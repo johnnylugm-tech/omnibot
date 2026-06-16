@@ -383,6 +383,18 @@ paths:
           description: Rate Limit 超出
 
   /api/v1/webhook/messenger:
+    get:
+      summary: Messenger Webhook 驗證 (hub.challenge)
+      parameters:
+        - name: hub.mode
+          in: query
+        - name: hub.verify_token
+          in: query
+        - name: hub.challenge
+          in: query
+      responses:
+        '200':
+          description: 成功回傳 hub.challenge 字串
     post:
       summary: Messenger Webhook
       security:
@@ -402,6 +414,18 @@ paths:
           description: 簽名驗證失敗
 
   /api/v1/webhook/whatsapp:
+    get:
+      summary: WhatsApp Webhook 驗證 (hub.challenge)
+      parameters:
+        - name: hub.mode
+          in: query
+        - name: hub.verify_token
+          in: query
+        - name: hub.challenge
+          in: query
+      responses:
+        '200':
+          description: 成功回傳 hub.challenge 字串
     post:
       summary: WhatsApp Webhook
       security:
@@ -1471,7 +1495,7 @@ class RateLimiter:
     async def allow(self, platform: str, user_id: str) -> bool:
         config = self._configs.get(platform, RateLimitConfig(max_requests=20, window_seconds=1.0))
         key = f"ratelimit:{platform}:{user_id}:{config.window_seconds}"
-        now = time.monotonic()
+        now = time.time()  # 使用 time.time() 確保跨機器一致性 (分散式)
         
         try:
             await self._ensure_script_loaded()
@@ -1495,7 +1519,7 @@ class RateLimiter:
         if not config:
             return 0
         key = f"ratelimit:{platform}:{user_id}:{config.window_seconds}"
-        now = time.monotonic()
+        now = time.time()  # 使用 time.time() 確保跨機器一致性 (分散式)
         try:
             count = await self._redis.zcount(key, now - config.window_seconds, now)
             return count
