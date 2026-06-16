@@ -2623,7 +2623,6 @@ ROLE_PERMISSIONS: dict[str, dict[str, list[str]]] = {
         "audit": ["read"],
         "experiment": ["read"],
         "system": ["read"],
-        "pii": ["decrypt"],
     },
     "dpo": {
         "knowledge": ["read"],
