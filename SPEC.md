@@ -1007,6 +1007,19 @@ VERIFIERS: dict[str, type[WebhookVerifier]] = {
     # web 使用 JWT BearerAuth，無需 Webhook 簽名驗證（見 /api/v1/web/message）
     # agent 使用 M2M OAuth2/JWT BearerAuth（見 /api/v1/a2a/rpc）
 }
+
+async def verify_webhook_signature(request):
+    """FastAPI 依賴注入：驗證 Webhook 簽名"""
+    platform = request.path_params.get("platform")
+    if platform not in VERIFIERS:
+        return
+    
+    body = await request.body()
+    signature = request.headers.get("X-Hub-Signature-256") or request.headers.get("x-line-signature") or request.headers.get("x-telegram-bot-api-secret-token")
+    
+    if not signature or not VERIFIERS[platform](app_secret="...").verify(body, signature):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=401, detail="AUTH_INVALID_SIGNATURE")
 ```
 
 ---
@@ -1796,6 +1809,13 @@ class GroundingChecker:
         self.local_model = None
         if model_name != "text-embedding-3-small":
             self.local_model = SentenceTransformer(model_name)
+
+    L5_JUDGE_PROMPT = """
+    You are a strict output grounding evaluator.
+    Compare the generated RESPONSE with the provided SOURCE_DOCUMENTS.
+    If the RESPONSE contains ANY factual claims, numbers, URLs, or entities not present in the SOURCE_DOCUMENTS, you must reject it.
+    Output JSON format: {"grounded": true/false, "reason": "..."}
+    """
 
     def check(self, llm_output: str, source_texts: list[str]) -> GroundingResult:
         if not source_texts:
@@ -3108,6 +3128,7 @@ class KnowledgeReindexJob:
 omnibot-worker:
   build: .
   command: saq omnibot:jobs --queues embedding,maintenance,notification --concurrency 15
+  stop_grace_period: 30s  # SIGTERM 緩衝，讓 SAQ 完成當前任務 (graceful shutdown)
   environment:
     - REDIS_URL=rediss://:${REDIS_PASSWORD}@redis:6380/0
     - DATABASE_URL=postgresql://omnibot:${DB_PASSWORD}@postgres:5432/omnibot
@@ -3267,8 +3288,8 @@ async def batch_import_knowledge(db, entries: list[dict], embedding_client, batc
 
 | 場景 | sync_first_chunk | 預期延遲 (per entry) |
 |------|-----------------|---------------------|
-| WebUI 單筆新增 | True | < 500ms |
-| API 單筆新增 | True | < 500ms |
+| WebUI 單筆新增 | True | < 2.5s |  # 考量 Embedding 首筆同步上限 2.0s
+| API 單筆新增 | True | < 2.5s |  # 同上
 | CSV/JSON 批次匯入 (> 10 筆) | False | < 50ms（僅 DB write） |
 | 初始化全量匯入 | False | < 50ms（僅 DB write） |
 
@@ -3348,6 +3369,16 @@ class AsyncMessageProcessor:
 
     async def ack(self, message_id: str) -> None:
         await self.redis.xack("omnibot:messages", self.group, message_id)
+
+    async def claim_pending(self, consumer: str, min_idle_time: int = 300000):
+        """HA 機制：處理 Crash 的消費者遺留的未 ACK 訊息 (XPENDING/XCLAIM)"""
+        pending = await self.redis.xpending("omnibot:messages", self.group)
+        if pending and pending['pending'] > 0:
+            # 撈出閒置過久的訊息並 Claim 給當前 consumer
+            await self.redis.xautoclaim(
+                "omnibot:messages", self.group, consumer, 
+                min_idle_time, start_id="0-0", count=10
+            )
 ```
 
 ### Redis Stream 訊息格式
@@ -3656,6 +3687,18 @@ CREATE TABLE edge_cases (
         CHECK (status IN ('pending', 'approved', 'rejected')),
     annotated_at TIMESTAMPTZ,
     used_in_regression BOOLEAN DEFAULT FALSE
+);
+
+-- ============================================================
+-- PII 隱私加密保管庫 (GDPR / ISO27001 合規)
+-- ============================================================
+CREATE TABLE pii_vault (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID, -- 關聯 unified_user_id
+    original_text TEXT NOT NULL,
+    masked_text TEXT NOT NULL,
+    category VARCHAR(50), -- PHONE, ADDRESS, SSN 等
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ============================================================
