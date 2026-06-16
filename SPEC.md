@@ -3215,7 +3215,7 @@ async def create_knowledge_with_chunks(db, knowledge_data: dict, chunks: list[st
             try:
                 vector = await asyncio.wait_for(
                     embedding_client.create_embedding(model="text-embedding-3-small", input=first_chunk),
-                    timeout=0.5
+                    timeout=2.0
                 )
                 await db.execute(
                     "UPDATE knowledge_chunks SET embeddings = %s::vector, embedding_model = %s WHERE id = %s",
