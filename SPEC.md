@@ -4482,7 +4482,8 @@ e2e_scenarios:
 
 ## 開發任務（完整版）
 
-\n### Milestone 1\n\n\n### Milestone 2\n\n\n### Milestone 3\n\n\n### Milestone 4\n- [x] PostgreSQL Schema（全部核心表 + 索引）
+### Milestone 1
+
 - [x] Platform Adapter（Telegram + LINE + Messenger + WhatsApp）
 - [ ] Webhook 簽名驗證（4 平台）
 - [ ] 統一消息格式（UnifiedMessage / UnifiedResponse）
@@ -4498,6 +4499,9 @@ e2e_scenarios:
 - [ ] RRF k=60 融合（回傳 KnowledgeResult）
 - [ ] LLM 生成 Tier 3
 - [ ] DST 對話狀態機
+
+### Milestone 2
+
 - [ ] 統一情緒模組（含衰減 + 連續偵測）
 - [ ] Prompt Injection 防護 L3（Sandwich Defense）
 - [ ] Grounding Checks L5
@@ -4513,6 +4517,9 @@ e2e_scenarios:
 - [ ] 告警規則設定（Prometheus）
 - [ ] Redis Streams 異步處理（classmethod factory）
 - [ ] 指數退避重試機制
+
+### Milestone 3
+
 - [ ] TDE 加密 + Redis TLS/AUTH/ACL
 - [ ] Docker Compose 開發環境（含 otel + prometheus + grafana）
 - [ ] Kubernetes Deployment + Service
@@ -4527,6 +4534,9 @@ e2e_scenarios:
 - [ ] ODD SQL 查詢（完整版）
 - [ ] Semantic Injection Classifier L4 (PALADIN Layer 4)
 - [ ] LLM-as-a-Judge 評測框架（Ensemble Judge + Rubric）
+
+### Milestone 4
+
 - [ ] Background Job System（SAQ Worker + Embedding Job）
 - [ ] WebSocket 端點（/ws/agent + /ws/user）
 - [ ] M2M Token 管理 API（issuance/rotation/revocation）
@@ -4542,7 +4552,7 @@ e2e_scenarios:
 - [ ] 同步首 Chunk embedding 策略（對抗搜尋黑暗期）
 - [ ] PALADIN L4 平行化管線（非阻塞 medium risk 請求）
 
-\n\n\n---
+---
 
 ## 驗收標準（完整版）
 
