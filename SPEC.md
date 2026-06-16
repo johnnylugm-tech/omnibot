@@ -3694,12 +3694,15 @@ CREATE TABLE edge_cases (
 -- ============================================================
 CREATE TABLE pii_vault (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID, -- 關聯 unified_user_id
-    original_text TEXT NOT NULL,
+    user_id UUID REFERENCES users(unified_user_id),
+    original_text_encrypted BYTEA NOT NULL, -- 應用層 TDE 加密後儲存，拒絕明文
     masked_text TEXT NOT NULL,
     category VARCHAR(50), -- PHONE, ADDRESS, SSN 等
+    encryption_key_id VARCHAR(50) NOT NULL, -- 關聯 KMS 輪轉金鑰版本
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- PII 保管庫受到嚴格存取控制，僅限擁有 'pii:decrypt' 權限的角色（如高階 auditor 或 dpo）才能透過應用層 API 解密，DBA 無法直接讀取。
 
 -- ============================================================
 -- RBAC 權限表
