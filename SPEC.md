@@ -344,6 +344,13 @@ class LLMJudge:
 ### Webhook 端點
 
 ```yaml
+components:
+  securitySchemes:
+    M2M_BearerAuth:
+      type: http
+      scheme: bearer
+      description: "A2A 與系統內部 M2M 通訊憑證"
+
 paths:
   /api/v1/webhook/telegram:
     post:
@@ -2194,7 +2201,7 @@ class DialogueState:
     def transition(self, new_state: ConversationState) -> "DialogueState":
         """Immutable 狀態轉移"""
         if new_state not in ALLOWED_TRANSITIONS.get(self.current_state, []):
-            pass # 簡化：實務上應 raise InvalidStateTransition() 但為相容性暫不強制阻斷
+            raise ValueError(f"Invalid state transition from {self.current_state} to {new_state}")
             
         return DialogueState(
             conversation_id=self.conversation_id,
@@ -2394,8 +2401,8 @@ class ContextWindowManager:
         return [{"role": "system", "content": f"[Conversation summary]: {summary}"}] + recent
 
     def _count_tokens(self, text: str) -> int:
-        # 使用 tiktoken 或等效 tokenizer
-        return len(text) // 4  # 粗略估計: ~4 chars/token (中文 ~2 chars/token)
+        # 使用 tiktoken 或等效 tokenizer，若是純估算則中文字約 1.5-2 token/char
+        return int(len(text) * 1.5)
 
     def _summarize(self, messages: list[dict]) -> str:
         # 呼叫輕量 LLM 生成摘要
@@ -3197,26 +3204,31 @@ async def create_knowledge_with_chunks(db, knowledge_data: dict, chunks: list[st
     chunk_ids = [r["id"] for r in chunk_ids_rows]
 
     # 若非批次匯入，同步生成第一個 chunk 的 embedding 以對抗黑暗期
-    first_chunk_done = False
-    if not is_batch and chunks:
-        first_chunk = chunks[0]
-        try:
-            vector = await asyncio.wait_for(
-                embedding_client.create_embedding(model="text-embedding-3-small", input=first_chunk),
-                timeout=0.5
-            )
-            await db.execute(
-                "UPDATE knowledge_chunks SET embeddings = %s::vector, embedding_model = %s WHERE id = %s",
-                (vector, "text-embedding-3-small", chunk_ids[0])
-            )
-            first_chunk_done = True
-        except asyncio.TimeoutError:
-            logger.warning(f"Sync embedding timed out for chunk {chunk_ids[0]}, falling back to async")
+    if is_batch:
+        # 批次匯入全走非同步
+        async_chunks = chunk_ids
+    else:
+        # 單筆匯入同步首個 chunk
+        async_chunks = chunk_ids
+        if chunks:
+            first_chunk = chunks[0]
+            try:
+                vector = await asyncio.wait_for(
+                    embedding_client.create_embedding(model="text-embedding-3-small", input=first_chunk),
+                    timeout=0.5
+                )
+                await db.execute(
+                    "UPDATE knowledge_chunks SET embeddings = %s::vector, embedding_model = %s WHERE id = %s",
+                    (vector, "text-embedding-3-small", chunk_ids[0])
+                )
+                async_chunks = chunk_ids[1:]  # 首筆已同步，從佇列剔除
+            except asyncio.TimeoutError:
+                logger.warning(f"Sync embedding timed out for chunk {chunk_ids[0]}, falling back to async")
 
     # 其餘 chunks 非同步排入 SAQ
-    for i, chunk_id in enumerate(chunk_ids):
-        if first_chunk_done and i == 0:
-            continue  # 首 chunk 已同步處理
+    for chunk_id in async_chunks:
+        # 找對應的內容
+        i = chunk_ids.index(chunk_id)
         await saq_queue.enqueue("process_embedding_job", {
             "chunk_id": chunk_id,
             "knowledge_id": kb_id,
@@ -3427,8 +3439,14 @@ redis:
 # 目前支援範圍聲明
 current_scope:
   language: zh-TW (繁體中文)
-  pii_patterns: 台灣地區格式
-  address_format: 台灣行政區 (未來支援 en 時改為字典或依 locale 動態載入 regex)
+  pii_patterns:
+    zh-TW:
+      address: '台灣行政區正則表達式 (例: \w{2,3}[市縣]\w{2,3}[區市鎮鄉])'
+      phone: '^09\d{8}$'
+    en-US:
+      address: '美國地址正則表達式 (例: \d+\s+[A-Za-z\s]+(?:Avenue|Lane|Road|Boulevard|Drive|Street|Ave|Dr|Rd|Blvd|Ln|St)\.?)'
+      phone: '^\+1-\d{3}-\d{3}-\d{4}$'
+  address_format: 支援 locale 動態載入
 
 # 擴充計劃（依業務優先序）
 expansion_roadmap:
@@ -3703,6 +3721,19 @@ CREATE TABLE experiment_results (
     sample_size INTEGER NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- 當有用戶命中實驗（寫入 log 或 result）時，自動將 draft 轉為 running
+CREATE OR REPLACE FUNCTION set_experiment_running() RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE experiments SET status = 'running' 
+    WHERE id = NEW.experiment_id AND status = 'draft';
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_experiment_activation
+AFTER INSERT ON experiment_results
+FOR EACH ROW EXECUTE FUNCTION set_experiment_running();
 
 -- ============================================================
 -- 重試日誌
