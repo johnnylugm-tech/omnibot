@@ -2623,6 +2623,15 @@ ROLE_PERMISSIONS: dict[str, dict[str, list[str]]] = {
         "audit": ["read"],
         "experiment": ["read"],
         "system": ["read"],
+        "pii": ["decrypt"],
+    },
+    "dpo": {
+        "knowledge": ["read"],
+        "escalate": ["read"],
+        "audit": ["read"],
+        "experiment": ["read"],
+        "system": ["read"],
+        "pii": ["decrypt"],
     },
 }
 ```
@@ -3694,11 +3703,11 @@ CREATE TABLE edge_cases (
 -- ============================================================
 CREATE TABLE pii_vault (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(unified_user_id),
+    user_id UUID REFERENCES users(unified_user_id) ON DELETE CASCADE,
     original_text_encrypted BYTEA NOT NULL, -- 應用層 TDE 加密後儲存，拒絕明文
-    masked_text TEXT NOT NULL,
+    masked_text_encrypted BYTEA NOT NULL, -- 遮蔽版可能仍含部分 PII 特徵，同樣需加密
     category VARCHAR(50), -- PHONE, ADDRESS, SSN 等
-    encryption_key_id VARCHAR(50) NOT NULL, -- 關聯 KMS 輪轉金鑰版本
+    encryption_key_id VARCHAR(50) NOT NULL, -- 關聯外部 KMS 輪轉金鑰版本 (外部關聯無 FK)
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
