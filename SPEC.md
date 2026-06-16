@@ -130,7 +130,12 @@ Score 1-5:
 4 (Warm): 溫暖有同理心，針對情緒做適當回應
 5 (Exceptional): 展現高度情緒智慧，主動安撫，語氣自然真誠
 
-Aggregation: max(primary_score, secondary_score)  # 寬鬆評分，避免過度壓抑（因情感支持價值在於主動性，寧可寬容）
+Aggregation: max(primary_score, secondary_score)  # 寬鬆評分，避免過度壓抑
+Rationale:
+  - 兩個 judge 對「禮貌」容易 systemically 偏嚴（模型對正向情緒的識別閾值偏高）
+  - 採寬鬆聚合可避免 CSAT 公式中禮貌度長期偏低
+  - 業務後果：禮貌度評低 → 用戶滿意度看似下降 → 客服 team 被誤導
+  - 取寬鬆：寧可「誤以為禮貌」也不「漏報禮貌」
 ```
 
 #### Accuracy（準確度）
@@ -143,7 +148,18 @@ Score 1-5:
 4 (Correct): 資訊準確完整
 5 (Excellent): 準確且附帶恰當的 caveat/disclaimer，引導用戶補充資訊
 
-Aggregation: min(primary_score, secondary_score)  # 保守評分，錯誤不可接受（因幻覺會導致業務損失，寧嚴勿寬）
+Aggregation: min(primary_score, secondary_score)  # 保守評分，錯誤不可接受
+Rationale:
+  - 兩個 judge 對「錯誤內容」識別都有高 recall，但 precision 不同
+  - 採嚴格聚合（min）= 任一 judge 認為有錯就標記需複查
+  - 業務後果：準確度評高 → 錯誤回答外流 → 法規/商譽風險
+  - 取嚴格：寧可「誤以為有錯複查」也不「漏報錯誤」
+
+統一判斷（兩者並存的理論基礎）
+兩個維度的業務後果不對稱：
+  - 禮貌：假警報成本低（多說一句道歉），漏報成本高（用戶流失）
+  - 準確：假警報成本高（人工複查負擔），漏報成本極高（錯誤事實傳遞）
+因此 Politeness 偏寬鬆、Accuracy 偏嚴格是 trade-off 設計，不是 bug。
 ```
 
 ### 校準流程
@@ -2717,11 +2733,17 @@ class ResponseGenerator:
     # （Template 來源見 line 2695，情緒整合見 line 2746）
 
     DEFAULT_TEMPLATES: dict[str, ResponseTemplate] = {
-        "rule_default": ResponseTemplate(
-            name="rule_default",
-            platform="all", # 應在 adapter 層依據平台截斷並補上 link,
+        "rule_default_web": ResponseTemplate(
+            name="rule_default_web",
+            platform="web",
             emotion_tone="neutral",
             template="{answer}"
+        ),
+        "rule_default_messenger": ResponseTemplate(
+            name="rule_default_messenger",
+            platform="messenger",
+            emotion_tone="neutral",
+            template="{answer}\n\n🔗 點擊查看完整內容: {link}"
         ),
         "rag_default": ResponseTemplate(
             name="rag_default",
@@ -2733,7 +2755,7 @@ class ResponseGenerator:
             name="escalate",
             platform="all",
             emotion_tone="neutral",
-            template="我已經將您的問題轉交給專業客服人員，請稍候，我們會盡快回覆您。\n\n📋 案件編號：#{escalation_id}"
+            template="我已經將您的問題轉交給專業客服人員，請稍候。\n\n📋 案件編號：#{escalation_id}"
         ),
     }
 
@@ -3687,17 +3709,17 @@ CREATE TABLE schema_migrations (
 # alembic/versions/001_initial.py
 def upgrade():
     """初始完整 Schema"""
-    op.create_table(
-        'knowledge_chunks',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('content', sa.Text(), nullable=False),
-        sa.PrimaryKeyConstraint('id')
-    )
-    # ... 其餘表結構 ...
+    op.create_table('knowledge_chunks', sa.Column('id', sa.Integer(), nullable=False), sa.PrimaryKeyConstraint('id'))
 
-def downgrade():
-    op.drop_table('knowledge_chunks')
-    # ... 其餘反向操作 ...
+# alembic/versions/002_add_vector_index.py
+def upgrade():
+    """向量索引遷移"""
+    op.execute('CREATE INDEX ON knowledge_chunks USING hnsw (embedding vector_cosine_ops)')
+
+# alembic/versions/003_add_ab_testing.py
+def upgrade():
+    """A/B Testing 相關表"""
+    op.create_table('ab_experiments', sa.Column('id', sa.Integer(), nullable=False), sa.PrimaryKeyConstraint('id'))
 ```
 
 ---
@@ -3906,7 +3928,7 @@ ORDER BY e.name, er.variant;
   - **規則匹配結果**：列出 ILIKE 匹配結果與置信度。
   - **向量檢索細節**：展示命中 Child Chunks 的餘弦相似度分數、其對應的 Parent Chunk 內容、以及所處的資料段落。
   - **RRF 融合分數**：列出最終 RRF k=60 計算後排名前三的合併評分（RRF Score）。
-- **閾值微調滑桿**：提供即時的相似度門檻（Threshold，預設 0.75）調整滑桿，管理員可在沙盒中直接調試「高精準/高召回」的平衡點。（沙盒內調試僅影響當前 session，不入 platform_configs.threshold）
+- **閾值微調滑桿**：提供即時的相似度門檻（Threshold，預設 0.75）調整滑桿，管理員可在沙盒中直接調試「高精準/高召回」的平衡點。（沙盒內調試僅在沙盒生效，不寫入 platform_configs.threshold）
 
 ### 2. 即時運維與 SLA/FCR 監控看板 (Operations Dashboard)
 
@@ -4451,7 +4473,8 @@ e2e_scenarios:
 
 ## 開發任務（完整版）
 
-\n### Milestone 1\n\n\n### Milestone 2\n\n\n### Milestone 3\n\n\n### Milestone 4\n- [x] PostgreSQL Schema（全部核心表 + 索引）
+### Milestone 1
+
 - [x] Platform Adapter（Telegram + LINE + Messenger + WhatsApp）
 - [ ] Webhook 簽名驗證（4 平台）
 - [ ] 統一消息格式（UnifiedMessage / UnifiedResponse）
@@ -4466,6 +4489,9 @@ e2e_scenarios:
 - [ ] RAG 語義搜尋（含 embedding_model 過濾）
 - [ ] RRF k=60 融合（回傳 KnowledgeResult）
 - [ ] LLM 生成 Tier 3
+
+### Milestone 2
+
 - [ ] DST 對話狀態機
 - [ ] 統一情緒模組（含衰減 + 連續偵測）
 - [ ] Prompt Injection 防護 L3（Sandwich Defense）
@@ -4480,6 +4506,9 @@ e2e_scenarios:
 - [ ] OpenTelemetry Tracing
 - [ ] Grafana Dashboards
 - [ ] 告警規則設定（Prometheus）
+
+### Milestone 3
+
 - [ ] Redis Streams 異步處理（classmethod factory）
 - [ ] 指數退避重試機制
 - [ ] TDE 加密 + Redis TLS/AUTH/ACL
@@ -4494,6 +4523,9 @@ e2e_scenarios:
 - [ ] 黃金數據集初始化（500 筆）
 - [ ] 健康檢查端點
 - [ ] ODD SQL 查詢（完整版）
+
+### Milestone 4
+
 - [ ] Semantic Injection Classifier L4 (PALADIN Layer 4)
 - [ ] LLM-as-a-Judge 評測框架（Ensemble Judge + Rubric）
 - [ ] Background Job System（SAQ Worker + Embedding Job）
@@ -4511,122 +4543,4 @@ e2e_scenarios:
 - [ ] 同步首 Chunk embedding 策略（對抗搜尋黑暗期）
 - [ ] PALADIN L4 平行化管線（非阻塞 medium risk 請求）
 
-\n\n\n---
 
-## 驗收標準（完整版）
-
-| KPI | 目標 | 測試方法 |
-|-----|------|----------|
-| **FCR (首問解決率)** | >= 90% | ODD SQL 查詢 |
-| **p95 延遲** | < 1.0s | k6 壓力測試 |
-| **平台支援** | 4 個 | 功能測試 |
-| **Webhook 驗證** | 4 平台 | 滲透測試 |
-| **PII 遮蔽** | 電話/Email/地址 + Luhn | 單元測試 |
-| **安全阻擋率** | >= 95% | 紅隊測試 |
-| **Grounding** | 100% 知識對齊 (L5 相似度 >= 0.75) | L5 單元測試 |
-| **Prompt Injection 防禦** | PALADIN L1-L5 全層覆蓋 | 紅隊測試 + OWASP LLM01 checklist |
-| **LLM-as-a-Judge** | Cohen's Kappa >= 0.7 vs 人工標註 | 500 筆黃金集校準 |
-| **Background Job** | Embedding job p95 < 30s | SAQ dashboard |
-| **轉接 SLA** | >= 95% | ODD SQL 查詢 |
-| **黃金數據集** | >= 500 筆 | 數量檢查 |
-| **可用性** | >= 99.9% | 監控儀表板 |
-| **災備復原** | < 5 分鐘 | 演練測試 |
-| **錯誤率** | < 1% | Prometheus |
-| **成本** | < $500/月 | 成本儀表板 |
-| **RBAC** | 4 角色完整 | 功能測試 |
-| **A/B 自動化** | >= 95% 準確率 | 統計分析 |
-| **Agentic Tool 呼叫** | 成功率 >= 95% | 模擬接口集成測試 |
-| **LLM Fallback 切換時間** | < 500ms | 故障注入測試 |
-| **1536維向量召回率 (Recall@3)** | >= 92% | 黃金數據集回歸測試 |
-| **後台與監控看板** | 響應時間 < 1.5s，100% 數據即時連動 | Lighthouse 審計 / 手動驗收 |
-
----
-
-## 覆蓋檢查矩陣
-
-| 模組 | 涵蓋 |
-|------|------|
-| **UnifiedMessage / UnifiedResponse** | Y |
-| **統一回應格式 ApiResponse / PaginatedResponse** | Y |
-| **Webhook 簽名驗證（4 平台）** | Y |
-| **API 設計（端點 + 錯誤碼 + RBAC 保護）** | Y |
-| **輸入清理 L2** | Y |
-| **PII L4（含 Luhn 校驗）** | Y |
-| **Rate Limiter** | Y |
-| **IP 白名單** | Y |
-| **規則匹配 Tier 1** | Y |
-| **RAG + RRF Tier 2 (1536維 + HNSW 索引)** | Y |
-| **RAG 文本切分與層級檢索 (Parent-Child)** | Y |
-| **LLM 生成 Tier 3 (Sandwich 防護)** | Y |
-| **雙 LLM 自動備份降級 (Fallback Mechanism)** | Y |
-| **Agentic Tool Calling (Function Calling 執行器)** | Y |
-| **人工轉接 + SLA** | Y |
-| **DST 對話狀態機** | Y |
-| **統一情緒模組** | Y |
-| **Prompt Injection L3 (PALADIN L2+L3)** | Y |
-| **Semantic Injection Classifier L4 (PALADIN L4)** | Y |
-| **Grounding Checks L5 (PALADIN L5)** | Y |
-| **結構化日誌** | Y |
-| **Prometheus Metrics** | Y |
-| **OpenTelemetry Tracing** | Y |
-| **Grafana + 告警** | Y |
-| **RBAC + Enforcement** | Y |
-| **A/B Testing** | Y |
-| **Redis Streams 異步** | Y |
-| **指數退避重試** | Y |
-| **TDE + Redis 安全** | Y |
-| **Docker Compose（完整）** | Y |
-| **Kubernetes** | Y |
-| **備份 / Rollback / 降級** | Y |
-| **負載測試** | Y |
-| **成本模型** | Y |
-| **Schema 遷移管理** | Y |
-| **i18n 擴充指引** | Y |
-| **黃金數據集指引** | Y |
-| **環境分離** | Y |
-| **SLA 定義** | Y |
-| **CSAT 量化指標** | Y |
-| **知識管理 WebUI / RAG Debugger** | Y |
-| **SLA 運維與 FCR 看板** | Y |
-| **客服 Agent Portal / 情緒紅色警報** | Y |
-| **LLM-as-a-Judge 評測框架 (Ensemble Judge + Rubric)** | Y |
-| **異步任務系統 (SAQ Worker, Embedding Job)** | Y |
-| **WebSocket 即時推送 (/ws/agent, /ws/user)** | Y |
-| **A2A 雙向協議 (Client + Server Agent Card)** | Y |
-| **使用者管理 API + M2M Token 管理** | Y |
-| **多媒體訊息處理路徑 (IMAGE/FILE/LOCATION/STICKER)** | Y |
-| **GDPR / 資料生命週期管理** | Y |
-| **對話 Context Window 管理** | Y |
-| **Response Generator (Template + Emotion Tone + Platform Adapter)** | Y |
-| **E2E 整合測試策略** | Y |
-| **ToolDefinition 統一定義 (AEE + DST 共用)** | Y |
-| **分散式 Rate Limiter (Redis ZSET + Lua)** | Y |
-
----
-
-## 版本資訊
-
-| 檔案 | 內容 | 開發時間 |
-|------|------|---------|
-| `SPEC.md` | 完整規格（單一階段） | 8-11 週 |
-
-**總開發時間**：8-11 週
-**最終目標 FCR**：90%
-**最終可用性**：99.9%
-
----
-
-*文件版本: v8.1*
-*最後更新: 2026-06-06*
-
-> **v8.1 變更摘要**（參見審計報告與改善方案）：
-> - P0: 修正 bge-m3 維度錯誤、統一 ToolDefinition、分散式 Rate Limiter、Circuit Breaker 降級
-> - P1: PALADIN 五層防禦、LLM-as-a-Judge 框架、背景任務系統、A2A 雙向協議、WebSocket 端點
-> - P1+: L4 Classifier 平行化管線 (p95 SLA 對策)、同步首 Chunk embedding (搜尋黑暗期對策)
-> - P1+: 多模型故障隔離矩陣 (Embedding/Classifier/Judge fallback 降級策略)
-> - P2: 使用者管理 API、多媒體處理、GDPR 合規、Context Window、Response Generator、E2E 測試、M2M Token
-> - 一致性: 版本號統一、enum 補完、metric 補完、格式一致性修正
-
-> **模型名稱備註**：規格書中的 `gpt-4o`、`gemini-1.5-flash` 等為示範模型名稱。
-> 實作時應透過環境變數或 platform_configs 表配置實際模型，不應 hard-code 廠商型號。
-> 所有外部 AI API 均需定義 fallback 路徑（參見降級策略中的 model_dependency_matrix）。
