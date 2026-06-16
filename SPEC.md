@@ -45,7 +45,7 @@
 
 | KPI | 目標 |
 |-----|------|
-| **首問解決率 (FCR)** | 90% |
+| **首問解決率 (FCR)** | 90% （FCR 計算定義見 ODD SQL 章節 line 3683） |
 | **CSAT 提升** | +50% (相較於 2025Q4 基準平均 3.2 分) |
 | **p95 回應延遲** | < 1.0s |
 | **平台支援** | 4 個 |
@@ -58,10 +58,10 @@
 
 | 知識類型 | 儲存技術 | 檢索策略 | 預期貢獻 |
 |-----------|----------|----------|----------|
-| **Tier 1: 規則匹配** | PostgreSQL | SQL 精確匹配 / 關鍵字 | 40% |
+| **Tier 1: 規則匹配** | PostgreSQL | SQL 精確匹配 / 關鍵字 | 40% | （FCR 在每個 Tier 的計算細節見各章節）
 | **Tier 2: RAG 向量檢索** | pgvector | 語義向量 + RRF k=60 | 40% |
 | **Tier 3: LLM 生成** | LLM Context | 多輪對話 + DST | 10% |
-| **Tier 4: 人工轉接** | 轉接佇列 | SLA 追蹤 | 10% |
+| **Tier 4: 人工轉接** | 轉接佇列 | SLA 追蹤 | 10% | （轉接 SLA 見 line 2420 人工轉接章節）
 
 ### CSAT 量化指標
 
@@ -105,7 +105,7 @@ CSAT 總公式為：`CSAT = 0.4 * 速度 + 0.2 * 擬人化 + 0.2 * 禮貌度 + 0
 
 ### Judge 配置
 
-採用 **Ensemble Judge** 模式：兩個不同廠商的輕量模型交叉驗證，降低單一 judge bias。
+採用 **Ensemble Judge** 模式：兩個不同廠商的輕量模型交叉驗證，降低單一 judge bias。（Aggregation 策略詳見下方 Rubric 章節）
 
 ```yaml
 evaluation:
@@ -176,7 +176,7 @@ class LLMJudge:
 
     def __init__(self, primary_model: str = "gpt-4o-mini", secondary_model: str = "claude-3-5-haiku"):
         self.primary = primary_model
-        self.secondary = secondary_model
+        self.secondary = secondary_model # （黃金集校準流程見 line 124）
 
     async def evaluate(self, bot_response: str, knowledge_sources: list[str], conversation_context: str) -> dict:
         # Parallel judge calls
@@ -864,6 +864,7 @@ class UnifiedResponse:
     confidence: float
     knowledge_id: Optional[int] = None
     emotion_adjustment: Optional[str] = None
+    quick_replies: list[dict] = field(default_factory=list)
 ```
 
 ### 多媒體訊息處理路徑
@@ -999,7 +1000,7 @@ import unicodedata
 
 class InputSanitizer:
     """
-    PALADIN Layer 1: 輸入清理。
+    PALADIN Layer 1: 輸入清理。（L2/L3 詳見 line 972，L4 詳見 line 1054）
     字元正規化 + confusables 替換（基礎的 Homoglyph 替換處理）。
     """
 
@@ -1042,6 +1043,7 @@ class SecurityCheckResult:
 class PromptInjectionDefense:
     """
     PALADIN Layer 2 (Pattern Detection) + Layer 3 (Instruction Hierarchy).
+    （見 L1 line 939，L4 line 1054）
     
     Layer 2: regex pattern + Unicode 變體偵測（快速攔截）。
     Layer 3: Instruction Hierarchy — 系統 prompt 標記 privilege level (ICLR 2025)。
@@ -1118,6 +1120,7 @@ class SemanticClassifyResult:
 class SemanticInjectionClassifier:
     """
     PALADIN Layer 4: LLM-based 語意層分類器。
+    （見 L1-L3 線 939+972，觸發策略見 line 1206）
     
     Layer 2 (regex) 無法偵測的語意層攻擊（如多語言、改寫、社會工程），
     由輕量 LLM classifier 處理。這是 OWASP LLM01:2025 建議的關鍵防線。
@@ -1620,24 +1623,36 @@ class A2AAdapter(ActionAdapter):
         self._agent_url = agent_url
         self._auth_token = auth_token
         self._tools_cache: list[ToolDefinition] | None = None
+        self._cache_time: float = 0
+        self._cache_ttl: int = 300
 
     async def _discover_agent_card(self) -> dict:
         """
         Agent Card Discovery (GET /.well-known/agent.json)。
         回傳遠端 Agent 的能力描述、支援的方法與工具清單。
         """
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(
-                f"{self._agent_url}/.well-known/agent.json",
-                timeout=10.0
-            )
-            return resp.json()
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(
+                    f"{self._agent_url}/.well-known/agent.json",
+                    timeout=10.0
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                if not isinstance(data, dict) or "tools" not in data:
+                    return {"tools": []}
+                return data
+        except Exception as e:
+            # logger.warning(f"Agent Card Discovery failed: {e}")
+            return {"tools": []} # agent.json 不可達時 list_tools() 回傳空清單（OmniBot 行為降級為無外部 A2A 工具）
 
     async def list_tools(self) -> list[ToolDefinition]:
         """向遠端 Agent 查詢可用工具並快取"""
-        if self._tools_cache:
+        import time
+        if self._tools_cache and (time.time() - self._cache_time < self._cache_ttl):
             return self._tools_cache
         agent_card = await self._discover_agent_card()
+        self._cache_time = time.time()
         self._tools_cache = [
             ToolDefinition(
                 name=t["name"],
@@ -1660,7 +1675,8 @@ class A2AAdapter(ActionAdapter):
         }
         headers = {"Authorization": f"Bearer {self._auth_token}"}
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            # A2A 呼叫不計入 p95 SLA，超時則 fallback 到本地降級策略
+            async with httpx.AsyncClient(timeout=2.0) as client:
                 resp = await client.post(self._agent_url, json=payload, headers=headers)
                 data = resp.json()
                 if "error" in data:
@@ -1805,6 +1821,8 @@ class GroundingChecker:
 
 ### 統一資料結構
 
+（Tier 對應實作見 HybridKnowledge class line 1834）
+
 ```python
 from dataclasses import dataclass
 from typing import Optional
@@ -1832,6 +1850,7 @@ class LLMTimeoutError(Exception): pass
 class LLMRateLimitError(Exception): pass
 
 class HybridKnowledge:
+    # （對應 tier 流程見 line 34 FCR 分層表）
     # 規格書默認以 OpenAI text-embedding-3-small (1536維) 為標準。
     # 若需更換模型，請參閱 GroundingChecker 中的模型對照表，
     # 並同步變更 EMBEDDING_DIM 及 knowledge_chunks.embeddings vector(N) 維度。
@@ -2474,6 +2493,8 @@ class EscalationManager:
 
 ## RBAC 權限管理
 
+（6 個角色定義見 line 2484，Enforcement 見 line 2531）
+
 ### 權限定義
 
 ```python
@@ -2566,6 +2587,8 @@ rbac = RBACEnforcer()
 ---
 
 ## A/B Testing 框架
+
+（與 Response Generator 銜接見 line 2735 _apply_ab_variant）
 
 ```python
 import hashlib
@@ -2691,11 +2714,12 @@ class ResponseTemplate:
 
 class ResponseGenerator:
     """回覆產生器：將 KnowledgeResult 轉換為 UnifiedResponse"""
+    # （Template 來源見 line 2695，情緒整合見 line 2746）
 
     DEFAULT_TEMPLATES: dict[str, ResponseTemplate] = {
         "rule_default": ResponseTemplate(
             name="rule_default",
-            platform="all",
+            platform="all", # 應在 adapter 層依據平台截斷並補上 link,
             emotion_tone="neutral",
             template="{answer}"
         ),
@@ -2717,10 +2741,11 @@ class ResponseGenerator:
         self,
         knowledge_result: KnowledgeResult,
         emotion_score: EmotionScore,
+        platform: str = "web",
         ab_variant: str | None = None,
     ) -> UnifiedResponse:
         # 1. 選擇 template
-        template = self._select_template(knowledge_result.source, emotion_score)
+        template = self._select_template(knowledge_result.source, emotion_score, platform)
         
         # 2. Variable interpolation
         content = template.template.format(
@@ -2743,8 +2768,10 @@ class ResponseGenerator:
             emotion_adjustment=emotion_score.category.value,
         )
 
-    def _apply_emotion_tone(self, content: str, emotion: EmotionScore) -> str:
+    def _apply_emotion_tone(self, content: str, emotion: EmotionScore, repeat_count: int = 0, platform: str = "web") -> str:
         """根據情緒強度和類別調整回覆語氣"""
+        if repeat_count > 0 and emotion.category == EmotionCategory.NEGATIVE:
+            return content  # 抑制重複道歉
         if emotion.category == EmotionCategory.NEGATIVE and emotion.intensity > 0.7:
             return f"非常抱歉造成您的困擾。{content}"
         elif emotion.category == EmotionCategory.POSITIVE:
@@ -2752,7 +2779,9 @@ class ResponseGenerator:
         return content
 
     def _apply_ab_variant(self, content: str, variant: str) -> str:
-        """注入 A/B variant 差異"""
+        """注入 A/B variant 差異
+        ab_variant 來源：A/B Testing 章節 line 2530 的 get_variant(user_id, experiment_id) -> str
+        """
         # variant 可以是不同的結尾語、emoji 策略、CTA 文字等
         variant_configs = {
             "variant_a": {"suffix": "還有其他問題嗎？"},
@@ -3859,7 +3888,11 @@ ORDER BY e.name, er.variant;
 
 ## 客服後台與知識管理 UI/UX 規格
 
-為了打通 OmniBot 商業化落地的最後一哩路，系統需提供一套高整合度、操作流暢的企業級 Web 管理系統（採用現代響應式 Dashboard 設計與 Glassmorphism 毛玻璃視覺風格）。本模組定義三個核心工作視圖。
+為了打通 OmniBot 商業化落地的最後一哩路，系統需提供一套高整合度、操作流暢的企業級 Web 管理系統（採用現代響應式 Dashboard 設計與 Glassmorphism 毛玻璃視覺風格）。
+
+**UI 技術棧選型**：React 18 + Vite + Shadcn + Tailwind + Zustand。
+**設計 Token**：backdrop-blur: 12px / opacity: 0.6 / border: 1px solid rgba(255,255,255,0.18)。
+本模組定義三個核心工作視圖。
 
 ### 1. 知識管理與 RAG 視覺化除錯後台 (Knowledge WebUI)
 
@@ -3873,7 +3906,7 @@ ORDER BY e.name, er.variant;
   - **規則匹配結果**：列出 ILIKE 匹配結果與置信度。
   - **向量檢索細節**：展示命中 Child Chunks 的餘弦相似度分數、其對應的 Parent Chunk 內容、以及所處的資料段落。
   - **RRF 融合分數**：列出最終 RRF k=60 計算後排名前三的合併評分（RRF Score）。
-- **閾值微調滑桿**：提供即時的相似度門檻（Threshold，預設 0.75）調整滑桿，管理員可在沙盒中直接調試「高精準/高召回」的平衡點。
+- **閾值微調滑桿**：提供即時的相似度門檻（Threshold，預設 0.75）調整滑桿，管理員可在沙盒中直接調試「高精準/高召回」的平衡點。（沙盒內調試僅影響當前 session，不入 platform_configs.threshold）
 
 ### 2. 即時運維與 SLA/FCR 監控看板 (Operations Dashboard)
 
@@ -3947,7 +3980,7 @@ services:
     volumes:
       - ./tls:/tls
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD-SHELL", "REDISCLI_AUTH=${REDIS_PASSWORD} redis-cli --tls --cacert /tls/redis.crt ping"]
       interval: 10s
 
   otel-collector:
@@ -3969,6 +4002,8 @@ volumes:
 ```
 
 ### Kubernetes Deployment
+
+> **Secrets 管理**：DB/Redis 密碼需透過 SealedSecrets 或 External Secrets Operator 注入，不可用明文 ConfigMap。
 
 ```yaml
 apiVersion: apps/v1
@@ -4025,6 +4060,13 @@ spec:
         target:
           type: Utilization
           averageUtilization: 70
+    - type: External
+      external:
+        metric:
+          name: llm_queue_depth
+        target:
+          type: Value
+          value: 100
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -4409,7 +4451,7 @@ e2e_scenarios:
 
 ## 開發任務（完整版）
 
-- [x] PostgreSQL Schema（全部核心表 + 索引）
+\n### Milestone 1\n\n\n### Milestone 2\n\n\n### Milestone 3\n\n\n### Milestone 4\n- [x] PostgreSQL Schema（全部核心表 + 索引）
 - [x] Platform Adapter（Telegram + LINE + Messenger + WhatsApp）
 - [ ] Webhook 簽名驗證（4 平台）
 - [ ] 統一消息格式（UnifiedMessage / UnifiedResponse）
@@ -4469,7 +4511,7 @@ e2e_scenarios:
 - [ ] 同步首 Chunk embedding 策略（對抗搜尋黑暗期）
 - [ ] PALADIN L4 平行化管線（非阻塞 medium risk 請求）
 
----
+\n\n\n---
 
 ## 驗收標準（完整版）
 
