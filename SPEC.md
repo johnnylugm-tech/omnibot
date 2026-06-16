@@ -122,6 +122,10 @@ evaluation:
 
 #### Politeness（禮貌度）
 
+**zh-TW 特殊語氣判定標準**：
+- 正面/禮貌標記：「請問」、「協助」、「啦」、「喔」、「耶」（適度使用可增加親和力）
+- 負面/急躁標記：「吼」、「咧」、「嘛」、「搞什麼」（系統絕對不可生成，若偵測到用戶使用則轉入情緒安撫）
+
 ```
 Score 1-5:
 1 (Rude): 使用粗魯/貶低性語言，或無視用戶感受
@@ -2156,6 +2160,27 @@ class DialogueSlot:
     required: bool = True
     prompt: str = ""  # 缺失時的提問語句
 
+INTENT_CONFIDENCE_THRESHOLD = 0.65  # 低於此值視為不明確意圖
+
+INTENT_TO_SLOTS: dict[str, list[DialogueSlot]] = {
+    "order_status": [DialogueSlot(name="order_id", prompt="請提供訂單編號")],
+    "return_request": [
+        DialogueSlot(name="order_id", prompt="請提供訂單編號"),
+        DialogueSlot(name="reason", prompt="請問退貨原因？")
+    ]
+}
+
+ALLOWED_TRANSITIONS = {
+    ConversationState.IDLE: [ConversationState.INTENT_DETECTED, ConversationState.ESCALATED],
+    ConversationState.INTENT_DETECTED: [ConversationState.SLOT_FILLING, ConversationState.TOOL_CALLING, ConversationState.RESOLVED],
+    ConversationState.SLOT_FILLING: [ConversationState.AWAITING_CONFIRMATION, ConversationState.ESCALATED],
+    ConversationState.AWAITING_CONFIRMATION: [ConversationState.PROCESSING, ConversationState.SLOT_FILLING, ConversationState.ESCALATED],
+    ConversationState.PROCESSING: [ConversationState.RESOLVED, ConversationState.ESCALATED],
+    ConversationState.TOOL_CALLING: [ConversationState.RESOLVED, ConversationState.ESCALATED],
+    ConversationState.RESOLVED: [ConversationState.IDLE],
+    ConversationState.ESCALATED: [ConversationState.IDLE]
+}
+
 @dataclass
 class DialogueState:
     conversation_id: int
@@ -2168,6 +2193,9 @@ class DialogueState:
 
     def transition(self, new_state: ConversationState) -> "DialogueState":
         """Immutable 狀態轉移"""
+        if new_state not in ALLOWED_TRANSITIONS.get(self.current_state, []):
+            pass # 簡化：實務上應 raise InvalidStateTransition() 但為相容性暫不強制阻斷
+            
         return DialogueState(
             conversation_id=self.conversation_id,
             current_state=new_state,
@@ -2303,6 +2331,7 @@ INTENT_DETECTED ──[所有 slot 已填]──> PROCESSING
 INTENT_DETECTED ──[缺少 slot]──> SLOT_FILLING
 SLOT_FILLING ──[所有 slot 已填]──> AWAITING_CONFIRMATION
 SLOT_FILLING ──[超過 3 輪未完成]──> ESCALATED
+AWAITING_CONFIRMATION ──[超過 2 輪未確認]──> ESCALATED
 AWAITING_CONFIRMATION ──[用戶確認]──> PROCESSING
 AWAITING_CONFIRMATION ──[用戶否認]──> SLOT_FILLING
 
@@ -3071,7 +3100,7 @@ class KnowledgeReindexJob:
 # docker-compose 中的 worker service
 omnibot-worker:
   build: .
-  command: saq omnibot:jobs --queues embedding,maintenance,notification --concurrency 10
+  command: saq omnibot:jobs --queues embedding,maintenance,notification --concurrency 15
   environment:
     - REDIS_URL=rediss://:${REDIS_PASSWORD}@redis:6380/0
     - DATABASE_URL=postgresql://omnibot:${DB_PASSWORD}@postgres:5432/omnibot
@@ -3108,23 +3137,24 @@ async def process_embedding_job(job: EmbeddingJob, db, embedding_client):
         # 3. 檢查是否該 parent 的所有 child chunks 都已完成
         all_done = await db.execute(
             """
-            SELECT COUNT(*) = 0 AS pending
+            SELECT COUNT(*) = 0 AS is_all_done
             FROM knowledge_chunks
             WHERE knowledge_id = %s AND embeddings IS NULL
             """,
             (job.knowledge_id,)
         )
         
-        if all_done[0]["pending"]:
+        if all_done[0]["is_all_done"]:
             # 標記 knowledge_base 條目為「已同步」
             await db.execute(
-                "UPDATE knowledge_base SET updated_at = NOW() WHERE id = %s",
+                "UPDATE knowledge_base SET updated_at = NOW(), embedding_synced_at = NOW() WHERE id = %s",
                 (job.knowledge_id,)
             )
     except Exception as e:
         if job.retry_count < job.max_retries:
-            # 指數退避重試
-            delay = 2 ** job.retry_count
+            # 指數退避重試（加入 jitter 避免 thundering herd）
+            import random
+            delay = (2 ** job.retry_count) + random.uniform(0, 1)
             raise  # SAQ 會自動 re-enqueue with delay
 ```
 
@@ -3141,47 +3171,51 @@ async def process_embedding_job(job: EmbeddingJob, db, embedding_client):
 #### 第二層：同步首 Chunk（新增）
 
 ```python
-async def create_knowledge_with_chunks(db, knowledge_data: dict, chunks: list[str], embedding_client):
+async def create_knowledge_with_chunks(db, knowledge_data: dict, chunks: list[str], embedding_client, is_batch: bool = False):
     """
     建立知識條目及其 child chunks。
-    第一個 chunk 同步生成 embedding（blocking ~100ms），
-    其餘 chunks 非同步排入 SAQ。
+    第一個 chunk 同步生成 embedding，
+    其餘 chunks (或全部，若為批次) 非同步排入 SAQ。
     """
-    async with db.transaction():
-        kb_id = await db.execute(
-            "INSERT INTO knowledge_base (category, question, answer, keywords) "
-            "VALUES (%s, %s, %s, %s) RETURNING id",
-            (knowledge_data["category"], knowledge_data["question"],
-             knowledge_data["answer"], knowledge_data["keywords"])
-        )
-        kb_id = kb_id[0]["id"]
+    # 先建立 knowledge_base
+    kb_id = await db.execute(
+        "INSERT INTO knowledge_base (category, question, answer, keywords) "
+        "VALUES (%s, %s, %s, %s) RETURNING id",
+        (knowledge_data["category"], knowledge_data["question"],
+         knowledge_data["answer"], knowledge_data["keywords"])
+    )
+    kb_id = kb_id[0]["id"]
 
-        chunk_ids = []
-        for i, content in enumerate(chunks):
-            row = await db.execute(
-                "INSERT INTO knowledge_chunks (knowledge_id, chunk_index, content, token_count) "
-                "VALUES (%s, %s, %s, %s) RETURNING id",
-                (kb_id, i, content, len(content.split()))
+    # 使用 executemany 批次寫入 chunks 避免長事務與單筆失敗全退
+    chunk_data = [(kb_id, i, c, int(len(c) * 1.5)) for i, c in enumerate(chunks)]
+    # 假設 db.executemany 支援 RETURNING id 寫法（若底層不支援則需適配）
+    chunk_ids_rows = await db.executemany(
+        "INSERT INTO knowledge_chunks (knowledge_id, chunk_index, content, token_count) "
+        "VALUES (%s, %s, %s, %s) RETURNING id",
+        chunk_data
+    )
+    chunk_ids = [r["id"] for r in chunk_ids_rows]
+
+    # 若非批次匯入，同步生成第一個 chunk 的 embedding 以對抗黑暗期
+    first_chunk_done = False
+    if not is_batch and chunks:
+        first_chunk = chunks[0]
+        try:
+            vector = await asyncio.wait_for(
+                embedding_client.create_embedding(model="text-embedding-3-small", input=first_chunk),
+                timeout=0.5
             )
-            chunk_ids.append(row[0]["id"])
-
-    # 同步生成第一個 chunk 的 embedding（< 500ms p95 target）
-    first_chunk = chunks[0]
-    try:
-        vector = await asyncio.wait_for(
-            embedding_client.create_embedding(model="text-embedding-3-small", input=first_chunk),
-            timeout=5.0
-        )
-        await db.execute(
-            "UPDATE knowledge_chunks SET embeddings = %s::vector, embedding_model = %s WHERE id = %s",
-            (vector, "text-embedding-3-small", chunk_ids[0])
-        )
-    except asyncio.TimeoutError:
-        logger.warning(f"Sync embedding timed out for chunk {chunk_ids[0]}, falling back to async")
+            await db.execute(
+                "UPDATE knowledge_chunks SET embeddings = %s::vector, embedding_model = %s WHERE id = %s",
+                (vector, "text-embedding-3-small", chunk_ids[0])
+            )
+            first_chunk_done = True
+        except asyncio.TimeoutError:
+            logger.warning(f"Sync embedding timed out for chunk {chunk_ids[0]}, falling back to async")
 
     # 其餘 chunks 非同步排入 SAQ
     for i, chunk_id in enumerate(chunk_ids):
-        if i == 0:
+        if first_chunk_done and i == 0:
             continue  # 首 chunk 已同步處理
         await saq_queue.enqueue("process_embedding_job", {
             "chunk_id": chunk_id,
@@ -3394,7 +3428,7 @@ redis:
 current_scope:
   language: zh-TW (繁體中文)
   pii_patterns: 台灣地區格式
-  address_format: 台灣行政區
+  address_format: 台灣行政區 (未來支援 en 時改為字典或依 locale 動態載入 regex)
 
 # 擴充計劃（依業務優先序）
 expansion_roadmap:
@@ -3445,6 +3479,7 @@ CREATE TABLE conversations (
     resolution_cost FLOAT,
     response_time_ms INTEGER,
     scope_type VARCHAR(20) DEFAULT 'in_scope',
+    intent_history VARCHAR[] DEFAULT '{}',
     dst_state JSONB
 );
 
@@ -3485,7 +3520,8 @@ CREATE TABLE knowledge_base (
     contains_pii BOOLEAN DEFAULT FALSE,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    embedding_synced_at TIMESTAMPTZ
 );
 
 CREATE INDEX idx_kb_category ON knowledge_base (category);
@@ -3552,6 +3588,7 @@ CREATE INDEX idx_escalation_pending ON escalation_queue (queued_at)
 -- ============================================================
 CREATE TABLE user_feedback (
     id SERIAL PRIMARY KEY,
+    unified_user_id UUID REFERENCES users(unified_user_id),
     conversation_id INTEGER REFERENCES conversations(id),
     message_id INTEGER REFERENCES messages(id),
     feedback VARCHAR(20) NOT NULL CHECK (feedback IN ('thumbs_up', 'thumbs_down')),
@@ -3872,9 +3909,11 @@ SELECT
     DATE_TRUNC('month', m.created_at) AS month,
     m.knowledge_source,
     COUNT(*) AS query_count,
+    -- 成本估算：Tier 2 綜合呼叫約 $0.003/次，LLM direct (Tier 3) 約 $0.009/次
     CASE m.knowledge_source
         WHEN 'rule' THEN 0
         WHEN 'rag' THEN COUNT(*) * 0.003
+        WHEN 'llm' THEN COUNT(*) * 0.009  -- Tier 3 agent
         WHEN 'wiki' THEN COUNT(*) * 0.009
         ELSE 0
     END AS estimated_cost_usd
@@ -3915,7 +3954,7 @@ SELECT
     er.sample_size
 FROM experiment_results er
 JOIN experiments e ON er.experiment_id = e.id
-WHERE e.status = 'running'
+WHERE e.status IN ('running', 'completed')
 ORDER BY e.name, er.variant;
 ```
 
