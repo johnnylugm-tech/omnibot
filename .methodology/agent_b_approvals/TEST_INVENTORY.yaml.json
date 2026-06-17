@@ -5,6 +5,16 @@
   "docs_embedded": ["TEST_INVENTORY.yaml", "TRACEABILITY_MATRIX.md", "SRS.md"],
   "confidence": 0.93,
   "round": 1,
+  "citations": [
+    "TEST_INVENTORY FR-16: test_fr16_retrospective_block_event_in_security_logs — consistent with SRS FR-16 injection_retrospective_block in security_logs",
+    "TEST_INVENTORY FR-61: test_fr61_auditor_pii_decrypt_returns_403 — consistent with SRS FR-61 and TRACEABILITY_MATRIX",
+    "TEST_INVENTORY FR-71: test_fr71_all_11_metrics_scraped — consistent with SRS FR-71 listing exactly 11 Prometheus metrics",
+    "TEST_INVENTORY FR-82: test_fr82_gin_tsvector_index_exists — consistent with SRS FR-82 GIN index on knowledge_chunks",
+    "TEST_INVENTORY FR-87: test_fr87_rotate_old_token_valid_24hr — consistent with SRS FR-87 M2M rotate 24hr overlap",
+    "TEST_INVENTORY FR-99: test_fr99_embedding_down_uses_tsvector_fallback — consistent with SRS FR-99 level_embedding_down lateral circuit breaker",
+    "TEST_INVENTORY FR-100: test_fr100_clamav_down_503_file_scan_unavailable — consistent with SRS FR-100 ClamAV fail-secure",
+    "TEST_INVENTORY cross_cutting.security: test_redteam_auditor_pii_decrypt_blocked_403 — consistent with FR-61 RBAC requirement"
+  ],
   "gaps": [
     {
       "severity": "low",

@@ -1,0 +1,472 @@
+{
+  "version": "1.0",
+  "created_at": "2026-06-18",
+  "phase": 2,
+  "project": "omnibot",
+  "layers": [
+    {
+      "name": "api",
+      "modules": [
+        "app.api.common",
+        "app.api.main",
+        "app.api.webhooks",
+        "app.api.management",
+        "app.api.auth",
+        "app.api.websocket",
+        "app.api.agent_card"
+      ],
+      "allowed_dependencies": [
+        "core",
+        "infra",
+        "admin"
+      ]
+    },
+    {
+      "name": "core",
+      "modules": [
+        "app.core.pipeline",
+        "app.core.paladin",
+        "app.core.pii",
+        "app.core.knowledge",
+        "app.core.dst",
+        "app.core.response",
+        "app.core.emotion"
+      ],
+      "allowed_dependencies": [
+        "infra",
+        "services"
+      ]
+    },
+    {
+      "name": "services",
+      "modules": [
+        "app.services.registry",
+        "app.services.aee",
+        "app.services.escalation",
+        "app.services.ab_testing",
+        "app.services.llm_judge",
+        "app.services.media"
+      ],
+      "allowed_dependencies": [
+        "infra"
+      ]
+    },
+    {
+      "name": "infra",
+      "modules": [
+        "app.infra.config",
+        "app.infra.database",
+        "app.infra.rate_limit",
+        "app.infra.redis_streams",
+        "app.infra.jobs",
+        "app.infra.circuit_breaker",
+        "app.infra.observability",
+        "app.infra.security",
+        "app.infra.deployment"
+      ],
+      "allowed_dependencies": []
+    },
+    {
+      "name": "admin",
+      "modules": [
+        "app.admin.reports",
+        "app.admin.rbac",
+        "app.admin.gdpr",
+        "app.admin.webui",
+        "app.admin.odd_sql"
+      ],
+      "allowed_dependencies": [
+        "infra"
+      ]
+    }
+  ],
+  "dependencies": {
+    "api": [
+      "core",
+      "infra",
+      "admin"
+    ],
+    "core": [
+      "infra",
+      "services"
+    ],
+    "services": [
+      "infra"
+    ],
+    "admin": [
+      "infra"
+    ]
+  },
+  "quality_targets": {
+    "max_complexity": 15,
+    "min_coverage": 80,
+    "max_coupling": 0.3
+  },
+  "nfr_dimension_mapping": {
+    "NFR-01": "performance",
+    "NFR-02": "performance",
+    "NFR-03": "performance",
+    "NFR-04": "performance",
+    "NFR-05": "performance",
+    "NFR-06": "performance",
+    "NFR-07": "performance",
+    "NFR-08": "performance",
+    "NFR-09": "performance",
+    "NFR-10": "error_handling",
+    "NFR-11": "error_handling",
+    "NFR-12": "error_handling",
+    "NFR-13": "error_handling",
+    "NFR-14": "error_handling",
+    "NFR-15": "security",
+    "NFR-16": "security",
+    "NFR-17": "security",
+    "NFR-23": "test_assertion_quality",
+    "NFR-24": "test_assertion_quality",
+    "NFR-25": "test_assertion_quality",
+    "NFR-26": "test_assertion_quality",
+    "NFR-27": "test_assertion_quality",
+    "NFR-28": "test_assertion_quality",
+    "NFR-29": "test_assertion_quality",
+    "NFR-31": "readability",
+    "NFR-32": "test_assertion_quality",
+    "NFR-33": "error_handling",
+    "NFR-34": "error_handling",
+    "NFR-35": "error_handling",
+    "NFR-36": "security",
+    "NFR-37": "performance",
+    "NFR-38": "performance"
+  },
+  "nfr_traceability": {
+    "NFR-01": {
+      "type": "performance",
+      "target": "p95 < 1000ms",
+      "module": "app.core.pipeline"
+    },
+    "NFR-02": {
+      "type": "performance",
+      "target": "p95 < 5ms",
+      "module": "app.core.paladin"
+    },
+    "NFR-03": {
+      "type": "performance",
+      "target": "p95 < 200ms",
+      "module": "app.core.paladin"
+    },
+    "NFR-04": {
+      "type": "performance",
+      "target": "p95 < 300ms",
+      "module": "app.core.knowledge"
+    },
+    "NFR-05": {
+      "type": "performance",
+      "target": "timeout = 2000ms",
+      "module": "app.services.aee"
+    },
+    "NFR-06": {
+      "type": "performance",
+      "target": "p95 < 500ms",
+      "module": "app.core.knowledge"
+    },
+    "NFR-07": {
+      "type": "performance",
+      "target": "cache_ttl = 300s",
+      "module": "app.services.aee"
+    },
+    "NFR-08": {
+      "type": "performance",
+      "target": "p95 < 30000ms",
+      "module": "app.infra.jobs"
+    },
+    "NFR-09": {
+      "type": "performance",
+      "target": ">=2000 TPS",
+      "module": "app.api.webhooks"
+    },
+    "NFR-10": {
+      "type": "reliability",
+      "target": ">=99.9% uptime per month",
+      "module": "app.infra.circuit_breaker"
+    },
+    "NFR-11": {
+      "type": "reliability",
+      "target": ">=99.95% early warning threshold",
+      "module": "app.infra.observability"
+    },
+    "NFR-12": {
+      "type": "reliability",
+      "target": "p95 > 800ms triggers HighLatency alert",
+      "module": "app.infra.observability"
+    },
+    "NFR-13": {
+      "type": "reliability",
+      "target": "error_rate > 0.5% triggers alert",
+      "module": "app.infra.observability"
+    },
+    "NFR-14": {
+      "type": "reliability",
+      "target": "DR recovery < 5 minutes",
+      "module": "app.infra.deployment"
+    },
+    "NFR-15": {
+      "type": "security",
+      "target": "OWASP LLM01:2025 compliant",
+      "module": "app.core.paladin"
+    },
+    "NFR-16": {
+      "type": "security",
+      "target": ">=95% security block rate",
+      "module": "app.core.paladin"
+    },
+    "NFR-17": {
+      "type": "security",
+      "target": "zero secrets in VCS",
+      "module": "app.infra.security"
+    },
+    "NFR-18": {
+      "type": "usability",
+      "target": "< $500 / month infrastructure cost",
+      "module": "app.infra.deployment"
+    },
+    "NFR-19": {
+      "type": "usability",
+      "target": "~ $210 / month LLM API cost",
+      "module": "app.services.llm_judge"
+    },
+    "NFR-20": {
+      "type": "deployability",
+      "target": "Taiwan PDA compliance",
+      "module": "app.admin.gdpr"
+    },
+    "NFR-21": {
+      "type": "deployability",
+      "target": "GDPR Art.5(1)(e) data minimization",
+      "module": "app.admin.gdpr"
+    },
+    "NFR-22": {
+      "type": "deployability",
+      "target": "SOC2 audit trail",
+      "module": "app.infra.observability"
+    },
+    "NFR-23": {
+      "type": "testability",
+      "target": ">=90% FCR (in_scope conversations)",
+      "module": "app.services.llm_judge"
+    },
+    "NFR-24": {
+      "type": "testability",
+      "target": ">=4.8 CSAT score",
+      "module": "app.services.llm_judge"
+    },
+    "NFR-25": {
+      "type": "testability",
+      "target": ">=95% escalation SLA compliance",
+      "module": "app.services.escalation"
+    },
+    "NFR-26": {
+      "type": "testability",
+      "target": ">=0.7 Cohen's Kappa vs human annotation",
+      "module": "app.services.llm_judge"
+    },
+    "NFR-27": {
+      "type": "testability",
+      "target": "100% grounding check pass rate (cosine>=0.75)",
+      "module": "app.core.paladin"
+    },
+    "NFR-28": {
+      "type": "testability",
+      "target": ">=92% Recall@3 HNSW 1536-dim",
+      "module": "app.core.knowledge"
+    },
+    "NFR-29": {
+      "type": "testability",
+      "target": ">=95% agentic tool success rate",
+      "module": "app.services.aee"
+    },
+    "NFR-30": {
+      "type": "scalability",
+      "target": "HPA min=3 max=10 CPU=70%",
+      "module": "app.infra.deployment"
+    },
+    "NFR-31": {
+      "type": "maintainability",
+      "target": "100% request OTel trace coverage",
+      "module": "app.infra.observability"
+    },
+    "NFR-32": {
+      "type": "testability",
+      "target": "unit>=70% integration>=20% e2e>=10%",
+      "module": "tests.strategy"
+    },
+    "NFR-33": {
+      "type": "reliability",
+      "target": "rate_limit fail-open on Redis unavailable",
+      "module": "app.infra.rate_limit"
+    },
+    "NFR-34": {
+      "type": "reliability",
+      "target": "IP whitelist fail-secure 403 on no match",
+      "module": "app.infra.rate_limit"
+    },
+    "NFR-35": {
+      "type": "reliability",
+      "target": "max 100 CIDR blocks",
+      "module": "app.infra.rate_limit"
+    },
+    "NFR-36": {
+      "type": "security",
+      "target": "M2M token 90-day expiry; 24hr overlap on rotate",
+      "module": "app.api.auth"
+    },
+    "NFR-37": {
+      "type": "performance",
+      "target": "p95 < 1500ms WebUI response",
+      "module": "app.admin.webui"
+    },
+    "NFR-38": {
+      "type": "performance",
+      "target": "p95 < 500ms ClamAV scan",
+      "module": "app.services.media"
+    }
+  },
+  "advisory_only": [
+    "deployability",
+    "scalability",
+    "usability"
+  ],
+  "gate_score_overrides": {
+    "performance": 2000.0,
+    "error_handling": 99.95,
+    "security": 95.0,
+    "test_assertion_quality": 95.0,
+    "readability": 80.0
+  },
+  "fr_module_traceability": {
+    "FR-01": "app.api.webhooks",
+    "FR-02": "app.api.webhooks",
+    "FR-03": "app.api.webhooks",
+    "FR-04": "app.api.webhooks",
+    "FR-05": "app.api.webhooks",
+    "FR-06": "app.api.webhooks",
+    "FR-07": "app.api.common",
+    "FR-08": "app.api.common",
+    "FR-09": "app.api.common",
+    "FR-10": "app.core.paladin",
+    "FR-11": "app.core.paladin",
+    "FR-12": "app.core.paladin",
+    "FR-13": "app.core.paladin",
+    "FR-14": "app.core.paladin",
+    "FR-15": "app.core.paladin",
+    "FR-16": "app.core.paladin",
+    "FR-17": "app.core.paladin",
+    "FR-18": "app.core.pii",
+    "FR-19": "app.core.pii",
+    "FR-20": "app.core.pii",
+    "FR-21": "app.infra.rate_limit",
+    "FR-22": "app.infra.rate_limit",
+    "FR-23": "app.infra.rate_limit",
+    "FR-24": "app.infra.rate_limit",
+    "FR-25": "app.infra.rate_limit",
+    "FR-26": "app.core.knowledge",
+    "FR-27": "app.core.knowledge",
+    "FR-28": "app.core.knowledge",
+    "FR-29": "app.core.knowledge",
+    "FR-30": "app.core.knowledge",
+    "FR-31": "app.core.knowledge",
+    "FR-32": "app.core.knowledge",
+    "FR-33": "app.core.knowledge",
+    "FR-34": "app.core.dst",
+    "FR-35": "app.core.dst",
+    "FR-36": "app.core.dst",
+    "FR-37": "app.core.dst",
+    "FR-38": "app.core.dst",
+    "FR-39": "app.services.aee",
+    "FR-40": "app.services.aee",
+    "FR-41": "app.services.aee",
+    "FR-42": "app.services.aee",
+    "FR-43": "app.services.aee",
+    "FR-44": "app.api.agent_card",
+    "FR-45": "app.services.aee",
+    "FR-46": "app.core.emotion",
+    "FR-47": "app.core.emotion",
+    "FR-48": "app.core.emotion",
+    "FR-49": "app.core.emotion",
+    "FR-50": "app.core.response",
+    "FR-51": "app.core.response",
+    "FR-52": "app.core.response",
+    "FR-53": "app.core.response",
+    "FR-54": "app.services.escalation",
+    "FR-55": "app.services.escalation",
+    "FR-56": "app.services.escalation",
+    "FR-57": "app.api.websocket",
+    "FR-58": "app.api.websocket",
+    "FR-59": "app.api.websocket",
+    "FR-60": "app.admin.rbac",
+    "FR-61": "app.admin.rbac",
+    "FR-62": "app.admin.rbac",
+    "FR-63": "app.services.ab_testing",
+    "FR-64": "app.services.ab_testing",
+    "FR-65": "app.services.llm_judge",
+    "FR-66": "app.services.llm_judge",
+    "FR-67": "app.services.llm_judge",
+    "FR-68": "app.services.llm_judge",
+    "FR-69": "app.services.llm_judge",
+    "FR-70": "app.infra.observability",
+    "FR-71": "app.infra.observability",
+    "FR-72": "app.infra.observability",
+    "FR-73": "app.infra.observability",
+    "FR-74": "app.infra.observability",
+    "FR-75": "app.infra.jobs",
+    "FR-76": "app.infra.jobs",
+    "FR-77": "app.infra.jobs",
+    "FR-78": "app.infra.jobs",
+    "FR-79": "app.infra.jobs",
+    "FR-80": "app.infra.redis_streams",
+    "FR-81": "app.infra.redis_streams",
+    "FR-82": "app.infra.database",
+    "FR-83": "app.infra.database",
+    "FR-84": "app.api.webhooks",
+    "FR-85": "app.api.management",
+    "FR-86": "app.api.auth",
+    "FR-87": "app.api.auth",
+    "FR-88": "app.api.management",
+    "FR-89": "app.infra.security",
+    "FR-90": "app.infra.redis_streams",
+    "FR-91": "app.admin.gdpr",
+    "FR-92": "app.admin.gdpr",
+    "FR-93": "app.admin.gdpr",
+    "FR-94": "app.admin.gdpr",
+    "FR-95": "app.infra.deployment",
+    "FR-96": "app.infra.deployment",
+    "FR-97": "app.infra.deployment",
+    "FR-98": "app.infra.deployment",
+    "FR-99": "app.infra.circuit_breaker",
+    "FR-100": "app.services.media",
+    "FR-101": "app.admin.webui",
+    "FR-102": "app.admin.webui",
+    "FR-103": "app.admin.webui",
+    "FR-104": "app.admin.webui",
+    "FR-105": "app.admin.odd_sql",
+    "FR-106": "tests.load",
+    "FR-107": "tests.strategy",
+    "FR-108": "tests.strategy"
+  },
+  "architecture_constraints": [
+    "no_circular_dependencies",
+    "api_layer_no_business_logic",
+    "infra_layer_no_domain_imports",
+    "paladin_executes_before_pii",
+    "knowledge_query_after_dst_slot_resolution"
+  ],
+  "high_risk_modules": [
+    "app.core.paladin",
+    "app.core.knowledge",
+    "app.core.dst",
+    "app.infra.circuit_breaker",
+    "app.infra.redis_streams",
+    "app.infra.rate_limit",
+    "app.infra.jobs",
+    "app.services.aee",
+    "app.services.llm_judge",
+    "app.services.media"
+  ]
+}
