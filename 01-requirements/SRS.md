@@ -4,6 +4,8 @@
 > **Authored**: 2026-06-17 — Agent A: REQUIREMENTS_ENGINEER
 > **Project**: omnibot
 > **Phase**: 1
+> **Changelog**:
+> - 2026-06-17: 修正規格不一致問題 (FR-73, FR-87, FR-01~04, NFR Table, 等)
 
 ---
 
@@ -19,10 +21,10 @@ OmniBot 是多平台企業級客服聊天機器人，同時服務 Telegram、LIN
 
 | FR ID | Requirement Description | Acceptance Criteria | Implementation Function |
 |-------|------------------------|---------------------|------------------------|
-| FR-01 | Telegram Webhook Adapter：接收 POST /api/v1/webhook/telegram，驗證 X-Telegram-Bot-Api-Secret-Token（HMAC-SHA256），解析 update_id + message，映射為 UnifiedMessage | 合法請求回 200；簽名驗證失敗回 401 AUTH_INVALID_SIGNATURE；rate limit 超出回 429 | `TelegramWebhookVerifier.verify()`, platform adapter |
-| FR-02 | LINE Webhook Adapter：接收 POST /api/v1/webhook/line，驗證 x-line-signature（HMAC-SHA256 Base64），解析 events 陣列，映射為 UnifiedMessage | 合法請求回 200；簽名驗證失敗回 401；rate limit 超出回 429 | `LineWebhookVerifier.verify()`, platform adapter |
-| FR-03 | Messenger Webhook Adapter：GET 驗證（hub.mode, hub.verify_token, hub.challenge 回傳）+ POST HMAC-SHA256 簽名驗證，映射為 UnifiedMessage | GET 回傳 hub.challenge 字串；POST 合法回 200；簽名失敗回 401 | `MessengerWebhookVerifier.verify()`, platform adapter |
-| FR-04 | WhatsApp Webhook Adapter：GET 驗證（hub.challenge）+ POST HMAC-SHA256 簽名驗證（sha256= prefix），映射為 UnifiedMessage | GET 回傳 hub.challenge；POST 合法回 200；簽名失敗回 401 | `WhatsAppWebhookVerifier.verify()`, platform adapter |
+| FR-01 | Telegram Webhook Adapter：接收 POST /api/v1/webhook/telegram，驗證 X-Telegram-Bot-Api-Secret-Token（HMAC-SHA256），解析 update_id + message，映射為 UnifiedMessage | 合法請求回 200；簽名驗證失敗回 401 {"error": "AUTH_INVALID_SIGNATURE"}；rate limit 超出回 429 | `TelegramWebhookVerifier.verify()`, platform adapter |
+| FR-02 | LINE Webhook Adapter：接收 POST /api/v1/webhook/line，驗證 x-line-signature（HMAC-SHA256 Base64），解析 events 陣列，映射為 UnifiedMessage | 合法請求回 200；簽名驗證失敗回 401 {"error": "AUTH_INVALID_SIGNATURE"}；rate limit 超出回 429 | `LineWebhookVerifier.verify()`, platform adapter |
+| FR-03 | Messenger Webhook Adapter：GET 驗證（hub.mode, hub.verify_token, hub.challenge 回傳）+ POST HMAC-SHA256 簽名驗證，映射為 UnifiedMessage | GET 回傳 hub.challenge 字串；POST 合法回 200；簽名失敗回 401 {"error": "AUTH_INVALID_SIGNATURE"} | `MessengerWebhookVerifier.verify()`, platform adapter |
+| FR-04 | WhatsApp Webhook Adapter：GET 驗證（hub.challenge）+ POST HMAC-SHA256 簽名驗證（sha256= prefix），映射為 UnifiedMessage | GET 回傳 hub.challenge；POST 合法回 200；簽名失敗回 401 {"error": "AUTH_INVALID_SIGNATURE"} | `WhatsAppWebhookVerifier.verify()`, platform adapter |
 | FR-05 | Web Platform Adapter：POST /api/v1/web/guest-session 初始化匿名連線回傳 Guest JWT；POST /api/v1/web/message 使用 JWT BearerAuth 傳訊 | guest-session 回 200 含 JWT；JWT 驗證失敗回 401 AUTH_TOKEN_EXPIRED；rate limit 超出回 429 | `WebAdapter`, JWT middleware |
 | FR-06 | A2A Platform Adapter：POST /api/v1/a2a/rpc 接收 JSON-RPC 2.0（method: ask_customer_service / escalate_to_human），使用 M2M OAuth2/JWT BearerAuth 驗證，映射為 UnifiedMessage | 合法 M2M token 回 200 JSON-RPC 2.0 回應；token 驗證失敗回 401 | `A2AAdapter`, M2M auth middleware |
 | FR-07 | UnifiedMessage 資料結構：immutable dataclass，欄位含 platform(Platform enum), platform_user_id, unified_user_id(Optional), message_type(MessageType enum), content, raw_payload, received_at, reply_token(LINE 特有) | 所有平台訊息皆可建立合法 UnifiedMessage 實例；frozen=True 確保不可變 | `UnifiedMessage` dataclass |
@@ -161,7 +163,7 @@ OmniBot 是多平台企業級客服聊天機器人，同時服務 Telegram、LIN
 | FR-70 | StructuredLogger：JSON 格式，欄位含 timestamp(ISO 8601 Z), level, service, message 及任意 kwargs；支援 DEBUG/INFO/WARN/ERROR/CRITICAL；CRITICAL 用於安全事件 | JSON 日誌格式正確；各 level 正確路由至 Python logging | `StructuredLogger.log()` |
 | FR-71 | Prometheus Metrics（9 種，全部顯式列出）：1. response_duration_seconds(histogram)；2. requests_total(counter)；3. fcr_total(counter)；4. knowledge_hit_total(counter, labels: tier)；5. pii_masked_total(counter)；6. escalation_queue_size(gauge)；7. emotion_escalation_total(counter)；8. escalation_sla_breach_total(counter)；9. llm_tokens_total(counter, labels: model) | 所有 9 個 metric 名稱正確定義；各 metric 類型（histogram/counter/gauge）正確；label 完整；Prometheus 抓取端點回傳所有 9 個 metric | Prometheus metrics definitions |
 | FR-72 | OpenTelemetry Tracing：每請求完整 span tree（handle_message → emotion_analysis → knowledge_query → response_generation）；span attributes 含 platform, user_id, emotion, knowledge_source, confidence, trace_id | Span 樹正確；attributes 完整；trace_id 透過 HTTP header 跨服務傳遞 | `setup_tracing()`, tracer spans |
-| FR-73 | 告警規則（4 條）：HighLatency（p95 > 0.8s for 5m, warning）；HighErrorRate（error rate > 0.5% for 3m, critical）；EscalationQueueBacklog（queue > 50 for 10m, warning）；SLABreach（轉接 SLA 遵守率 < 90%, critical, for=0m） | 4 條告警規則正確定義；閾值符合規格；SLABreach for=0m 立即觸發 | Prometheus alert rules |
+| FR-73 | 告警規則（4 條）：HighLatency（p95 > 0.8s for 5m, warning; p95 > 1.0s for 5m, critical）；HighErrorRate（error rate > 0.5% for 3m, critical）；EscalationQueueBacklog（queue > 50 for 10m, warning）；SLABreach（轉接 SLA 遵守率 < 90%, critical, for=0m） | 4 條告警規則正確定義；閾值符合規格；SLABreach for=0m 立即觸發 | Prometheus alert rules |
 | FR-74 | Grafana Dashboard：連結 Prometheus + ODD SQL 指標；提供 FCR 折線圖、p95 延遲儀表、知識來源圓餅圖、成本時序圖；刷新頻率支援 24hr/7d/30d | Dashboard 面板存在；指標即時連動；<99.95% 可用性顯示早期警報 | Grafana dashboard config |
 
 ### Module 16: Background Job System
@@ -195,7 +197,7 @@ OmniBot 是多平台企業級客服聊天機器人，同時服務 Telegram、LIN
 | FR-84 | Webhook API 端點（6 個）：POST /api/v1/webhook/telegram, /line, /messenger(GET+POST), /whatsapp(GET+POST), POST /api/v1/web/guest-session, /web/message, /a2a/rpc；各端點錯誤碼規範（AUTH_INVALID_SIGNATURE/RATE_LIMIT_EXCEEDED/VALIDATION_ERROR/INTERNAL_ERROR/LLM_TIMEOUT/AUTH_TOKEN_EXPIRED/AUTHZ_INSUFFICIENT_ROLE） | 各端點存在且回傳正確 HTTP status；錯誤碼規範一致 | FastAPI routers |
 | FR-85 | 管理 API（8 個端點）：GET/POST /api/v1/knowledge；PUT/DELETE /api/v1/knowledge/{id}；POST /api/v1/knowledge/bulk；GET /api/v1/conversations；POST /api/v1/experiments；GET /api/v1/health | 各端點 RBAC 保護正確；分頁回應格式符合 PaginatedResponse；health 回傳 status/postgres/redis/uptime_seconds | FastAPI management routes |
 | FR-86 | Auth & User API：POST /api/v1/auth/login（回傳 JWT access + refresh token）；POST /api/v1/auth/refresh；GET/POST /api/v1/users；POST/DELETE /api/v1/users/{user_id}/roles（admin 限定） | login 失敗回 401；role 管理需 system:write 權限；refresh token 正常換發 | auth module |
-| FR-87 | M2M Token API：POST /api/v1/m2m/tokens（admin 限定，client_name, scopes, expires_in_days=90）→ 回傳 token 僅顯示一次；GET /api/v1/m2m/tokens（不顯示 token 值）；POST /api/v1/m2m/tokens/{client_id}/revoke；Token 格式：m2m_ prefix + 32 bytes random hex，儲存 SHA-256 hash | Token 建立僅回傳一次；儲存 hash 不存明文；90 天到期；revoke 成功後 token 立即失效；rotate 後舊 token 24hr 內仍可用；超過 24hr 自動失效 | M2M token management, `/rotate` endpoint |
+| FR-87 | M2M Token API：POST /api/v1/m2m/tokens（admin 限定，client_name, scopes, expires_in_days=90）→ 回傳 token 僅顯示一次；GET /api/v1/m2m/tokens（不顯示 token 值）；POST /api/v1/m2m/tokens/{client_id}/revoke；Token 格式：m2m_ prefix + 32 bytes random hex，儲存 SHA-256 hash | Token 建立僅回傳一次；儲存 hash 不存明文；90 天到期；revoke 成功後 token 立即失效 | M2M token management |
 | FR-88 | GDPR API：GET /api/v1/users/{user_id}/data（匯出 JSON/CSV）；DELETE /api/v1/users/{user_id}/data（觸發異步刪除，30 天內完成，含 PII 欄位清除 + messages 內容 [REDACTED] + 稽核日誌） | data export 回傳合法 JSON/CSV；deletion 記錄 pii_audit_log 並異步執行；30 天 SLA | GDPR compliance module |
 
 ### Module 20: 安全基礎設施
@@ -267,46 +269,46 @@ OmniBot 是多平台企業級客服聊天機器人，同時服務 Telegram、LIN
 
 ## 3. Non-Functional Requirements (NFR)
 
-| ID | Type | Requirement | Test Method |
-|----|------|-------------|-------------|
-| NFR-01 | Performance | p95 end-to-end latency < 1.0s（全負載） | k6 load test (p(95)<1000) |
-| NFR-02 | Performance | L1-L3 合計延遲 < 5ms p95 | Unit benchmark |
-| NFR-03 | Performance | L4 Semantic Classifier < 200ms p95（async） | L4 unit test with timing |
-| NFR-04 | Performance | Embedding API < 300ms p95 | Integration test with timing |
-| NFR-05 | Performance | A2A timeout = 2.0s | Fault injection test |
-| NFR-06 | Performance | LLM fallback switch < 500ms | Fault injection test (primary LLM down) |
-| NFR-07 | Performance | Agent Card TTL cache = 300s（不重複 discovery） | Unit test cache expiry |
-| NFR-08 | Performance | Embedding job p95 < 30s | SAQ dashboard monitoring |
-| NFR-09 | Throughput | 2000 TPS sustained（k6 load scenario） | k6 stress test |
-| NFR-10 | Availability | 99.9% / month | Prometheus uptime monitor |
-| NFR-11 | Availability | 早期告警閾值 < 99.95%（SLA 前觸發） | Prometheus alert: early-warning |
-| NFR-12 | Availability | p95 > 0.8s → HighLatency 告警 | Prometheus alert rule |
-| NFR-13 | Availability | error rate > 0.5% → 告警（> 1% = SLA breach） | Prometheus alert rule |
-| NFR-14 | Availability | 災備復原時間 < 5 分鐘 | DR drill |
-| NFR-15 | Security | OWASP LLM01:2025 合規（PALADIN 五層覆蓋） | Red-team + OWASP checklist |
-| NFR-16 | Security | 安全阻擋率 ≥ 95% | Red-team test |
-| NFR-17 | Security | 機密資料（secrets）不提交至版控 | git-secrets / pre-commit hook |
-| NFR-18 | Cost | 月費用 < $500（含 GPU 推理、Embedding、備援） | Cost dashboard |
-| NFR-19 | Cost | LLM API 基礎估算 ~$210/月（10 萬對話、Tier 2 覆蓋 40%） | Cost dashboard |
-| NFR-20 | Compliance | 台灣個資法合規 | Legal review |
-| NFR-21 | Compliance | GDPR Art.5(1)(e) 合規（資料最小化） | GDPR audit |
-| NFR-22 | Compliance | SOC2 稽核軌跡 | SOC2 audit trail |
-| NFR-23 | Quality | FCR ≥ 90%（in_scope 對話） | ODD SQL |
-| NFR-24 | Quality | CSAT 目標 4.8（2025Q4 基準 3.2，+50%） | LLM-as-a-Judge monthly |
-| NFR-25 | Quality | Escalation SLA 遵守率 ≥ 95% | ODD SQL |
-| NFR-26 | Quality | LLM-as-a-Judge Cohen's Kappa ≥ 0.7 vs 人工標注 | 500 筆黃金集校準 |
-| NFR-27 | Quality | Grounding check pass rate 100%（cosine ≥ 0.75） | L5 unit tests |
-| NFR-28 | Quality | Recall@3 ≥ 92%（HNSW 1536維） | Golden set regression |
-| NFR-29 | Quality | Agentic tool success rate ≥ 95% | Integration tests |
-| NFR-30 | Scalability | Kubernetes HPA min=3, max=10, CPU target=70% | K8s load test |
-| NFR-31 | Observability | 每請求完整 OpenTelemetry trace | Trace sampling verification |
-| NFR-32 | Testability | Unit 70% + Integration 20% + E2E 10% coverage | pytest-cov |
-| NFR-33 | Resilience | Rate Limiter fail-open on Redis unavailability | Redis failure injection |
-| NFR-34 | Resilience | IP Whitelist fail-secure (403) on no match | Security test |
-| NFR-35 | Resilience | IP Whitelist max 100 CIDR blocks | Config validation test |
-| NFR-36 | Resilience | M2M token 90 天到期；rolling rotation 新舊並存 24hr | Token expiry unit test |
-| NFR-37 | Performance | Admin WebUI 響應時間 < 1.5s，100% 資料即時連動 | Lighthouse audit + manual |
-| NFR-38 | Performance | ClamAV 文件掃描 p95 < 500ms | Integration test with timing |
+| ID | Type | Requirement | Test Method | Related FR |
+|----|------|-------------|-------------|------------|
+| NFR-01 | Performance | p95 end-to-end latency < 1.0s（全負載） | k6 load test (p(95)<1000) | N/A |
+| NFR-02 | Performance | L1-L3 合計延遲 < 5ms p95 | Unit benchmark | N/A |
+| NFR-03 | Performance | L4 Semantic Classifier < 200ms p95（async） | L4 unit test with timing | N/A |
+| NFR-04 | Performance | Embedding API < 300ms p95 | Integration test with timing | N/A |
+| NFR-05 | Performance | A2A timeout = 2.0s | Fault injection test | N/A |
+| NFR-06 | Performance | LLM fallback switch < 500ms | Fault injection test (primary LLM down) | N/A |
+| NFR-07 | Performance | Agent Card TTL cache = 300s（不重複 discovery） | Unit test cache expiry | N/A |
+| NFR-08 | Performance | Embedding job p95 < 30s | SAQ dashboard monitoring | N/A |
+| NFR-09 | Throughput | 2000 TPS sustained（k6 load scenario） | k6 stress test | N/A |
+| NFR-10 | Availability | 99.9% / month | Prometheus uptime monitor | N/A |
+| NFR-11 | Availability | 早期告警閾值 < 99.95%（SLA 前觸發） | Prometheus alert: early-warning | N/A |
+| NFR-12 | Availability | p95 > 0.8s → HighLatency 告警 | Prometheus alert rule | N/A |
+| NFR-13 | Availability | error rate > 0.5% → 告警（> 1% = SLA breach） | Prometheus alert rule | N/A |
+| NFR-14 | Availability | 災備復原時間 < 5 分鐘 | DR drill | N/A |
+| NFR-15 | Security | OWASP LLM01:2025 合規（PALADIN 五層覆蓋） | Red-team + OWASP checklist | N/A |
+| NFR-16 | Security | 安全阻擋率 ≥ 95% | Red-team test | N/A |
+| NFR-17 | Security | 機密資料（secrets）不提交至版控 | git-secrets / pre-commit hook | N/A |
+| NFR-18 | Cost | 月費用 < $500（含 GPU 推理、Embedding、備援） | Cost dashboard | N/A |
+| NFR-19 | Cost | LLM API 基礎估算 ~$210/月（10 萬對話、Tier 2 覆蓋 40%） | Cost dashboard | N/A |
+| NFR-20 | Compliance | 台灣個資法合規 | Legal review | N/A |
+| NFR-21 | Compliance | GDPR Art.5(1)(e) 合規（資料最小化） | GDPR audit | N/A |
+| NFR-22 | Compliance | SOC2 稽核軌跡 | SOC2 audit trail | N/A |
+| NFR-23 | Quality | FCR ≥ 90%（in_scope 對話） | ODD SQL | N/A |
+| NFR-24 | Quality | CSAT 目標 4.8（2025Q4 基準 3.2，+50%） | LLM-as-a-Judge monthly | N/A |
+| NFR-25 | Quality | Escalation SLA 遵守率 ≥ 95% | ODD SQL | N/A |
+| NFR-26 | Quality | LLM-as-a-Judge Cohen's Kappa ≥ 0.7 vs 人工標注 | 500 筆黃金集校準 | N/A |
+| NFR-27 | Quality | Grounding check pass rate 100%（cosine ≥ 0.75） | L5 unit tests | N/A |
+| NFR-28 | Quality | Recall@3 ≥ 92%（HNSW 1536維） | Golden set regression | N/A |
+| NFR-29 | Quality | Agentic tool success rate ≥ 95% | Integration tests | N/A |
+| NFR-30 | Scalability | Kubernetes HPA min=3, max=10, CPU target=70% | K8s load test | N/A |
+| NFR-31 | Observability | 每請求完整 OpenTelemetry trace | Trace sampling verification | N/A |
+| NFR-32 | Testability | Unit 70% + Integration 20% + E2E 10% coverage | pytest-cov | N/A |
+| NFR-33 | Resilience | Rate Limiter fail-open on Redis unavailability | Redis failure injection | N/A |
+| NFR-34 | Resilience | IP Whitelist fail-secure (403) on no match | Security test | N/A |
+| NFR-35 | Resilience | IP Whitelist max 100 CIDR blocks | Config validation test | N/A |
+| NFR-36 | Resilience | M2M token 90 天到期 | Token expiry unit test | N/A |
+| NFR-37 | Performance | Admin WebUI 響應時間 < 1.5s，100% 資料即時連動 | Lighthouse audit + manual | N/A |
+| NFR-38 | Performance | ClamAV 文件掃描 p95 < 500ms | Integration test with timing | N/A |
 
 ---
 
@@ -411,350 +413,1178 @@ OmniBot 是多平台企業級客服聊天機器人，同時服務 Telegram、LIN
 <!-- FR:START -->
 ```json
 {
-  "version": "1.0",
-  "created_at": "2026-06-17",
-  "phase": 1,
-  "project": "omnibot",
-  "functional_requirements": [
-    { "id": "FR-01", "description": "Telegram Webhook Adapter with HMAC-SHA256 signature verification", "implementation_functions": ["TelegramWebhookVerifier.verify", "telegram_adapter"], "verification_method": "Unit + Integration: valid→200, invalid signature→401, rate limit→429" },
-    { "id": "FR-02", "description": "LINE Webhook Adapter with HMAC-SHA256 Base64 signature verification", "implementation_functions": ["LineWebhookVerifier.verify", "line_adapter"], "verification_method": "Unit + Integration: valid→200, invalid→401" },
-    { "id": "FR-03", "description": "Messenger Webhook GET challenge verification + POST HMAC-SHA256", "implementation_functions": ["MessengerWebhookVerifier.verify", "messenger_adapter"], "verification_method": "GET→hub.challenge; POST valid→200; invalid→401" },
-    { "id": "FR-04", "description": "WhatsApp Webhook GET challenge + POST sha256= prefix HMAC verification", "implementation_functions": ["WhatsAppWebhookVerifier.verify", "whatsapp_adapter"], "verification_method": "GET→hub.challenge; POST valid→200; invalid→401" },
-    { "id": "FR-05", "description": "Web Platform Adapter: guest-session JWT + web message JWT BearerAuth", "implementation_functions": ["WebAdapter", "jwt_middleware"], "verification_method": "guest-session→JWT; invalid JWT→401; rate limit→429" },
-    { "id": "FR-06", "description": "A2A Platform Adapter JSON-RPC 2.0 with M2M OAuth2/JWT", "implementation_functions": ["A2AAdapter", "m2m_auth_middleware"], "verification_method": "valid M2M→200 JSON-RPC; invalid→401" },
-    { "id": "FR-07", "description": "UnifiedMessage immutable dataclass (platform, user_id, message_type, content, raw_payload, received_at, reply_token)", "implementation_functions": ["UnifiedMessage"], "verification_method": "Unit: all platforms create valid instance; frozen=True" },
-    { "id": "FR-08", "description": "UnifiedResponse immutable dataclass (content, source, confidence, knowledge_id, emotion_adjustment, quick_replies)", "implementation_functions": ["UnifiedResponse"], "verification_method": "Unit: source limited to rule|rag|wiki|escalate" },
-    { "id": "FR-09", "description": "ApiResponse[T] + PaginatedResponse[T] unified response format", "implementation_functions": ["ApiResponse", "PaginatedResponse"], "verification_method": "All management API responses wrap ApiResponse" },
-    { "id": "FR-10", "description": "PALADIN L1 InputSanitizer: NFKC + homoglyph substitution + control char removal, <2ms", "implementation_functions": ["InputSanitizer.sanitize"], "verification_method": "Unit: Cyrillic/Greek chars normalized; latency <2ms" },
-    { "id": "FR-11", "description": "PALADIN L2 Pattern Detection: 13 SUSPICIOUS_PATTERNS regex + Unicode variant, <3ms", "implementation_functions": ["PromptInjectionDefense.check_input"], "verification_method": "Unit: all 13 patterns hit; normal messages no false positive; latency <3ms" },
-    { "id": "FR-12", "description": "PALADIN L3 Instruction Hierarchy: Sandwich Prompt with UNTRUSTED DATA BOUNDARY, L1-L3 <5ms total", "implementation_functions": ["PromptInjectionDefense.build_sandwich_prompt"], "verification_method": "Unit: 3 boundary markers present; total L1-L3 <5ms" },
-    { "id": "FR-13", "description": "PALADIN L4 SemanticInjectionClassifier: LLM-based, <200ms p95, timeout→pass with 'unverified'", "implementation_functions": ["SemanticInjectionClassifier.classify"], "verification_method": "Unit: valid JSON response; timeout doesn't block; injection_type 4 values" },
-    { "id": "FR-14", "description": "PALADIN L5 GroundingChecker: cosine similarity ≥0.75 threshold, 1536-dim, <5ms", "implementation_functions": ["GroundingChecker.check"], "verification_method": "Unit: score<0.75→False; score≥0.75→True; no source→False; <5ms" },
-    { "id": "FR-15", "description": "PALADIN L4 parallel pipeline: low→skip L4; medium→parallel L3+L4; high→sync block no L3", "implementation_functions": ["PALADINPipeline.process"], "verification_method": "Unit: low risk no L4 call; medium parallel; high sync block" },
-    { "id": "FR-16", "description": "L4 retrospective blocking: injection_retrospective_block logged to security_logs", "implementation_functions": ["PALADINPipeline.process"], "verification_method": "Integration: retrospective block event in security_logs" },
-    { "id": "FR-17", "description": "Per-platform L4 retraction strategy (Telegram deleteMessage; LINE apology; Messenger DELETE; WhatsApp apology; Web WS replace; A2A revoked:true)", "implementation_functions": ["platform_retraction_handlers"], "verification_method": "Integration: each platform retraction path tested" },
-    { "id": "FR-18", "description": "PIIMasking: phone/email/Taiwan address/credit card (Luhn) detection and masking", "implementation_functions": ["PIIMasking.mask"], "verification_method": "Unit: 4 PII types masked; Luhn invalid→not masked; mask_count correct" },
-    { "id": "FR-19", "description": "PII sensitive keyword escalation: 密碼/銀行帳戶/信用卡號/提款卡 → should_escalate()=True", "implementation_functions": ["PIIMasking.should_escalate"], "verification_method": "Unit: 4 keywords trigger True; others False" },
-    { "id": "FR-20", "description": "PII audit log: pii_audit_log write on each mask event, 90-day retention then anonymize", "implementation_functions": ["pii_audit_log table", "retention_job"], "verification_method": "Integration: audit log created; scheduled job anonymizes after 90d" },
-    { "id": "FR-21", "description": "Redis sliding window rate limiter (Lua atomic ZSET): Telegram/LINE/Messenger/WhatsApp 30/s, Web 10/s, Agent 100/s", "implementation_functions": ["RateLimiter.allow"], "verification_method": "Unit: over limit→429; under limit→pass; Lua atomic correctness" },
-    { "id": "FR-22", "description": "Rate Limiter fail-open on Redis unavailability: allow + log warning, no exception", "implementation_functions": ["RateLimiter.allow"], "verification_method": "Unit: ConnectionError→True + warning log; no exception raised" },
-    { "id": "FR-23", "description": "IP Whitelist CIDR-based (max 100), X-Forwarded-For leftmost IP, no match→403 empty body; empty WL or bad IP header→400+warning", "implementation_functions": ["IPWhitelist.is_allowed"], "verification_method": "Unit: valid IP pass; invalid→403; empty WL→400; bad header→400" },
-    { "id": "FR-24", "description": "Middleware chain order: TLS→IP Whitelist→Webhook Signature→Platform Adapter→Rate Limit→RBAC", "implementation_functions": ["middleware chain"], "verification_method": "Integration: chain order verified via request tracing" },
-    { "id": "FR-25", "description": "IPWhitelist error handling: invalid CIDR→IPWhitelistError at startup; invalid IP in is_allowed→False (no exception)", "implementation_functions": ["IPWhitelist.__init__", "IPWhitelist.is_allowed"], "verification_method": "Unit: bad CIDR raises at init; bad IP returns False" },
-    { "id": "FR-26", "description": "Knowledge Tier 1 rule matching: PostgreSQL ILIKE + keywords, confidence≥0.80 direct return, LIMIT 5", "implementation_functions": ["HybridKnowledge._rule_match"], "verification_method": "Unit: confidence≥0.80 returns rule; <0.80 falls through to T2" },
-    { "id": "FR-27", "description": "Knowledge Tier 2 RAG+RRF k=60: pgvector HNSW 1536-dim, Child→Parent, Top-10 dedup to Top-5, confidence≥0.85", "implementation_functions": ["HybridKnowledge._rag_search", "_reciprocal_rank_fusion"], "verification_method": "Unit: RRF ranking correct; confidence≥0.85 returns rag; Parent-Child lookup correct" },
-    { "id": "FR-28", "description": "Parent-Child chunking: 500-token parent (100-token overlap), 150-token child; child indexed, parent sent to LLM", "implementation_functions": ["chunking module", "knowledge_chunks table"], "verification_method": "Unit: chunk sizes correct; vector search hits child→parent lookup succeeds" },
-    { "id": "FR-29", "description": "HNSW index: vector_cosine_ops, m=16, ef_construction=64, partial WHERE embeddings IS NOT NULL; Recall@3≥92%", "implementation_functions": ["CREATE INDEX USING hnsw"], "verification_method": "Schema test: index created; golden set Recall@3≥92%" },
-    { "id": "FR-30", "description": "Knowledge Tier 3 LLM generation: gpt-4o→gemini fallback, Sandwich Prompt, L5 grounding≥0.75, fallback <500ms", "implementation_functions": ["HybridKnowledge._llm_generate", "_call_llm_api"], "verification_method": "Integration: primary failure→fallback; grounding<0.75→escalate; fallback<500ms" },
-    { "id": "FR-31", "description": "Knowledge Tier 4 human escalation: all tiers fail→escalate; source=escalate, id=-1", "implementation_functions": ["HybridKnowledge._escalate"], "verification_method": "Integration: T1-T3 no match→escalate with id=-1" },
-    { "id": "FR-32", "description": "KnowledgeResult frozen dataclass (id, content, confidence, source, knowledge_id); id=-1 for non-KB", "implementation_functions": ["KnowledgeResult"], "verification_method": "Unit: source limited to 4 values; id=-1 recognized as non-KB" },
-    { "id": "FR-33", "description": "HybridKnowledge query orchestrator: T1→T2→T3→T4 sequential; EMBEDDING_DIM=1536", "implementation_functions": ["HybridKnowledge.query"], "verification_method": "Unit: query path follows T1→T4 order; EMBEDDING_DIM constant=1536" },
-    { "id": "FR-34", "description": "8-state FSM: ALLOWED_TRANSITIONS enforced; invalid transition raises ValueError; turn_count+1 per transition", "implementation_functions": ["DialogueState.transition", "ALLOWED_TRANSITIONS"], "verification_method": "Unit: all legal transitions succeed; illegal→ValueError; turn_count increments" },
-    { "id": "FR-35", "description": "Slot filling: order_status needs order_id; return_request needs order_id+reason; missing_slots() correct", "implementation_functions": ["DialogueSlot", "INTENT_TO_SLOTS", "DialogueState.missing_slots"], "verification_method": "Unit: missing required slots returned; filled slots not in missing" },
-    { "id": "FR-36", "description": "Auto-escalate: slot_filling>3 rounds→ESCALATED; confidence<0.65→ESCALATED", "implementation_functions": ["DST state machine transitions"], "verification_method": "Unit: 3 rounds trigger escalation; confidence<0.65 triggers escalation" },
-    { "id": "FR-37", "description": "AWAITING_CONFIRMATION timeout: >2 rounds unconfirmed→ESCALATED; confirm→PROCESSING; deny→SLOT_FILLING", "implementation_functions": ["DST transitions"], "verification_method": "Unit: 2 rounds unconfirmed→ESCALATED; confirm/deny transitions correct" },
-    { "id": "FR-38", "description": "Context Window Management: sliding_window_with_summarization, max_tokens=8192, overflow→LLM summary of earliest 1/3", "implementation_functions": ["ContextWindowManager.manage"], "verification_method": "Unit: token count correct; overflow triggers summary; recent 1/3 preserved" },
-    { "id": "FR-39", "description": "ActionAdapter abstract: list_tools()→List[ToolDefinition]; execute(name, args)→ToolExecutionResult", "implementation_functions": ["ActionAdapter", "ToolDefinition", "ToolExecutionResult"], "verification_method": "Unit: all adapters implement interface; ToolExecutionResult has success/output/error_message" },
-    { "id": "FR-40", "description": "MCPAdapter: stdio/SSE to external MCP Server; list_tools from MCP capabilities", "implementation_functions": ["MCPAdapter"], "verification_method": "Integration: connects to MCP Server; tool call returns result" },
-    { "id": "FR-41", "description": "A2AAdapter: agent card discovery (/.well-known/agent.json, 300s TTL); JSON-RPC 2.0, timeout=2.0s; unreachable→empty tools", "implementation_functions": ["A2AAdapter._discover_agent_card", "A2AAdapter.execute"], "verification_method": "Unit: cache TTL correct; timeout→ToolExecutionResult(success=False); unreachable→empty list no exception" },
-    { "id": "FR-42", "description": "CLIAdapter: sandboxed script execution→ToolExecutionResult", "implementation_functions": ["CLIAdapter"], "verification_method": "Unit: success→True; failure→False+error_message" },
-    { "id": "FR-43", "description": "ToolExecutor: register+execute; default tools: get_shipping_status, update_shipping_address (blocked if shipped/delivered)", "implementation_functions": ["ToolExecutor", "_get_shipping_status", "_update_shipping_address"], "verification_method": "Unit: unknown tool→success=False; update blocked in shipped/delivered state" },
-    { "id": "FR-44", "description": "OmniBot Agent Card: GET /.well-known/agent.json returns valid agent card JSON", "implementation_functions": ["agent_card endpoint"], "verification_method": "Integration: endpoint returns 200 with name/url/methods/auth_schemes" },
-    { "id": "FR-45", "description": "ToolDefinition shared dataclass: AEE and DST use same class, no duplication", "implementation_functions": ["ToolDefinition shared"], "verification_method": "Code review: single ToolDefinition import path" },
-    { "id": "FR-46", "description": "EmotionAnalyzer: classify positive/neutral/negative, intensity 0.0-1.0", "implementation_functions": ["EmotionScore", "emotion_classify"], "verification_method": "Unit: category limited to 3 values; intensity in [0.0, 1.0]" },
-    { "id": "FR-47", "description": "Temporal decay: 24hr half-life exponential decay in current_weighted_score()", "implementation_functions": ["EmotionTracker.current_weighted_score"], "verification_method": "Unit: 24hr ago score=50% of current; decay formula correct" },
-    { "id": "FR-48", "description": "Escalation trigger: consecutive_negative_count()≥3→should_escalate()=True", "implementation_functions": ["EmotionTracker.should_escalate"], "verification_method": "Unit: 3 consecutive negative→True; non-negative interrupts count" },
-    { "id": "FR-49", "description": "AGENT platform bypass: skip emotion analysis for platform==AGENT", "implementation_functions": ["platform check in pipeline"], "verification_method": "Unit: AGENT platform messages skip emotion module" },
-    { "id": "FR-50", "description": "Template system: rule_default, rag_default (with 📌 suffix), escalate (with case number)", "implementation_functions": ["ResponseGenerator.DEFAULT_TEMPLATES"], "verification_method": "Unit: 3 templates exist; variable interpolation correct" },
-    { "id": "FR-51", "description": "Emotion tone: negative+intensity>0.7→apology prefix; positive→positive prefix; repeat_count>0→suppress repeat apology", "implementation_functions": ["ResponseGenerator._apply_emotion_tone"], "verification_method": "Unit: tone rules trigger at correct thresholds; suppression works" },
-    { "id": "FR-52", "description": "A/B variant injection: SHA-256 deterministic; variant_a/b suffix injection; control→no injection", "implementation_functions": ["ResponseGenerator._apply_ab_variant", "ABTestManager.get_variant"], "verification_method": "Unit: same input→same variant cross-process; control unchanged" },
-    { "id": "FR-53", "description": "Platform format adapter: per-platform character limits and formatting", "implementation_functions": ["platform format adapters"], "verification_method": "Unit: Telegram 4096, LINE 5000, Messenger 2000 truncation; Agent pure JSON" },
-    { "id": "FR-54", "description": "EscalationManager: create/assign/resolve escalation_queue records", "implementation_functions": ["EscalationManager.create", ".assign", ".resolve"], "verification_method": "Integration: create→record in DB; assign→assigned_agent updated; resolve→resolved_at set" },
-    { "id": "FR-55", "description": "Escalation SLA: normal=30min, high=15min, urgent=5min; breach detection via get_sla_breaches()", "implementation_functions": ["EscalationManager.SLA_BY_PRIORITY", "get_sla_breaches"], "verification_method": "Unit: sla_deadline correct for each priority; breach query accurate" },
-    { "id": "FR-56", "description": "WebSocket push on escalation.new: push to /ws/agent with full payload", "implementation_functions": ["EscalationManager + WebSocket push"], "verification_method": "Integration: escalation created→WS message received within 1s" },
-    { "id": "FR-57", "description": "/ws/agent WebSocket: 6 event types; JWT auth", "implementation_functions": ["/ws/agent handler"], "verification_method": "Integration: all 6 event types sent/received correctly; invalid JWT rejected" },
-    { "id": "FR-58", "description": "/ws/user WebSocket: message.reply push; JWT auth", "implementation_functions": ["/ws/user handler"], "verification_method": "Integration: message.reply received by Web client; JWT verified" },
-    { "id": "FR-59", "description": "WebSocket heartbeat: 30s ping; 10s timeout disconnect; subscribe/subscribed flow", "implementation_functions": ["WebSocket lifecycle"], "verification_method": "Integration: 10s no pong→disconnect event sent; subscribe returns subscribed" },
-    { "id": "FR-60", "description": "7 RBAC roles: anonymous/customer/agent/editor/admin/auditor/dpo with permissions matrix", "implementation_functions": ["ROLE_PERMISSIONS"], "verification_method": "Unit: 7 roles defined; dpo has pii:decrypt; auditor does not" },
-    { "id": "FR-61", "description": "Complete permission matrix: resource/action per role as specified", "implementation_functions": ["ROLE_PERMISSIONS"], "verification_method": "Unit: all role×resource×action combinations match spec" },
-    { "id": "FR-62", "description": "RBACEnforcer decorator: @rbac.require(resource, action); no permission→403 AUTHZ_INSUFFICIENT_ROLE", "implementation_functions": ["RBACEnforcer.require", "check"], "verification_method": "Unit: unauthorized→PermissionError→403; authorized→pass" },
-    { "id": "FR-63", "description": "ABTestManager SHA-256 deterministic variant assignment; run_experiment with variant prompt", "implementation_functions": ["ABTestManager.get_variant", "run_experiment"], "verification_method": "Unit: same user+experiment→same variant cross-process; hashlib.sha256 used" },
-    { "id": "FR-64", "description": "auto_promote: min_sample=100; diff≥0.05→promote best variant, status='completed'", "implementation_functions": ["ABTestManager.auto_promote"], "verification_method": "Unit: sample<100→None; diff≥0.05 with sufficient sample→promote" },
-    { "id": "FR-65", "description": "Ensemble Judge: gpt-4o-mini + claude-3-5-haiku, temp=0, parallel calls", "implementation_functions": ["LLMJudge.evaluate"], "verification_method": "Unit: 2 judges called in parallel; temperature=0 in config" },
-    { "id": "FR-66", "description": "Politeness aggregation: max(primary, secondary)", "implementation_functions": ["LLMJudge.evaluate aggregation"], "verification_method": "Unit: politeness=max(scores)" },
-    { "id": "FR-67", "description": "Accuracy aggregation: min(primary, secondary)", "implementation_functions": ["LLMJudge.evaluate aggregation"], "verification_method": "Unit: accuracy=min(scores)" },
-    { "id": "FR-68", "description": "CSAT formula: 0.4*speed + 0.2*anthropomorphism + 0.2*politeness + 0.2*accuracy; normalize to 0-5", "implementation_functions": ["LLMJudge.evaluate"], "verification_method": "Unit: CSAT formula correct; output in [0, 5]" },
-    { "id": "FR-69", "description": "Monthly calibration: 500 golden set, Kappa≥0.7; recalibrate if CSAT deviation>15%", "implementation_functions": ["calibration pipeline"], "verification_method": "Monthly: Kappa computed and compared; trigger at >15% deviation" },
-    { "id": "FR-70", "description": "StructuredLogger: JSON format, timestamp+level+service+message fields", "implementation_functions": ["StructuredLogger.log"], "verification_method": "Unit: JSON parseable; all required fields present" },
-    { "id": "FR-71", "description": "Prometheus metrics: 9 metric definitions with correct types and labels", "implementation_functions": ["Prometheus metrics definitions"], "verification_method": "Integration: all metrics scraped; label cardinality correct" },
-    { "id": "FR-72", "description": "OpenTelemetry tracing: full span tree per request; trace_id in response header", "implementation_functions": ["setup_tracing", "tracer spans"], "verification_method": "Integration: spans created for all pipeline stages; trace_id propagated" },
-    { "id": "FR-73", "description": "Alert rules: HighLatency, HighErrorRate, EscalationQueueBacklog, SLABreach (for=0m)", "implementation_functions": ["Prometheus alert rules"], "verification_method": "Config test: 4 alert rules defined with correct thresholds" },
-    { "id": "FR-74", "description": "Grafana dashboard: 4 panels connected to metrics and ODD SQL", "implementation_functions": ["Grafana dashboard config"], "verification_method": "Manual: all 4 panels render; data updates correctly" },
-    { "id": "FR-75", "description": "SAQ Worker: 3 queues (embedding/maintenance/notification), concurrency+timeout per queue, 30s grace period", "implementation_functions": ["SAQ worker configuration"], "verification_method": "Integration: workers consume from correct queues; SIGTERM waits 30s" },
-    { "id": "FR-76", "description": "EmbeddingJob: max_retries=3, exponential backoff+jitter, p95<30s", "implementation_functions": ["EmbeddingJob", "process_embedding_job"], "verification_method": "Integration: 3 retries with backoff; p95<30s on golden set" },
-    { "id": "FR-77", "description": "Sync first chunk embedding: single insert→first chunk sync within 2.0s timeout; timeout→async fallback", "implementation_functions": ["create_knowledge_with_chunks"], "verification_method": "Integration: T2 searchable within 2.5s of insert; timeout doesn't block" },
-    { "id": "FR-78", "description": "Batch import mode: is_batch=True→all chunks async, per-entry<50ms", "implementation_functions": ["batch_import_knowledge"], "verification_method": "Performance: batch insert<50ms per entry; no sync waiting" },
-    { "id": "FR-79", "description": "Embedding sync status UI: 🟡syncing/🟢synced/🔴failed display; embedding_synced_at column", "implementation_functions": ["knowledge_base.embedding_synced_at", "WebUI"], "verification_method": "Manual: UI status updates correctly; embedding_synced_at set after all chunks done" },
-    { "id": "FR-80", "description": "Redis Streams: consumer group; XACK; XCLAIM for crashed consumers; unknown fields ignored", "implementation_functions": ["AsyncMessageProcessor"], "verification_method": "Integration: pending messages reclaimed; unknown fields don't cause errors" },
-    { "id": "FR-81", "description": "Retry strategy: max=3, base=1.0s, max=30.0s, jitter=True", "implementation_functions": ["RetryStrategy.execute_with_retry"], "verification_method": "Unit: 3 retries; delay<30s; jitter applied" },
-    { "id": "FR-82", "description": "Complete DB schema: 20 tables with indexes and FK constraints", "implementation_functions": ["SQL DDL", "Alembic migrations"], "verification_method": "Schema test: all 20 tables created; all FK and indexes valid" },
-    { "id": "FR-83", "description": "Alembic migrations: upgrade()+downgrade() per migration; staging before prod", "implementation_functions": ["Alembic migration files"], "verification_method": "Test: upgrade+downgrade roundtrip on staging; no data loss" },
-    { "id": "FR-84", "description": "6 webhook + 2 web + 1 A2A API endpoints with standard error codes", "implementation_functions": ["FastAPI routers"], "verification_method": "API test: all endpoints exist; error codes per spec" },
-    { "id": "FR-85", "description": "8 management API endpoints with RBAC protection", "implementation_functions": ["FastAPI management routes"], "verification_method": "Integration: RBAC enforcement on all endpoints; paginated responses correct" },
-    { "id": "FR-86", "description": "Auth + User API: login/refresh/users/roles management", "implementation_functions": ["auth module"], "verification_method": "Integration: login→JWT; refresh works; role management requires system:write" },
-    { "id": "FR-87", "description": "M2M Token API: create/list/revoke; token format m2m_+32hex; stored as SHA-256; 90d expiry", "implementation_functions": ["M2M token management"], "verification_method": "Unit: format m2m_+64hex(SHA256); list hides token value; revoke invalidates" },
-    { "id": "FR-88", "description": "GDPR API: data export (JSON/CSV) + data deletion (async, 30d SLA, PII cleared, audit logged)", "implementation_functions": ["GDPR compliance module"], "verification_method": "Integration: export returns all personal data; deletion clears PII and logs gdpr_deletion" },
-    { "id": "FR-89", "description": "TDE: AES-256, 90-day key rotation, ssl_mode=verify-full; pii_vault app-layer decrypt only", "implementation_functions": ["PostgreSQL TDE config"], "verification_method": "Config: TDE enabled; key rotation scheduled; pii_vault direct read blocked for DBA" },
-    { "id": "FR-90", "description": "Redis security: TLS tls-port 6380; AUTH from env var; ACL; default_user disabled", "implementation_functions": ["Redis security config"], "verification_method": "Config: plaintext port blocked; env var used; default user disabled" },
-    { "id": "FR-91", "description": "Data retention policy: messages 180d→archive; archive 2yr→delete; PII audit 90d→anonymize; emotion 90d→delete; security 1yr→archive→2yr delete", "implementation_functions": ["data retention scheduled jobs"], "verification_method": "Integration: scheduled jobs execute at correct intervals; anonymization verified" },
-    { "id": "FR-92", "description": "GDPR right to erasure: async deletion within 30d; profile=NULL; messages=[REDACTED]; pii_audit_log gdpr_deletion", "implementation_functions": ["execute_data_deletion"], "verification_method": "Integration: post-deletion PII fields null; messages redacted; audit log entry exists" },
-    { "id": "FR-93", "description": "Right of access + portability: GET /users/{id}/data returns JSON with all personal data; CSV export", "implementation_functions": ["data export endpoint"], "verification_method": "Integration: export contains all user data; JSON and CSV formats valid" },
-    { "id": "FR-94", "description": "pii_vault: encrypted BYTEA storage; KMS key_id; dpo-only decrypt; no plaintext storage", "implementation_functions": ["pii_vault table", "KMS integration"], "verification_method": "Security test: plaintext not in DB; non-dpo decrypt fails; KMS key_id present" },
-    { "id": "FR-95", "description": "Docker Compose: 7 services with healthchecks; pgvector/pgvector:pg16 image", "implementation_functions": ["docker-compose.yml"], "verification_method": "docker compose up→all services healthy; health endpoint 200" },
-    { "id": "FR-96", "description": "K8s: Deployment(3 replicas)+HPA(3-10)+PDB(minAvailable=2)+NetworkPolicy+Service(LoadBalancer); Secrets via SealedSecrets", "implementation_functions": ["K8s manifests"], "verification_method": "K8s apply→resources created; HPA scales correctly; PDB prevents disruption" },
-    { "id": "FR-97", "description": "Backup: pg_basebackup+WAL daily, 30d retention; Redis RDB hourly+AOF per-second, 7d retention", "implementation_functions": ["backup scripts"], "verification_method": "DR drill: restore completes in <5 minutes" },
-    { "id": "FR-98", "description": "Rollback procedures: knowledge soft-delete, model A/B gradual, Alembic downgrade, experiment abort", "implementation_functions": ["rollback procedures"], "verification_method": "Test each rollback path: data preserved; service continues" },
-    { "id": "FR-99", "description": "Circuit breaker degradation: 9 levels (6 main + 3 lateral) with trigger conditions and recovery thresholds", "implementation_functions": ["circuit breaker implementation"], "verification_method": "Integration: inject failures→correct level triggered; recovery after success count" },
-    { "id": "FR-100", "description": "Multimedia: image/file→escalate; sticker→ignore+prompt; location→extract coordinates; file size limit 10MB", "implementation_functions": ["media handling pipeline"], "verification_method": "Unit: image→escalation; sticker→fixed reply; location→context with coordinates; file>10MB rejected" },
-    { "id": "FR-101", "description": "Knowledge WebUI: CRUD + Markdown editor + keywords + CSV/JSON import/export + embedding status", "implementation_functions": ["WebUI frontend (React)"], "verification_method": "Manual: CRUD works; import succeeds; status updates in real-time; response<1.5s" },
-    { "id": "FR-102", "description": "RAG Debugger: search sandbox with cosine scores, Parent Chunk content, RRF top-3, threshold slider (session-only)", "implementation_functions": ["RAG Debugger UI"], "verification_method": "Manual: debugger shows T1+T2 decision flow; slider adjusts results; not persisted to DB" },
-    { "id": "FR-103", "description": "Operations Dashboard: FCR chart + p95 gauge + knowledge pie + cost chart, 24hr/7d/30d", "implementation_functions": ["Operations Dashboard UI"], "verification_method": "Manual: all 4 panels render; KPI alerts trigger correctly; time range switching works" },
-    { "id": "FR-104", "description": "Agent Portal: escalation inbox (Unassigned/My Chats/Resolved) + WS real-time + takeover panel", "implementation_functions": ["Agent Portal UI"], "verification_method": "Manual: inbox WS updates; priority colors correct; takeover panel shows emotion+DST+context" },
-    { "id": "FR-105", "description": "ODD SQL queries: 10+ queries for FCR/latency/knowledge/CSAT/SLA/emotion/security/cost/PII/RBAC/A-B analytics", "implementation_functions": ["ODD SQL scripts"], "verification_method": "Integration: all SQL execute without error on staging DB" },
-    { "id": "FR-106", "description": "k6 load test: 4 scenarios (smoke/load/stress/spike), 2000 TPS, 4 test case weights", "implementation_functions": ["k6 load test scripts"], "verification_method": "Performance: load scenario p95<1000ms; error<1%; stress no crash; 2000 TPS sustained" },
-    { "id": "FR-107", "description": "Test pyramid: unit 70% + integration 20% + E2E 10%; 6 E2E scenarios defined", "implementation_functions": ["pytest test suite", "k6"], "verification_method": "pytest-cov: 70/20/10 coverage; all 6 E2E scenarios pass" },
-    { "id": "FR-108", "description": "Golden dataset: 500 edge cases, 6 categories (asr-noise/typo/dialect/multi-intent/emotional/injection)", "implementation_functions": ["golden dataset", "edge_cases table"], "verification_method": "Count: edge_cases rows≥500; status=approved≥500; regression test pass rate tracked" }
-  ],
-  "non_functional_requirements": [
+    "version": "1.0",
+    "created_at": "2026-06-17",
+    "phase": 1,
+    "project": "omnibot",
+    "functional_requirements": [
+        {
+            "id": "FR-01",
+            "description": "Telegram Webhook Adapter with HMAC-SHA256 signature verification",
+            "implementation_functions": [
+                "TelegramWebhookVerifier.verify",
+                "telegram_adapter"
+            ],
+            "verification_method": "Unit: valid req -> 200; invalid sig -> 401 {\"error\": \"AUTH_INVALID_SIGNATURE\"}"
+        },
+        {
+            "id": "FR-02",
+            "description": "LINE Webhook Adapter with HMAC-SHA256 Base64 signature verification",
+            "implementation_functions": [
+                "LineWebhookVerifier.verify",
+                "line_adapter"
+            ],
+            "verification_method": "Unit: valid req -> 200; invalid sig -> 401 {\"error\": \"AUTH_INVALID_SIGNATURE\"}"
+        },
+        {
+            "id": "FR-03",
+            "description": "Messenger Webhook GET challenge verification + POST HMAC-SHA256",
+            "implementation_functions": [
+                "MessengerWebhookVerifier.verify",
+                "messenger_adapter"
+            ],
+            "verification_method": "Unit: valid req -> 200; invalid sig -> 401 {\"error\": \"AUTH_INVALID_SIGNATURE\"}"
+        },
+        {
+            "id": "FR-04",
+            "description": "WhatsApp Webhook GET challenge + POST sha256= prefix HMAC verification",
+            "implementation_functions": [
+                "WhatsAppWebhookVerifier.verify",
+                "whatsapp_adapter"
+            ],
+            "verification_method": "Unit: valid req -> 200; invalid sig -> 401 {\"error\": \"AUTH_INVALID_SIGNATURE\"}"
+        },
+        {
+            "id": "FR-05",
+            "description": "Web Platform Adapter: guest-session JWT + web message JWT BearerAuth",
+            "implementation_functions": [
+                "WebAdapter",
+                "jwt_middleware"
+            ],
+            "verification_method": "guest-session→JWT; invalid JWT→401; rate limit→429"
+        },
+        {
+            "id": "FR-06",
+            "description": "A2A Platform Adapter JSON-RPC 2.0 with M2M OAuth2/JWT",
+            "implementation_functions": [
+                "A2AAdapter",
+                "m2m_auth_middleware"
+            ],
+            "verification_method": "valid M2M→200 JSON-RPC; invalid→401"
+        },
+        {
+            "id": "FR-07",
+            "description": "UnifiedMessage immutable dataclass (platform, user_id, message_type, content, raw_payload, received_at, reply_token)",
+            "implementation_functions": [
+                "UnifiedMessage"
+            ],
+            "verification_method": "Unit: all platforms create valid instance; frozen=True"
+        },
+        {
+            "id": "FR-08",
+            "description": "UnifiedResponse immutable dataclass (content, source, confidence, knowledge_id, emotion_adjustment, quick_replies)",
+            "implementation_functions": [
+                "UnifiedResponse"
+            ],
+            "verification_method": "Unit: source limited to rule|rag|wiki|escalate"
+        },
+        {
+            "id": "FR-09",
+            "description": "ApiResponse[T] + PaginatedResponse[T] unified response format",
+            "implementation_functions": [
+                "ApiResponse",
+                "PaginatedResponse"
+            ],
+            "verification_method": "All management API responses wrap ApiResponse"
+        },
+        {
+            "id": "FR-10",
+            "description": "PALADIN L1 InputSanitizer: NFKC + homoglyph substitution + control char removal, <2ms",
+            "implementation_functions": [
+                "InputSanitizer.sanitize"
+            ],
+            "verification_method": "Unit: Cyrillic/Greek chars normalized; latency <2ms"
+        },
+        {
+            "id": "FR-11",
+            "description": "PALADIN L2 Pattern Detection: 13 SUSPICIOUS_PATTERNS regex + Unicode variant, <3ms",
+            "implementation_functions": [
+                "PromptInjectionDefense.check_input"
+            ],
+            "verification_method": "Unit: all 13 patterns hit; normal messages no false positive; latency <3ms"
+        },
+        {
+            "id": "FR-12",
+            "description": "PALADIN L3 Instruction Hierarchy: Sandwich Prompt with UNTRUSTED DATA BOUNDARY, L1-L3 <5ms total",
+            "implementation_functions": [
+                "PromptInjectionDefense.build_sandwich_prompt"
+            ],
+            "verification_method": "Unit: 3 boundary markers present; total L1-L3 <5ms"
+        },
+        {
+            "id": "FR-13",
+            "description": "PALADIN L4 SemanticInjectionClassifier: LLM-based, <200ms p95, timeout→pass with 'unverified'",
+            "implementation_functions": [
+                "SemanticInjectionClassifier.classify"
+            ],
+            "verification_method": "Unit: valid JSON response; timeout doesn't block; injection_type 4 values"
+        },
+        {
+            "id": "FR-14",
+            "description": "PALADIN L5 GroundingChecker: cosine similarity ≥0.75 threshold, 1536-dim, <5ms",
+            "implementation_functions": [
+                "GroundingChecker.check"
+            ],
+            "verification_method": "Unit: score<0.75→False; score≥0.75→True; no source→False; <5ms"
+        },
+        {
+            "id": "FR-15",
+            "description": "PALADIN L4 parallel pipeline: low→skip L4; medium→parallel L3+L4; high→sync block no L3",
+            "implementation_functions": [
+                "PALADINPipeline.process"
+            ],
+            "verification_method": "Unit: low risk no L4 call; medium parallel; high sync block"
+        },
+        {
+            "id": "FR-16",
+            "description": "L4 retrospective blocking: injection_retrospective_block logged to security_logs",
+            "implementation_functions": [
+                "PALADINPipeline.process"
+            ],
+            "verification_method": "Integration: retrospective block event in security_logs"
+        },
+        {
+            "id": "FR-17",
+            "description": "Per-platform L4 retraction strategy (Telegram deleteMessage; LINE apology; Messenger DELETE; WhatsApp apology; Web WS replace; A2A revoked:true)",
+            "implementation_functions": [
+                "platform_retraction_handlers"
+            ],
+            "verification_method": "Integration: each platform retraction path tested"
+        },
+        {
+            "id": "FR-18",
+            "description": "PIIMasking: phone/email/Taiwan address/credit card (Luhn) detection and masking",
+            "implementation_functions": [
+                "PIIMasking.mask"
+            ],
+            "verification_method": "Unit: 4 PII types masked; Luhn invalid→not masked; mask_count correct"
+        },
+        {
+            "id": "FR-19",
+            "description": "PII sensitive keyword escalation: 密碼/銀行帳戶/信用卡號/提款卡 → should_escalate()=True",
+            "implementation_functions": [
+                "PIIMasking.should_escalate"
+            ],
+            "verification_method": "Unit: 4 keywords trigger True; others False"
+        },
+        {
+            "id": "FR-20",
+            "description": "PII audit log: pii_audit_log write on each mask event, 90-day retention then anonymize",
+            "implementation_functions": [
+                "pii_audit_log table",
+                "retention_job"
+            ],
+            "verification_method": "Integration: audit log created; scheduled job anonymizes after 90d"
+        },
+        {
+            "id": "FR-21",
+            "description": "Redis sliding window rate limiter (Lua atomic ZSET): Telegram/LINE/Messenger/WhatsApp 30/s, Web 10/s, Agent 100/s",
+            "implementation_functions": [
+                "RateLimiter.allow"
+            ],
+            "verification_method": "Unit: over limit→429; under limit→pass; Lua atomic correctness"
+        },
+        {
+            "id": "FR-22",
+            "description": "Rate Limiter fail-open on Redis unavailability: allow + log warning, no exception",
+            "implementation_functions": [
+                "RateLimiter.allow"
+            ],
+            "verification_method": "Unit: ConnectionError→True + warning log; no exception raised"
+        },
+        {
+            "id": "FR-23",
+            "description": "IP Whitelist CIDR-based (max 100), X-Forwarded-For leftmost IP, no match→403 empty body; empty WL or bad IP header→400+warning",
+            "implementation_functions": [
+                "IPWhitelist.is_allowed"
+            ],
+            "verification_method": "Unit: valid IP pass; invalid→403; empty WL→400; bad header→400"
+        },
+        {
+            "id": "FR-24",
+            "description": "Middleware chain order: TLS→IP Whitelist→Webhook Signature→Platform Adapter→Rate Limit→RBAC",
+            "implementation_functions": [
+                "middleware chain"
+            ],
+            "verification_method": "Integration: chain order verified via request tracing"
+        },
+        {
+            "id": "FR-25",
+            "description": "IPWhitelist error handling: invalid CIDR→IPWhitelistError at startup; invalid IP in is_allowed→False (no exception)",
+            "implementation_functions": [
+                "IPWhitelist.__init__",
+                "IPWhitelist.is_allowed"
+            ],
+            "verification_method": "Unit: bad CIDR raises at init; bad IP returns False"
+        },
+        {
+            "id": "FR-26",
+            "description": "Knowledge Tier 1 rule matching: PostgreSQL ILIKE + keywords, confidence≥0.80 direct return, LIMIT 5",
+            "implementation_functions": [
+                "HybridKnowledge._rule_match"
+            ],
+            "verification_method": "Unit: confidence≥0.80 returns rule; <0.80 falls through to T2"
+        },
+        {
+            "id": "FR-27",
+            "description": "Knowledge Tier 2 RAG+RRF k=60: pgvector HNSW 1536-dim, Child→Parent, Top-10 dedup to Top-5, confidence≥0.85",
+            "implementation_functions": [
+                "HybridKnowledge._rag_search",
+                "_reciprocal_rank_fusion"
+            ],
+            "verification_method": "Unit: RRF ranking correct; confidence≥0.85 returns rag; Parent-Child lookup correct"
+        },
+        {
+            "id": "FR-28",
+            "description": "Parent-Child chunking: 500-token parent (100-token overlap), 150-token child; child indexed, parent sent to LLM",
+            "implementation_functions": [
+                "chunking module",
+                "knowledge_chunks table"
+            ],
+            "verification_method": "Unit: chunk sizes correct; vector search hits child→parent lookup succeeds"
+        },
+        {
+            "id": "FR-29",
+            "description": "HNSW index: vector_cosine_ops, m=16, ef_construction=64, partial WHERE embeddings IS NOT NULL; Recall@3≥92%",
+            "implementation_functions": [
+                "CREATE INDEX USING hnsw"
+            ],
+            "verification_method": "Schema test: index created; golden set Recall@3≥92%"
+        },
+        {
+            "id": "FR-30",
+            "description": "Knowledge Tier 3 LLM generation: gpt-4o→gemini fallback, Sandwich Prompt, L5 grounding≥0.75, fallback <500ms",
+            "implementation_functions": [
+                "HybridKnowledge._llm_generate",
+                "_call_llm_api"
+            ],
+            "verification_method": "Integration: primary failure→fallback; grounding<0.75→escalate; fallback<500ms"
+        },
+        {
+            "id": "FR-31",
+            "description": "Knowledge Tier 4 human escalation: all tiers fail→escalate; source=escalate, id=-1",
+            "implementation_functions": [
+                "HybridKnowledge._escalate"
+            ],
+            "verification_method": "Integration: T1-T3 no match→escalate with id=-1"
+        },
+        {
+            "id": "FR-32",
+            "description": "KnowledgeResult frozen dataclass (id, content, confidence, source, knowledge_id); id=-1 for non-KB",
+            "implementation_functions": [
+                "KnowledgeResult"
+            ],
+            "verification_method": "Unit: source limited to 4 values; id=-1 recognized as non-KB"
+        },
+        {
+            "id": "FR-33",
+            "description": "HybridKnowledge query orchestrator: T1→T2→T3→T4 sequential; EMBEDDING_DIM=1536",
+            "implementation_functions": [
+                "HybridKnowledge.query"
+            ],
+            "verification_method": "Unit: query path follows T1→T4 order; EMBEDDING_DIM constant=1536"
+        },
+        {
+            "id": "FR-34",
+            "description": "8-state FSM: ALLOWED_TRANSITIONS enforced; invalid transition raises ValueError; turn_count+1 per transition",
+            "implementation_functions": [
+                "DialogueState.transition",
+                "ALLOWED_TRANSITIONS"
+            ],
+            "verification_method": "Unit: all legal transitions succeed; illegal→ValueError; turn_count increments"
+        },
+        {
+            "id": "FR-35",
+            "description": "Slot filling: order_status needs order_id; return_request needs order_id+reason; missing_slots() correct",
+            "implementation_functions": [
+                "DialogueSlot",
+                "INTENT_TO_SLOTS",
+                "DialogueState.missing_slots"
+            ],
+            "verification_method": "Unit: missing required slots returned; filled slots not in missing"
+        },
+        {
+            "id": "FR-36",
+            "description": "Auto-escalate: slot_filling>3 rounds→ESCALATED; confidence<0.65→ESCALATED",
+            "implementation_functions": [
+                "DST state machine transitions"
+            ],
+            "verification_method": "Unit: 3 rounds trigger escalation; confidence<0.65 triggers escalation"
+        },
+        {
+            "id": "FR-37",
+            "description": "AWAITING_CONFIRMATION timeout: >2 rounds unconfirmed→ESCALATED; confirm→PROCESSING; deny→SLOT_FILLING",
+            "implementation_functions": [
+                "DST transitions"
+            ],
+            "verification_method": "Unit: 2 rounds unconfirmed→ESCALATED; confirm/deny transitions correct"
+        },
+        {
+            "id": "FR-38",
+            "description": "Context Window Management: sliding_window_with_summarization, max_tokens=8192, overflow→LLM summary of earliest 1/3",
+            "implementation_functions": [
+                "ContextWindowManager.manage"
+            ],
+            "verification_method": "Unit: token count correct; overflow triggers summary; recent 1/3 preserved"
+        },
+        {
+            "id": "FR-39",
+            "description": "ActionAdapter abstract: list_tools()→List[ToolDefinition]; execute(name, args)→ToolExecutionResult",
+            "implementation_functions": [
+                "ActionAdapter",
+                "ToolDefinition",
+                "ToolExecutionResult"
+            ],
+            "verification_method": "Unit: all adapters implement interface; ToolExecutionResult has success/output/error_message"
+        },
+        {
+            "id": "FR-40",
+            "description": "MCPAdapter: stdio/SSE to external MCP Server; list_tools from MCP capabilities",
+            "implementation_functions": [
+                "MCPAdapter"
+            ],
+            "verification_method": "Integration: connects to MCP Server; tool call returns result"
+        },
+        {
+            "id": "FR-41",
+            "description": "A2AAdapter: agent card discovery (/.well-known/agent.json, 300s TTL); JSON-RPC 2.0, timeout=2.0s; unreachable→empty tools",
+            "implementation_functions": [
+                "A2AAdapter._discover_agent_card",
+                "A2AAdapter.execute"
+            ],
+            "verification_method": "Unit: cache TTL correct; timeout→ToolExecutionResult(success=False); unreachable→empty list no exception"
+        },
+        {
+            "id": "FR-42",
+            "description": "CLIAdapter: sandboxed script execution→ToolExecutionResult",
+            "implementation_functions": [
+                "CLIAdapter"
+            ],
+            "verification_method": "Unit: success→True; failure→False+error_message"
+        },
+        {
+            "id": "FR-43",
+            "description": "ToolExecutor: register+execute; default tools: get_shipping_status, update_shipping_address (blocked if shipped/delivered)",
+            "implementation_functions": [
+                "ToolExecutor",
+                "_get_shipping_status",
+                "_update_shipping_address"
+            ],
+            "verification_method": "Unit: unknown tool→success=False; update blocked in shipped/delivered state"
+        },
+        {
+            "id": "FR-44",
+            "description": "OmniBot Agent Card: GET /.well-known/agent.json returns valid agent card JSON",
+            "implementation_functions": [
+                "agent_card endpoint"
+            ],
+            "verification_method": "Integration: endpoint returns 200 with name/url/methods/auth_schemes"
+        },
+        {
+            "id": "FR-45",
+            "description": "ToolDefinition shared dataclass: AEE and DST use same class, no duplication",
+            "implementation_functions": [
+                "ToolDefinition shared"
+            ],
+            "verification_method": "Code review: single ToolDefinition import path"
+        },
+        {
+            "id": "FR-46",
+            "description": "EmotionAnalyzer: classify positive/neutral/negative, intensity 0.0-1.0",
+            "implementation_functions": [
+                "EmotionScore",
+                "emotion_classify"
+            ],
+            "verification_method": "Unit: category limited to 3 values; intensity in [0.0, 1.0]"
+        },
+        {
+            "id": "FR-47",
+            "description": "Temporal decay: 24hr half-life exponential decay in current_weighted_score()",
+            "implementation_functions": [
+                "EmotionTracker.current_weighted_score"
+            ],
+            "verification_method": "Unit: 24hr ago score=50% of current; decay formula correct"
+        },
+        {
+            "id": "FR-48",
+            "description": "Escalation trigger: consecutive_negative_count()≥3→should_escalate()=True",
+            "implementation_functions": [
+                "EmotionTracker.should_escalate"
+            ],
+            "verification_method": "Unit: 3 consecutive negative→True; non-negative interrupts count"
+        },
+        {
+            "id": "FR-49",
+            "description": "AGENT platform bypass: skip emotion analysis for platform==AGENT",
+            "implementation_functions": [
+                "platform check in pipeline"
+            ],
+            "verification_method": "Unit: AGENT platform messages skip emotion module"
+        },
+        {
+            "id": "FR-50",
+            "description": "Template system: rule_default, rag_default (with 📌 suffix), escalate (with case number)",
+            "implementation_functions": [
+                "ResponseGenerator.DEFAULT_TEMPLATES"
+            ],
+            "verification_method": "Unit: 3 templates exist; variable interpolation correct"
+        },
+        {
+            "id": "FR-51",
+            "description": "Emotion tone: negative+intensity>0.7→apology prefix; positive→positive prefix; repeat_count>0→suppress repeat apology",
+            "implementation_functions": [
+                "ResponseGenerator._apply_emotion_tone"
+            ],
+            "verification_method": "Unit: tone rules trigger at correct thresholds; suppression works"
+        },
+        {
+            "id": "FR-52",
+            "description": "A/B variant injection: SHA-256 deterministic; variant_a/b suffix injection; control→no injection",
+            "implementation_functions": [
+                "ResponseGenerator._apply_ab_variant",
+                "ABTestManager.get_variant"
+            ],
+            "verification_method": "Unit: same input→same variant cross-process; control unchanged"
+        },
+        {
+            "id": "FR-53",
+            "description": "Platform format adapter: per-platform character limits and formatting",
+            "implementation_functions": [
+                "platform format adapters"
+            ],
+            "verification_method": "Unit: Telegram 4096, LINE 5000, Messenger 2000 truncation; Agent pure JSON"
+        },
+        {
+            "id": "FR-54",
+            "description": "EscalationManager: create/assign/resolve escalation_queue records",
+            "implementation_functions": [
+                "EscalationManager.create",
+                ".assign",
+                ".resolve"
+            ],
+            "verification_method": "Integration: create→record in DB; assign→assigned_agent updated; resolve→resolved_at set"
+        },
+        {
+            "id": "FR-55",
+            "description": "Escalation SLA: normal=30min, high=15min, urgent=5min; breach detection via get_sla_breaches()",
+            "implementation_functions": [
+                "EscalationManager.SLA_BY_PRIORITY",
+                "get_sla_breaches"
+            ],
+            "verification_method": "Unit: sla_deadline correct for each priority; breach query accurate"
+        },
+        {
+            "id": "FR-56",
+            "description": "WebSocket push on escalation.new: push to /ws/agent with full payload",
+            "implementation_functions": [
+                "EscalationManager + WebSocket push"
+            ],
+            "verification_method": "Integration: escalation created→WS message received within 1s"
+        },
+        {
+            "id": "FR-57",
+            "description": "/ws/agent WebSocket: 6 event types; JWT auth",
+            "implementation_functions": [
+                "/ws/agent handler"
+            ],
+            "verification_method": "Integration: all 6 event types sent/received correctly; invalid JWT rejected"
+        },
+        {
+            "id": "FR-58",
+            "description": "/ws/user WebSocket: message.reply push; JWT auth",
+            "implementation_functions": [
+                "/ws/user handler"
+            ],
+            "verification_method": "Integration: message.reply received by Web client; JWT verified"
+        },
+        {
+            "id": "FR-59",
+            "description": "WebSocket heartbeat: 30s ping; 10s timeout disconnect; subscribe/subscribed flow",
+            "implementation_functions": [
+                "WebSocket lifecycle"
+            ],
+            "verification_method": "Integration: 10s no pong→disconnect event sent; subscribe returns subscribed"
+        },
+        {
+            "id": "FR-60",
+            "description": "7 RBAC roles: anonymous/customer/agent/editor/admin/auditor/dpo with permissions matrix",
+            "implementation_functions": [
+                "ROLE_PERMISSIONS"
+            ],
+            "verification_method": "Unit: 7 roles defined; dpo has pii:decrypt; auditor does not"
+        },
+        {
+            "id": "FR-61",
+            "description": "Complete permission matrix: resource/action per role as specified",
+            "implementation_functions": [
+                "ROLE_PERMISSIONS"
+            ],
+            "verification_method": "Unit: all role×resource×action combinations match spec"
+        },
+        {
+            "id": "FR-62",
+            "description": "RBACEnforcer decorator: @rbac.require(resource, action); no permission→403 AUTHZ_INSUFFICIENT_ROLE",
+            "implementation_functions": [
+                "RBACEnforcer.require",
+                "check"
+            ],
+            "verification_method": "Unit: unauthorized→PermissionError→403; authorized→pass"
+        },
+        {
+            "id": "FR-63",
+            "description": "ABTestManager SHA-256 deterministic variant assignment; run_experiment with variant prompt",
+            "implementation_functions": [
+                "ABTestManager.get_variant",
+                "run_experiment"
+            ],
+            "verification_method": "Unit: same user+experiment→same variant cross-process; hashlib.sha256 used"
+        },
+        {
+            "id": "FR-64",
+            "description": "auto_promote: min_sample=100; diff≥0.05→promote best variant, status='completed'",
+            "implementation_functions": [
+                "ABTestManager.auto_promote"
+            ],
+            "verification_method": "Unit: sample<100→None; diff≥0.05 with sufficient sample→promote"
+        },
+        {
+            "id": "FR-65",
+            "description": "Ensemble Judge: gpt-4o-mini + claude-3-5-haiku, temp=0, parallel calls",
+            "implementation_functions": [
+                "LLMJudge.evaluate"
+            ],
+            "verification_method": "Unit: 2 judges called in parallel; temperature=0 in config"
+        },
+        {
+            "id": "FR-66",
+            "description": "Politeness aggregation: max(primary, secondary)",
+            "implementation_functions": [
+                "LLMJudge.evaluate aggregation"
+            ],
+            "verification_method": "Unit: politeness=max(scores)"
+        },
+        {
+            "id": "FR-67",
+            "description": "Accuracy aggregation: min(primary, secondary)",
+            "implementation_functions": [
+                "LLMJudge.evaluate aggregation"
+            ],
+            "verification_method": "Unit: accuracy=min(scores)"
+        },
+        {
+            "id": "FR-68",
+            "description": "CSAT formula: 0.4*speed + 0.2*anthropomorphism + 0.2*politeness + 0.2*accuracy; normalize to 0-5",
+            "implementation_functions": [
+                "LLMJudge.evaluate"
+            ],
+            "verification_method": "Unit: CSAT formula correct; output in [0, 5]"
+        },
+        {
+            "id": "FR-69",
+            "description": "Monthly calibration: 500 golden set, Kappa≥0.7; recalibrate if CSAT deviation>15%",
+            "implementation_functions": [
+                "calibration pipeline"
+            ],
+            "verification_method": "Monthly: Kappa computed and compared; trigger at >15% deviation"
+        },
+        {
+            "id": "FR-70",
+            "description": "StructuredLogger: JSON format, timestamp+level+service+message fields",
+            "implementation_functions": [
+                "StructuredLogger.log"
+            ],
+            "verification_method": "Unit: JSON parseable; all required fields present"
+        },
+        {
+            "id": "FR-71",
+            "description": "Prometheus metrics: 9 metric definitions with correct types and labels",
+            "implementation_functions": [
+                "Prometheus metrics definitions"
+            ],
+            "verification_method": "Integration: all metrics scraped; label cardinality correct"
+        },
+        {
+            "id": "FR-72",
+            "description": "OpenTelemetry tracing: full span tree per request; trace_id in response header",
+            "implementation_functions": [
+                "setup_tracing",
+                "tracer spans"
+            ],
+            "verification_method": "Integration: spans created for all pipeline stages; trace_id propagated"
+        },
+        {
+            "id": "FR-73",
+            "description": "Alert rules: HighLatency (warning/critical), HighErrorRate, EscalationQueueBacklog, SLABreach (for=0m)",
+            "implementation_functions": [
+                "Prometheus alert rules"
+            ],
+            "verification_method": "Config test: 4 alert rules defined with correct thresholds"
+        },
+        {
+            "id": "FR-74",
+            "description": "Grafana dashboard: 4 panels connected to metrics and ODD SQL",
+            "implementation_functions": [
+                "Grafana dashboard config"
+            ],
+            "verification_method": "Manual: all 4 panels render; data updates correctly"
+        },
+        {
+            "id": "FR-75",
+            "description": "SAQ Worker: 3 queues (embedding/maintenance/notification), concurrency+timeout per queue, 30s grace period",
+            "implementation_functions": [
+                "SAQ worker configuration"
+            ],
+            "verification_method": "Integration: workers consume from correct queues; SIGTERM waits 30s"
+        },
+        {
+            "id": "FR-76",
+            "description": "EmbeddingJob: max_retries=3, exponential backoff+jitter, p95<30s",
+            "implementation_functions": [
+                "EmbeddingJob",
+                "process_embedding_job"
+            ],
+            "verification_method": "Integration: 3 retries with backoff; p95<30s on golden set"
+        },
+        {
+            "id": "FR-77",
+            "description": "Sync first chunk embedding: single insert→first chunk sync within 2.0s timeout; timeout→async fallback",
+            "implementation_functions": [
+                "create_knowledge_with_chunks"
+            ],
+            "verification_method": "Integration: T2 searchable within 2.5s of insert; timeout doesn't block"
+        },
+        {
+            "id": "FR-78",
+            "description": "Batch import mode: is_batch=True→all chunks async, per-entry<50ms",
+            "implementation_functions": [
+                "batch_import_knowledge"
+            ],
+            "verification_method": "Performance: batch insert<50ms per entry; no sync waiting"
+        },
+        {
+            "id": "FR-79",
+            "description": "Embedding sync status UI: 🟡syncing/🟢synced/🔴failed display; embedding_synced_at column",
+            "implementation_functions": [
+                "knowledge_base.embedding_synced_at",
+                "WebUI"
+            ],
+            "verification_method": "Manual: UI status updates correctly; embedding_synced_at set after all chunks done"
+        },
+        {
+            "id": "FR-80",
+            "description": "Redis Streams: consumer group; XACK; XCLAIM for crashed consumers; unknown fields ignored",
+            "implementation_functions": [
+                "AsyncMessageProcessor"
+            ],
+            "verification_method": "Integration: pending messages reclaimed; unknown fields don't cause errors"
+        },
+        {
+            "id": "FR-81",
+            "description": "Retry strategy: max=3, base=1.0s, max=30.0s, jitter=True",
+            "implementation_functions": [
+                "RetryStrategy.execute_with_retry"
+            ],
+            "verification_method": "Unit: 3 retries; delay<30s; jitter applied"
+        },
+        {
+            "id": "FR-82",
+            "description": "Complete DB schema: 20 tables with indexes and FK constraints",
+            "implementation_functions": [
+                "SQL DDL",
+                "Alembic migrations"
+            ],
+            "verification_method": "Schema test: all 20 tables created; all FK and indexes valid"
+        },
+        {
+            "id": "FR-83",
+            "description": "Alembic migrations: upgrade()+downgrade() per migration; staging before prod",
+            "implementation_functions": [
+                "Alembic migration files"
+            ],
+            "verification_method": "Test: upgrade+downgrade roundtrip on staging; no data loss"
+        },
+        {
+            "id": "FR-84",
+            "description": "6 webhook + 2 web + 1 A2A API endpoints with standard error codes",
+            "implementation_functions": [
+                "FastAPI routers"
+            ],
+            "verification_method": "API test: all endpoints exist; error codes per spec"
+        },
+        {
+            "id": "FR-85",
+            "description": "8 management API endpoints with RBAC protection",
+            "implementation_functions": [
+                "FastAPI management routes"
+            ],
+            "verification_method": "Integration: RBAC enforcement on all endpoints; paginated responses correct"
+        },
+        {
+            "id": "FR-86",
+            "description": "Auth + User API: login/refresh/users/roles management",
+            "implementation_functions": [
+                "auth module"
+            ],
+            "verification_method": "Integration: login→JWT; refresh works; role management requires system:write"
+        },
+        {
+            "id": "FR-87",
+            "description": "M2M Token API: create/list/revoke; token format m2m_+32hex; stored as SHA-256",
+            "implementation_functions": [
+                "M2M token management"
+            ],
+            "verification_method": "Unit: format m2m_+64hex(SHA256); list hides token value"
+        },
+        {
+            "id": "FR-88",
+            "description": "GDPR API: data export (JSON/CSV) + data deletion (async, 30d SLA, PII cleared, audit logged)",
+            "implementation_functions": [
+                "GDPR compliance module"
+            ],
+            "verification_method": "Integration: export returns all personal data; deletion clears PII and logs gdpr_deletion"
+        },
+        {
+            "id": "FR-89",
+            "description": "TDE: AES-256, 90-day key rotation, ssl_mode=verify-full; pii_vault app-layer decrypt only",
+            "implementation_functions": [
+                "PostgreSQL TDE config"
+            ],
+            "verification_method": "Config: TDE enabled; key rotation scheduled; pii_vault direct read blocked for DBA"
+        },
+        {
+            "id": "FR-90",
+            "description": "Redis security: TLS tls-port 6380; AUTH from env var; ACL; default_user disabled",
+            "implementation_functions": [
+                "Redis security config"
+            ],
+            "verification_method": "Config: plaintext port blocked; env var used; default user disabled"
+        },
+        {
+            "id": "FR-91",
+            "description": "Data retention policy: messages 180d→archive; archive 2yr→delete; PII audit 90d→anonymize; emotion 90d→delete; security 1yr→archive→2yr delete",
+            "implementation_functions": [
+                "data retention scheduled jobs"
+            ],
+            "verification_method": "Integration: scheduled jobs execute at correct intervals; anonymization verified"
+        },
+        {
+            "id": "FR-92",
+            "description": "GDPR right to erasure: async deletion within 30d; profile=NULL; messages=[REDACTED]; pii_audit_log gdpr_deletion",
+            "implementation_functions": [
+                "execute_data_deletion"
+            ],
+            "verification_method": "Integration: post-deletion PII fields null; messages redacted; audit log entry exists"
+        },
+        {
+            "id": "FR-93",
+            "description": "Right of access + portability: GET /users/{id}/data returns JSON with all personal data; CSV export",
+            "implementation_functions": [
+                "data export endpoint"
+            ],
+            "verification_method": "Integration: export contains all user data; JSON and CSV formats valid"
+        },
+        {
+            "id": "FR-94",
+            "description": "pii_vault: encrypted BYTEA storage; KMS key_id; dpo-only decrypt; no plaintext storage",
+            "implementation_functions": [
+                "pii_vault table",
+                "KMS integration"
+            ],
+            "verification_method": "Security test: plaintext not in DB; non-dpo decrypt fails; KMS key_id present"
+        },
+        {
+            "id": "FR-95",
+            "description": "Docker Compose: 7 services with healthchecks; pgvector/pgvector:pg16 image",
+            "implementation_functions": [
+                "docker-compose.yml"
+            ],
+            "verification_method": "docker compose up→all services healthy; health endpoint 200"
+        },
+        {
+            "id": "FR-96",
+            "description": "K8s: Deployment(3 replicas)+HPA(3-10)+PDB(minAvailable=2)+NetworkPolicy+Service(LoadBalancer); Secrets via SealedSecrets",
+            "implementation_functions": [
+                "K8s manifests"
+            ],
+            "verification_method": "K8s apply→resources created; HPA scales correctly; PDB prevents disruption"
+        },
+        {
+            "id": "FR-97",
+            "description": "Backup: pg_basebackup+WAL daily, 30d retention; Redis RDB hourly+AOF per-second, 7d retention",
+            "implementation_functions": [
+                "backup scripts"
+            ],
+            "verification_method": "DR drill: restore completes in <5 minutes"
+        },
+        {
+            "id": "FR-98",
+            "description": "Rollback procedures: knowledge soft-delete, model A/B gradual, Alembic downgrade, experiment abort",
+            "implementation_functions": [
+                "rollback procedures"
+            ],
+            "verification_method": "Test each rollback path: data preserved; service continues"
+        },
+        {
+            "id": "FR-99",
+            "description": "Circuit breaker degradation: 9 levels (6 main + 3 lateral) with trigger conditions and recovery thresholds",
+            "implementation_functions": [
+                "circuit breaker implementation"
+            ],
+            "verification_method": "Integration: inject failures→correct level triggered; recovery after success count"
+        },
+        {
+            "id": "FR-100",
+            "description": "Multimedia: image/file→escalate; sticker→ignore+prompt; location→extract coordinates; file size limit 10MB",
+            "implementation_functions": [
+                "media handling pipeline"
+            ],
+            "verification_method": "Unit: image→escalation; sticker→fixed reply; location→context with coordinates; file>10MB rejected"
+        },
+        {
+            "id": "FR-101",
+            "description": "Knowledge WebUI: CRUD + Markdown editor + keywords + CSV/JSON import/export + embedding status",
+            "implementation_functions": [
+                "WebUI frontend (React)"
+            ],
+            "verification_method": "Manual: CRUD works; import succeeds; status updates in real-time; response<1.5s"
+        },
+        {
+            "id": "FR-102",
+            "description": "RAG Debugger: search sandbox with cosine scores, Parent Chunk content, RRF top-3, threshold slider (session-only)",
+            "implementation_functions": [
+                "RAG Debugger UI"
+            ],
+            "verification_method": "Manual: debugger shows T1+T2 decision flow; slider adjusts results; not persisted to DB"
+        },
+        {
+            "id": "FR-103",
+            "description": "Operations Dashboard: FCR chart + p95 gauge + knowledge pie + cost chart, 24hr/7d/30d",
+            "implementation_functions": [
+                "Operations Dashboard UI"
+            ],
+            "verification_method": "Manual: all 4 panels render; KPI alerts trigger correctly; time range switching works"
+        },
+        {
+            "id": "FR-104",
+            "description": "Agent Portal: escalation inbox (Unassigned/My Chats/Resolved) + WS real-time + takeover panel",
+            "implementation_functions": [
+                "Agent Portal UI"
+            ],
+            "verification_method": "Manual: inbox WS updates; priority colors correct; takeover panel shows emotion+DST+context"
+        },
+        {
+            "id": "FR-105",
+            "description": "ODD SQL queries: 10+ queries for FCR/latency/knowledge/CSAT/SLA/emotion/security/cost/PII/RBAC/A-B analytics",
+            "implementation_functions": [
+                "ODD SQL scripts"
+            ],
+            "verification_method": "Integration: all SQL execute without error on staging DB"
+        },
+        {
+            "id": "FR-106",
+            "description": "k6 load test: 4 scenarios (smoke/load/stress/spike), 2000 TPS, 4 test case weights",
+            "implementation_functions": [
+                "k6 load test scripts"
+            ],
+            "verification_method": "Performance: load scenario p95<1000ms; error<1%; stress no crash; 2000 TPS sustained"
+        },
+        {
+            "id": "FR-107",
+            "description": "Test pyramid: unit 70% + integration 20% + E2E 10%; 6 E2E scenarios defined",
+            "implementation_functions": [
+                "pytest test suite",
+                "k6"
+            ],
+            "verification_method": "pytest-cov: 70/20/10 coverage; all 6 E2E scenarios pass"
+        },
+        {
+            "id": "FR-108",
+            "description": "Golden dataset: 500 edge cases, 6 categories (asr-noise/typo/dialect/multi-intent/emotional/injection)",
+            "implementation_functions": [
+                "golden dataset",
+                "edge_cases table"
+            ],
+            "verification_method": "Count: edge_cases rows≥500; status=approved≥500; regression test pass rate tracked"
+        }
+    ],
+    "non_functional_requirements": [
         {
             "id": "NFR-01",
             "type": "performance",
             "description": "p95 end-to-end latency < 1.0s（全負載）",
-            "test_method": "k6 load test (p(95)<1000)"
+            "test_method": "k6 load test (p(95)<1000)",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-02",
             "type": "performance",
             "description": "L1-L3 合計延遲 < 5ms p95",
-            "test_method": "Unit benchmark"
+            "test_method": "Unit benchmark",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-03",
             "type": "performance",
             "description": "L4 Semantic Classifier < 200ms p95（async）",
-            "test_method": "L4 unit test with timing"
+            "test_method": "L4 unit test with timing",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-04",
             "type": "performance",
             "description": "Embedding API < 300ms p95",
-            "test_method": "Integration test with timing"
+            "test_method": "Integration test with timing",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-05",
             "type": "performance",
             "description": "A2A timeout = 2.0s",
-            "test_method": "Fault injection test"
+            "test_method": "Fault injection test",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-06",
             "type": "performance",
             "description": "LLM fallback switch < 500ms",
-            "test_method": "Fault injection test (primary LLM down)"
+            "test_method": "Fault injection test (primary LLM down)",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-07",
             "type": "performance",
             "description": "Agent Card TTL cache = 300s（不重複 discovery）",
-            "test_method": "Unit test cache expiry"
+            "test_method": "Unit test cache expiry",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-08",
             "type": "performance",
             "description": "Embedding job p95 < 30s",
-            "test_method": "SAQ dashboard monitoring"
+            "test_method": "SAQ dashboard monitoring",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-09",
             "type": "throughput",
             "description": "2000 TPS sustained（k6 load scenario）",
-            "test_method": "k6 stress test"
+            "test_method": "k6 stress test",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-10",
             "type": "availability",
             "description": "99.9% / month",
-            "test_method": "Prometheus uptime monitor"
+            "test_method": "Prometheus uptime monitor",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-11",
             "type": "availability",
             "description": "早期告警閾值 < 99.95%（SLA 前觸發）",
-            "test_method": "Prometheus alert: early-warning"
+            "test_method": "Prometheus alert: early-warning",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-12",
             "type": "availability",
             "description": "p95 > 0.8s → HighLatency 告警",
-            "test_method": "Prometheus alert rule"
+            "test_method": "Prometheus alert rule",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-13",
             "type": "availability",
             "description": "error rate > 0.5% → 告警（> 1% = SLA breach）",
-            "test_method": "Prometheus alert rule"
+            "test_method": "Prometheus alert rule",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-14",
             "type": "availability",
             "description": "災備復原時間 < 5 分鐘",
-            "test_method": "DR drill"
+            "test_method": "DR drill",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-15",
             "type": "security",
             "description": "OWASP LLM01:2025 合規（PALADIN 五層覆蓋）",
-            "test_method": "Red-team + OWASP checklist"
+            "test_method": "Red-team + OWASP checklist",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-16",
             "type": "security",
             "description": "安全阻擋率 ≥ 95%",
-            "test_method": "Red-team test"
+            "test_method": "Red-team test",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-17",
             "type": "security",
             "description": "機密資料（secrets）不提交至版控",
-            "test_method": "git-secrets / pre-commit hook"
+            "test_method": "git-secrets / pre-commit hook",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-18",
             "type": "cost",
             "description": "月費用 < $500（含 GPU 推理、Embedding、備援）",
-            "test_method": "Cost dashboard"
+            "test_method": "Cost dashboard",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-19",
             "type": "cost",
             "description": "LLM API 基礎估算 ~$210/月（10 萬對話、Tier 2 覆蓋 40%）",
-            "test_method": "Cost dashboard"
+            "test_method": "Cost dashboard",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-20",
             "type": "compliance",
             "description": "台灣個資法合規",
-            "test_method": "Legal review"
+            "test_method": "Legal review",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-21",
             "type": "compliance",
             "description": "GDPR Art.5(1)(e) 合規（資料最小化）",
-            "test_method": "GDPR audit"
+            "test_method": "GDPR audit",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-22",
             "type": "compliance",
             "description": "SOC2 稽核軌跡",
-            "test_method": "SOC2 audit trail"
+            "test_method": "SOC2 audit trail",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-23",
             "type": "quality",
             "description": "FCR ≥ 90%（in_scope 對話）",
-            "test_method": "ODD SQL"
+            "test_method": "ODD SQL",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-24",
             "type": "quality",
             "description": "CSAT 目標 4.8（2025Q4 基準 3.2，+50%）",
-            "test_method": "LLM-as-a-Judge monthly"
+            "test_method": "LLM-as-a-Judge monthly",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-25",
             "type": "quality",
             "description": "Escalation SLA 遵守率 ≥ 95%",
-            "test_method": "ODD SQL"
+            "test_method": "ODD SQL",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-26",
             "type": "quality",
             "description": "LLM-as-a-Judge Cohen's Kappa ≥ 0.7 vs 人工標注",
-            "test_method": "500 筆黃金集校準"
+            "test_method": "500 筆黃金集校準",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-27",
             "type": "quality",
             "description": "Grounding check pass rate 100%（cosine ≥ 0.75）",
-            "test_method": "L5 unit tests"
+            "test_method": "L5 unit tests",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-28",
             "type": "quality",
             "description": "Recall@3 ≥ 92%（HNSW 1536維）",
-            "test_method": "Golden set regression"
+            "test_method": "Golden set regression",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-29",
             "type": "quality",
             "description": "Agentic tool success rate ≥ 95%",
-            "test_method": "Integration tests"
+            "test_method": "Integration tests",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-30",
             "type": "scalability",
             "description": "Kubernetes HPA min=3, max=10, CPU target=70%",
-            "test_method": "K8s load test"
+            "test_method": "K8s load test",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-31",
             "type": "observability",
             "description": "每請求完整 OpenTelemetry trace",
-            "test_method": "Trace sampling verification"
+            "test_method": "Trace sampling verification",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-32",
             "type": "testability",
             "description": "Unit 70% + Integration 20% + E2E 10% coverage",
-            "test_method": "pytest-cov"
+            "test_method": "pytest-cov",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-33",
             "type": "resilience",
             "description": "Rate Limiter fail-open on Redis unavailability",
-            "test_method": "Redis failure injection"
+            "test_method": "Redis failure injection",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-34",
             "type": "resilience",
             "description": "IP Whitelist fail-secure (403) on no match",
-            "test_method": "Security test"
+            "test_method": "Security test",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-35",
             "type": "resilience",
             "description": "IP Whitelist max 100 CIDR blocks",
-            "test_method": "Config validation test"
+            "test_method": "Config validation test",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-36",
             "type": "resilience",
-            "description": "M2M token 90 天到期；rolling rotation 新舊並存 24hr",
-            "test_method": "Token expiry unit test"
+            "description": "M2M token 90 天到期",
+            "test_method": "Token expiry unit test",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-37",
             "type": "performance",
             "description": "Admin WebUI 響應時間 < 1.5s，100% 資料即時連動",
-            "test_method": "Lighthouse audit + manual"
+            "test_method": "Lighthouse audit + manual",
+            "related_fr": "N/A"
         },
         {
             "id": "NFR-38",
             "type": "performance",
             "description": "ClamAV 文件掃描 p95 < 500ms",
-            "test_method": "Integration test with timing"
+            "test_method": "Integration test with timing",
+            "related_fr": "N/A"
         }
-  ]
+    ]
 }
 ```
 <!-- FR:END -->

@@ -32,7 +32,7 @@
 | 項目 | 內容 |
 |--------|------|
 | **專案名稱** | OmniBot - 多平台客服機器人 |
-| **版本** | v8.0（完整版） |
+| **版本** | v8.1（完整版） |
 | **目標** | 90% FCR + 99.9% 可用性 + 企業級安全 |
 | **開發時間** | 8-11 週 (配置 4 名後端 + 2 名 SRE) |
 | **前置條件** | 無 |
@@ -48,7 +48,7 @@
 | **首問解決率 (FCR)** | 90% （FCR 計算定義見 ODD SQL 章節 line 3683） |
 | **CSAT 提升** | +50% (相較於 2025Q4 基準平均 3.2 分) |
 | **p95 回應延遲** | < 1.0s |
-| **平台支援** | 4 個 |
+| **平台支援** | 6 個 |
 | **系統可用性** | 99.9% |
 | **安全阻擋率** | >= 95% |
 | **災備復原時間** | < 5 分鐘 |
@@ -933,7 +933,7 @@ media_handling:
     supported: false
     action: auto_escalate
     scan: 
-      - malware_scan: true  # ClamAV or cloud scanning API
+      - malware_scan: true  # ClamAV or cloud scanning API (p95 < 500ms)
       - size_limit: 10MB
       - allowed_types: [pdf, docx, xlsx, csv, txt]
     reason: "目前不支援檔案內容解析，轉人工客服處理"
@@ -4708,7 +4708,7 @@ e2e_scenarios:
 |-----|------|----------|
 | **FCR (首問解決率)** | >= 90% | ODD SQL 查詢 |
 | **p95 延遲** | < 1.0s | k6 壓力測試 |
-| **平台支援** | 4 個 | 功能測試 |
+| **平台支援** | 6 個 | 功能測試 |
 | **Webhook 驗證** | 4 平台 | 滲透測試 |
 | **PII 遮蔽** | 電話/Email/地址 + Luhn | 單元測試 |
 | **安全阻擋率** | >= 95% | 紅隊測試 |
