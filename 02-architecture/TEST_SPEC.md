@@ -551,8 +551,9 @@
 
 | # | Test Function | Inputs | Type | Derivation |
 |---|---|---|---|---|
-| 1 | `test_fr25_invalid_cidr_raises_IPWhitelistError_at_startup` | cidr="256.0.0.0/8"; expected_error="IPWhitelistError" | validation | Q2 |
-| 2 | `test_fr25_invalid_ip_returns_false_no_exception` | ip="not-an-ip"; expected_result="False" | validation | Q2 |
+| 1 | `test_fr25_valid_cidr_startup_succeeds` | cidr="192.168.1.0/24"; expected_status="initialized" | happy_path | Q1 |
+| 2 | `test_fr25_invalid_cidr_raises_IPWhitelistError_at_startup` | cidr="256.0.0.0/8"; expected_error="IPWhitelistError" | validation | Q2 |
+| 3 | `test_fr25_invalid_ip_returns_false_no_exception` | ip="not-an-ip"; expected_result="False" | validation | Q2 |
 
 **Sub-assertions** (predicate over Inputs / `result`):
 
@@ -593,6 +594,8 @@
 | 2 | `test_fr27_confidence_above_085_returns_rag` | confidence="0.88"; expected_source="rag" | happy_path | Q1 |
 | 3 | `test_fr27_parent_child_lookup_correct` | child_id="chunk-5"; expected_parent_retrieved="true" | happy_path | Q1 |
 | 4 | `test_fr27_recall_at_3_above_92_percent` | golden_set_size="100"; min_recall="0.92" | nfr_pattern | Q6/NP-06 |
+| 5 | `test_fr27_embedding_api_down_falls_through_to_ilike_only` | embedding_api="down"; expected_fallback="tier1_ilike_only" | fault_injection | Q6/1b/NP-07 |
+| 6 | `test_fr27_embedding_timeout_triggers_tsvector_fallback` | embedding_timeout_ms="5000"; timeout_threshold_ms="2000" | fault_injection | Q6/1b/NP-15 |
 
 **Sub-assertions** (predicate over Inputs / `result`):
 
@@ -723,8 +726,8 @@
 
 | # | Test Function | Inputs | Type | Derivation |
 |---|---|---|---|---|
-| 1 | `test_fr34_idle_to_intent_detected_valid` | from_state="IDLE"; to_state="INTENT_DETECTED" | happy_path | Q1 |
-| 2 | `test_fr34_illegal_transition_raises_valueerror` | from_state="IDLE"; to_state="RESOLVED" | validation | Q2 |
+| 1 | `test_fr34_idle_to_intent_detected_valid` | from_state="IDLE"; to_state="INTENT_DETECTED" | state_transition | Q4 |
+| 2 | `test_fr34_illegal_transition_raises_valueerror` | from_state="IDLE"; to_state="RESOLVED" | state_transition | Q4 |
 | 3 | `test_fr34_turn_count_increments_per_transition` | transitions="3"; expected_turn_count="3" | validation | Q2 |
 | 4 | `test_fr34_all_8_states_reachable` | states="IDLE,INTENT_DETECTED,SLOT_FILLING,AWAITING_CONFIRMATION,PROCESSING,TOOL_CALLING,RESOLVED,ESCALATED" | happy_path | Q1 |
 | 5 | `test_fr34_concurrent_transitions_state_consistent` | concurrent_threads="10"; from_state="IDLE"; to_state="INTENT_DETECTED" | nfr_pattern | Q6/1b/NP-13 |
@@ -845,6 +848,8 @@
 | 1 | `test_fr40_mcp_adapter_connects_stdio` | transport="stdio"; command="python server.py" | happy_path | Q1 |
 | 2 | `test_fr40_mcp_adapter_connects_sse` | transport="sse"; url="http://localhost:8080/sse" | happy_path | Q1 |
 | 3 | `test_fr40_mcp_tool_call_returns_result` | tool_name="get_data"; expected_result="success=true" | integration | Q7/FR-39 |
+| 4 | `test_fr40_mcp_server_down_returns_empty_tools` | transport="stdio"; server_status="down"; expected_tools="[]" | fault_injection | Q6/1b/NP-07 |
+| 5 | `test_fr40_mcp_connection_timeout_returns_error` | transport="sse"; connect_timeout_ms="2000"; expected_error="timeout" | fault_injection | Q6/1b/NP-15 |
 
 **Sub-assertions** (predicate over Inputs / `result`):
 
@@ -884,6 +889,8 @@
 |---|---|---|---|---|
 | 1 | `test_fr42_cli_success_returns_true` | script="echo hello"; expected_success="true" | happy_path | Q1 |
 | 2 | `test_fr42_cli_failure_returns_false_error_message` | script="exit 1"; expected_success="false" | validation | Q2 |
+| 3 | `test_fr42_cli_script_timeout_terminates_process` | script="sleep 100"; timeout_seconds="5"; expected_terminated="true" | fault_injection | Q6/1b/NP-15 |
+| 4 | `test_fr42_cli_process_killed_returns_false_error` | script="cat /dev/zero"; kill_signal="SIGKILL"; expected_success="false" | fault_injection | Q6/1b/NP-07 |
 
 **Sub-assertions** (predicate over Inputs / `result`):
 
@@ -1400,6 +1407,8 @@
 |---|---|---|---|---|
 | 1 | `test_fr69_kappa_above_07_on_golden_set` | golden_set="500"; min_kappa="0.7" | happy_path | Q1 |
 | 2 | `test_fr69_15_percent_deviation_triggers_recalibration` | deviation="0.16"; threshold="0.15"; expected_action="recalibration" | validation | Q2 |
+| 3 | `test_fr69_calibration_llm_down_uses_cached_kappa` | calibration_llm="down"; expected_fallback="cached_kappa" | fault_injection | Q6/1b/NP-07 |
+| 4 | `test_fr69_calibration_timeout_skips_cycle` | calibration_timeout_ms="30000"; expected_action="skip_cycle" | fault_injection | Q6/1b/NP-15 |
 
 **Sub-assertions** (predicate over Inputs / `result`):
 
@@ -1679,7 +1688,7 @@
 
 ---
 
-### FR-84: Webhook API 端點 — 6 個端點 + 統一錯誤碼
+### FR-84: Webhook API 端點 — 7 個端點 + 統一錯誤碼
 
 **Classification**: API_ENDPOINT  
 **Active Patterns**: NP-01, NP-03, NP-04
@@ -2240,16 +2249,16 @@
 | Metric | Count |
 |---|---|
 | FRs covered | 108 |
-| Total test cases | 423 |
+| Total test cases | 432 |
 | By type: happy_path | 130 |
-| By type: validation | 115 |
+| By type: validation | 114 |
 | By type: boundary | 22 |
-| By type: state_transition | 2 |
-| By type: fault_injection | 27 |
+| By type: state_transition | 4 |
+| By type: fault_injection | 35 |
 | By type: nfr_pattern | 57 |
 | By type: integration | 70 |
 | Active NFR patterns applied | 15 (NP-01 through NP-15) |
-| Step 1b forced integration tests | 9 |
+| Step 1b forced integration tests | 17 |
 | Cross-cutting test cases | 38 |
 
 ---

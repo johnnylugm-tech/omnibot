@@ -1,33 +1,28 @@
 {
   "fr": "TEST_SPEC.md",
   "review_status": "APPROVE",
-  "reason": "TEST_SPEC.md demonstrates complete coverage of all 108 FRs (FR-01 through FR-108) with the required test_frNN_xxx naming convention. All 15 NP patterns are activated and properly mapped. Step 1b forced integrations for all 10 architecture-risk modules (paladin, knowledge, dst, circuit_breaker, redis_streams, rate_limit, jobs, aee, llm_judge, media) show fault_injection and nfr_pattern variants with NP-07/NP-13/NP-15 as appropriate. Cross-cutting sections meet all minimum counts: Security Red-Team (10), KPI (7), Deployment Smoke (6), API Completeness (14), Backward Compat (1). All sampled FR sections include sub-assertions tables with at least one predicate on case 1. SRS alignment is consistent across sampled FRs — latency thresholds (FR-10: <2ms, FR-13: <200ms), status codes (FR-01: 401/429, FR-21: 429), and behavioral contracts (FR-34: ValueError on invalid transition, FR-22: fail-open) match SRS descriptions. The harness CLI reports 0 contradictions. Total 423 test cases across 108 FRs yields an average of ~3.9 tests per FR, providing adequate coverage depth.",
+  "reason": "All 8 delta changes are logically sound. FR-25 happy_path correctly validates that a well-formed CIDR initializes successfully, completing the acceptance criteria coverage. FR-27 fault_injection tests accurately represent NP-07 (embedding API down → tier1 fallback) and NP-15 (timeout threshold exceeded → tsvector fallback) per app.core.knowledge retry/network-client obligation. FR-34 reclassification to state_transition/Q4 is appropriate and consistent with FR-37 treatment — both tests exercise FSM transition semantics directly. FR-40 fault_injection tests correctly model NP-07 (server down → empty tool list, fail-secure) and NP-15 (connection timeout → error result) for MCPAdapter. FR-42 fault_injection tests correctly model NP-15 (process timeout → termination) and NP-07 (process killed externally → false+error), which are the canonical representations of those patterns for a CLI subprocess adapter. FR-69 fault_injection tests correctly model NP-07 (calibration LLM unreachable → cached kappa fallback) and NP-15 (calibration timeout → skip cycle), consistent with the 30s timeout implied by the monthly calibration window. FR-84 title '7 端點' is the correct choice: the test input has always listed 7 distinct URL paths; the SRS '6 個' counts by platform/adapter grouping, not by unique routes, so '7 端點' better serves as the title of a URL-level test section without contradicting the SRS intent. Summary math 130+114+22+4+35+57+70=432 is verified correct; state_transition delta +2 and fault_injection delta +8 are consistent with the per-FR changes described.",
   "citations": [
-    "test_fr21_redis_unavailable_fail_open (fault_injection, NP-07) correctly maps to FR-22 'Rate Limiter fail-open: Redis down → allow + Warning'",
-    "test_fr34_concurrent_fsm_transitions_isolated (nfr_pattern, NP-13) satisfies Step 1b forced NP-13 for app.core.dst shared mutable FSM state",
-    "test_fr65_judge_api_down_degraded_single_judge and test_fr65_judge_timeout_returns_partial_result cover both NP-07 and NP-15 for app.services.llm_judge parallel network calls",
-    "test_fr99_level_embedding_down_tsvector_search_returns_results (integration, FR-82) correctly cross-references the 20-table schema with HNSW+GIN tsvector for the level_embedding_down degradation path",
-    "test_fr13_l4_classifier_timeout_allows_unverified (fault_injection, NP-15) aligns with SRS FR-13 'timeout→unverified' behavioral contract",
-    "Cross-cutting sections present: Security Red-Team=10, KPI=7, Deployment Smoke=6, API Completeness=14, Backward Compat=1 — all meet stated minimums"
+    "SRS FR-25: 非法 CIDR 啟動時即失敗；非法 IP 不拋例外回 False — happy_path test_fr25_valid_cidr_startup_succeeds covers the affirmative initialization path missing in round 1",
+    "SAD Step 1b: app.core.knowledge 'Network client + retry (LLM + Embedding)' FORCES NP-07, NP-15 for FR-26–33 — FR-27 now has one test per forced pattern",
+    "SAD Step 1b: app.services.aee 'Network client + retry (A2AAdapter, MCPAdapter)' FORCES NP-07, NP-15 for FR-39–45 — FR-40 and FR-42 each now have one test per forced pattern",
+    "SAD Step 1b: app.services.llm_judge 'Parallel network calls (2 LLMs)' FORCES NP-07, NP-15 for FR-65–69 — FR-69 now has one test per forced pattern",
+    "SRS FR-34: 8-state FSM with ALLOWED_TRANSITIONS enforcement — both valid and invalid transition tests are transition-semantic tests; Q4 derivation is correct; FR-37 precedent confirms the classification",
+    "SRS FR-84 description enumerates 7 distinct URL paths across 6 platform/adapter groups; the test input expected_paths lists all 7; title '7 端點' matches the test scope accurately"
   ],
-  "docs_embedded": ["SRS.md", "SAD.md"],
-  "confidence": 0.91,
-  "round": 1,
+  "docs_embedded": ["SRS.md", "SAD.md", "TEST_SPEC.md"],
+  "confidence": 0.94,
+  "round": 2,
   "gaps": [
     {
       "severity": "low",
-      "message": "FR-79 (Embedding status UI: 🟡/🟢/🔴, embedding_synced_at) is grouped under jobs.py NP-07+NP-15 forced patterns but no explicit UI-layer fault_injection test is visible in the embedded sample. Harness reports 0 contradictions so a test likely exists but was not shown in the embedded excerpts.",
-      "fr_id": "FR-79"
+      "message": "FR-42 NP-07 modeled as SIGKILL (process killed externally) rather than the more canonical 'process not found / spawn failure' interpretation. SIGKILL is a valid NP-07 proxy for a subprocess adapter but is slightly non-standard; acceptable given CLIAdapter's sandboxed execution context.",
+      "fr_id": "FR-42"
     },
     {
       "severity": "low",
-      "message": "FR-69 (Monthly calibration: Kappa≥0.7, 500 golden, 15% deviation trigger) is covered by the KPI section but no dedicated test_fr69_xxx name is visible in the embedded samples. The summary count of 423 total tests implies coverage exists.",
-      "fr_id": "FR-69"
-    },
-    {
-      "severity": "low",
-      "message": "state_transition type count is only 2 in the summary table, which is low given FR-34 defines an 8-state FSM and FR-37 defines AWAITING_CONFIRMATION timeout transitions. Additional state_transition cases for FR-35, FR-36, FR-37 would strengthen coverage depth, though functional coverage appears satisfied by validation and happy_path cases.",
-      "fr_id": "FR-35"
+      "message": "FR-84 title change from '6 端點' to '7 端點' diverges from SRS literal wording. The change is defensible (URL count vs. adapter count) but a comment in TEST_SPEC.md explaining the discrepancy would eliminate future ambiguity.",
+      "fr_id": "FR-84"
     }
   ]
 }
