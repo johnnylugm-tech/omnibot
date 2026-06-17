@@ -512,8 +512,8 @@ fr_tests:
     unit:
       - test_fr73_4_alert_rules_defined
       - test_fr73_slabreach_for_0m_immediate
-      - test_fr73_high_latency_threshold_1s
-      - test_fr73_high_error_rate_threshold_5pct
+      - test_fr73_high_latency_threshold_0_8s
+      - test_fr73_high_error_rate_threshold_0_5pct
 
   FR-74:
     integration:

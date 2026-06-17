@@ -9,7 +9,7 @@
 
 ## 1. Requirements Overview
 
-OmniBot 是多平台企業級客服聊天機器人，同時服務 Telegram、LINE、Messenger、WhatsApp、Web、A2A 六個管道。核心目標：FCR ≥ 90%、p95 < 1.0s、可用性 99.9%、PALADIN 五層安全防禦。
+OmniBot 是多平台企業級客服聊天機器人，同時服務 Telegram、LINE、Messenger、WhatsApp、Web、A2A 六個管道（註：SPEC 中 KPI 表格標示 4 個平台為過時資訊，以此處 6 個管道為準）。核心目標：FCR ≥ 90%、p95 < 1.0s、可用性 99.9%、PALADIN 五層安全防禦。
 
 ---
 
@@ -161,7 +161,7 @@ OmniBot 是多平台企業級客服聊天機器人，同時服務 Telegram、LIN
 | FR-70 | StructuredLogger：JSON 格式，欄位含 timestamp(ISO 8601 Z), level, service, message 及任意 kwargs；支援 DEBUG/INFO/WARN/ERROR/CRITICAL；CRITICAL 用於安全事件 | JSON 日誌格式正確；各 level 正確路由至 Python logging | `StructuredLogger.log()` |
 | FR-71 | Prometheus Metrics（11 種，全部顯式列出）：1. response_duration_seconds(histogram)；2. requests_total(counter)；3. fcr_total(counter)；4. knowledge_hit_total(counter, labels: tier)；5. pii_masked_total(counter)；6. escalation_queue_size(gauge)；7. emotion_escalation_total(counter)；8. escalation_sla_breach_total(counter)；9. llm_tokens_total(counter, labels: model)；10. ab_variant_total(counter, labels: experiment_id, variant)；11. security_block_total(counter, labels: layer, reason) | 所有 11 個 metric 名稱正確定義；各 metric 類型（histogram/counter/gauge）正確；label 完整；Prometheus 抓取端點回傳所有 11 個 metric | Prometheus metrics definitions |
 | FR-72 | OpenTelemetry Tracing：每請求完整 span tree（handle_message → emotion_analysis → knowledge_query → response_generation）；span attributes 含 platform, user_id, emotion, knowledge_source, confidence, trace_id | Span 樹正確；attributes 完整；trace_id 透過 HTTP header 跨服務傳遞 | `setup_tracing()`, tracer spans |
-| FR-73 | 告警規則（4 條）：HighLatency（p95 > 1.0s for 5m, warning）；HighErrorRate（error rate > 5% for 3m, critical）；EscalationQueueBacklog（queue > 50 for 10m, warning）；SLABreach（1hr 內 breach > 5, critical, for=0m） | 4 條告警規則正確定義；閾值符合規格；SLABreach for=0m 立即觸發 | Prometheus alert rules |
+| FR-73 | 告警規則（4 條）：HighLatency（p95 > 0.8s for 5m, warning）；HighErrorRate（error rate > 0.5% for 3m, critical）；EscalationQueueBacklog（queue > 50 for 10m, warning）；SLABreach（轉接 SLA 遵守率 < 90%, critical, for=0m） | 4 條告警規則正確定義；閾值符合規格；SLABreach for=0m 立即觸發 | Prometheus alert rules |
 | FR-74 | Grafana Dashboard：連結 Prometheus + ODD SQL 指標；提供 FCR 折線圖、p95 延遲儀表、知識來源圓餅圖、成本時序圖；刷新頻率支援 24hr/7d/30d | Dashboard 面板存在；指標即時連動；<99.95% 可用性顯示早期警報 | Grafana dashboard config |
 
 ### Module 16: Background Job System
@@ -248,7 +248,7 @@ OmniBot 是多平台企業級客服聊天機器人，同時服務 Telegram、LIN
 
 | FR ID | Requirement Description | Acceptance Criteria | Implementation Function |
 |-------|------------------------|---------------------|------------------------|
-| FR-105 | ODD SQL 查詢集（10 個）：FCR 首問解決率（scope_type='in_scope' + 30天）；p95 回應延遲（含 platform 分組）；知識層命中分布（含百分比）；CSAT 分數；用戶回饋分析；轉接 SLA 遵守率；情緒觸發統計；安全阻擋率；成本效益分析；月度成本報告（Tier 1=$0/Tier 2=$0.003/Tier 3=$0.009）；PII 稽核摘要；RBAC 權限審計；A/B 實驗效果；**Judge Evaluation 成本：LLM-as-a-Judge 預設採 20% Sampling Rate（每 5 筆回應評估 1 筆），以控制 judge 成本在月費估算 $210 範圍內；sampling_rate 存入 experiments 表，可透過管理 API 動態調整（valid range 0.01–1.0）；成本 SQL 須含 judge_sample_rate 欄位** | 各 SQL 可正確執行；FCR 計算僅含 in_scope + 非 NULL；成本計算按 Tier 定價；judge sampling 預設 20%；成本報告含 judge_sample_rate | ODD SQL scripts, judge sampling config |
+| FR-105 | ODD SQL 查詢集（10 個）：FCR 首問解決率（scope_type='in_scope' + 30天）；p95 回應延遲（含 platform 分組）；知識層命中分布（含百分比）；CSAT 分數；用戶回饋分析；轉接 SLA 遵守率；情緒觸發統計；安全阻擋率；成本效益分析；月度成本報告（Tier 1=$0/Tier 2=$0.003/Tier 3=$0.009）；PII 稽核摘要；RBAC 權限審計；A/B 實驗效果；**Judge Evaluation 成本：LLM-as-a-Judge 預設採 20% Sampling Rate（每 5 筆回應評估 1 筆），以控制 judge 成本在預估的 $9/月 範圍內（總 LLM API 成本控制在 $210 內）；sampling_rate 存入 experiments 表，可透過管理 API 動態調整（valid range 0.01–1.0）；成本 SQL 須含 judge_sample_rate 欄位** | 各 SQL 可正確執行；FCR 計算僅含 in_scope + 非 NULL；成本計算按 Tier 定價；judge sampling 預設 20%；成本報告含 judge_sample_rate | ODD SQL scripts, judge sampling config |
 
 ### Module 27: 負載測試
 
@@ -550,8 +550,20 @@ OmniBot 是多平台企業級客服聊天機器人，同時服務 Telegram、LIN
     { "id": "NFR-22", "type": "observability", "description": "Full OpenTelemetry trace per request", "test_method": "Trace sampling verification" },
     { "id": "NFR-23", "type": "testability", "description": "Unit 70% + Integration 20% + E2E 10% coverage", "test_method": "pytest-cov" },
     { "id": "NFR-24", "type": "reliability", "description": "Rate limiter fail-open on Redis unavailability", "test_method": "Redis failure injection" },
-    { "id": "NFR-25", "type": "reliability", "description": "Grounding check 100% pass rate for LLM output", "test_method": "L5 unit tests with adversarial inputs" },
-    { "id": "NFR-26", "type": "performance", "description": "Admin WebUI response < 1.5s, 100% real-time data sync", "test_method": "Lighthouse audit + manual" }
+    { "id": "NFR-25", "type": "quality", "description": "Escalation SLA compliance ≥ 95%", "test_method": "SLA query" },
+    { "id": "NFR-26", "type": "quality", "description": "LLM-as-a-Judge Cohen's Kappa ≥ 0.7 vs human", "test_method": "Calibration script" },
+    { "id": "NFR-27", "type": "quality", "description": "Grounding check pass rate 100% (cosine ≥ 0.75)", "test_method": "L5 unit tests" },
+    { "id": "NFR-28", "type": "quality", "description": "Recall@3 ≥ 92% (HNSW 1536-dim)", "test_method": "Golden set regression" },
+    { "id": "NFR-29", "type": "quality", "description": "Agentic tool success rate ≥ 95%", "test_method": "Integration tests" },
+    { "id": "NFR-30", "type": "scalability", "description": "Kubernetes HPA min=3, max=10, CPU target=70%", "test_method": "K8s load test" },
+    { "id": "NFR-31", "type": "observability", "description": "Full OpenTelemetry trace per request", "test_method": "Trace sampling verification" },
+    { "id": "NFR-32", "type": "testability", "description": "Unit 70% + Integration 20% + E2E 10% coverage", "test_method": "pytest-cov" },
+    { "id": "NFR-33", "type": "resilience", "description": "Rate limiter fail-open on Redis unavailability", "test_method": "Redis failure injection" },
+    { "id": "NFR-34", "type": "resilience", "description": "IP Whitelist fail-secure (403) on no match", "test_method": "Security test" },
+    { "id": "NFR-35", "type": "resilience", "description": "IP Whitelist max 100 CIDR blocks", "test_method": "Config validation test" },
+    { "id": "NFR-36", "type": "resilience", "description": "M2M token 90d expiry, 24hr rotation overlap", "test_method": "Token expiry unit test" },
+    { "id": "NFR-37", "type": "performance", "description": "Admin WebUI response < 1.5s, 100% real-time data sync", "test_method": "Lighthouse audit + manual" },
+    { "id": "NFR-38", "type": "performance", "description": "ClamAV scan p95 < 500ms", "test_method": "Integration test with timing" }
   ]
 }
 ```

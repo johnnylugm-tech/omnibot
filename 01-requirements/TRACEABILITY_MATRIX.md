@@ -168,7 +168,7 @@ Phase 3 補充：實際測試通過狀態。
 | FR-70 | SRS §2 Module 15 | `StructuredLogger.log()` | `test_fr70_log_json_parseable`, `test_fr70_timestamp_iso8601_z_format`, `test_fr70_all_log_levels_routed_correctly` | Pending |
 | FR-71 | SRS §2 Module 15 | Prometheus metrics definitions | `test_fr71_all_11_metrics_scraped`, `test_fr71_ab_variant_total_metric_exists`, `test_fr71_security_block_total_metric_exists`, `test_fr71_knowledge_hit_total_has_tier_label` | Pending |
 | FR-72 | SRS §2 Module 15 | `setup_tracing()`, tracer spans | `test_fr72_span_tree_complete_per_request`, `test_fr72_trace_id_in_response_header`, `test_fr72_span_attributes_include_platform` | Pending |
-| FR-73 | SRS §2 Module 15 | Prometheus alert rules | `test_fr73_4_alert_rules_defined`, `test_fr73_slabreach_for_0m_immediate`, `test_fr73_high_latency_threshold_1s` | Pending |
+| FR-73 | SRS §2 Module 15 | Prometheus alert rules | `test_fr73_4_alert_rules_defined`, `test_fr73_slabreach_for_0m_immediate`, `test_fr73_high_latency_threshold_0_8s`, `test_fr73_high_error_rate_threshold_0_5pct` | Pending |
 | FR-74 | SRS §2 Module 15 | Grafana dashboard config | `test_fr74_grafana_dashboard_4_panels_exist` | Pending |
 
 ### Module 16: Background Job System
