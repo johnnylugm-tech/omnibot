@@ -1,0 +1,802 @@
+# TEST_INVENTORY.yaml — P1 Naming Authority
+# Maps every FR to expected test function names. These are the AUTHORITATIVE names
+# that derive_test_cases.md preserves in TEST_SPEC.md (P2 single source of truth).
+# Specified per FR and per test category (unit/integration/cross_cutting).
+# If no name is specified for a category, derive_test_cases.md fills the gap with
+# names derived via the 7-Question Protocol.
+# Source: SRS.md (Approved Round 2) + TRACEABILITY_MATRIX.md (Approved)
+# Authored: 2026-06-17 — Agent A: REQUIREMENTS_ENGINEER
+format_version: "1.1"
+
+fr_tests:
+
+  # Module 1: Platform Adapter Layer
+  FR-01:
+    unit:
+      - test_fr01_telegram_webhook_valid_signature
+      - test_fr01_telegram_webhook_invalid_signature_401
+      - test_fr01_telegram_rate_limit_429
+    integration:
+      - test_fr01_telegram_end_to_end_message_mapped_to_unified_message
+
+  FR-02:
+    unit:
+      - test_fr02_line_webhook_valid_signature
+      - test_fr02_line_webhook_invalid_signature_401
+    integration:
+      - test_fr02_line_events_array_parsed_to_unified_message
+
+  FR-03:
+    unit:
+      - test_fr03_messenger_hub_challenge_returns_challenge
+      - test_fr03_messenger_webhook_valid_post_200
+      - test_fr03_messenger_webhook_invalid_signature_401
+    integration:
+      - test_fr03_messenger_entry_parsed_to_unified_message
+
+  FR-04:
+    unit:
+      - test_fr04_whatsapp_hub_challenge_returns_challenge
+      - test_fr04_whatsapp_invalid_sha256_prefix_401
+    integration:
+      - test_fr04_whatsapp_message_parsed_to_unified_message
+
+  FR-05:
+    unit:
+      - test_fr05_web_guest_session_returns_jwt
+      - test_fr05_web_message_invalid_jwt_401
+      - test_fr05_web_message_rate_limit_429
+    integration:
+      - test_fr05_web_jwt_bearer_auth_end_to_end
+
+  FR-06:
+    unit:
+      - test_fr06_a2a_valid_m2m_token_200
+      - test_fr06_a2a_invalid_m2m_token_401
+    integration:
+      - test_fr06_a2a_rpc_ask_customer_service_end_to_end
+
+  FR-07:
+    unit:
+      - test_fr07_unified_message_telegram_valid
+      - test_fr07_unified_message_frozen_immutable
+      - test_fr07_unified_message_all_platforms_valid
+
+  FR-08:
+    unit:
+      - test_fr08_unified_response_source_enum_valid
+      - test_fr08_unified_response_invalid_source_raises
+      - test_fr08_unified_response_frozen_immutable
+
+  FR-09:
+    unit:
+      - test_fr09_api_response_schema_valid
+      - test_fr09_paginated_response_has_next_field
+      - test_fr09_api_response_error_code_present_on_failure
+
+  # Module 2: Security — PALADIN 五層防禦
+  FR-10:
+    unit:
+      - test_fr10_cyrillic_homoglyph_normalized
+      - test_fr10_greek_homoglyph_normalized
+      - test_fr10_nfkc_normalization_passes
+      - test_fr10_control_char_removed
+      - test_fr10_latency_under_2ms
+
+  FR-11:
+    unit:
+      - test_fr11_ignore_previous_instructions_detected
+      - test_fr11_system_prefix_detected
+      - test_fr11_pretend_you_pattern_detected
+      - test_fr11_act_as_pattern_detected
+      - test_fr11_forget_everything_pattern_detected
+      - test_fr11_normal_message_not_flagged
+      - test_fr11_latency_under_3ms
+
+  FR-12:
+    unit:
+      - test_fr12_sandwich_has_priority_highest_marker
+      - test_fr12_sandwich_has_untrusted_boundary
+      - test_fr12_l1_l3_combined_under_5ms
+      - test_fr12_spotlighting_delimiters_present
+
+  FR-13:
+    unit:
+      - test_fr13_classifier_returns_valid_json
+      - test_fr13_timeout_returns_unverified_passthrough
+      - test_fr13_injection_type_enum_four_values
+      - test_fr13_latency_under_200ms
+    integration:
+      - test_fr13_classifier_called_only_for_medium_high_risk
+
+  FR-14:
+    unit:
+      - test_fr14_cosine_below_075_grounded_false
+      - test_fr14_cosine_above_075_grounded_true
+      - test_fr14_no_source_texts_grounded_false
+      - test_fr14_latency_under_5ms
+
+  FR-15:
+    unit:
+      - test_fr15_low_risk_skips_l4
+      - test_fr15_medium_risk_l4_parallel_l3
+      - test_fr15_high_risk_l4_sync_blocks_l3
+      - test_fr15_critical_risk_immediate_block
+
+  FR-16:
+    unit:
+      - test_fr16_retrospective_block_event_in_security_logs
+      - test_fr16_l3_result_revoked_on_late_injection
+    integration:
+      - test_fr16_injection_retrospective_block_full_pipeline
+
+  FR-17:
+    unit:
+      - test_fr17_telegram_retraction_within_48hr
+      - test_fr17_telegram_window_expired_sends_apology
+      - test_fr17_messenger_retraction_within_10min
+      - test_fr17_messenger_window_expired_sends_apology
+      - test_fr17_line_no_delete_sends_apology
+      - test_fr17_whatsapp_sends_correction
+      - test_fr17_web_ws_replace_response
+      - test_fr17_a2a_revoked_true
+      - test_fr17_retraction_failed_logged
+
+  # Module 3: PII 去識別化
+  FR-18:
+    unit:
+      - test_fr18_phone_tw_format_masked
+      - test_fr18_email_masked
+      - test_fr18_tw_address_masked
+      - test_fr18_credit_card_luhn_valid_masked
+      - test_fr18_credit_card_luhn_invalid_not_masked
+      - test_fr18_mask_count_correct
+      - test_fr18_mask_format_pii_type_placeholder
+
+  FR-19:
+    unit:
+      - test_fr19_password_keyword_triggers_escalate
+      - test_fr19_bank_account_triggers_escalate
+      - test_fr19_credit_card_keyword_triggers_escalate
+      - test_fr19_debit_card_triggers_escalate
+      - test_fr19_normal_text_no_escalate
+
+  FR-20:
+    unit:
+      - test_fr20_mask_event_writes_audit_log
+      - test_fr20_audit_log_has_conversation_id
+    integration:
+      - test_fr20_90day_anonymize_scheduled
+
+  # Module 4: Rate Limiting & IP Whitelist
+  FR-21:
+    unit:
+      - test_fr21_telegram_over_30rps_returns_429
+      - test_fr21_web_over_10rps_returns_429
+      - test_fr21_agent_over_100rps_returns_429
+      - test_fr21_lua_atomic_no_race_condition
+      - test_fr21_line_over_30rps_returns_429
+
+  FR-22:
+    unit:
+      - test_fr22_redis_connection_error_passthrough
+      - test_fr22_redis_timeout_passthrough
+      - test_fr22_failopen_warning_logged
+
+  FR-23:
+    unit:
+      - test_fr23_whitelisted_ip_passes
+      - test_fr23_nonwhitelisted_ip_403_empty_body
+      - test_fr23_x_forwarded_for_leftmost_used
+      - test_fr23_empty_whitelist_400_warning
+      - test_fr23_fallback_to_request_client_host
+
+  FR-24:
+    integration:
+      - test_fr24_ip_block_before_signature_validation
+      - test_fr24_rate_limit_after_platform_parse
+      - test_fr24_middleware_chain_full_order
+
+  FR-25:
+    unit:
+      - test_fr25_invalid_cidr_raises_IPWhitelistError_at_startup
+      - test_fr25_invalid_ip_returns_false_no_exception
+
+  # Module 5: Hybrid Knowledge Layer
+  FR-26:
+    unit:
+      - test_fr26_exact_match_confidence_095_returns_rule
+      - test_fr26_confidence_below_080_falls_through_tier2
+      - test_fr26_limit_5_applied
+      - test_fr26_partial_match_confidence_070_falls_through
+
+  FR-27:
+    unit:
+      - test_fr27_rrf_k60_ranking_correct
+      - test_fr27_confidence_above_085_returns_rag
+      - test_fr27_parent_child_lookup_correct
+    integration:
+      - test_fr27_recall_at_3_above_92_percent
+
+  FR-28:
+    unit:
+      - test_fr28_parent_500_token_size
+      - test_fr28_child_150_token_size
+      - test_fr28_child_vector_indexed_parent_not
+      - test_fr28_vector_hit_child_retrieves_parent
+      - test_fr28_overlap_100_tokens_correct
+
+  FR-29:
+    integration:
+      - test_fr29_hnsw_index_created_m16_ef64
+      - test_fr29_partial_index_null_excluded
+
+  FR-30:
+    unit:
+      - test_fr30_grounding_below_075_escalates
+    integration:
+      - test_fr30_gpt4o_failure_triggers_gemini_fallback
+      - test_fr30_fallback_switch_under_500ms
+
+  FR-31:
+    unit:
+      - test_fr31_t1_t3_no_match_triggers_escalate
+      - test_fr31_escalate_id_minus1
+      - test_fr31_reason_enum_valid_values
+
+  FR-32:
+    unit:
+      - test_fr32_knowledge_result_frozen
+      - test_fr32_source_enum_four_values
+      - test_fr32_id_minus1_non_kb_marker
+
+  FR-33:
+    unit:
+      - test_fr33_query_t1_first_t4_last_order
+      - test_fr33_embedding_dim_1536_constant
+
+  # Module 6: DST
+  FR-34:
+    unit:
+      - test_fr34_idle_to_intent_detected_valid
+      - test_fr34_illegal_transition_raises_valueerror
+      - test_fr34_turn_count_increments_per_transition
+      - test_fr34_all_8_states_reachable
+
+  FR-35:
+    unit:
+      - test_fr35_order_status_missing_order_id
+      - test_fr35_return_request_missing_both_slots
+      - test_fr35_all_slots_filled_no_missing
+      - test_fr35_return_request_missing_reason_only
+
+  FR-36:
+    unit:
+      - test_fr36_slot_filling_3rounds_escalated
+      - test_fr36_confidence_below_065_escalated
+      - test_fr36_processing_confidence_below_065_escalated
+
+  FR-37:
+    unit:
+      - test_fr37_awaiting_2rounds_unconfirmed_escalated
+      - test_fr37_confirm_transitions_to_processing
+      - test_fr37_deny_transitions_to_slot_filling
+
+  FR-38:
+    unit:
+      - test_fr38_token_count_uses_cl100k_base
+      - test_fr38_overflow_triggers_summary
+      - test_fr38_recent_1_3_messages_preserved
+      - test_fr38_gemini_fallback_same_budget
+      - test_fr38_system_reserved_512_tokens
+
+  # Module 7: AEE
+  FR-39:
+    unit:
+      - test_fr39_adapter_implements_list_tools
+      - test_fr39_adapter_implements_execute
+      - test_fr39_tool_execution_result_has_success_output_error
+
+  FR-40:
+    integration:
+      - test_fr40_mcp_adapter_connects_stdio
+      - test_fr40_mcp_adapter_connects_sse
+      - test_fr40_mcp_tool_call_returns_result
+
+  FR-41:
+    unit:
+      - test_fr41_agent_card_discovery_caches_300s
+      - test_fr41_json_rpc_2_format_correct
+      - test_fr41_timeout_2s_returns_error
+      - test_fr41_unreachable_returns_empty_tools_no_exception
+    integration:
+      - test_fr41_agent_card_cache_expires_after_300s
+
+  FR-42:
+    unit:
+      - test_fr42_cli_success_returns_true
+      - test_fr42_cli_failure_returns_false_error_message
+
+  FR-43:
+    unit:
+      - test_fr43_unknown_tool_returns_false
+      - test_fr43_update_address_blocked_when_shipped
+      - test_fr43_get_shipping_status_returns_result
+      - test_fr43_update_address_blocked_when_delivered
+
+  FR-44:
+    integration:
+      - test_fr44_agent_card_endpoint_200
+      - test_fr44_agent_card_methods_include_ask_and_escalate
+
+  FR-45:
+    unit:
+      - test_fr45_aee_and_dst_share_tool_definition_import
+      - test_fr45_single_tool_definition_class_no_duplication
+
+  # Module 8: Emotion Analyzer
+  FR-46:
+    unit:
+      - test_fr46_classify_positive_neutral_negative_enum
+      - test_fr46_intensity_in_0_to_1_range
+
+  FR-47:
+    unit:
+      - test_fr47_24hr_weight_50_percent_of_current
+      - test_fr47_decay_formula_correct
+      - test_fr47_recent_score_higher_weight
+
+  FR-48:
+    unit:
+      - test_fr48_3_consecutive_negative_triggers
+      - test_fr48_non_negative_interrupts_count
+      - test_fr48_2_consecutive_negative_not_trigger
+
+  FR-49:
+    unit:
+      - test_fr49_agent_platform_skips_emotion_module
+
+  # Module 9: Response Generator
+  FR-50:
+    unit:
+      - test_fr50_rule_default_template_exists
+      - test_fr50_rag_default_has_knowledge_suffix
+      - test_fr50_escalate_template_has_case_number
+      - test_fr50_variable_interpolation_correct
+
+  FR-51:
+    unit:
+      - test_fr51_negative_intensity_above_07_apology_prefix
+      - test_fr51_positive_adds_positive_prefix
+      - test_fr51_repeat_negative_suppresses_apology
+      - test_fr51_neutral_no_tone_adjustment
+
+  FR-52:
+    unit:
+      - test_fr52_sha256_deterministic_same_variant_cross_process
+      - test_fr52_variant_a_suffix_correct
+      - test_fr52_variant_b_suffix_correct
+      - test_fr52_control_no_injection
+
+  FR-53:
+    unit:
+      - test_fr53_telegram_4096_char_limit
+      - test_fr53_line_5000_char_limit
+      - test_fr53_messenger_2000_char_truncation
+      - test_fr53_agent_pure_json_format
+      - test_fr53_web_no_char_limit_full_markdown
+
+  # Module 10: Human Escalation
+  FR-54:
+    unit:
+      - test_fr54_create_inserts_escalation_queue
+      - test_fr54_assign_updates_assigned_agent
+      - test_fr54_resolve_sets_resolved_at
+    integration:
+      - test_fr54_create_to_resolve_full_lifecycle
+
+  FR-55:
+    unit:
+      - test_fr55_normal_sla_30min
+      - test_fr55_high_sla_15min
+      - test_fr55_urgent_sla_5min
+      - test_fr55_breach_query_correct
+
+  FR-56:
+    integration:
+      - test_fr56_escalation_new_ws_event_sent
+      - test_fr56_payload_has_all_required_fields
+
+  # Module 11: WebSocket 端點
+  FR-57:
+    integration:
+      - test_fr57_agent_ws_escalation_new_event
+      - test_fr57_agent_ws_invalid_jwt_rejected
+      - test_fr57_agent_ws_agent_takeover_event
+      - test_fr57_agent_ws_all_6_event_types
+
+  FR-58:
+    integration:
+      - test_fr58_user_ws_message_reply_pushed
+      - test_fr58_user_ws_jwt_verified
+
+  FR-59:
+    integration:
+      - test_fr59_ping_sent_every_30s
+      - test_fr59_no_pong_within_10s_disconnect
+      - test_fr59_subscribe_returns_subscribed
+
+  # Module 12: RBAC
+  FR-60:
+    unit:
+      - test_fr60_7_roles_defined
+      - test_fr60_dpo_has_pii_decrypt
+      - test_fr60_auditor_lacks_pii_decrypt
+
+  FR-61:
+    unit:
+      - test_fr61_auditor_pii_decrypt_returns_403
+      - test_fr61_permission_matrix_complete
+      - test_fr61_admin_has_all_resources
+      - test_fr61_auditor_pii_none_explicit_in_matrix
+
+  FR-62:
+    unit:
+      - test_fr62_unauthorized_role_returns_403
+      - test_fr62_authorized_role_passes
+      - test_fr62_error_code_authz_insufficient_role
+
+  # Module 13: A/B Testing
+  FR-63:
+    unit:
+      - test_fr63_sha256_same_user_same_experiment_same_variant
+      - test_fr63_variant_deterministic_cross_process
+      - test_fr63_hashlib_sha256_not_python_hash
+
+  FR-64:
+    unit:
+      - test_fr64_sample_below_100_returns_none
+      - test_fr64_diff_above_005_promotes_best_variant
+      - test_fr64_promoted_status_set_completed
+      - test_fr64_diff_below_005_no_promotion
+
+  # Module 14: LLM-as-a-Judge
+  FR-65:
+    unit:
+      - test_fr65_two_judges_called_in_parallel
+      - test_fr65_temperature_0_in_config
+    integration:
+      - test_fr65_both_judges_return_results
+
+  FR-66:
+    unit:
+      - test_fr66_politeness_equals_max_of_both_judges
+
+  FR-67:
+    unit:
+      - test_fr67_accuracy_equals_min_of_both_judges
+
+  FR-68:
+    unit:
+      - test_fr68_csat_formula_04_02_02_02_weights
+      - test_fr68_csat_score_in_0_5_range
+
+  FR-69:
+    integration:
+      - test_fr69_kappa_above_07_on_golden_set
+      - test_fr69_15_percent_deviation_triggers_recalibration
+
+  # Module 15: Observability
+  FR-70:
+    unit:
+      - test_fr70_log_json_parseable
+      - test_fr70_timestamp_iso8601_z_format
+      - test_fr70_all_log_levels_routed_correctly
+      - test_fr70_critical_used_for_security_events
+
+  FR-71:
+    integration:
+      - test_fr71_all_11_metrics_scraped
+      - test_fr71_ab_variant_total_metric_exists
+      - test_fr71_security_block_total_metric_exists
+      - test_fr71_knowledge_hit_total_has_tier_label
+      - test_fr71_llm_tokens_total_has_model_label
+
+  FR-72:
+    integration:
+      - test_fr72_span_tree_complete_per_request
+      - test_fr72_trace_id_in_response_header
+      - test_fr72_span_attributes_include_platform
+
+  FR-73:
+    unit:
+      - test_fr73_4_alert_rules_defined
+      - test_fr73_slabreach_for_0m_immediate
+      - test_fr73_high_latency_threshold_1s
+      - test_fr73_high_error_rate_threshold_5pct
+
+  FR-74:
+    integration:
+      - test_fr74_grafana_dashboard_4_panels_exist
+
+  # Module 16: Background Jobs
+  FR-75:
+    integration:
+      - test_fr75_embedding_queue_high_concurrency_3
+      - test_fr75_notification_queue_high_concurrency_5
+      - test_fr75_sigterm_waits_30s_grace
+      - test_fr75_maintenance_queue_low_concurrency_1
+
+  FR-76:
+    unit:
+      - test_fr76_max_retries_3_then_stop
+      - test_fr76_backoff_has_jitter
+    integration:
+      - test_fr76_p95_under_30s
+
+  FR-77:
+    integration:
+      - test_fr77_first_chunk_searchable_within_25s
+      - test_fr77_timeout_does_not_block_main_flow
+
+  FR-78:
+    integration:
+      - test_fr78_batch_mode_skips_sync_wait
+      - test_fr78_per_entry_under_50ms
+
+  FR-79:
+    integration:
+      - test_fr79_ui_shows_syncing_status
+      - test_fr79_embedding_synced_at_set_after_all_chunks
+
+  # Module 17: High Availability
+  FR-80:
+    unit:
+      - test_fr80_consumer_group_created
+      - test_fr80_busygroup_error_silently_ignored
+      - test_fr80_unknown_fields_ignored
+    integration:
+      - test_fr80_xclaim_processes_pending_messages
+
+  FR-81:
+    unit:
+      - test_fr81_3_retries_then_stop
+      - test_fr81_delay_capped_at_30s
+      - test_fr81_jitter_applied
+      - test_fr81_base_delay_1s
+
+  # Module 18: Data Layer
+  FR-82:
+    integration:
+      - test_fr82_all_20_tables_created
+      - test_fr82_fk_constraints_valid
+      - test_fr82_hnsw_index_exists
+      - test_fr82_gin_tsvector_index_exists
+
+  FR-83:
+    integration:
+      - test_fr83_upgrade_migration_succeeds
+      - test_fr83_downgrade_migration_succeeds
+      - test_fr83_roundtrip_no_data_loss
+
+  # Module 19: API 端點
+  FR-84:
+    integration:
+      - test_fr84_all_6_webhook_endpoints_exist
+      - test_fr84_error_codes_consistent
+
+  FR-85:
+    integration:
+      - test_fr85_knowledge_list_rbac_protected
+      - test_fr85_health_returns_postgres_redis_uptime
+      - test_fr85_paginated_response_has_next
+
+  FR-86:
+    integration:
+      - test_fr86_login_returns_jwt_and_refresh
+      - test_fr86_login_failure_401
+      - test_fr86_role_management_requires_system_write
+
+  FR-87:
+    unit:
+      - test_fr87_token_shown_once_on_create
+      - test_fr87_list_hides_token_value
+      - test_fr87_revoke_invalidates_immediately
+      - test_fr87_rotate_old_token_valid_24hr
+      - test_fr87_old_token_expires_after_24hr
+
+  FR-88:
+    integration:
+      - test_fr88_data_export_returns_json
+      - test_fr88_data_export_csv_downloadable
+      - test_fr88_deletion_clears_pii_fields
+      - test_fr88_deletion_logs_gdpr_deletion_event
+
+  # Module 20: Security Infra
+  FR-89:
+    integration:
+      - test_fr89_tde_enabled
+      - test_fr89_key_rotation_scheduled_90d
+      - test_fr89_pii_vault_direct_read_blocked
+
+  FR-90:
+    integration:
+      - test_fr90_redis_rejects_plaintext_connection
+      - test_fr90_auth_from_env_var
+      - test_fr90_default_user_disabled
+
+  # Module 21: GDPR & Data Lifecycle
+  FR-91:
+    integration:
+      - test_fr91_180d_messages_archived
+      - test_fr91_2yr_archive_deleted
+      - test_fr91_pii_audit_90d_anonymized
+      - test_fr91_emotion_90d_deleted
+
+  FR-92:
+    integration:
+      - test_fr92_pii_fields_null_after_deletion
+      - test_fr92_messages_redacted
+      - test_fr92_gdpr_deletion_event_in_audit_log
+
+  FR-93:
+    integration:
+      - test_fr93_export_contains_all_personal_data
+      - test_fr93_csv_format_downloadable
+
+  FR-94:
+    unit:
+      - test_fr94_plaintext_not_in_db
+    integration:
+      - test_fr94_dpo_can_decrypt
+      - test_fr94_non_dpo_decrypt_fails_403
+
+  # Module 22: Deployment
+  FR-95:
+    integration:
+      - test_fr95_all_7_services_healthy
+      - test_fr95_health_endpoint_200_after_compose_up
+
+  FR-96:
+    integration:
+      - test_fr96_deployment_3_replicas
+      - test_fr96_hpa_scales_to_10
+      - test_fr96_pdb_prevents_disruption
+      - test_fr96_secrets_not_in_plaintext_configmap
+
+  FR-97:
+    integration:
+      - test_fr97_pg_basebackup_restore_under_5min
+      - test_fr97_redis_rdb_restore_works
+
+  FR-98:
+    integration:
+      - test_fr98_knowledge_soft_delete_rollback
+      - test_fr98_schema_downgrade_no_data_loss
+      - test_fr98_experiment_abort_restores_control
+
+  # Module 23: Circuit Breaker
+  FR-99:
+    unit:
+      - test_fr99_level1_triggers_on_llm_p95_800ms
+      - test_fr99_level3_triggers_on_5_consecutive_failures
+      - test_fr99_embedding_down_uses_tsvector_fallback
+      - test_fr99_classifier_down_bypasses_l4
+      - test_fr99_recovery_auto_rises_on_success_count
+    integration:
+      - test_fr99_level_embedding_down_tsvector_search_returns_results
+
+  # Module 24: Multimedia
+  FR-100:
+    unit:
+      - test_fr100_image_auto_escalate
+      - test_fr100_sticker_fixed_reply
+      - test_fr100_location_extracts_coordinates
+      - test_fr100_file_above_10mb_rejected
+      - test_fr100_clamav_down_503_file_scan_unavailable
+    integration:
+      - test_fr100_clamav_scan_p95_under_500ms
+
+  # Module 25: WebUI
+  FR-101:
+    integration:
+      - test_fr101_knowledge_crud_correct
+      - test_fr101_csv_import_succeeds
+      - test_fr101_embedding_status_updates_realtime
+
+  FR-102:
+    integration:
+      - test_fr102_debugger_shows_tier1_tier2_flow
+      - test_fr102_slider_adjustment_not_persisted
+
+  FR-103:
+    integration:
+      - test_fr103_fcr_below_90_triggers_yellow_alert
+      - test_fr103_time_range_switching_works
+
+  FR-104:
+    integration:
+      - test_fr104_inbox_ws_realtime_update
+      - test_fr104_priority_colors_correct
+      - test_fr104_takeover_shows_emotion_dst_context
+
+  # Module 26: ODD SQL
+  FR-105:
+    integration:
+      - test_fr105_all_sql_execute_on_staging
+      - test_fr105_fcr_query_in_scope_only
+      - test_fr105_cost_per_tier_correct
+      - test_fr105_judge_sample_rate_default_020
+
+  # Module 27: Load Testing
+  FR-106:
+    integration:
+      - test_fr106_smoke_10vu_baseline
+      - test_fr106_load_p95_under_1000ms
+      - test_fr106_load_error_rate_below_1pct
+      - test_fr106_stress_2000tps_no_crash
+      - test_fr106_spike_recovery_normal
+
+  # Module 28: Test Strategy
+  FR-107:
+    integration:
+      - test_fr107_unit_coverage_70pct
+      - test_fr107_integration_coverage_20pct
+    e2e:
+      - test_fr107_e2e_faq_exact_match
+      - test_fr107_e2e_semantic_search
+      - test_fr107_e2e_multi_turn_dst
+      - test_fr107_e2e_emotion_escalation
+      - test_fr107_e2e_prompt_injection_blocked
+      - test_fr107_e2e_fallback_escalation
+
+  FR-108:
+    integration:
+      - test_fr108_edge_cases_count_500
+      - test_fr108_6_categories_present
+      - test_fr108_regression_auto_executable
+
+cross_cutting:
+  security:
+    - test_redteam_prompt_injection_direct_telegram_payload
+    - test_redteam_prompt_injection_indirect_knowledge_content
+    - test_redteam_rate_limit_burst_attack_blocked
+    - test_redteam_pii_mixed_phone_email_leak_detected
+    - test_redteam_pii_credit_card_luhn_valid_masked
+    - test_redteam_homoglyph_cyrillic_normalized
+    - test_redteam_ip_whitelist_unauthorized_ip_returns_403
+    - test_redteam_injection_retrospective_block_end_to_end
+    - test_redteam_auditor_pii_decrypt_blocked_403
+    - test_redteam_sql_injection_sanitized
+  kpi:
+    - test_kpi_p95_latency_phase1_under_1s
+    - test_kpi_fcr_phase1_target_90_percent
+    - test_kpi_recall_at_3_hnsw_above_92_percent
+    - test_kpi_grounding_cosine_above_075
+    - test_kpi_escalation_sla_compliance_above_95_percent
+    - test_kpi_csat_formula_above_48_target
+    - test_kpi_judge_kappa_above_07
+  deployment:
+    - test_deploy_docker_compose_all_services_healthy
+    - test_deploy_health_endpoint_returns_200_after_startup
+    - test_deploy_backup_pg_basebackup_and_restore
+    - test_deploy_redis_rdb_restore
+    - test_deploy_k8s_hpa_scales_under_load
+    - test_deploy_pdb_maintains_min_available_during_rolling_update
+  api_completeness:
+    - test_webhook_telegram_valid_signature_returns_200
+    - test_webhook_telegram_invalid_signature_returns_401
+    - test_webhook_telegram_rate_limit_returns_429
+    - test_webhook_line_valid_signature_returns_200
+    - test_webhook_line_invalid_signature_returns_401
+    - test_webhook_messenger_hub_challenge_returns_challenge
+    - test_webhook_whatsapp_hub_challenge_returns_challenge
+    - test_web_guest_session_returns_jwt
+    - test_web_message_invalid_jwt_returns_401
+    - test_a2a_rpc_valid_m2m_token_returns_200
+    - test_a2a_rpc_invalid_m2m_token_returns_401
+    - test_knowledge_create_requires_knowledge_write
+    - test_knowledge_delete_requires_knowledge_delete
+    - test_health_endpoint_returns_200
+  version_consistency:
+    - test_backward_compat_phase1_tests_pass_in_phase2_env

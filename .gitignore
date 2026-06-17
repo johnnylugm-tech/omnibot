@@ -155,3 +155,10 @@ tmp/
 .temp/
 *.local
 .history/
+
+# harness-methodology runtime (auto-added by git_strategy)
+.sessi-work/
+.methodology/last_block.md
+.methodology/steering_history.json
+.mutmut-cache/
+.code-review-graph/
