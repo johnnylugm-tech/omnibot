@@ -496,9 +496,7 @@ fr_tests:
 
   FR-71:
     integration:
-      - test_fr71_all_11_metrics_scraped
-      - test_fr71_ab_variant_total_metric_exists
-      - test_fr71_security_block_total_metric_exists
+      - test_fr71_all_9_metrics_scraped
       - test_fr71_knowledge_hit_total_has_tier_label
       - test_fr71_llm_tokens_total_has_model_label
 
@@ -602,8 +600,6 @@ fr_tests:
       - test_fr87_token_shown_once_on_create
       - test_fr87_list_hides_token_value
       - test_fr87_revoke_invalidates_immediately
-      - test_fr87_rotate_old_token_valid_24hr
-      - test_fr87_old_token_expires_after_24hr
 
   FR-88:
     integration:

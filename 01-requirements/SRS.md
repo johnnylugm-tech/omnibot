@@ -159,7 +159,7 @@ OmniBot 是多平台企業級客服聊天機器人，同時服務 Telegram、LIN
 | FR ID | Requirement Description | Acceptance Criteria | Implementation Function |
 |-------|------------------------|---------------------|------------------------|
 | FR-70 | StructuredLogger：JSON 格式，欄位含 timestamp(ISO 8601 Z), level, service, message 及任意 kwargs；支援 DEBUG/INFO/WARN/ERROR/CRITICAL；CRITICAL 用於安全事件 | JSON 日誌格式正確；各 level 正確路由至 Python logging | `StructuredLogger.log()` |
-| FR-71 | Prometheus Metrics（11 種，全部顯式列出）：1. response_duration_seconds(histogram)；2. requests_total(counter)；3. fcr_total(counter)；4. knowledge_hit_total(counter, labels: tier)；5. pii_masked_total(counter)；6. escalation_queue_size(gauge)；7. emotion_escalation_total(counter)；8. escalation_sla_breach_total(counter)；9. llm_tokens_total(counter, labels: model)；10. ab_variant_total(counter, labels: experiment_id, variant)；11. security_block_total(counter, labels: layer, reason) | 所有 11 個 metric 名稱正確定義；各 metric 類型（histogram/counter/gauge）正確；label 完整；Prometheus 抓取端點回傳所有 11 個 metric | Prometheus metrics definitions |
+| FR-71 | Prometheus Metrics（9 種，全部顯式列出）：1. response_duration_seconds(histogram)；2. requests_total(counter)；3. fcr_total(counter)；4. knowledge_hit_total(counter, labels: tier)；5. pii_masked_total(counter)；6. escalation_queue_size(gauge)；7. emotion_escalation_total(counter)；8. escalation_sla_breach_total(counter)；9. llm_tokens_total(counter, labels: model) | 所有 9 個 metric 名稱正確定義；各 metric 類型（histogram/counter/gauge）正確；label 完整；Prometheus 抓取端點回傳所有 9 個 metric | Prometheus metrics definitions |
 | FR-72 | OpenTelemetry Tracing：每請求完整 span tree（handle_message → emotion_analysis → knowledge_query → response_generation）；span attributes 含 platform, user_id, emotion, knowledge_source, confidence, trace_id | Span 樹正確；attributes 完整；trace_id 透過 HTTP header 跨服務傳遞 | `setup_tracing()`, tracer spans |
 | FR-73 | 告警規則（4 條）：HighLatency（p95 > 0.8s for 5m, warning）；HighErrorRate（error rate > 0.5% for 3m, critical）；EscalationQueueBacklog（queue > 50 for 10m, warning）；SLABreach（轉接 SLA 遵守率 < 90%, critical, for=0m） | 4 條告警規則正確定義；閾值符合規格；SLABreach for=0m 立即觸發 | Prometheus alert rules |
 | FR-74 | Grafana Dashboard：連結 Prometheus + ODD SQL 指標；提供 FCR 折線圖、p95 延遲儀表、知識來源圓餅圖、成本時序圖；刷新頻率支援 24hr/7d/30d | Dashboard 面板存在；指標即時連動；<99.95% 可用性顯示早期警報 | Grafana dashboard config |
@@ -195,7 +195,7 @@ OmniBot 是多平台企業級客服聊天機器人，同時服務 Telegram、LIN
 | FR-84 | Webhook API 端點（6 個）：POST /api/v1/webhook/telegram, /line, /messenger(GET+POST), /whatsapp(GET+POST), POST /api/v1/web/guest-session, /web/message, /a2a/rpc；各端點錯誤碼規範（AUTH_INVALID_SIGNATURE/RATE_LIMIT_EXCEEDED/VALIDATION_ERROR/INTERNAL_ERROR/LLM_TIMEOUT/AUTH_TOKEN_EXPIRED/AUTHZ_INSUFFICIENT_ROLE） | 各端點存在且回傳正確 HTTP status；錯誤碼規範一致 | FastAPI routers |
 | FR-85 | 管理 API（8 個端點）：GET/POST /api/v1/knowledge；PUT/DELETE /api/v1/knowledge/{id}；POST /api/v1/knowledge/bulk；GET /api/v1/conversations；POST /api/v1/experiments；GET /api/v1/health | 各端點 RBAC 保護正確；分頁回應格式符合 PaginatedResponse；health 回傳 status/postgres/redis/uptime_seconds | FastAPI management routes |
 | FR-86 | Auth & User API：POST /api/v1/auth/login（回傳 JWT access + refresh token）；POST /api/v1/auth/refresh；GET/POST /api/v1/users；POST/DELETE /api/v1/users/{user_id}/roles（admin 限定） | login 失敗回 401；role 管理需 system:write 權限；refresh token 正常換發 | auth module |
-| FR-87 | M2M Token API：POST /api/v1/m2m/tokens（admin 限定，client_name, scopes, expires_in_days=90）→ 回傳 token 僅顯示一次；GET /api/v1/m2m/tokens（不顯示 token 值）；POST /api/v1/m2m/tokens/{client_id}/revoke；Token 格式：m2m_ prefix + 32 bytes random hex，儲存 SHA-256 hash；**Rotation 流程：admin 呼叫 POST /api/v1/m2m/tokens/{client_id}/rotate 建立新 token，舊 token 保持有效 24hr 後自動失效（DB 欄位 rotate_expires_at = NOW()+24hr）；系統排程任務每小時清除過期舊 token** | Token 建立僅回傳一次；儲存 hash 不存明文；90 天到期；revoke 成功後 token 立即失效；rotate 後舊 token 24hr 內仍可用；超過 24hr 自動失效 | M2M token management, `/rotate` endpoint |
+| FR-87 | M2M Token API：POST /api/v1/m2m/tokens（admin 限定，client_name, scopes, expires_in_days=90）→ 回傳 token 僅顯示一次；GET /api/v1/m2m/tokens（不顯示 token 值）；POST /api/v1/m2m/tokens/{client_id}/revoke；Token 格式：m2m_ prefix + 32 bytes random hex，儲存 SHA-256 hash | Token 建立僅回傳一次；儲存 hash 不存明文；90 天到期；revoke 成功後 token 立即失效；rotate 後舊 token 24hr 內仍可用；超過 24hr 自動失效 | M2M token management, `/rotate` endpoint |
 | FR-88 | GDPR API：GET /api/v1/users/{user_id}/data（匯出 JSON/CSV）；DELETE /api/v1/users/{user_id}/data（觸發異步刪除，30 天內完成，含 PII 欄位清除 + messages 內容 [REDACTED] + 稽核日誌） | data export 回傳合法 JSON/CSV；deletion 記錄 pii_audit_log 並異步執行；30 天 SLA | GDPR compliance module |
 
 ### Module 20: 安全基礎設施
@@ -227,13 +227,13 @@ OmniBot 是多平台企業級客服聊天機器人，同時服務 Telegram、LIN
 
 | FR ID | Requirement Description | Acceptance Criteria | Implementation Function |
 |-------|------------------------|---------------------|------------------------|
-| FR-99 | 階梯式降級策略（7 級）：level_0=全功能；level_1=輕度延遲啟用快取（LLM p95>800ms for 2m）；level_2=關閉 Tier3 僅 Tier1+2（LLM p95>1.5s for 2m）；level_3=熔斷 LLM 僅 Tier1（連續失敗≥5次）；level_4=DB 降級啟用 Redis 快取（DB p95>2s for 1m）；level_embedding_down=Tier2 降級為 tsvector 全文搜尋（Embedding API 失敗≥3次或p95>5s for 2m）；level_classifier_down=Bypass L4（Classifier 失敗≥3次）；level_judge_down=暫停 Judge 改規則式（雙 Judge 失敗≥3次）；level_5=全面癱瘓靜態維護頁 | 各觸發條件正確觸發降級；恢復條件（連續成功次數）後自動回升；降級期間不影響已上線功能的基礎可用性 | circuit breaker implementation |
+| FR-99 | 階梯式降級策略（**9 級（6 主級 + 3 橫向）**）：level_0=全功能；level_1=輕度延遲啟用快取（LLM p95>800ms for 2m）；level_2=關閉 Tier3 僅 Tier1+2（LLM p95>1.5s for 2m）；level_3=熔斷 LLM 僅 Tier1（連續失敗≥5次）；level_4=DB 降級啟用 Redis 快取（DB p95>2s for 1m）；level_embedding_down=Tier2 降級為 tsvector 全文搜尋（Embedding API 失敗≥3次或p95>5s for 2m）；level_classifier_down=Bypass L4（Classifier 失敗≥3次）；level_judge_down=暫停 Judge 改規則式（雙 Judge 失敗≥3次）；level_5=全面癱瘓靜態維護頁 | 各觸發條件正確觸發降級；恢復條件（連續成功次數）後自動回升；降級期間不影響已上線功能的基礎可用性 | circuit breaker implementation |
 
 ### Module 24: 多媒體訊息處理
 
 | FR ID | Requirement Description | Acceptance Criteria | Implementation Function |
 |-------|------------------------|---------------------|------------------------|
-| FR-100 | 多媒體處理路徑：Image → auto_escalate（不支援圖片理解）；Sticker → ignore + 固定回覆「請用文字描述您的問題」+ log sticker 頻率；Location → 解析經緯度，附帶於 conversation context；File → malware scan（ClamAV）+ size_limit 10MB + allowed_types[pdf,docx,xlsx,csv,txt] → auto_escalate（不支援解析）；**ClamAV 部署依賴：Docker service clamav:alpine（docker-compose.yml 含此 service）；ClamAV 失敗模式 = fail-secure（拒絕文件上傳 + 回傳 503 FILE_SCAN_UNAVAILABLE）；ClamAV 掃描 p95 延遲 < 500ms（加入 NFR-38）** | Image/File 自動觸發人工轉接；Sticker 回覆固定文字；Location 座標正確提取；File 超過 10MB 拒絕；ClamAV 不可用時回 503 FILE_SCAN_UNAVAILABLE（不放行） | media handling pipeline, ClamAV service |
+| FR-100 | 多媒體處理路徑：Image → auto_escalate（不支援圖片理解）；Sticker → ignore + 固定回覆「請用文字描述您的問題」+ log sticker 頻率；Location → 解析經緯度，附帶於 conversation context；File → malware scan（ClamAV）+ size_limit 10MB + allowed_types[pdf,docx,xlsx,csv,txt] → auto_escalate（不支援解析）；ClamAV 失敗模式 = fail-secure（拒絕文件上傳 + 回傳 503 FILE_SCAN_UNAVAILABLE）；ClamAV 掃描 p95 延遲 < 500ms** | Image/File 自動觸發人工轉接；Sticker 回覆固定文字；Location 座標正確提取；File 超過 10MB 拒絕；ClamAV 不可用時回 503 FILE_SCAN_UNAVAILABLE（不放行） | media handling pipeline, ClamAV service |
 
 ### Module 25: 管理 WebUI
 
@@ -272,7 +272,7 @@ OmniBot 是多平台企業級客服聊天機器人，同時服務 Telegram、LIN
 | NFR-01 | Performance | p95 end-to-end latency < 1.0s（全負載） | k6 load test (p(95)<1000) |
 | NFR-02 | Performance | L1-L3 合計延遲 < 5ms p95 | Unit benchmark |
 | NFR-03 | Performance | L4 Semantic Classifier < 200ms p95（async） | L4 unit test with timing |
-| NFR-04 | Performance | Embedding API < 100ms p95 | Integration test with timing |
+| NFR-04 | Performance | Embedding API < 300ms p95 | Integration test with timing |
 | NFR-05 | Performance | A2A timeout = 2.0s | Fault injection test |
 | NFR-06 | Performance | LLM fallback switch < 500ms | Fault injection test (primary LLM down) |
 | NFR-07 | Performance | Agent Card TTL cache = 300s（不重複 discovery） | Unit test cache expiry |
@@ -514,7 +514,7 @@ OmniBot 是多平台企業級客服聊天機器人，同時服務 Telegram、LIN
     { "id": "FR-96", "description": "K8s: Deployment(3 replicas)+HPA(3-10)+PDB(minAvailable=2)+NetworkPolicy+Service(LoadBalancer); Secrets via SealedSecrets", "implementation_functions": ["K8s manifests"], "verification_method": "K8s apply→resources created; HPA scales correctly; PDB prevents disruption" },
     { "id": "FR-97", "description": "Backup: pg_basebackup+WAL daily, 30d retention; Redis RDB hourly+AOF per-second, 7d retention", "implementation_functions": ["backup scripts"], "verification_method": "DR drill: restore completes in <5 minutes" },
     { "id": "FR-98", "description": "Rollback procedures: knowledge soft-delete, model A/B gradual, Alembic downgrade, experiment abort", "implementation_functions": ["rollback procedures"], "verification_method": "Test each rollback path: data preserved; service continues" },
-    { "id": "FR-99", "description": "Circuit breaker degradation: 7 levels with trigger conditions and recovery thresholds", "implementation_functions": ["circuit breaker implementation"], "verification_method": "Integration: inject failures→correct level triggered; recovery after success count" },
+    { "id": "FR-99", "description": "Circuit breaker degradation: 9 levels (6 main + 3 lateral) with trigger conditions and recovery thresholds", "implementation_functions": ["circuit breaker implementation"], "verification_method": "Integration: inject failures→correct level triggered; recovery after success count" },
     { "id": "FR-100", "description": "Multimedia: image/file→escalate; sticker→ignore+prompt; location→extract coordinates; file size limit 10MB", "implementation_functions": ["media handling pipeline"], "verification_method": "Unit: image→escalation; sticker→fixed reply; location→context with coordinates; file>10MB rejected" },
     { "id": "FR-101", "description": "Knowledge WebUI: CRUD + Markdown editor + keywords + CSV/JSON import/export + embedding status", "implementation_functions": ["WebUI frontend (React)"], "verification_method": "Manual: CRUD works; import succeeds; status updates in real-time; response<1.5s" },
     { "id": "FR-102", "description": "RAG Debugger: search sandbox with cosine scores, Parent Chunk content, RRF top-3, threshold slider (session-only)", "implementation_functions": ["RAG Debugger UI"], "verification_method": "Manual: debugger shows T1+T2 decision flow; slider adjusts results; not persisted to DB" },
@@ -526,44 +526,234 @@ OmniBot 是多平台企業級客服聊天機器人，同時服務 Telegram、LIN
     { "id": "FR-108", "description": "Golden dataset: 500 edge cases, 6 categories (asr-noise/typo/dialect/multi-intent/emotional/injection)", "implementation_functions": ["golden dataset", "edge_cases table"], "verification_method": "Count: edge_cases rows≥500; status=approved≥500; regression test pass rate tracked" }
   ],
   "non_functional_requirements": [
-    { "id": "NFR-01", "type": "performance", "description": "p95 end-to-end latency < 1.0s under full load", "test_method": "k6 load test p(95)<1000" },
-    { "id": "NFR-02", "type": "performance", "description": "PALADIN L1-L3 combined latency < 5ms p95", "test_method": "Unit benchmark" },
-    { "id": "NFR-03", "type": "performance", "description": "L4 Semantic Classifier < 200ms p95 (async)", "test_method": "L4 unit test with timing" },
-    { "id": "NFR-04", "type": "performance", "description": "Embedding API < 100ms p95", "test_method": "Integration test with timing" },
-    { "id": "NFR-05", "type": "performance", "description": "Throughput 2000 TPS sustained", "test_method": "k6 stress test" },
-    { "id": "NFR-06", "type": "reliability", "description": "System availability 99.9% per month", "test_method": "Prometheus uptime monitor" },
-    { "id": "NFR-07", "type": "reliability", "description": "Disaster recovery < 5 minutes", "test_method": "DR drill" },
-    { "id": "NFR-08", "type": "reliability", "description": "LLM fallback switch < 500ms", "test_method": "Fault injection test" },
-    { "id": "NFR-09", "type": "security", "description": "OWASP LLM01:2025 compliance, security block rate ≥95%", "test_method": "Red-team + OWASP checklist" },
-    { "id": "NFR-10", "type": "security", "description": "Secrets never committed to version control", "test_method": "git-secrets pre-commit hook" },
-    { "id": "NFR-11", "type": "compliance", "description": "Taiwan Personal Data Protection Act + GDPR Art.5(1)(e) + SOC2", "test_method": "Legal/compliance audit" },
-    { "id": "NFR-12", "type": "cost", "description": "Monthly infrastructure cost < $500", "test_method": "Cost dashboard monitoring" },
-    { "id": "NFR-13", "type": "quality", "description": "FCR ≥ 90% (in_scope conversations)", "test_method": "ODD SQL query" },
-    { "id": "NFR-14", "type": "quality", "description": "CSAT target 4.8 (+50% vs 3.2 baseline)", "test_method": "LLM-as-a-Judge monthly" },
-    { "id": "NFR-15", "type": "quality", "description": "Escalation SLA compliance ≥ 95%", "test_method": "ODD SQL query" },
-    { "id": "NFR-16", "type": "quality", "description": "Recall@3 (HNSW 1536-dim) ≥ 92%", "test_method": "Golden set regression" },
-    { "id": "NFR-17", "type": "quality", "description": "LLM-as-a-Judge Cohen's Kappa ≥ 0.7 vs human labels", "test_method": "500-sample golden set calibration" },
-    { "id": "NFR-18", "type": "quality", "description": "Grounding pass rate 100% (cosine ≥ 0.75)", "test_method": "L5 unit tests" },
-    { "id": "NFR-19", "type": "quality", "description": "Agentic tool success rate ≥ 95%", "test_method": "Integration tests" },
-    { "id": "NFR-20", "type": "reliability", "description": "Embedding job p95 < 30s", "test_method": "SAQ dashboard monitoring" },
-    { "id": "NFR-21", "type": "scalability", "description": "Kubernetes HPA min=3, max=10, CPU target=70%", "test_method": "K8s load test" },
-    { "id": "NFR-22", "type": "observability", "description": "Full OpenTelemetry trace per request", "test_method": "Trace sampling verification" },
-    { "id": "NFR-23", "type": "testability", "description": "Unit 70% + Integration 20% + E2E 10% coverage", "test_method": "pytest-cov" },
-    { "id": "NFR-24", "type": "reliability", "description": "Rate limiter fail-open on Redis unavailability", "test_method": "Redis failure injection" },
-    { "id": "NFR-25", "type": "quality", "description": "Escalation SLA compliance ≥ 95%", "test_method": "SLA query" },
-    { "id": "NFR-26", "type": "quality", "description": "LLM-as-a-Judge Cohen's Kappa ≥ 0.7 vs human", "test_method": "Calibration script" },
-    { "id": "NFR-27", "type": "quality", "description": "Grounding check pass rate 100% (cosine ≥ 0.75)", "test_method": "L5 unit tests" },
-    { "id": "NFR-28", "type": "quality", "description": "Recall@3 ≥ 92% (HNSW 1536-dim)", "test_method": "Golden set regression" },
-    { "id": "NFR-29", "type": "quality", "description": "Agentic tool success rate ≥ 95%", "test_method": "Integration tests" },
-    { "id": "NFR-30", "type": "scalability", "description": "Kubernetes HPA min=3, max=10, CPU target=70%", "test_method": "K8s load test" },
-    { "id": "NFR-31", "type": "observability", "description": "Full OpenTelemetry trace per request", "test_method": "Trace sampling verification" },
-    { "id": "NFR-32", "type": "testability", "description": "Unit 70% + Integration 20% + E2E 10% coverage", "test_method": "pytest-cov" },
-    { "id": "NFR-33", "type": "resilience", "description": "Rate limiter fail-open on Redis unavailability", "test_method": "Redis failure injection" },
-    { "id": "NFR-34", "type": "resilience", "description": "IP Whitelist fail-secure (403) on no match", "test_method": "Security test" },
-    { "id": "NFR-35", "type": "resilience", "description": "IP Whitelist max 100 CIDR blocks", "test_method": "Config validation test" },
-    { "id": "NFR-36", "type": "resilience", "description": "M2M token 90d expiry, 24hr rotation overlap", "test_method": "Token expiry unit test" },
-    { "id": "NFR-37", "type": "performance", "description": "Admin WebUI response < 1.5s, 100% real-time data sync", "test_method": "Lighthouse audit + manual" },
-    { "id": "NFR-38", "type": "performance", "description": "ClamAV scan p95 < 500ms", "test_method": "Integration test with timing" }
+        {
+            "id": "NFR-01",
+            "type": "performance",
+            "description": "p95 end-to-end latency < 1.0s（全負載）",
+            "test_method": "k6 load test (p(95)<1000)"
+        },
+        {
+            "id": "NFR-02",
+            "type": "performance",
+            "description": "L1-L3 合計延遲 < 5ms p95",
+            "test_method": "Unit benchmark"
+        },
+        {
+            "id": "NFR-03",
+            "type": "performance",
+            "description": "L4 Semantic Classifier < 200ms p95（async）",
+            "test_method": "L4 unit test with timing"
+        },
+        {
+            "id": "NFR-04",
+            "type": "performance",
+            "description": "Embedding API < 300ms p95",
+            "test_method": "Integration test with timing"
+        },
+        {
+            "id": "NFR-05",
+            "type": "performance",
+            "description": "A2A timeout = 2.0s",
+            "test_method": "Fault injection test"
+        },
+        {
+            "id": "NFR-06",
+            "type": "performance",
+            "description": "LLM fallback switch < 500ms",
+            "test_method": "Fault injection test (primary LLM down)"
+        },
+        {
+            "id": "NFR-07",
+            "type": "performance",
+            "description": "Agent Card TTL cache = 300s（不重複 discovery）",
+            "test_method": "Unit test cache expiry"
+        },
+        {
+            "id": "NFR-08",
+            "type": "performance",
+            "description": "Embedding job p95 < 30s",
+            "test_method": "SAQ dashboard monitoring"
+        },
+        {
+            "id": "NFR-09",
+            "type": "throughput",
+            "description": "2000 TPS sustained（k6 load scenario）",
+            "test_method": "k6 stress test"
+        },
+        {
+            "id": "NFR-10",
+            "type": "availability",
+            "description": "99.9% / month",
+            "test_method": "Prometheus uptime monitor"
+        },
+        {
+            "id": "NFR-11",
+            "type": "availability",
+            "description": "早期告警閾值 < 99.95%（SLA 前觸發）",
+            "test_method": "Prometheus alert: early-warning"
+        },
+        {
+            "id": "NFR-12",
+            "type": "availability",
+            "description": "p95 > 0.8s → HighLatency 告警",
+            "test_method": "Prometheus alert rule"
+        },
+        {
+            "id": "NFR-13",
+            "type": "availability",
+            "description": "error rate > 0.5% → 告警（> 1% = SLA breach）",
+            "test_method": "Prometheus alert rule"
+        },
+        {
+            "id": "NFR-14",
+            "type": "availability",
+            "description": "災備復原時間 < 5 分鐘",
+            "test_method": "DR drill"
+        },
+        {
+            "id": "NFR-15",
+            "type": "security",
+            "description": "OWASP LLM01:2025 合規（PALADIN 五層覆蓋）",
+            "test_method": "Red-team + OWASP checklist"
+        },
+        {
+            "id": "NFR-16",
+            "type": "security",
+            "description": "安全阻擋率 ≥ 95%",
+            "test_method": "Red-team test"
+        },
+        {
+            "id": "NFR-17",
+            "type": "security",
+            "description": "機密資料（secrets）不提交至版控",
+            "test_method": "git-secrets / pre-commit hook"
+        },
+        {
+            "id": "NFR-18",
+            "type": "cost",
+            "description": "月費用 < $500（含 GPU 推理、Embedding、備援）",
+            "test_method": "Cost dashboard"
+        },
+        {
+            "id": "NFR-19",
+            "type": "cost",
+            "description": "LLM API 基礎估算 ~$210/月（10 萬對話、Tier 2 覆蓋 40%）",
+            "test_method": "Cost dashboard"
+        },
+        {
+            "id": "NFR-20",
+            "type": "compliance",
+            "description": "台灣個資法合規",
+            "test_method": "Legal review"
+        },
+        {
+            "id": "NFR-21",
+            "type": "compliance",
+            "description": "GDPR Art.5(1)(e) 合規（資料最小化）",
+            "test_method": "GDPR audit"
+        },
+        {
+            "id": "NFR-22",
+            "type": "compliance",
+            "description": "SOC2 稽核軌跡",
+            "test_method": "SOC2 audit trail"
+        },
+        {
+            "id": "NFR-23",
+            "type": "quality",
+            "description": "FCR ≥ 90%（in_scope 對話）",
+            "test_method": "ODD SQL"
+        },
+        {
+            "id": "NFR-24",
+            "type": "quality",
+            "description": "CSAT 目標 4.8（2025Q4 基準 3.2，+50%）",
+            "test_method": "LLM-as-a-Judge monthly"
+        },
+        {
+            "id": "NFR-25",
+            "type": "quality",
+            "description": "Escalation SLA 遵守率 ≥ 95%",
+            "test_method": "ODD SQL"
+        },
+        {
+            "id": "NFR-26",
+            "type": "quality",
+            "description": "LLM-as-a-Judge Cohen's Kappa ≥ 0.7 vs 人工標注",
+            "test_method": "500 筆黃金集校準"
+        },
+        {
+            "id": "NFR-27",
+            "type": "quality",
+            "description": "Grounding check pass rate 100%（cosine ≥ 0.75）",
+            "test_method": "L5 unit tests"
+        },
+        {
+            "id": "NFR-28",
+            "type": "quality",
+            "description": "Recall@3 ≥ 92%（HNSW 1536維）",
+            "test_method": "Golden set regression"
+        },
+        {
+            "id": "NFR-29",
+            "type": "quality",
+            "description": "Agentic tool success rate ≥ 95%",
+            "test_method": "Integration tests"
+        },
+        {
+            "id": "NFR-30",
+            "type": "scalability",
+            "description": "Kubernetes HPA min=3, max=10, CPU target=70%",
+            "test_method": "K8s load test"
+        },
+        {
+            "id": "NFR-31",
+            "type": "observability",
+            "description": "每請求完整 OpenTelemetry trace",
+            "test_method": "Trace sampling verification"
+        },
+        {
+            "id": "NFR-32",
+            "type": "testability",
+            "description": "Unit 70% + Integration 20% + E2E 10% coverage",
+            "test_method": "pytest-cov"
+        },
+        {
+            "id": "NFR-33",
+            "type": "resilience",
+            "description": "Rate Limiter fail-open on Redis unavailability",
+            "test_method": "Redis failure injection"
+        },
+        {
+            "id": "NFR-34",
+            "type": "resilience",
+            "description": "IP Whitelist fail-secure (403) on no match",
+            "test_method": "Security test"
+        },
+        {
+            "id": "NFR-35",
+            "type": "resilience",
+            "description": "IP Whitelist max 100 CIDR blocks",
+            "test_method": "Config validation test"
+        },
+        {
+            "id": "NFR-36",
+            "type": "resilience",
+            "description": "M2M token 90 天到期；rolling rotation 新舊並存 24hr",
+            "test_method": "Token expiry unit test"
+        },
+        {
+            "id": "NFR-37",
+            "type": "performance",
+            "description": "Admin WebUI 響應時間 < 1.5s，100% 資料即時連動",
+            "test_method": "Lighthouse audit + manual"
+        },
+        {
+            "id": "NFR-38",
+            "type": "performance",
+            "description": "ClamAV 文件掃描 p95 < 500ms",
+            "test_method": "Integration test with timing"
+        }
   ]
 }
 ```

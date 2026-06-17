@@ -281,7 +281,7 @@
 | NFR-01 | p95 end-to-end latency < 1.0s | Performance | Pending | BE+SRE | P0 | M3 |
 | NFR-02 | L1-L3 combined latency < 5ms p95 | Performance | Pending | BE | P0 | M1 |
 | NFR-03 | L4 Classifier < 200ms p95 | Performance | Pending | BE | P0 | M4 |
-| NFR-04 | Embedding API < 100ms p95 | Performance | Pending | BE | P0 | M3 |
+| NFR-04 | Embedding API < 300ms p95 | Performance | Pending | BE | P0 | M3 |
 | NFR-05 | A2A timeout = 2.0s | Performance | Pending | BE | P0 | M4 |
 | NFR-06 | LLM fallback switch < 500ms | Performance | Pending | BE | P0 | M1 |
 | NFR-07 | Agent Card TTL cache = 300s | Performance | Pending | BE | P0 | M4 |

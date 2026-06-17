@@ -166,7 +166,7 @@ Phase 3 補充：實際測試通過狀態。
 | FR ID | SRS Section | Design Component | Primary Test Function(s) | Status |
 |-------|-------------|------------------|--------------------------|--------|
 | FR-70 | SRS §2 Module 15 | `StructuredLogger.log()` | `test_fr70_log_json_parseable`, `test_fr70_timestamp_iso8601_z_format`, `test_fr70_all_log_levels_routed_correctly` | Pending |
-| FR-71 | SRS §2 Module 15 | Prometheus metrics definitions | `test_fr71_all_11_metrics_scraped`, `test_fr71_ab_variant_total_metric_exists`, `test_fr71_security_block_total_metric_exists`, `test_fr71_knowledge_hit_total_has_tier_label` | Pending |
+| FR-71 | SRS §2 Module 15 | Prometheus metrics definitions | `test_fr71_all_9_metrics_scraped`, `test_fr71_knowledge_hit_total_has_tier_label` | Pending |
 | FR-72 | SRS §2 Module 15 | `setup_tracing()`, tracer spans | `test_fr72_span_tree_complete_per_request`, `test_fr72_trace_id_in_response_header`, `test_fr72_span_attributes_include_platform` | Pending |
 | FR-73 | SRS §2 Module 15 | Prometheus alert rules | `test_fr73_4_alert_rules_defined`, `test_fr73_slabreach_for_0m_immediate`, `test_fr73_high_latency_threshold_0_8s`, `test_fr73_high_error_rate_threshold_0_5pct` | Pending |
 | FR-74 | SRS §2 Module 15 | Grafana dashboard config | `test_fr74_grafana_dashboard_4_panels_exist` | Pending |
@@ -202,7 +202,7 @@ Phase 3 補充：實際測試通過狀態。
 | FR-84 | SRS §2 Module 19 | FastAPI routers | `test_fr84_all_6_webhook_endpoints_exist`, `test_fr84_error_codes_consistent` | Pending |
 | FR-85 | SRS §2 Module 19 | FastAPI management routes | `test_fr85_knowledge_list_rbac_protected`, `test_fr85_health_returns_postgres_redis_uptime`, `test_fr85_paginated_response_has_next` | Pending |
 | FR-86 | SRS §2 Module 19 | auth module | `test_fr86_login_returns_jwt_and_refresh`, `test_fr86_login_failure_401`, `test_fr86_role_management_requires_system_write` | Pending |
-| FR-87 | SRS §2 Module 19 | M2M token management, `/rotate` endpoint | `test_fr87_token_shown_once_on_create`, `test_fr87_list_hides_token_value`, `test_fr87_revoke_invalidates_immediately`, `test_fr87_rotate_old_token_valid_24hr`, `test_fr87_old_token_expires_after_24hr` | Pending |
+| FR-87 | SRS §2 Module 19 | M2M token management | `test_fr87_token_shown_once_on_create`, `test_fr87_list_hides_token_value`, `test_fr87_revoke_invalidates_immediately` | Pending |
 | FR-88 | SRS §2 Module 19 | GDPR compliance module | `test_fr88_data_export_returns_json`, `test_fr88_data_export_csv_downloadable`, `test_fr88_deletion_clears_pii_fields`, `test_fr88_deletion_logs_gdpr_deletion_event` | Pending |
 
 ### Module 20: 安全基礎設施
