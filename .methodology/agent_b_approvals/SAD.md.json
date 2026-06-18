@@ -1,21 +1,21 @@
 {
   "fr": "SAD.md",
   "review_status": "APPROVE",
-  "reason": "All five round-5 NFR type corrections are verified in the actual SAD.md file: NFR-31 is `observability`, NFR-33/34/35/36 are all `resilience`. All round-4 fixes also verified in document: §1 admin-infra-only dependency, §2.3 pipeline sequence PALADIN→PII→DST→Knowledge→Emotion→Response, §2.6 webui.py RAG Debugger direct-DB implementation note, §6.1 data flow dst.transition() before knowledge.query(), and NFR-20/21/22 as `compliance`, NFR-23-29 as `quality` all confirmed in SAB block.",
+  "reason": "All 7 targeted fixes verified against actual SAD.md content: Fix A (§2.4 FR-44 removed from services layer, retained in api layer only); Fix B (nfr_traceability NFR-09=throughput, NFR-10~14=availability, NFR-18~19=cost); Fix C (§1 dependency flow now describes primary chain + cross-layer paths consistent with SAB allowed_dependencies); Fix D (edge budget label and external edge estimates for all 5 layers present); Fix E (crg_analysis.py:65 HUB_HIGH_FAN_IN citation in §5.2); Fix F (tests/ cross-cutting box in ASCII art, §2.1 and §1 L12 updated); Fix G (nfr_dimension_mapping populated 31 entries, NFR-18~22/NFR-30 absence is valid by design). No internal contradictions detected.",
   "citations": [
-    "SAD.md §1 admin dependency — code-level Infra only, data access via app.infra.database",
-    "SAD.md §2.3 pipeline sequence — PALADIN→PII→DST→Knowledge→Emotion→Response",
-    "SAD.md §2.3 Logical Constraints — Knowledge query only after DST slot resolution (now consistent)",
-    "SAD.md §2.6 webui.py — RAG Debugger uses pgvector SQL directly, not app.core.knowledge",
-    "SAD.md §6.1 data flow — dst.transition() (slot resolution first) before knowledge.query()",
-    "SAD.md §7 SAB Block — NFR-20/21/22 type:compliance (SRS:Compliance)",
-    "SAD.md §7 SAB Block — NFR-23 type:quality module:app.admin.odd_sql (SRS:Quality, FR-105 ODD SQL)",
-    "SAD.md §7 SAB Block — NFR-24~29 type:quality (SRS:Quality)",
-    "SAD.md §7 SAB Block — NFR-31 type:observability (SRS:Observability)",
-    "SAD.md §7 SAB Block — NFR-33/34/35/36 type:resilience (SRS:Resilience)"
+    "SAD.md §2.4 line 245 — FR Coverage: FR-39–43, FR-45, FR-54–56, FR-63–69, FR-100",
+    "SAD.md §7 SAB fr_module_traceability line 822 — FR-44: app.api.agent_card",
+    "SAD.md §7 SAB nfr_traceability lines 653-675 — NFR-09 type:throughput; NFR-10~14 type:availability",
+    "SAD.md §7 SAB nfr_traceability lines 689-695 — NFR-18~19 type:cost",
+    "SAD.md §1 line 39 — Dependency Flow primary chain + cross-layer",
+    "SAD.md §1 lines 34-36 — Cross-cutting: tests/ in ASCII art",
+    "SAD.md §2.1 line 52 — 5 application source directories + 1 cross-cutting tests directory",
+    "SAD.md §2.1 lines 109-114 — CRG Edge Budget architectural design targets with external edge estimates",
+    "SAD.md §5.2 line 456 — crg_analysis.py:65 HUB_HIGH_FAN_IN citation",
+    "SAD.md §7 SAB nfr_dimension_mapping lines 586-618 — 31 entries populated; NFR-18~22/NFR-30 intentionally absent"
   ],
   "docs_embedded": ["SRS.md", "SAD.md"],
   "confidence": 0.97,
-  "round": 5,
+  "round": 6,
   "gaps": []
 }

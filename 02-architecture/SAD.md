@@ -9,7 +9,7 @@
 
 ## 1. Architecture Overview
 
-OmniBot 採用五層清晰分層架構，對應 SRS 108 個 FR 與 38 個 NFR：
+OmniBot 採用五層清晰分層架構，對應 SRS 108 個 FR（含 3 個 test FR：FR-106~108）與 38 個 NFR：
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -17,7 +17,7 @@ OmniBot 採用五層清晰分層架構，對應 SRS 108 個 FR 與 38 個 NFR：
 │  Webhooks · REST Management · WebSocket · Auth  │
 ├─────────────────────────────────────────────────┤
 │  Layer 2: Core Pipeline (app/core/)             │
-│  PALADIN · PII · Knowledge · DST · Response     │
+│  PALADIN · PII · DST · Knowledge · Response     │
 │  Emotion                                         │
 ├─────────────────────────────────────────────────┤
 │  Layer 3: Services (app/services/)              │
@@ -30,10 +30,13 @@ OmniBot 採用五層清晰分層架構，對應 SRS 108 個 FR 與 38 個 NFR：
 ├─────────────────────────────────────────────────┤
 │  Layer 5: Admin (app/admin/)                    │
 │  RBAC · GDPR · WebUI Backend · ODD SQL          │
+├─────────────────────────────────────────────────┤
+│  Cross-cutting: tests/                          │
+│  unit · integration · e2e · load (FR-106~108)   │
 └─────────────────────────────────────────────────┘
 ```
 
-**Dependency Flow**: API → Core → Services → Infra (downward only).
+**Dependency Flow**: Primary chain: API → Core → Services → Infra (downward). Cross-layer: API → Admin (management); Core → Services (orchestration). All dependency paths terminate at Infra. No circular dependencies.
 Admin manages cross-layer operations (RBAC, GDPR, analytics, WebUI) but its code-level dependency is **Infra only** — admin modules access cross-layer data via the database (app.infra.database), not via direct imports of Core or Services modules.
 
 **No circular dependencies**: API depends on Core/Infra/Admin; Core depends on Infra/Services; Services depends on Infra; Admin depends on Infra only.
@@ -46,7 +49,7 @@ Admin manages cross-layer operations (RBAC, GDPR, analytics, WebUI) but its code
 
 OmniBot 遵循 CRG (Code Review Graph) 高內聚設計：
 
-- **5 個 source directories** (app/api, app/core, app/services, app/infra, app/admin)，各自形成獨立 CRG community
+- **5 個 application source directories** (app/api, app/core, app/services, app/infra, app/admin) + **1 cross-cutting tests directory** (tests/)，各自形成獨立 CRG community
 - **每個 directory 有 hub module**：≥ 70% 的 sibling files import 並呼叫 hub
 - **Entry point** (`app/api/main.py`) 位於 api/ directory，呼叫 api/common.py hub
 - **每個 function body 呼叫 hub function**（非僅 module-level import）
@@ -103,12 +106,12 @@ tests/
 └── load/               # k6 load tests (FR-106)
 ```
 
-**CRG Edge Budget** (per directory):
+**CRG Edge Budget** (per directory — architectural design targets; no tool scan until implementation):
 - api/ (7 files): hub=common.py; each sibling calls `common.build_response()` + `common.extract_user_context()` from every function body → ~28 internal edges vs ~35 external edges; cohesion ≥ 0.44
-- core/ (7 files): hub=pipeline.py; each module called by pipeline and calls `pipeline.get_context()` → ~30 internal edges; cohesion ≥ 0.46
-- services/ (6 files): hub=registry.py; all services registered via `registry.get_service()` called per function → ~20 internal edges; cohesion ≥ 0.40
-- infra/ (9 files): hub=config.py; all infra modules call `config.get_setting()` + `config.health_probe()` per function body → ~36 internal edges; cohesion ≥ 0.42
-- admin/ (5 files): hub=reports.py; all admin modules call `reports.log_admin_action()` per function → ~16 internal edges; cohesion ≥ 0.38
+- core/ (7 files): hub=pipeline.py; each module called by pipeline and calls `pipeline.get_context()` → ~30 internal edges vs ~35 external edges; cohesion ≥ 0.46
+- services/ (6 files): hub=registry.py; all services registered via `registry.get_service()` called per function → ~20 internal edges vs ~30 external edges; cohesion ≥ 0.40
+- infra/ (9 files): hub=config.py; all infra modules call `config.get_setting()` + `config.health_probe()` per function body → ~36 internal edges vs ~50 external edges; cohesion ≥ 0.42
+- admin/ (5 files): hub=reports.py; all admin modules call `reports.log_admin_action()` per function → ~16 internal edges vs ~25 external edges; cohesion ≥ 0.38
 
 ### 2.2 Layer 1: API Gateway (app/api/)
 
@@ -239,7 +242,7 @@ tests/
 | Dependencies | app.infra.database, app.infra.redis_streams, app.infra.observability |
 | Hub Module | registry.py — `get_service()`, `register_service()` |
 
-**FR Coverage**: FR-39–45, FR-54–56, FR-63–69, FR-100
+**FR Coverage**: FR-39–43, FR-45, FR-54–56, FR-63–69, FR-100
 
 #### Module: aee.py
 - `ActionAdapter` abstract interface (`list_tools()`, `execute()`) → FR-39
@@ -450,7 +453,7 @@ These entries document modules evaluated against CRG scoring criteria for Gate 3
 | Module | CRG Evaluation | Result | Gate Handling |
 |--------|---------------|--------|---------------|
 | `app.core.pipeline` | Star-topology orchestrator evaluated for Leiden false positive. Harness detection criteria (`evaluate_dimension.md` §Orchestrator Pattern): community size > 50 AND hub fan_out > 8. Actual: core community size = 7 nodes (pipeline + 6 siblings); pipeline fan_out = 6. Both thresholds NOT met. | **Will NOT trigger** Leiden false positive | No DA waiver needed. No Gate action required for this module. |
-| `app.infra.config` | Hub fan_in = 8: all 8 sibling infra modules (database / rate_limit / redis_streams / jobs / circuit_breaker / observability / security / deployment) import config. Exactly hits `HUB_HIGH_FAN_IN = 8` threshold → CRG emits advisory finding (high severity if untested, medium if tested). Does not affect `community_cohesion.score`. | **Will trigger** HUB_HIGH_FAN_IN advisory | No score impact. Document as intentional infrastructure hub pattern in Gate 3 architecture findings. |
+| `app.infra.config` | Hub fan_in = 8: all 8 sibling infra modules (database / rate_limit / redis_streams / jobs / circuit_breaker / observability / security / deployment) import config. Exactly hits `HUB_HIGH_FAN_IN = 8` threshold (`crg_analysis.py:65 — HUB_HIGH_FAN_IN = _ti('CRG_HUB_HIGH_FANIN', 8)`) → CRG emits advisory finding (high severity if untested, medium if tested). Does not affect `community_cohesion.score`. | **Will trigger** HUB_HIGH_FAN_IN advisory | No score impact. Document as intentional infrastructure hub pattern in Gate 3 architecture findings. |
 
 ---
 
@@ -580,7 +583,39 @@ sab:
     min_coverage: 80
     max_coupling: 0.3
 
-  nfr_dimension_mapping: {}
+  nfr_dimension_mapping:
+    NFR-01: performance
+    NFR-02: performance
+    NFR-03: performance
+    NFR-04: performance
+    NFR-05: performance
+    NFR-06: performance
+    NFR-07: performance
+    NFR-08: performance
+    NFR-09: performance
+    NFR-10: error_handling
+    NFR-11: error_handling
+    NFR-12: error_handling
+    NFR-13: error_handling
+    NFR-14: error_handling
+    NFR-15: security
+    NFR-16: security
+    NFR-17: security
+    NFR-23: test_assertion_quality
+    NFR-24: test_assertion_quality
+    NFR-25: test_assertion_quality
+    NFR-26: test_assertion_quality
+    NFR-27: test_assertion_quality
+    NFR-28: test_assertion_quality
+    NFR-29: test_assertion_quality
+    NFR-31: readability
+    NFR-32: test_assertion_quality
+    NFR-33: error_handling
+    NFR-34: error_handling
+    NFR-35: error_handling
+    NFR-36: security
+    NFR-37: performance
+    NFR-38: performance
 
   nfr_traceability:
     NFR-01:
@@ -616,27 +651,27 @@ sab:
       target: "p95 < 30000ms"
       module: app.infra.jobs
     NFR-09:
-      type: performance
+      type: throughput
       target: ">=2000 TPS"
       module: app.api.webhooks
     NFR-10:
-      type: reliability
+      type: availability
       target: ">=99.9% uptime per month"
       module: app.infra.circuit_breaker
     NFR-11:
-      type: reliability
+      type: availability
       target: ">=99.95% early warning threshold"
       module: app.infra.observability
     NFR-12:
-      type: reliability
+      type: availability
       target: "p95 > 800ms triggers HighLatency alert"
       module: app.infra.observability
     NFR-13:
-      type: reliability
+      type: availability
       target: "error_rate > 0.5% triggers alert"
       module: app.infra.observability
     NFR-14:
-      type: reliability
+      type: availability
       target: "DR recovery < 5 minutes"
       module: app.infra.deployment
     NFR-15:
@@ -652,11 +687,11 @@ sab:
       target: "zero secrets in VCS"
       module: app.infra.security
     NFR-18:
-      type: usability
+      type: cost
       target: "< $500 / month infrastructure cost"
       module: app.infra.deployment
     NFR-19:
-      type: usability
+      type: cost
       target: "~ $210 / month LLM API cost"
       module: app.services.llm_judge
     NFR-20:

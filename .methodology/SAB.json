@@ -178,32 +178,32 @@
       "module": "app.infra.jobs"
     },
     "NFR-09": {
-      "type": "performance",
+      "type": "throughput",
       "target": ">=2000 TPS",
       "module": "app.api.webhooks"
     },
     "NFR-10": {
-      "type": "reliability",
+      "type": "availability",
       "target": ">=99.9% uptime per month",
       "module": "app.infra.circuit_breaker"
     },
     "NFR-11": {
-      "type": "reliability",
+      "type": "availability",
       "target": ">=99.95% early warning threshold",
       "module": "app.infra.observability"
     },
     "NFR-12": {
-      "type": "reliability",
+      "type": "availability",
       "target": "p95 > 800ms triggers HighLatency alert",
       "module": "app.infra.observability"
     },
     "NFR-13": {
-      "type": "reliability",
+      "type": "availability",
       "target": "error_rate > 0.5% triggers alert",
       "module": "app.infra.observability"
     },
     "NFR-14": {
-      "type": "reliability",
+      "type": "availability",
       "target": "DR recovery < 5 minutes",
       "module": "app.infra.deployment"
     },
@@ -223,12 +223,12 @@
       "module": "app.infra.security"
     },
     "NFR-18": {
-      "type": "usability",
+      "type": "cost",
       "target": "< $500 / month infrastructure cost",
       "module": "app.infra.deployment"
     },
     "NFR-19": {
-      "type": "usability",
+      "type": "cost",
       "target": "~ $210 / month LLM API cost",
       "module": "app.services.llm_judge"
     },
