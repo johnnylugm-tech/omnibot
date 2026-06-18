@@ -23,8 +23,9 @@ Citations:
 from __future__ import annotations
 
 from prometheus_client import Counter, Gauge, Histogram, generate_latest
+from prometheus_client.metrics import MetricWrapperBase
 
-PROMETHEUS_METRICS: dict[str, Counter | Gauge | Histogram] = {
+PROMETHEUS_METRICS: dict[str, MetricWrapperBase] = {
     "response_duration_seconds": Histogram(
         "response_duration_seconds",
         "End-to-end response latency in seconds",
