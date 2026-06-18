@@ -314,7 +314,7 @@
     },
     "NFR-36": {
       "type": "security",
-      "target": "M2M token 90-day expiry; 24hr overlap on rotate",
+      "target": "M2M token 90-day expiry; revoke immediately invalidates",
       "module": "app.api.auth"
     },
     "NFR-37": {

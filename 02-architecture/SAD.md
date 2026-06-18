@@ -135,7 +135,7 @@ tests/
 
 #### Module: auth.py
 - POST /api/v1/auth/login, /auth/refresh, /users, /users/{id}/roles → FR-86
-- POST /api/v1/m2m/tokens, GET, revoke, rotate (24hr overlap, hourly cleanup) → FR-87
+- POST /api/v1/m2m/tokens, GET, revoke (90-day expiry; revoke immediately invalidates) → FR-87
 
 #### Module: management.py
 - GET/POST /api/v1/knowledge; PUT/DELETE /api/v1/knowledge/{id}; POST /api/v1/knowledge/bulk → FR-85
@@ -326,7 +326,7 @@ tests/
 **Architecture Risk**: jobs.py uses retry logic + async queue → NP-07 + NP-15 forced
 
 #### Module: circuit_breaker.py
-- 9-level breaker: level_0=full; level_1=cache (LLM p95>800ms/2m); level_2=T1+T2 only (p95>1.5s/2m); level_3=T1 only (≥5 failures); level_4=DB→Redis cache (DB p95>2s/1m); level_embedding_down=tsvector fallback; level_classifier_down=bypass L4; level_judge_down=rule-based; level_5=static maintenance → FR-99
+- 9-level breaker: level_0=full; level_1=cache (LLM p95>800ms/2m); level_2=T1+T2 only (p95>1.5s/2m); level_3=T1 only (≥5 failures); level_4=DB→Redis cache (DB p95>2s/1m); level_embedding_down=tsvector fallback; level_classifier_down=bypass PALADIN-L4; level_judge_down=rule-based; level_5=static maintenance → FR-99
 - Auto-recovery on consecutive success
 
 **Architecture Risk**: circuit_breaker.py manages shared mutable state (level counters, probe state) under concurrent async access → NP-13 forced
@@ -393,6 +393,8 @@ tests/
 ---
 
 ## 3. Error Handling
+
+> **Note**: L0–L9 below are **error-handling response levels** — distinct from PALADIN's internal security layers (L1–L5 in §2.3) and circuit-breaker degradation levels (level_0–level_5 in §2.5).
 
 | Level | Condition | Strategy |
 |-------|-----------|----------|
@@ -491,7 +493,7 @@ HybridKnowledge.query(text)
 level_0 (full) ←→ level_1 (cache) ←→ level_2 (T1+T2 only) ←→ level_3 (T1 only) ←→ level_5 (static)
      ↕                                    ↕
 level_4 (DB→Redis)                 level_embedding_down (tsvector)
-                                   level_classifier_down (bypass L4)
+                                   level_classifier_down (bypass PALADIN-L4)
                                    level_judge_down (rule-based judge)
 ```
 
@@ -728,7 +730,7 @@ sab:
       module: app.infra.rate_limit
     NFR-36:
       type: security
-      target: "M2M token 90-day expiry; 24hr overlap on rotate"
+      target: "M2M token 90-day expiry; revoke immediately invalidates"
       module: app.api.auth
     NFR-37:
       type: performance
