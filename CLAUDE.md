@@ -8,12 +8,12 @@
 <!-- harness:auto-start -->
 ## Harness Status _(auto-generated — do not edit this block)_
 
-> Phase: **3 — Implementation** | Last Gate: **Gate 1** | Last FR: FR-21 | Updated: 2026-06-18
+> Phase: **3 — Implementation** | Last Gate: **Gate 1** | Last FR: FR-22 | Updated: 2026-06-18
 
 ### Gate Progress
 | Gate | Score / FRs | Status |
 |------|-------------|--------|
-| Gate 1 | 21/108 FRs | 🔄 In Progress |
+| Gate 1 | 22/108 FRs | 🔄 In Progress |
 | Gate 2 | — | ⬜ Not Started |
 | Gate 3 | — | ⬜ Not Started |
 | Gate 4 | — | ⬜ Not Started |
@@ -42,7 +42,7 @@
 | FR-19 | 100.0 | ✅ COMPLETE |
 | FR-20 | 100.0 | ✅ COMPLETE |
 | FR-21 | 100.0 | ✅ COMPLETE |
-| FR-22 | — | ⬜ Pending |
+| FR-22 | 100.0 | ✅ COMPLETE |
 | FR-23 | — | ⬜ Pending |
 | FR-24 | — | ⬜ Pending |
 | FR-25 | — | ⬜ Pending |
