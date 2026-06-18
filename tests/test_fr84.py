@@ -8,10 +8,14 @@ Citations:
 
 def test_fr84_all_6_webhook_endpoints_exist():
     """[FR-84] all_6_webhook_endpoints_exist."""
+    import pytest
     from src.api.webhooks import WebhookRouter
-    assert True  # RED: will fail on import
-
-
+    router = WebhookRouter()
+    router.register("telegram", lambda p: p)
+    result = router.route("telegram", {"ok": True})
+    assert result == {"ok": True}
+    with pytest.raises(KeyError):
+        router.route("unknown", {})
 def test_fr84_error_codes_consistent():
     """[FR-84] error_codes_consistent."""
     from src.api.webhooks import WebhookRouter

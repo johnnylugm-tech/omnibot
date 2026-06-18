@@ -8,10 +8,13 @@ Citations:
 
 def test_fr106_smoke_10vu_baseline():
     """[FR-106] smoke_10vu_baseline."""
-    from src.loadtest.k6 import K6LoadTest
-    assert True  # RED: will fail on import
-
-
+    from src.loadtest.k6 import K6LoadTest, K6Scenario
+    test = K6LoadTest()
+    scenario = K6Scenario("smoke", vus=5, duration="1m", target_rps=10)
+    test.add_scenario(scenario)
+    assert len(test.scenarios) == 1
+    script = test.to_script()
+    assert isinstance(script, str)
 def test_fr106_load_p95_under_1000ms():
     """[FR-106] load_p95_under_1000ms."""
     from src.loadtest.k6 import K6LoadTest

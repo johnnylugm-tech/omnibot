@@ -9,9 +9,9 @@ Citations:
 def test_fr35_order_status_missing_order_id():
     """[FR-35] order_status_missing_order_id."""
     from src.dst.dialogue_state import SlotFiller
-    assert True  # RED: will fail on import
-
-
+    sf = SlotFiller()
+    slots = sf.extract("book a flight to Tokyo", [])
+    assert isinstance(slots, dict)
 def test_fr35_return_request_missing_both_slots():
     """[FR-35] return_request_missing_both_slots."""
     from src.dst.dialogue_state import SlotFiller

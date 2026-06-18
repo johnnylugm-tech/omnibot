@@ -8,10 +8,11 @@ Citations:
 
 def test_fr99_level1_triggers_on_llm_p95_800ms():
     """[FR-99] level1_triggers_on_llm_p95_800ms."""
-    from src.ha.circuit_breaker import CircuitBreaker
-    assert True  # RED: will fail on import
-
-
+    from src.ha.circuit_breaker import CircuitBreaker, CircuitState
+    cb = CircuitBreaker(threshold=3)
+    assert cb.state == CircuitState.CLOSED
+    result = cb.call(lambda: "ok")
+    assert result == "ok" 
 def test_fr99_level3_triggers_on_5_consecutive_failures():
     """[FR-99] level3_triggers_on_5_consecutive_failures."""
     from src.ha.circuit_breaker import CircuitBreaker

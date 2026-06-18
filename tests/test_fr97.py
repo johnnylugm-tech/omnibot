@@ -9,9 +9,12 @@ Citations:
 def test_fr97_pg_basebackup_restore_under_5min():
     """[FR-97] pg_basebackup_restore_under_5min."""
     from src.deployment.backup import BackupStrategy
-    assert True  # RED: will fail on import
-
-
+    bk = BackupStrategy("/tmp/backups")
+    pg_path = bk.backup_postgres()
+    assert isinstance(pg_path, str)
+    redis_path = bk.backup_redis()
+    assert isinstance(redis_path, str)
+    assert bk.restore("/tmp/backups/pg.tar") is True
 def test_fr97_redis_rdb_restore_works():
     """[FR-97] redis_rdb_restore_works."""
     from src.deployment.backup import BackupStrategy

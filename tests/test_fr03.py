@@ -9,9 +9,9 @@ Citations:
 def test_fr03_messenger_hub_challenge_returns_challenge():
     """[FR-03] messenger_hub_challenge_returns_challenge."""
     from src.adapters.messenger import MessengerWebhookVerifier
-    assert True  # RED: will fail on import
-
-
+    v = MessengerWebhookVerifier("secret")
+    assert v.verify(b"body", "sig") is True
+    assert isinstance(v.parse({}), dict)
 def test_fr03_messenger_webhook_valid_post_200():
     """[FR-03] messenger_webhook_valid_post_200."""
     from src.adapters.messenger import MessengerWebhookVerifier

@@ -9,9 +9,11 @@ Citations:
 def test_fr76_max_retries_3_then_stop():
     """[FR-76] max_retries_3_then_stop."""
     from src.jobs.embedding_job import EmbeddingJob
-    assert True  # RED: will fail on import
-
-
+    job = EmbeddingJob()
+    vec = job.run("doc-1", "some text")
+    assert isinstance(vec, list)
+    ids = job.batch_run([{"id": "1", "text": "a"}])
+    assert isinstance(ids, list)
 def test_fr76_backoff_has_jitter():
     """[FR-76] backoff_has_jitter."""
     from src.jobs.embedding_job import EmbeddingJob

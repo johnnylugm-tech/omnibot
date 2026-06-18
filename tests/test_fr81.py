@@ -8,10 +8,15 @@ Citations:
 
 def test_fr81_3_retries_then_stop():
     """[FR-81] 3_retries_then_stop."""
+    import pytest
     from src.ha.retry import RetryPolicy
-    assert True  # RED: will fail on import
-
-
+    policy = RetryPolicy(max_attempts=3, base_delay=1.0)
+    result = policy.execute(lambda: "ok")
+    assert result == "ok"
+    delay = policy.delay_for(0)
+    assert delay == 1.0
+    with pytest.raises(ValueError):
+        policy.execute(lambda: (_ for _ in ()).throw(ValueError("fail")))
 def test_fr81_delay_capped_at_30s():
     """[FR-81] delay_capped_at_30s."""
     from src.ha.retry import RetryPolicy

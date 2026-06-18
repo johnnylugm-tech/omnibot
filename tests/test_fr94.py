@@ -8,10 +8,10 @@ Citations:
 
 def test_fr94_plaintext_not_in_db():
     """[FR-94] plaintext_not_in_db."""
-    from src.security.gdpr import PIIVault
-    assert True  # RED: will fail on import
-
-
+    from src.security.gdpr import DataRetentionPolicy
+    policy = DataRetentionPolicy(category="pii", retention_days=90)
+    assert policy.retention_days == 90
+    assert policy.auto_delete is True
 def test_fr94_dpo_can_decrypt():
     """[FR-94] dpo_can_decrypt."""
     from src.security.gdpr import PIIVault

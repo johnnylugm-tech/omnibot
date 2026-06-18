@@ -9,9 +9,9 @@ Citations:
 def test_fr04_whatsapp_hub_challenge_returns_challenge():
     """[FR-04] whatsapp_hub_challenge_returns_challenge."""
     from src.adapters.whatsapp import WhatsAppWebhookVerifier
-    assert True  # RED: will fail on import
-
-
+    v = WhatsAppWebhookVerifier("secret", "token")
+    assert v.verify(b"body", "sig") is True
+    assert isinstance(v.parse({}), dict)
 def test_fr04_whatsapp_invalid_sha256_prefix_401():
     """[FR-04] whatsapp_invalid_sha256_prefix_401."""
     from src.adapters.whatsapp import WhatsAppWebhookVerifier

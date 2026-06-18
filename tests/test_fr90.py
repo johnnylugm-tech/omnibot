@@ -9,9 +9,9 @@ Citations:
 def test_fr90_redis_rejects_plaintext_connection():
     """[FR-90] redis_rejects_plaintext_connection."""
     from src.security.redis_security import RedisSecurityConfig
-    assert True  # RED: will fail on import
-
-
+    cfg = RedisSecurityConfig(host="localhost", tls_enabled=False, password="pw")
+    url = cfg.to_url()
+    assert "localhost" in url
 def test_fr90_auth_from_env_var():
     """[FR-90] auth_from_env_var."""
     from src.security.redis_security import RedisSecurityConfig

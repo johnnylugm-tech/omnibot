@@ -9,9 +9,9 @@ Citations:
 def test_fr21_telegram_over_30rps_returns_429():
     """[FR-21] telegram_over_30rps_returns_429."""
     from src.rate_limit.rate_limiter import RateLimiter
-    assert True  # RED: will fail on import
-
-
+    rl = RateLimiter(limit=10, window=60)
+    assert rl.is_allowed("user:1") is True
+    assert rl.get_remaining("user:1") == 10
 def test_fr21_web_over_10rps_returns_429():
     """[FR-21] web_over_10rps_returns_429."""
     from src.rate_limit.rate_limiter import RateLimiter

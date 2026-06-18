@@ -9,9 +9,9 @@ Citations:
 def test_fr70_log_json_parseable():
     """[FR-70] log_json_parseable."""
     from src.observability.logger import StructuredLogger
-    assert True  # RED: will fail on import
-
-
+    log = StructuredLogger("test")
+    log.info("test message", key="val")
+    log.error("error message")
 def test_fr70_timestamp_iso8601_z_format():
     """[FR-70] timestamp_iso8601_z_format."""
     from src.observability.logger import StructuredLogger

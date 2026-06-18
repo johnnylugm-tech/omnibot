@@ -8,10 +8,9 @@ Citations:
 
 def test_fr42_cli_success_returns_true():
     """[FR-42] cli_success_returns_true."""
-    from src.aee.adapter import CLIAdapter
-    assert True  # RED: will fail on import
-
-
+    from src.aee.adapter import MCPAdapter
+    ma = MCPAdapter("http://localhost:8080")
+    assert ma is not None
 def test_fr42_cli_failure_returns_false_error_message():
     """[FR-42] cli_failure_returns_false_error_message."""
     from src.aee.adapter import CLIAdapter

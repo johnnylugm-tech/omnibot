@@ -9,9 +9,10 @@ Citations:
 def test_fr63_sha256_same_user_same_experiment_same_variant():
     """[FR-63] sha256_same_user_same_experiment_same_variant."""
     from src.ab_test.manager import ABTestManager
-    assert True  # RED: will fail on import
-
-
+    mgr = ABTestManager()
+    mgr.create("test-1", ["A", "B"])
+    variant = mgr.assign("test-1", "user-1")
+    assert variant in ("A", "B")
 def test_fr63_variant_deterministic_cross_process():
     """[FR-63] variant_deterministic_cross_process."""
     from src.ab_test.manager import ABTestManager

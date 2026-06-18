@@ -8,10 +8,9 @@ Citations:
 
 def test_fr16_retrospective_block_event_in_security_logs():
     """[FR-16] retrospective_block_event_in_security_logs."""
-    from src.security.paladin import RetrospectiveBlocker
-    assert True  # RED: will fail on import
-
-
+    from src.security.paladin import RetractionManager
+    rm = RetractionManager()
+    assert rm.retract("msg-1", "spam") is True
 def test_fr16_l3_result_revoked_on_late_injection():
     """[FR-16] l3_result_revoked_on_late_injection."""
     from src.security.paladin import RetrospectiveBlocker

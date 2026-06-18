@@ -9,9 +9,9 @@ Citations:
 def test_fr05_web_guest_session_returns_jwt():
     """[FR-05] web_guest_session_returns_jwt."""
     from src.adapters.web import WebPlatformAdapter
-    assert True  # RED: will fail on import
-
-
+    adapter = WebPlatformAdapter()
+    assert adapter.accept("sess1") is True
+    adapter.close("sess1")
 def test_fr05_web_message_invalid_jwt_401():
     """[FR-05] web_message_invalid_jwt_401."""
     from src.adapters.web import WebPlatformAdapter

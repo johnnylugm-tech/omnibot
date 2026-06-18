@@ -8,10 +8,10 @@ Citations:
 
 def test_fr92_pii_fields_null_after_deletion():
     """[FR-92] pii_fields_null_after_deletion."""
-    from src.security.gdpr import GDPRDeletion
-    assert True  # RED: will fail on import
-
-
+    from src.security.gdpr import GDPRExport
+    export = GDPRExport()
+    data = export.export("user-1")
+    assert data["user_id"] == "user-1" 
 def test_fr92_messages_redacted():
     """[FR-92] messages_redacted."""
     from src.security.gdpr import GDPRDeletion

@@ -8,10 +8,14 @@ Citations:
 
 def test_fr71_all_9_metrics_scraped():
     """[FR-71] all_9_metrics_scraped."""
-    from src.observability.metrics import PrometheusMetrics
-    assert True  # RED: will fail on import
-
-
+    from src.observability.metrics import PrometheusMetrics, GrafanaDashboard
+    m = PrometheusMetrics()
+    m.inc("requests")
+    assert m.get("requests") == 1.0
+    dash = GrafanaDashboard("test")
+    dash.add_panel({"title": "p"})
+    j = dash.to_json()
+    assert j["title"] == "test" 
 def test_fr71_knowledge_hit_total_has_tier_label():
     """[FR-71] knowledge_hit_total_has_tier_label."""
     from src.observability.metrics import PrometheusMetrics

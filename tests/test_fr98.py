@@ -9,9 +9,11 @@ Citations:
 def test_fr98_knowledge_soft_delete_rollback():
     """[FR-98] knowledge_soft_delete_rollback."""
     from src.deployment.rollback import RollbackManager
-    assert True  # RED: will fail on import
-
-
+    rm = RollbackManager()
+    assert rm.rollback("v1.0") is True
+    history = rm.get_history()
+    assert isinstance(history, list)
+    assert rm.abort_experiment("exp-1") is True
 def test_fr98_schema_downgrade_no_data_loss():
     """[FR-98] schema_downgrade_no_data_loss."""
     from src.deployment.rollback import RollbackManager

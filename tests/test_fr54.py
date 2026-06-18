@@ -9,9 +9,10 @@ Citations:
 def test_fr54_create_inserts_escalation_queue():
     """[FR-54] create_inserts_escalation_queue."""
     from src.escalation.manager import EscalationManager
-    assert True  # RED: will fail on import
-
-
+    em = EscalationManager()
+    assert em.should_escalate({}) is False
+    ticket = em.escalate("sess-1", "angry user")
+    assert "ticket_id" in ticket
 def test_fr54_assign_updates_assigned_agent():
     """[FR-54] assign_updates_assigned_agent."""
     from src.escalation.manager import EscalationManager

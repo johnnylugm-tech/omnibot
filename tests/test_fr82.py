@@ -9,9 +9,10 @@ Citations:
 def test_fr82_all_20_tables_created():
     """[FR-82] all_20_tables_created."""
     from src.db.schema import DatabaseSchema
-    assert True  # RED: will fail on import
-
-
+    schema = DatabaseSchema()
+    schema.define_table("users", {"id": "uuid"})
+    ddl = schema.get_ddl()
+    assert isinstance(ddl, str)
 def test_fr82_fk_constraints_valid():
     """[FR-82] fk_constraints_valid."""
     from src.db.schema import DatabaseSchema

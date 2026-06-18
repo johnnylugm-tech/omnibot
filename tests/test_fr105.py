@@ -9,9 +9,13 @@ Citations:
 def test_fr105_all_sql_execute_on_staging():
     """[FR-105] all_sql_execute_on_staging."""
     from src.analytics.odd_sql import ODDSQLQueries
-    assert True  # RED: will fail on import
-
-
+    queries = ODDSQLQueries()
+    sources = queries.get_data_sources()
+    assert isinstance(sources, list)
+    lineage = queries.trace_lineage("users")
+    assert lineage["table"] == "users"
+    manifest = queries.generate_manifest()
+    assert isinstance(manifest, str)
 def test_fr105_fcr_query_in_scope_only():
     """[FR-105] fcr_query_in_scope_only."""
     from src.analytics.odd_sql import ODDSQLQueries

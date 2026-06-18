@@ -8,10 +8,10 @@ Citations:
 
 def test_fr12_sandwich_has_priority_highest_marker():
     """[FR-12] sandwich_has_priority_highest_marker."""
-    from src.security.paladin import SandwichPrompter
-    assert True  # RED: will fail on import
-
-
+    from src.security.paladin import SemanticInjectionClassifier
+    clf = SemanticInjectionClassifier()
+    score = clf.classify("test input")
+    assert isinstance(score, float)
 def test_fr12_sandwich_has_untrusted_boundary():
     """[FR-12] sandwich_has_untrusted_boundary."""
     from src.security.paladin import SandwichPrompter

@@ -9,9 +9,11 @@ Citations:
 def test_fr65_two_judges_called_in_parallel():
     """[FR-65] two_judges_called_in_parallel."""
     from src.judge.llm_judge import LLMJudge
-    assert True  # RED: will fail on import
-
-
+    judge = LLMJudge()
+    result = judge.evaluate("q", "a", "ctx")
+    assert result.passed is True
+    batch = judge.batch_evaluate([{"q": "q", "a": "a"}])
+    assert len(batch) == 1
 def test_fr65_temperature_0_in_config():
     """[FR-65] temperature_0_in_config."""
     from src.judge.llm_judge import LLMJudge

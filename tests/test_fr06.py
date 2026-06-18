@@ -9,9 +9,9 @@ Citations:
 def test_fr06_a2a_valid_m2m_token_200():
     """[FR-06] a2a_valid_m2m_token_200."""
     from src.adapters.a2a import A2APlatformAdapter
-    assert True  # RED: will fail on import
-
-
+    adapter = A2APlatformAdapter("agent-1")
+    assert adapter.send({}) is True
+    assert isinstance(adapter.receive({"k": "v"}), dict)
 def test_fr06_a2a_invalid_m2m_token_401():
     """[FR-06] a2a_invalid_m2m_token_401."""
     from src.adapters.a2a import A2APlatformAdapter

@@ -9,9 +9,12 @@ Citations:
 def test_fr89_tde_enabled():
     """[FR-89] tde_enabled."""
     from src.security.tde import TDEManager
-    assert True  # RED: will fail on import
-
-
+    tde = TDEManager("key-1")
+    encrypted = tde.encrypt("secret")
+    decrypted = tde.decrypt(encrypted)
+    assert isinstance(decrypted, str)
+    new_key = tde.rotate_key()
+    assert isinstance(new_key, str)
 def test_fr89_key_rotation_scheduled_90d():
     """[FR-89] key_rotation_scheduled_90d."""
     from src.security.tde import TDEManager

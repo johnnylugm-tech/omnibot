@@ -9,9 +9,10 @@ Citations:
 def test_fr88_data_export_returns_json():
     """[FR-88] data_export_returns_json."""
     from src.api.gdpr import GDPRRouter
-    assert True  # RED: will fail on import
-
-
+    router = GDPRRouter()
+    data = router.export_data("user-1")
+    assert data["user_id"] == "user-1"
+    assert router.delete_user("user-1") is True
 def test_fr88_data_export_csv_downloadable():
     """[FR-88] data_export_csv_downloadable."""
     from src.api.gdpr import GDPRRouter

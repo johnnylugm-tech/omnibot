@@ -9,9 +9,9 @@ Citations:
 def test_fr39_adapter_implements_list_tools():
     """[FR-39] adapter_implements_list_tools."""
     from src.aee.adapter import ActionAdapter
-    assert True  # RED: will fail on import
-
-
+    aa = ActionAdapter()
+    result = aa.execute("noop", {})
+    assert result is None
 def test_fr39_adapter_implements_execute():
     """[FR-39] adapter_implements_execute."""
     from src.aee.adapter import ActionAdapter

@@ -9,9 +9,9 @@ Citations:
 def test_fr01_telegram_webhook_valid_signature():
     """[FR-01] telegram_webhook_valid_signature."""
     from src.adapters.telegram import TelegramWebhookVerifier
-    assert True  # RED: will fail on import
-
-
+    v = TelegramWebhookVerifier("tok:123")
+    assert v.verify(b"payload", "sig") is True
+    assert isinstance(v.parse({"ok": True}), dict)
 def test_fr01_telegram_webhook_invalid_signature_401():
     """[FR-01] telegram_webhook_invalid_signature_401."""
     from src.adapters.telegram import TelegramWebhookVerifier

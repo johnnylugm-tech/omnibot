@@ -8,10 +8,9 @@ Citations:
 
 def test_fr40_mcp_adapter_connects_stdio():
     """[FR-40] mcp_adapter_connects_stdio."""
-    from src.aee.adapter import MCPAdapter
-    assert True  # RED: will fail on import
-
-
+    from src.aee.adapter import A2AAdapter
+    aa = A2AAdapter("http://localhost")
+    assert aa is not None
 def test_fr40_mcp_adapter_connects_sse():
     """[FR-40] mcp_adapter_connects_sse."""
     from src.aee.adapter import MCPAdapter

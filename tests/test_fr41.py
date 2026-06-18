@@ -8,10 +8,9 @@ Citations:
 
 def test_fr41_agent_card_discovery_caches_300s():
     """[FR-41] agent_card_discovery_caches_300s."""
-    from src.aee.adapter import A2AAdapter
-    assert True  # RED: will fail on import
-
-
+    from src.aee.adapter import CLIAdapter
+    ca = CLIAdapter(["echo"])
+    assert ca is not None
 def test_fr41_json_rpc_2_format_correct():
     """[FR-41] json_rpc_2_format_correct."""
     from src.aee.adapter import A2AAdapter

@@ -8,10 +8,12 @@ Citations:
 
 def test_fr91_180d_messages_archived():
     """[FR-91] 180d_messages_archived."""
-    from src.security.gdpr import DataRetentionPolicy
-    assert True  # RED: will fail on import
-
-
+    from src.security.gdpr import PIIVault
+    vault = PIIVault()
+    vault.store("user:1:email", "test@example.com")
+    val = vault.retrieve("user:1:email")
+    assert val == "test@example.com"
+    assert vault.delete("user:1:email") is True
 def test_fr91_2yr_archive_deleted():
     """[FR-91] 2yr_archive_deleted."""
     from src.security.gdpr import DataRetentionPolicy

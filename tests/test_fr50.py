@@ -9,9 +9,11 @@ Citations:
 def test_fr50_rule_default_template_exists():
     """[FR-50] rule_default_template_exists."""
     from src.response.generator import ResponseGenerator
-    assert True  # RED: will fail on import
-
-
+    gen = ResponseGenerator()
+    resp = gen.generate("query", [])
+    assert isinstance(resp, str)
+    rendered = gen.render("Hello {name}!", {"name": "World"})
+    assert rendered == "Hello World!" 
 def test_fr50_rag_default_has_knowledge_suffix():
     """[FR-50] rag_default_has_knowledge_suffix."""
     from src.response.generator import ResponseGenerator

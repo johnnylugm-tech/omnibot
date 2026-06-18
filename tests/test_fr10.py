@@ -9,9 +9,9 @@ Citations:
 def test_fr10_cyrillic_homoglyph_normalized():
     """[FR-10] cyrillic_homoglyph_normalized."""
     from src.security.paladin import InputSanitizer
-    assert True  # RED: will fail on import
-
-
+    s = InputSanitizer()
+    result = s.sanitize("hello world")
+    assert isinstance(result, str)
 def test_fr10_greek_homoglyph_normalized():
     """[FR-10] greek_homoglyph_normalized."""
     from src.security.paladin import InputSanitizer

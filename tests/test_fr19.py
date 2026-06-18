@@ -9,9 +9,8 @@ Citations:
 def test_fr19_password_keyword_triggers_escalate():
     """[FR-19] password_keyword_triggers_escalate."""
     from src.pii.masking import PIIEscalationChecker
-    assert True  # RED: will fail on import
-
-
+    checker = PIIEscalationChecker()
+    assert isinstance(checker.should_escalate("test"), bool)
 def test_fr19_bank_account_triggers_escalate():
     """[FR-19] bank_account_triggers_escalate."""
     from src.pii.masking import PIIEscalationChecker

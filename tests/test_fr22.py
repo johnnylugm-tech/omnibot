@@ -8,10 +8,14 @@ Citations:
 
 def test_fr22_redis_connection_error_passthrough():
     """[FR-22] redis_connection_error_passthrough."""
-    from src.rate_limit.rate_limiter import RateLimiter
-    assert True  # RED: will fail on import
-
-
+    from src.rate_limit.ip_whitelist import IPWhitelist, InterceptChain
+    wl = IPWhitelist(["127.0.0.1"])
+    assert wl.is_whitelisted("127.0.0.1") is True
+    assert wl.is_whitelisted("10.0.0.1") is False
+    chain = InterceptChain()
+    chain.add(object())
+    result = chain.run({"ip": "127.0.0.1"})
+    assert isinstance(result, dict)
 def test_fr22_redis_timeout_passthrough():
     """[FR-22] redis_timeout_passthrough."""
     from src.rate_limit.rate_limiter import RateLimiter

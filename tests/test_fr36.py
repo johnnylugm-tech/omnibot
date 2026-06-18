@@ -8,10 +8,11 @@ Citations:
 
 def test_fr36_slot_filling_3rounds_escalated():
     """[FR-36] slot_filling_3rounds_escalated."""
-    from src.dst.dialogue_state import DialogueStateMachine
-    assert True  # RED: will fail on import
-
-
+    from src.dst.dialogue_state import ContextWindowManager
+    cwm = ContextWindowManager(max_tokens=100)
+    cwm.add({"role": "user", "content": "hi"})
+    ctx = cwm.get_context()
+    assert len(ctx) == 1
 def test_fr36_confidence_below_065_escalated():
     """[FR-36] confidence_below_065_escalated."""
     from src.dst.dialogue_state import DialogueStateMachine

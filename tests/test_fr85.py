@@ -9,9 +9,11 @@ Citations:
 def test_fr85_knowledge_list_rbac_protected():
     """[FR-85] knowledge_list_rbac_protected."""
     from src.api.management import ManagementRouter
-    assert True  # RED: will fail on import
-
-
+    router = ManagementRouter()
+    result = router.list_users()
+    assert result["total"] == 0
+    stats = router.get_stats()
+    assert isinstance(stats, dict)
 def test_fr85_health_returns_postgres_redis_uptime():
     """[FR-85] health_returns_postgres_redis_uptime."""
     from src.api.management import ManagementRouter

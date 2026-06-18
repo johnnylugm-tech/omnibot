@@ -9,9 +9,9 @@ Citations:
 def test_fr18_phone_tw_format_masked():
     """[FR-18] phone_tw_format_masked."""
     from src.pii.masking import PIIMasker
-    assert True  # RED: will fail on import
-
-
+    masker = PIIMasker()
+    masked = masker.mask("call 0912345678")
+    assert "[PHONE]" in masked
 def test_fr18_email_masked():
     """[FR-18] email_masked."""
     from src.pii.masking import PIIMasker

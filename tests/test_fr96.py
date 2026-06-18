@@ -9,9 +9,9 @@ Citations:
 def test_fr96_deployment_3_replicas():
     """[FR-96] deployment_3_replicas."""
     from src.deployment.kubernetes import KubernetesConfig
-    assert True  # RED: will fail on import
-
-
+    cfg = KubernetesConfig(namespace="prod", replicas=3)
+    manifest = cfg.to_manifest()
+    assert manifest["spec"]["replicas"] == 3
 def test_fr96_hpa_scales_to_10():
     """[FR-96] hpa_scales_to_10."""
     from src.deployment.kubernetes import KubernetesConfig

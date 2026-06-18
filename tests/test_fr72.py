@@ -9,9 +9,9 @@ Citations:
 def test_fr72_span_tree_complete_per_request():
     """[FR-72] span_tree_complete_per_request."""
     from src.observability.tracing import OTelTracer
-    assert True  # RED: will fail on import
-
-
+    tracer = OTelTracer("test-service")
+    span = tracer.start_span("op")
+    tracer.inject({})
 def test_fr72_trace_id_in_response_header():
     """[FR-72] trace_id_in_response_header."""
     from src.observability.tracing import OTelTracer

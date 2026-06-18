@@ -9,9 +9,12 @@ Citations:
 def test_fr101_knowledge_crud_correct():
     """[FR-101] knowledge_crud_correct."""
     from src.webui.knowledge import KnowledgeWebUI
-    assert True  # RED: will fail on import
-
-
+    ui = KnowledgeWebUI()
+    result = ui.list_documents()
+    assert result["total"] == 0
+    doc_id = ui.upload_document("content", {})
+    assert isinstance(doc_id, str)
+    assert ui.delete_document("doc-1") is True
 def test_fr101_csv_import_succeeds():
     """[FR-101] csv_import_succeeds."""
     from src.webui.knowledge import KnowledgeWebUI

@@ -9,9 +9,10 @@ Citations:
 def test_fr57_agent_ws_escalation_new_event():
     """[FR-57] agent_ws_escalation_new_event."""
     from src.websocket.handler import WebSocketHandler
-    assert True  # RED: will fail on import
-
-
+    handler = WebSocketHandler()
+    handler.connect("sess-1", object())
+    handler.disconnect("sess-1")
+    assert "sess-1" not in handler._connections
 def test_fr57_agent_ws_invalid_jwt_rejected():
     """[FR-57] agent_ws_invalid_jwt_rejected."""
     from src.websocket.handler import WebSocketHandler

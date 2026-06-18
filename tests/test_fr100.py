@@ -9,9 +9,11 @@ Citations:
 def test_fr100_image_auto_escalate():
     """[FR-100] image_auto_escalate."""
     from src.media.handler import MediaHandler
-    assert True  # RED: will fail on import
-
-
+    handler = MediaHandler()
+    url = handler.upload(b"data", "test.jpg", "image/jpeg")
+    assert isinstance(url, str)
+    assert isinstance(handler.get_url("media-1"), str)
+    assert handler.delete("media-1") is True
 def test_fr100_sticker_fixed_reply():
     """[FR-100] sticker_fixed_reply."""
     from src.media.handler import MediaHandler

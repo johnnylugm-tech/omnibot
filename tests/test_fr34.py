@@ -9,9 +9,10 @@ Citations:
 def test_fr34_idle_to_intent_detected_valid():
     """[FR-34] idle_to_intent_detected_valid."""
     from src.dst.dialogue_state import DialogueStateMachine
-    assert True  # RED: will fail on import
-
-
+    dsm = DialogueStateMachine()
+    assert dsm.state == "idle"
+    new_state = dsm.transition("greet")
+    assert isinstance(new_state, str)
 def test_fr34_illegal_transition_raises_valueerror():
     """[FR-34] illegal_transition_raises_valueerror."""
     from src.dst.dialogue_state import DialogueStateMachine

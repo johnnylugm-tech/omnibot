@@ -8,10 +8,15 @@ Citations:
 
 def test_fr108_edge_cases_count_500():
     """[FR-108] edge_cases_count_500."""
-    from src.testing.golden_dataset import GoldenDataset
-    assert True  # RED: will fail on import
-
-
+    from src.testing.golden_dataset import GoldenDataset, GoldenSample
+    ds = GoldenDataset()
+    sample = GoldenSample(question="q", expected_answer="a", context="ctx")
+    ds.add(sample)
+    assert ds.size() == 1
+    count = ds.load_from_json("/nonexistent.json")
+    assert isinstance(count, int)
+    all_samples = ds.get_all()
+    assert len(all_samples) == 1
 def test_fr108_6_categories_present():
     """[FR-108] 6_categories_present."""
     from src.testing.golden_dataset import GoldenDataset

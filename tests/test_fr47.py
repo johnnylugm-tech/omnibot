@@ -9,9 +9,10 @@ Citations:
 def test_fr47_24hr_weight_50_percent_of_current():
     """[FR-47] 24hr_weight_50_percent_of_current."""
     from src.emotion.tracker import EmotionTracker
-    assert True  # RED: will fail on import
-
-
+    tracker = EmotionTracker()
+    tracker.update(1, "neutral", 0.9)
+    trend = tracker.trend()
+    assert trend in ("stable", "improving", "declining")
 def test_fr47_decay_formula_correct():
     """[FR-47] decay_formula_correct."""
     from src.emotion.tracker import EmotionTracker

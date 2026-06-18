@@ -9,9 +9,10 @@ Citations:
 def test_fr87_token_shown_once_on_create():
     """[FR-87] token_shown_once_on_create."""
     from src.api.m2m import M2MTokenRouter
-    assert True  # RED: will fail on import
-
-
+    router = M2MTokenRouter()
+    token = router.issue("client", "secret", ["read"])
+    assert "access_token" in token
+    assert router.revoke("token") is True
 def test_fr87_list_hides_token_value():
     """[FR-87] list_hides_token_value."""
     from src.api.m2m import M2MTokenRouter

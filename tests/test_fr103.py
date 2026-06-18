@@ -9,9 +9,13 @@ Citations:
 def test_fr103_fcr_below_90_triggers_yellow_alert():
     """[FR-103] fcr_below_90_triggers_yellow_alert."""
     from src.webui.dashboard import OperationsDashboard
-    assert True  # RED: will fail on import
-
-
+    dash = OperationsDashboard()
+    summary = dash.get_metrics_summary()
+    assert isinstance(summary, dict)
+    count = dash.get_active_sessions()
+    assert isinstance(count, int)
+    queue = dash.get_escalation_queue()
+    assert isinstance(queue, list)
 def test_fr103_time_range_switching_works():
     """[FR-103] time_range_switching_works."""
     from src.webui.dashboard import OperationsDashboard

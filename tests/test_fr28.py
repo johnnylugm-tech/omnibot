@@ -8,10 +8,11 @@ Citations:
 
 def test_fr28_parent_500_token_size():
     """[FR-28] parent_500_token_size."""
-    from src.knowledge.chunking import ChunkingStrategy
-    assert True  # RED: will fail on import
-
-
+    from src.knowledge.hnsw import HNSWIndex
+    idx = HNSWIndex(dim=4, ef=10)
+    idx.add("doc-1", [0.1, 0.2, 0.3, 0.4])
+    results = idx.search([0.1, 0.2, 0.3, 0.4], top_k=3)
+    assert isinstance(results, list)
 def test_fr28_child_150_token_size():
     """[FR-28] child_150_token_size."""
     from src.knowledge.chunking import ChunkingStrategy

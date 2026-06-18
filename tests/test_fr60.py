@@ -9,9 +9,10 @@ Citations:
 def test_fr60_7_roles_defined():
     """[FR-60] 7_roles_defined."""
     from src.rbac.enforcer import RBACEnforcer
-    assert True  # RED: will fail on import
-
-
+    enforcer = RBACEnforcer()
+    enforcer.grant("admin", "read")
+    assert enforcer.is_allowed("admin", "read") is True
+    assert enforcer.is_allowed("user", "write") is False
 def test_fr60_dpo_has_pii_decrypt():
     """[FR-60] dpo_has_pii_decrypt."""
     from src.rbac.enforcer import RBACEnforcer

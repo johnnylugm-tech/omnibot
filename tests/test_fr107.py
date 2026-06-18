@@ -9,9 +9,14 @@ Citations:
 def test_fr107_unit_coverage_70pct():
     """[FR-107] unit_coverage_70pct."""
     from src.testing.strategy import TestingStrategy
-    assert True  # RED: will fail on import
-
-
+    strategy = TestingStrategy()
+    layer = strategy.get_layer("unit")
+    assert layer is not None
+    assert layer.coverage_target == 70.0
+    none_layer = strategy.get_layer("nonexistent")
+    assert none_layer is None
+    summary = strategy.coverage_summary()
+    assert "unit" in summary
 def test_fr107_integration_coverage_20pct():
     """[FR-107] integration_coverage_20pct."""
     from src.testing.strategy import TestingStrategy

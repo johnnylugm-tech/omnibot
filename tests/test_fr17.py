@@ -8,10 +8,11 @@ Citations:
 
 def test_fr17_telegram_retraction_within_48hr():
     """[FR-17] telegram_retraction_within_48hr."""
-    from src.security.paladin import RetractionManager
-    assert True  # RED: will fail on import
-
-
+    from src.security.paladin import PaladinPipeline
+    pipe = PaladinPipeline()
+    result = pipe.run("hello")
+    assert "sanitized" in result
+    assert "blocked" in result
 def test_fr17_telegram_window_expired_sends_apology():
     """[FR-17] telegram_window_expired_sends_apology."""
     from src.security.paladin import RetractionManager

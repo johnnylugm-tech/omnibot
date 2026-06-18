@@ -9,9 +9,11 @@ Citations:
 def test_fr26_exact_match_confidence_095_returns_rule():
     """[FR-26] exact_match_confidence_095_returns_rule."""
     from src.knowledge.hybrid import HybridKnowledge
-    assert True  # RED: will fail on import
-
-
+    hk = HybridKnowledge()
+    results = hk.search("test query")
+    assert isinstance(results, list)
+    ok = hk.index("doc-1", "content", [0.1, 0.2])
+    assert ok is True
 def test_fr26_confidence_below_080_falls_through_tier2():
     """[FR-26] confidence_below_080_falls_through_tier2."""
     from src.knowledge.hybrid import HybridKnowledge

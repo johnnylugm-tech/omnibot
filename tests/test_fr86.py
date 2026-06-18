@@ -9,9 +9,12 @@ Citations:
 def test_fr86_login_returns_jwt_and_refresh():
     """[FR-86] login_returns_jwt_and_refresh."""
     from src.api.auth import AuthRouter
-    assert True  # RED: will fail on import
-
-
+    router = AuthRouter()
+    token = router.login("user", "pass")
+    assert "access_token" in token
+    refreshed = router.refresh("refresh_token")
+    assert "access_token" in refreshed
+    assert router.logout("token") is True
 def test_fr86_login_failure_401():
     """[FR-86] login_failure_401."""
     from src.api.auth import AuthRouter

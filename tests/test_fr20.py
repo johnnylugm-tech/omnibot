@@ -9,9 +9,8 @@ Citations:
 def test_fr20_mask_event_writes_audit_log():
     """[FR-20] mask_event_writes_audit_log."""
     from src.pii.masking import PIIAuditLogger
-    assert True  # RED: will fail on import
-
-
+    logger = PIIAuditLogger()
+    logger.log("access", {"user": "u1"})
 def test_fr20_audit_log_has_conversation_id():
     """[FR-20] audit_log_has_conversation_id."""
     from src.pii.masking import PIIAuditLogger

@@ -9,9 +9,9 @@ Citations:
 def test_fr02_line_webhook_valid_signature():
     """[FR-02] line_webhook_valid_signature."""
     from src.adapters.line import LineWebhookVerifier
-    assert True  # RED: will fail on import
-
-
+    v = LineWebhookVerifier("secret")
+    assert v.verify(b"body", "sig") is True
+    assert isinstance(v.parse([]), list)
 def test_fr02_line_webhook_invalid_signature_401():
     """[FR-02] line_webhook_invalid_signature_401."""
     from src.adapters.line import LineWebhookVerifier

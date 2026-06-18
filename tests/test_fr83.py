@@ -9,9 +9,10 @@ Citations:
 def test_fr83_upgrade_migration_succeeds():
     """[FR-83] upgrade_migration_succeeds."""
     from src.db.schema import AlembicMigration
-    assert True  # RED: will fail on import
-
-
+    migration = AlembicMigration()
+    assert migration.upgrade() is True
+    assert migration.downgrade("base") is True
+    assert isinstance(migration.current(), str)
 def test_fr83_downgrade_migration_succeeds():
     """[FR-83] downgrade_migration_succeeds."""
     from src.db.schema import AlembicMigration

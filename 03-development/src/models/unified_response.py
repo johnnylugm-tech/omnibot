@@ -35,3 +35,7 @@ class UnifiedResponse:
     knowledge_id: Optional[str] = None
     emotion_adjustment: Optional[str] = None
     quick_replies: tuple[str, ...] = field(default_factory=tuple)
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.source, ResponseSource):
+            raise ValueError(f"source must be ResponseSource, got {type(self.source).__name__}")
