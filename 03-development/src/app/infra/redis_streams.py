@@ -128,6 +128,20 @@ class AsyncMessageProcessor:
                 mod.proc = self  # type: ignore[attr-defined]
                 break
 
+    @staticmethod
+    def _is_busygroup_error(exc: BaseException) -> bool:
+        """[FR-80] Detect ``BUSYGROUP`` via typed exception or message text.
+
+        Real ``redis-py`` raises a ``ResponseError`` whose ``str()`` starts
+        with ``BUSYGROUP``; the in-tree test fake raises a plain
+        ``Exception("BUSYGROUP ...")``. Both paths signal the same
+        "group already exists" steady state, so the detection must cover
+        both shapes.
+        """
+        if isinstance(exc, BusyGroupError):
+            return True
+        return "BUSYGROUP" in str(exc)
+
     async def ensure_group(self) -> bool:
         """[FR-80] Create the consumer group; silently absorb BUSYGROUP.
 
@@ -143,14 +157,8 @@ class AsyncMessageProcessor:
                 mkstream=True,
             )
             return True
-        except BusyGroupError:
-            return True
         except Exception as exc:  # noqa: BLE001
-            # Real redis-py raises ``ResponseError`` whose str() starts
-            # with ``BUSYGROUP``; the test fake mirrors that. Either
-            # path is the steady-state on every restart after the
-            # first one, so we silently absorb it.
-            if "BUSYGROUP" in str(exc):
+            if self._is_busygroup_error(exc):
                 return True
             raise
 
@@ -174,6 +182,23 @@ class AsyncMessageProcessor:
         return await self.redis.xack(
             self.stream, self.group_name, message_id,
         )
+
+    async def _fetch_message_fields(
+        self, message_id: str,
+    ) -> dict[str, str] | None:
+        """[FR-80] XRANGE lookup for the fields of a single message id.
+
+        Returns the field dict when present, ``None`` otherwise. The
+        XCLAIM command only transfers ownership; the caller still needs
+        XRANGE to retrieve the original stream payload for re-processing.
+        """
+        rows = await self.redis.xrange(
+            self.stream, min=message_id, max=message_id,
+        )
+        if not rows:
+            return None
+        _row_id, fields = rows[0]
+        return fields
 
     async def claim_pending(self, consumer: str) -> list[Message]:
         """[FR-80] XPENDING + XCLAIM stale pending messages to ``consumer``."""
@@ -206,17 +231,14 @@ class AsyncMessageProcessor:
                 message_ids=[msg_id],
             )
             with self._claim_lock:
-                new_justids = [j for j in justids if j not in self._claimed]
-                for j in new_justids:
+                winner_ids = [j for j in justids if j not in self._claimed]
+                for j in winner_ids:
                     self._claimed.add(j)
-            for claimed_id in new_justids:
-                fields = await self.redis.xrange(
-                    self.stream, min=claimed_id, max=claimed_id,
-                )
-                if fields:
-                    _row_id, fdict = fields[0]
+            for claimed_id in winner_ids:
+                fields = await self._fetch_message_fields(claimed_id)
+                if fields is not None:
                     claimed.append(
-                        Message(message_id=claimed_id, fields=fdict)
+                        Message(message_id=claimed_id, fields=fields)
                     )
         return claimed
 
