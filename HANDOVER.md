@@ -1,8 +1,8 @@
 # Harness Methodology — Session Handover
 
-**Checkpoint**: `P3-mid-20260618`  
+**Checkpoint**: `P3-pre-gate2-20260618`  
 **Phase**: P3 — Implementation  
-**Generated**: 2026-06-18T08:41:56Z
+**Generated**: 2026-06-18T08:42:06Z
 
 > ⚠️  **開始下一個工作階段前，請先執行 `/compact` 壓縮上下文**，再從「接下來的工作」繼續。
 
@@ -48,13 +48,14 @@ cat .methodology/phase3_plan.md
 
 ## 任務背景
 
-P3 Implementation in progress (≥50% milestone). 108/108 FRs done.
+P3 Implementation complete. Gate 2 not yet executed.
 
 ## 目前執行狀況
 
-108/108 FRs Gate 1 PASS [FR-01,FR-02,FR-03,FR-04,FR-05,…+103]. TDD cycles complete for passing FRs.
+All 108 FR(s) Gate 1 PASS [FR-01,FR-02,FR-03,FR-04,FR-05,…+103]. Gate 2 evaluation not yet started.
 
 **Recently Committed Files:**
+  - `HANDOVER.md`
   - `.methodology/.gate1_scores.json`
   - `.methodology/decision_logs/2026-06-18/GATE_3_218.yaml`
   - `.methodology/decision_logs/2026-06-18/GATE_3_219.yaml`
@@ -74,13 +75,12 @@ P3 Implementation in progress (≥50% milestone). 108/108 FRs done.
   - `.methodology/decision_logs/2026-06-18/GATE_3_211.yaml`
   - `.methodology/decision_logs/2026-06-18/GATE_3_208.yaml`
   - `.methodology/decision_logs/2026-06-18/GATE_3_209.yaml`
-  - `.methodology/decision_logs/2026-06-18/GATE_3_206.yaml`
 
 ## 接下來的工作
 
-1. Complete remaining 0 FR(s): (all FRs Gate 1 PASS — ready for P3-pre-gate2)
-2. Ensure each FR has passing unit tests (TDD)
-3. When all FRs done → `push-milestone --type p3-pre-gate2`
+1. Run Gate 2 evaluation (target score ≥ 75)
+2. Fix any failures during evaluation
+3. On Gate 2 PASS → `finalize-gate --gate 2` handles push + HANDOVER
 
 ## 注意事項
 
@@ -90,9 +90,7 @@ P3 Implementation in progress (≥50% milestone). 108/108 FRs done.
 
 ## 附加資訊
 
-- **fr_done**: 108
-- **fr_total**: 108
-- **remaining_frs**: (all FRs Gate 1 PASS — ready for P3-pre-gate2)
+- **fr_count**: 108
 
 ---
 *由 `HandoverGenerator` 自動生成。下次 push 時此檔案將被覆寫。*
