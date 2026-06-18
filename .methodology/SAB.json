@@ -178,32 +178,32 @@
       "module": "app.infra.jobs"
     },
     "NFR-09": {
-      "type": "throughput",
+      "type": "performance",
       "target": ">=2000 TPS",
       "module": "app.api.webhooks"
     },
     "NFR-10": {
-      "type": "availability",
+      "type": "reliability",
       "target": ">=99.9% uptime per month",
       "module": "app.infra.circuit_breaker"
     },
     "NFR-11": {
-      "type": "availability",
+      "type": "reliability",
       "target": ">=99.95% early warning threshold",
       "module": "app.infra.observability"
     },
     "NFR-12": {
-      "type": "availability",
+      "type": "reliability",
       "target": "p95 > 800ms triggers HighLatency alert",
       "module": "app.infra.observability"
     },
     "NFR-13": {
-      "type": "availability",
+      "type": "reliability",
       "target": "error_rate > 0.5% triggers alert",
       "module": "app.infra.observability"
     },
     "NFR-14": {
-      "type": "availability",
+      "type": "reliability",
       "target": "DR recovery < 5 minutes",
       "module": "app.infra.deployment"
     },
@@ -223,62 +223,62 @@
       "module": "app.infra.security"
     },
     "NFR-18": {
-      "type": "cost",
+      "type": "usability",
       "target": "< $500 / month infrastructure cost",
       "module": "app.infra.deployment"
     },
     "NFR-19": {
-      "type": "cost",
+      "type": "usability",
       "target": "~ $210 / month LLM API cost",
       "module": "app.services.llm_judge"
     },
     "NFR-20": {
-      "type": "compliance",
+      "type": "deployability",
       "target": "Taiwan PDA compliance",
       "module": "app.admin.gdpr"
     },
     "NFR-21": {
-      "type": "compliance",
+      "type": "deployability",
       "target": "GDPR Art.5(1)(e) data minimization",
       "module": "app.admin.gdpr"
     },
     "NFR-22": {
-      "type": "compliance",
+      "type": "deployability",
       "target": "SOC2 audit trail",
       "module": "app.infra.observability"
     },
     "NFR-23": {
-      "type": "quality",
+      "type": "testability",
       "target": ">=90% FCR (in_scope conversations)",
       "module": "app.admin.odd_sql"
     },
     "NFR-24": {
-      "type": "quality",
+      "type": "testability",
       "target": ">=4.8 CSAT score",
       "module": "app.services.llm_judge"
     },
     "NFR-25": {
-      "type": "quality",
+      "type": "testability",
       "target": ">=95% escalation SLA compliance",
       "module": "app.services.escalation"
     },
     "NFR-26": {
-      "type": "quality",
+      "type": "testability",
       "target": ">=0.7 Cohen's Kappa vs human annotation",
       "module": "app.services.llm_judge"
     },
     "NFR-27": {
-      "type": "quality",
+      "type": "testability",
       "target": "100% grounding check pass rate (cosine>=0.75)",
       "module": "app.core.paladin"
     },
     "NFR-28": {
-      "type": "quality",
+      "type": "testability",
       "target": ">=92% Recall@3 HNSW 1536-dim",
       "module": "app.core.knowledge"
     },
     "NFR-29": {
-      "type": "quality",
+      "type": "testability",
       "target": ">=95% agentic tool success rate",
       "module": "app.services.aee"
     },
@@ -288,7 +288,7 @@
       "module": "app.infra.deployment"
     },
     "NFR-31": {
-      "type": "observability",
+      "type": "maintainability",
       "target": "100% request OTel trace coverage",
       "module": "app.infra.observability"
     },
@@ -298,22 +298,22 @@
       "module": "tests.strategy"
     },
     "NFR-33": {
-      "type": "resilience",
+      "type": "reliability",
       "target": "rate_limit fail-open on Redis unavailable",
       "module": "app.infra.rate_limit"
     },
     "NFR-34": {
-      "type": "resilience",
+      "type": "reliability",
       "target": "IP whitelist fail-secure 403 on no match",
       "module": "app.infra.rate_limit"
     },
     "NFR-35": {
-      "type": "resilience",
+      "type": "reliability",
       "target": "max 100 CIDR blocks",
       "module": "app.infra.rate_limit"
     },
     "NFR-36": {
-      "type": "resilience",
+      "type": "security",
       "target": "M2M token 90-day expiry; 24hr overlap on rotate",
       "module": "app.api.auth"
     },
