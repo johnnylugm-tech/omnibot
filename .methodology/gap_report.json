@@ -1,12 +1,43 @@
 {
   "summary": {
-    "total": 0,
+    "total": 5,
     "missing": 0,
     "incomplete": 0,
-    "orphaned": 0,
+    "orphaned": 5,
     "critical": 0,
     "major": 0,
-    "minor": 0
+    "minor": 5
   },
-  "gaps": []
+  "gaps": [
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'Settings' has no corresponding specification in SPEC.md",
+      "action": "Add spec for Settings or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'get_setting' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get_setting or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'get_llm_client' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get_llm_client or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'embed' has no corresponding specification in SPEC.md",
+      "action": "Add spec for embed or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'health_probe' has no corresponding specification in SPEC.md",
+      "action": "Add spec for health_probe or remove if unnecessary"
+    }
+  ]
 }

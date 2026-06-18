@@ -8,12 +8,12 @@
 <!-- harness:auto-start -->
 ## Harness Status _(auto-generated — do not edit this block)_
 
-> Phase: **3 — Implementation** | Last Gate: **Gate None** | Updated: 2026-06-17
+> Phase: **3 — Implementation** | Last Gate: **Gate 1** | Last FR: FR-07 | Updated: 2026-06-18
 
 ### Gate Progress
 | Gate | Score / FRs | Status |
 |------|-------------|--------|
-| Gate 1 | — | ⬜ Not Started |
+| Gate 1 | 1/108 FRs | 🔄 In Progress |
 | Gate 2 | — | ⬜ Not Started |
 | Gate 3 | — | ⬜ Not Started |
 | Gate 4 | — | ⬜ Not Started |
@@ -21,7 +21,167 @@
 ### FR Registry (Gate 1)
 | FR ID | Score | Status |
 |-------|-------|--------|
-| — | — | No FRs registered yet |
+| FR-01 | — | ⬜ Pending |
+| FR-02 | — | ⬜ Pending |
+| FR-03 | — | ⬜ Pending |
+| FR-04 | — | ⬜ Pending |
+| FR-05 | — | ⬜ Pending |
+| FR-06 | — | ⬜ Pending |
+| FR-07 | 100.0 | ✅ COMPLETE |
+| FR-08 | — | ⬜ Pending |
+| FR-09 | — | ⬜ Pending |
+| FR-10 | — | ⬜ Pending |
+| FR-11 | — | ⬜ Pending |
+| FR-12 | — | ⬜ Pending |
+| FR-13 | — | ⬜ Pending |
+| FR-14 | — | ⬜ Pending |
+| FR-15 | — | ⬜ Pending |
+| FR-16 | — | ⬜ Pending |
+| FR-17 | — | ⬜ Pending |
+| FR-18 | — | ⬜ Pending |
+| FR-19 | — | ⬜ Pending |
+| FR-20 | — | ⬜ Pending |
+| FR-21 | — | ⬜ Pending |
+| FR-22 | — | ⬜ Pending |
+| FR-23 | — | ⬜ Pending |
+| FR-24 | — | ⬜ Pending |
+| FR-25 | — | ⬜ Pending |
+| FR-26 | — | ⬜ Pending |
+| FR-27 | — | ⬜ Pending |
+| FR-28 | — | ⬜ Pending |
+| FR-29 | — | ⬜ Pending |
+| FR-30 | — | ⬜ Pending |
+| FR-31 | — | ⬜ Pending |
+| FR-32 | — | ⬜ Pending |
+| FR-33 | — | ⬜ Pending |
+| FR-34 | — | ⬜ Pending |
+| FR-35 | — | ⬜ Pending |
+| FR-36 | — | ⬜ Pending |
+| FR-37 | — | ⬜ Pending |
+| FR-38 | — | ⬜ Pending |
+| FR-39 | — | ⬜ Pending |
+| FR-40 | — | ⬜ Pending |
+| FR-41 | — | ⬜ Pending |
+| FR-42 | — | ⬜ Pending |
+| FR-43 | — | ⬜ Pending |
+| FR-44 | — | ⬜ Pending |
+| FR-45 | — | ⬜ Pending |
+| FR-46 | — | ⬜ Pending |
+| FR-47 | — | ⬜ Pending |
+| FR-48 | — | ⬜ Pending |
+| FR-49 | — | ⬜ Pending |
+| FR-50 | — | ⬜ Pending |
+| FR-51 | — | ⬜ Pending |
+| FR-52 | — | ⬜ Pending |
+| FR-53 | — | ⬜ Pending |
+| FR-54 | — | ⬜ Pending |
+| FR-55 | — | ⬜ Pending |
+| FR-56 | — | ⬜ Pending |
+| FR-57 | — | ⬜ Pending |
+| FR-58 | — | ⬜ Pending |
+| FR-59 | — | ⬜ Pending |
+| FR-60 | — | ⬜ Pending |
+| FR-61 | — | ⬜ Pending |
+| FR-62 | — | ⬜ Pending |
+| FR-63 | — | ⬜ Pending |
+| FR-64 | — | ⬜ Pending |
+| FR-65 | — | ⬜ Pending |
+| FR-66 | — | ⬜ Pending |
+| FR-67 | — | ⬜ Pending |
+| FR-68 | — | ⬜ Pending |
+| FR-69 | — | ⬜ Pending |
+| FR-70 | — | ⬜ Pending |
+| FR-71 | — | ⬜ Pending |
+| FR-72 | — | ⬜ Pending |
+| FR-73 | — | ⬜ Pending |
+| FR-74 | — | ⬜ Pending |
+| FR-75 | — | ⬜ Pending |
+| FR-76 | — | ⬜ Pending |
+| FR-77 | — | ⬜ Pending |
+| FR-78 | — | ⬜ Pending |
+| FR-79 | — | ⬜ Pending |
+| FR-80 | — | ⬜ Pending |
+| FR-81 | — | ⬜ Pending |
+| FR-82 | — | ⬜ Pending |
+| FR-83 | — | ⬜ Pending |
+| FR-84 | — | ⬜ Pending |
+| FR-85 | — | ⬜ Pending |
+| FR-86 | — | ⬜ Pending |
+| FR-87 | — | ⬜ Pending |
+| FR-88 | — | ⬜ Pending |
+| FR-89 | — | ⬜ Pending |
+| FR-90 | — | ⬜ Pending |
+| FR-91 | — | ⬜ Pending |
+| FR-92 | — | ⬜ Pending |
+| FR-93 | — | ⬜ Pending |
+| FR-94 | — | ⬜ Pending |
+| FR-95 | — | ⬜ Pending |
+| FR-96 | — | ⬜ Pending |
+| FR-97 | — | ⬜ Pending |
+| FR-98 | — | ⬜ Pending |
+| FR-99 | — | ⬜ Pending |
+| FR-100 | — | ⬜ Pending |
+| FR-101 | — | ⬜ Pending |
+| FR-102 | — | ⬜ Pending |
+| FR-103 | — | ⬜ Pending |
+| FR-104 | — | ⬜ Pending |
+| FR-105 | — | ⬜ Pending |
+| FR-106 | — | ⬜ Pending |
+| FR-107 | — | ⬜ Pending |
+| FR-108 | — | ⬜ Pending |
+
+### Architecture Constraints
+- no_circular_dependencies
+- api_layer_no_business_logic
+- infra_layer_no_domain_imports
+- paladin_executes_before_pii
+- knowledge_query_after_dst_slot_resolution
+
+### High-Risk Modules
+- app.core.paladin
+- app.core.knowledge
+- app.core.dst
+- app.infra.circuit_breaker
+- app.infra.redis_streams
+- app.infra.rate_limit
+- app.infra.jobs
+- app.services.aee
+- app.services.llm_judge
+- app.services.media
+
+### NFR → Dimension Mapping
+- NFR-01 → performance
+- NFR-02 → performance
+- NFR-03 → performance
+- NFR-04 → performance
+- NFR-05 → performance
+- NFR-06 → performance
+- NFR-07 → performance
+- NFR-08 → performance
+- NFR-09 → performance
+- NFR-10 → error_handling
+- NFR-11 → error_handling
+- NFR-12 → error_handling
+- NFR-13 → error_handling
+- NFR-14 → error_handling
+- NFR-15 → security
+- NFR-16 → security
+- NFR-17 → security
+- NFR-23 → test_assertion_quality
+- NFR-24 → test_assertion_quality
+- NFR-25 → test_assertion_quality
+- NFR-26 → test_assertion_quality
+- NFR-27 → test_assertion_quality
+- NFR-28 → test_assertion_quality
+- NFR-29 → test_assertion_quality
+- NFR-31 → readability
+- NFR-32 → test_assertion_quality
+- NFR-33 → error_handling
+- NFR-34 → error_handling
+- NFR-35 → error_handling
+- NFR-36 → security
+- NFR-37 → performance
+- NFR-38 → performance
 <!-- harness:auto-end -->
 
 ## Agent Interaction Model
