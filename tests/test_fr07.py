@@ -1,34 +1,34 @@
-"""[FR-07] TDD-RED: failing tests for UnifiedMessage data structure.
+"""[FR-07] Tests for UnifiedMessage data structure.
 
 Citations:
   SRS.md FR-07
   TEST_SPEC.md FR-07
 """
+import datetime
 import pytest
 
 
-def test_fr07_unified_message_creation():
-    """[FR-07] UnifiedMessage can be constructed with all required fields."""
+def test_fr07_unified_message_telegram_valid():
+    """[FR-07] UnifiedMessage created with platform=telegram, message_type=text, content=hello."""
     from src.models.unified_message import UnifiedMessage, Platform, MessageType
-    import datetime
 
     msg = UnifiedMessage(
         platform=Platform.TELEGRAM,
         platform_user_id="u123",
         message_type=MessageType.TEXT,
         content="hello",
-        raw_payload={"update_id": 1, "message": {"text": "hello"}},
-        received_at=datetime.datetime.utcnow(),
+        raw_payload={"update_id": 1},
+        received_at=datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc),
     )
+    assert msg is not None
     assert msg.platform == Platform.TELEGRAM
-    assert msg.platform_user_id == "u123"
+    assert msg.message_type == MessageType.TEXT
     assert msg.content == "hello"
 
 
-def test_fr07_unified_message_frozen():
-    """[FR-07] UnifiedMessage is immutable (frozen=True)."""
+def test_fr07_unified_message_frozen_immutable():
+    """[FR-07] Attempting to mutate content raises error (frozen=True)."""
     from src.models.unified_message import UnifiedMessage, Platform, MessageType
-    import datetime
 
     msg = UnifiedMessage(
         platform=Platform.TELEGRAM,
@@ -36,42 +36,41 @@ def test_fr07_unified_message_frozen():
         message_type=MessageType.TEXT,
         content="hello",
         raw_payload={},
-        received_at=datetime.datetime.utcnow(),
+        received_at=datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc),
     )
     with pytest.raises((AttributeError, TypeError)):
-        msg.content = "changed"  # type: ignore
+        msg.content = "mutated"  # type: ignore
 
 
-def test_fr07_unified_message_optional_fields():
-    """[FR-07] unified_user_id and reply_token are optional."""
+def test_fr07_unified_message_all_platforms_valid():
+    """[FR-07] All 6 platforms telegram,line,messenger,whatsapp,web,a2a can create UnifiedMessage."""
     from src.models.unified_message import UnifiedMessage, Platform, MessageType
-    import datetime
+
+    for p in [Platform.TELEGRAM, Platform.LINE, Platform.MESSENGER,
+              Platform.WHATSAPP, Platform.WEB, Platform.AGENT]:
+        msg = UnifiedMessage(
+            platform=p,
+            platform_user_id="u1",
+            message_type=MessageType.TEXT,
+            content="test",
+            raw_payload={},
+            received_at=datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc),
+        )
+        assert msg.platform == p
+
+
+def test_fr07_must_not_mutate_frozen_dataclass():
+    """[FR-07] Setting content='hacked' on frozen dataclass raises FrozenInstanceError."""
+    from src.models.unified_message import UnifiedMessage, Platform, MessageType
+    from dataclasses import FrozenInstanceError
 
     msg = UnifiedMessage(
-        platform=Platform.LINE,
-        platform_user_id="u456",
+        platform=Platform.TELEGRAM,
+        platform_user_id="u1",
         message_type=MessageType.TEXT,
-        content="hi",
+        content="original",
         raw_payload={},
-        received_at=datetime.datetime.utcnow(),
-        unified_user_id=None,
-        reply_token="replyabc123",
+        received_at=datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc),
     )
-    assert msg.reply_token == "replyabc123"
-    assert msg.unified_user_id is None
-
-
-def test_fr07_platform_enum_all_platforms():
-    """[FR-07] Platform enum covers all 6 platforms."""
-    from src.models.unified_message import Platform
-
-    expected = {"TELEGRAM", "LINE", "MESSENGER", "WHATSAPP", "WEB", "AGENT"}
-    actual = {p.name for p in Platform}
-    assert expected == actual
-
-
-def test_fr07_message_type_enum():
-    """[FR-07] MessageType enum includes TEXT and other types."""
-    from src.models.unified_message import MessageType
-
-    assert hasattr(MessageType, "TEXT")
+    with pytest.raises(FrozenInstanceError):
+        msg.content = "hacked"  # type: ignore

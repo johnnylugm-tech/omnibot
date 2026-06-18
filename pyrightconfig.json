@@ -1,0 +1,7 @@
+{
+  "extraPaths": [
+    "03-development"
+  ],
+  "venvPath": ".",
+  "venv": ".venv"
+}
