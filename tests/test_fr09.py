@@ -14,6 +14,11 @@ def test_fr09_api_response_schema_valid():
     assert resp.success is True
     assert resp.data == {}
     assert resp.error is None
+    assert resp.error_code is None
+
+    default_resp: ApiResponse[None] = ApiResponse(success=True)
+    assert default_resp.data is None
+    assert default_resp.error is None
 
 
 def test_fr09_paginated_response_has_next_field():

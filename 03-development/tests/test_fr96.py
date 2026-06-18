@@ -1,0 +1,1 @@
+../../tests/test_fr96.py

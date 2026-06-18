@@ -8,10 +8,22 @@ Citations:
 
 def test_fr70_log_json_parseable():
     """[FR-70] log_json_parseable."""
+    import json, io, sys
     from src.observability.logger import StructuredLogger
     log = StructuredLogger("test")
-    log.info("test message", key="val")
-    log.error("error message")
+    buf = io.StringIO()
+    old_stderr = sys.stderr
+    sys.stderr = buf
+    try:
+        log.info("test message", key="val")
+        log.error("error message")
+    finally:
+        sys.stderr = old_stderr
+    lines = [l for l in buf.getvalue().strip().splitlines() if l]
+    assert len(lines) == 2
+    parsed = json.loads(lines[0])
+    assert parsed["level"] == "INFO"
+    assert parsed["message"] == "test message"
 def test_fr70_timestamp_iso8601_z_format():
     """[FR-70] timestamp_iso8601_z_format."""
     from src.observability.logger import StructuredLogger

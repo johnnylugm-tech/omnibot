@@ -11,10 +11,19 @@ def test_fr08_unified_response_source_enum_valid():
     """[FR-08] unified_response_source_enum_valid."""
     from src.models.unified_response import UnifiedResponse, ResponseSource
 
+    assert ResponseSource.RULE.value == "rule"
+    assert ResponseSource.RAG.value == "rag"
+    assert ResponseSource.WIKI.value == "wiki"
+    assert ResponseSource.ESCALATE.value == "escalate"
+
     resp = UnifiedResponse(content="answer", source=ResponseSource.RULE)
     assert resp is not None
     assert resp.source == ResponseSource.RULE
     assert resp.content == "answer"
+    assert resp.confidence == 1.0
+    assert resp.knowledge_id is None
+    assert resp.emotion_adjustment is None
+    assert resp.quick_replies == ()
 
 
 def test_fr08_unified_response_invalid_source_raises():

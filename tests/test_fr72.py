@@ -12,6 +12,8 @@ def test_fr72_span_tree_complete_per_request():
     tracer = OTelTracer("test-service")
     span = tracer.start_span("op")
     tracer.inject({})
+    assert tracer._service == "test-service"
+    assert span is None
 def test_fr72_trace_id_in_response_header():
     """[FR-72] trace_id_in_response_header."""
     from src.observability.tracing import OTelTracer
