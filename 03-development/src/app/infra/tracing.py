@@ -110,14 +110,13 @@ class _ActiveSpan:
 # Id helpers — W3C-compatible hex strings, generated from os.urandom.
 # ---------------------------------------------------------------------------
 
-def _new_trace_id() -> str:
-    """Return a 32-char lowercase hex string (OTel W3C trace id)."""
-    return secrets.token_hex(_TRACE_ID_HEX_LEN // 2)
+def _new_hex_id(width: int) -> str:
+    """Return a lowercase hex string of ``width`` characters.
 
-
-def _new_span_id() -> str:
-    """Return a 16-char lowercase hex string (OTel W3C span id)."""
-    return secrets.token_hex(_SPAN_ID_HEX_LEN // 2)
+    ``width`` is the OTel hex-character width (32 for trace_id, 16 for
+    span_id); ``width // 2`` is the underlying random-byte count.
+    """
+    return secrets.token_hex(width // 2)
 
 
 # ---------------------------------------------------------------------------
@@ -175,7 +174,7 @@ def start_as_current_span(
     with _lock:
         parent = _active_spans[-1] if _active_spans else None
         if parent is None:
-            trace_id = _new_trace_id()
+            trace_id = _new_hex_id(_TRACE_ID_HEX_LEN)
             parent_span_id = None
         else:
             trace_id = parent.trace_id
@@ -184,7 +183,7 @@ def start_as_current_span(
         span = _ActiveSpan(
             name=name,
             trace_id=trace_id,
-            span_id=_new_span_id(),
+            span_id=_new_hex_id(_SPAN_ID_HEX_LEN),
             parent_span_id=parent_span_id,
             attributes=caller_attrs,
         )
