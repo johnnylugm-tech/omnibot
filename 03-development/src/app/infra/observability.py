@@ -47,6 +47,7 @@ _LEVEL_MAP: dict[str, int] = {
 }
 
 # Security-tagged events are always emitted at CRITICAL, never downgraded.
+_SECURITY_EVENT_TYPE = "security"
 _SECURITY_LEVEL = "CRITICAL"
 
 
@@ -84,10 +85,11 @@ class StructuredLogger:
         can also assert on the exact serialized record in tests.
         """
         # Security events must not be downgraded by the caller.
-        if kwargs.get("event_type") == "security":
-            resolved_level = _SECURITY_LEVEL
-        else:
-            resolved_level = level
+        resolved_level = (
+            _SECURITY_LEVEL
+            if kwargs.get("event_type") == _SECURITY_EVENT_TYPE
+            else level
+        )
 
         record: dict[str, Any] = {
             "timestamp": time.strftime(_ISO_Z_FMT, time.gmtime()),
