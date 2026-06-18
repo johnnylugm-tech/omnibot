@@ -34,7 +34,7 @@ OmniBot 採用五層清晰分層架構，對應 SRS 108 個 FR 與 38 個 NFR：
 ```
 
 **Dependency Flow**: API → Core → Services → Infra (downward only).
-Admin cross-cuts all layers for management operations.
+Admin manages cross-layer operations (RBAC, GDPR, analytics, WebUI) but its code-level dependency is **Infra only** — admin modules access cross-layer data via the database (app.infra.database), not via direct imports of Core or Services modules.
 
 **No circular dependencies**: API depends on Core/Infra/Admin; Core depends on Infra/Services; Services depends on Infra; Admin depends on Infra only.
 
@@ -222,7 +222,7 @@ tests/
 #### Module: pipeline.py (Hub)
 - `handle_message(msg: UnifiedMessage) → UnifiedResponse` — orchestrates FR-10→FR-53 pipeline
 - `get_context(conversation_id)` — called by all sibling core modules per function body
-- Sequence: PALADIN → PII → Knowledge → DST → Emotion → Response
+- Sequence: PALADIN → PII → DST → Knowledge → Emotion → Response
 
 #### Logical Constraints
 - PALADIN must execute before PII masking
@@ -375,6 +375,7 @@ tests/
 #### Module: webui.py
 - Knowledge CRUD + Markdown editor + CSV/JSON import + embedding status (🟡🟢🔴) → FR-101
 - RAG Debugger (ILIKE+cosine+RRF k=60, threshold slider 0.75, session-only) → FR-102
+  - Implementation: runs diagnostic SQL directly against `app.infra.database` using pgvector `<=>` cosine operator and ILIKE — does NOT import or call `app.core.knowledge`. RRF fusion computed in Python from raw DB results. Consistent with admin-only-depends-on-infra SAB constraint.
 - Operations Dashboard (FCR/latency/knowledge/cost, 24hr/7d/30d) → FR-103
 - Agent Portal (inbox/WS/takeover, priority colors urgent=red/high=orange/normal=blue, DST slot sidebar) → FR-104
 
@@ -462,7 +463,8 @@ Client → [TLS] → [IPWhitelist] → [WebhookSig] → [PlatformAdapter] → Un
   → [RateLimiter] → [RBAC] → pipeline.handle_message()
     → paladin.process()         (L1→L2→L3→L4/parallel→L5)
     → pii.mask()
-    → dst.transition() + knowledge.query()
+    → dst.transition()          (slot resolution first)
+    → knowledge.query()         (after DST slot resolution)
     → emotion.analyze()
     → response.generate()
   → UnifiedResponse → platform format adapter → Client
@@ -658,43 +660,43 @@ sab:
       target: "~ $210 / month LLM API cost"
       module: app.services.llm_judge
     NFR-20:
-      type: deployability
+      type: compliance
       target: "Taiwan PDA compliance"
       module: app.admin.gdpr
     NFR-21:
-      type: deployability
+      type: compliance
       target: "GDPR Art.5(1)(e) data minimization"
       module: app.admin.gdpr
     NFR-22:
-      type: deployability
+      type: compliance
       target: "SOC2 audit trail"
       module: app.infra.observability
     NFR-23:
-      type: testability
+      type: quality
       target: ">=90% FCR (in_scope conversations)"
-      module: app.services.llm_judge
+      module: app.admin.odd_sql
     NFR-24:
-      type: testability
+      type: quality
       target: ">=4.8 CSAT score"
       module: app.services.llm_judge
     NFR-25:
-      type: testability
+      type: quality
       target: ">=95% escalation SLA compliance"
       module: app.services.escalation
     NFR-26:
-      type: testability
+      type: quality
       target: ">=0.7 Cohen's Kappa vs human annotation"
       module: app.services.llm_judge
     NFR-27:
-      type: testability
+      type: quality
       target: "100% grounding check pass rate (cosine>=0.75)"
       module: app.core.paladin
     NFR-28:
-      type: testability
+      type: quality
       target: ">=92% Recall@3 HNSW 1536-dim"
       module: app.core.knowledge
     NFR-29:
-      type: testability
+      type: quality
       target: ">=95% agentic tool success rate"
       module: app.services.aee
     NFR-30:
@@ -702,7 +704,7 @@ sab:
       target: "HPA min=3 max=10 CPU=70%"
       module: app.infra.deployment
     NFR-31:
-      type: maintainability
+      type: observability
       target: "100% request OTel trace coverage"
       module: app.infra.observability
     NFR-32:
@@ -710,19 +712,19 @@ sab:
       target: "unit>=70% integration>=20% e2e>=10%"
       module: tests.strategy
     NFR-33:
-      type: reliability
+      type: resilience
       target: "rate_limit fail-open on Redis unavailable"
       module: app.infra.rate_limit
     NFR-34:
-      type: reliability
+      type: resilience
       target: "IP whitelist fail-secure 403 on no match"
       module: app.infra.rate_limit
     NFR-35:
-      type: reliability
+      type: resilience
       target: "max 100 CIDR blocks"
       module: app.infra.rate_limit
     NFR-36:
-      type: security
+      type: resilience
       target: "M2M token 90-day expiry; 24hr overlap on rotate"
       module: app.api.auth
     NFR-37:

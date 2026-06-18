@@ -1,18 +1,21 @@
 {
   "fr": "SAD.md",
   "review_status": "APPROVE",
-  "reason": "All five verification points hold: pipeline.py fan_out=6 < 8 and core community size=7 < 50 → neither Orchestrator false-positive threshold met → no DA waiver required. infra.config fan_in=8 satisfies HUB_HIGH_FAN_IN >= 8 → advisory fires. compute_hub_risk_map code confirms severity = 'high' if untested else 'medium' for fan_in in [8,15) — matching SAD text. Hub advisory findings are explicitly non-scoring per evaluate_dimension.md §advisory findings.",
+  "reason": "All five round-5 NFR type corrections are verified in the actual SAD.md file: NFR-31 is `observability`, NFR-33/34/35/36 are all `resilience`. All round-4 fixes also verified in document: §1 admin-infra-only dependency, §2.3 pipeline sequence PALADIN→PII→DST→Knowledge→Emotion→Response, §2.6 webui.py RAG Debugger direct-DB implementation note, §6.1 data flow dst.transition() before knowledge.query(), and NFR-20/21/22 as `compliance`, NFR-23-29 as `quality` all confirmed in SAB block.",
   "citations": [
-    "crg_analysis.py:61 — COHESION_HEALTHY = _tf('CRG_COHESION_HEALTHY', 0.3)",
-    "crg_analysis.py:65 — HUB_HIGH_FAN_IN = _ti('CRG_HUB_HIGH_FANIN', 8)",
-    "crg_analysis.py:243-246 — severity ladder: fan_in>=HUB_CRITICAL_FAN_IN → critical/high; fan_in>=HUB_HIGH_FAN_IN → high/medium",
-    "evaluate_dimension.md:296-297 — Detection requires list_communities size > 50 AND fan_out > 8 (both conditions)",
-    "evaluate_dimension.md:84-89 — hub advisory findings do NOT change tool-scored coverage percentage",
-    "SAD.md §5.2 — pipeline fan_out=6, core size=7, both < threshold",
-    "SAD.md §5.2 — infra.config fan_in=8, 8 sibling imports listed"
+    "SAD.md §1 admin dependency — code-level Infra only, data access via app.infra.database",
+    "SAD.md §2.3 pipeline sequence — PALADIN→PII→DST→Knowledge→Emotion→Response",
+    "SAD.md §2.3 Logical Constraints — Knowledge query only after DST slot resolution (now consistent)",
+    "SAD.md §2.6 webui.py — RAG Debugger uses pgvector SQL directly, not app.core.knowledge",
+    "SAD.md §6.1 data flow — dst.transition() (slot resolution first) before knowledge.query()",
+    "SAD.md §7 SAB Block — NFR-20/21/22 type:compliance (SRS:Compliance)",
+    "SAD.md §7 SAB Block — NFR-23 type:quality module:app.admin.odd_sql (SRS:Quality, FR-105 ODD SQL)",
+    "SAD.md §7 SAB Block — NFR-24~29 type:quality (SRS:Quality)",
+    "SAD.md §7 SAB Block — NFR-31 type:observability (SRS:Observability)",
+    "SAD.md §7 SAB Block — NFR-33/34/35/36 type:resilience (SRS:Resilience)"
   ],
   "docs_embedded": ["SRS.md", "SAD.md"],
   "confidence": 0.97,
-  "round": 3,
+  "round": 5,
   "gaps": []
 }

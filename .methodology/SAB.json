@@ -233,52 +233,52 @@
       "module": "app.services.llm_judge"
     },
     "NFR-20": {
-      "type": "deployability",
+      "type": "compliance",
       "target": "Taiwan PDA compliance",
       "module": "app.admin.gdpr"
     },
     "NFR-21": {
-      "type": "deployability",
+      "type": "compliance",
       "target": "GDPR Art.5(1)(e) data minimization",
       "module": "app.admin.gdpr"
     },
     "NFR-22": {
-      "type": "deployability",
+      "type": "compliance",
       "target": "SOC2 audit trail",
       "module": "app.infra.observability"
     },
     "NFR-23": {
-      "type": "testability",
+      "type": "quality",
       "target": ">=90% FCR (in_scope conversations)",
-      "module": "app.services.llm_judge"
+      "module": "app.admin.odd_sql"
     },
     "NFR-24": {
-      "type": "testability",
+      "type": "quality",
       "target": ">=4.8 CSAT score",
       "module": "app.services.llm_judge"
     },
     "NFR-25": {
-      "type": "testability",
+      "type": "quality",
       "target": ">=95% escalation SLA compliance",
       "module": "app.services.escalation"
     },
     "NFR-26": {
-      "type": "testability",
+      "type": "quality",
       "target": ">=0.7 Cohen's Kappa vs human annotation",
       "module": "app.services.llm_judge"
     },
     "NFR-27": {
-      "type": "testability",
+      "type": "quality",
       "target": "100% grounding check pass rate (cosine>=0.75)",
       "module": "app.core.paladin"
     },
     "NFR-28": {
-      "type": "testability",
+      "type": "quality",
       "target": ">=92% Recall@3 HNSW 1536-dim",
       "module": "app.core.knowledge"
     },
     "NFR-29": {
-      "type": "testability",
+      "type": "quality",
       "target": ">=95% agentic tool success rate",
       "module": "app.services.aee"
     },
@@ -288,7 +288,7 @@
       "module": "app.infra.deployment"
     },
     "NFR-31": {
-      "type": "maintainability",
+      "type": "observability",
       "target": "100% request OTel trace coverage",
       "module": "app.infra.observability"
     },
@@ -298,22 +298,22 @@
       "module": "tests.strategy"
     },
     "NFR-33": {
-      "type": "reliability",
+      "type": "resilience",
       "target": "rate_limit fail-open on Redis unavailable",
       "module": "app.infra.rate_limit"
     },
     "NFR-34": {
-      "type": "reliability",
+      "type": "resilience",
       "target": "IP whitelist fail-secure 403 on no match",
       "module": "app.infra.rate_limit"
     },
     "NFR-35": {
-      "type": "reliability",
+      "type": "resilience",
       "target": "max 100 CIDR blocks",
       "module": "app.infra.rate_limit"
     },
     "NFR-36": {
-      "type": "security",
+      "type": "resilience",
       "target": "M2M token 90-day expiry; 24hr overlap on rotate",
       "module": "app.api.auth"
     },
