@@ -30,8 +30,8 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 try:
-    from redis.exceptions import ConnectionError as RedisConnectionError
-    from redis.exceptions import TimeoutError as RedisTimeoutError
+    from redis.exceptions import ConnectionError as RedisConnectionError  # type: ignore[reportAssignmentType]
+    from redis.exceptions import TimeoutError as RedisTimeoutError  # type: ignore[reportAssignmentType]
 except ImportError:  # pragma: no cover -- redis lib is in pyproject dependencies
     class RedisConnectionError(Exception):  # type: ignore[no-redef]
         pass
@@ -162,11 +162,16 @@ class RateLimiter:
         return RateLimitResult.denied() if count > limit else RateLimitResult.allowed()
 
     def _redis_count(self, platform: str, key: str) -> int:
-        sha = self.redis_client.script_load(self._SCRIPT)
+        # Caller (_check_and_record) already gated on `redis_client is not None`,
+        # but pyright can't narrow the type across that method boundary — assert
+        # so the subsequent attribute access is type-safe.
+        assert self.redis_client is not None
+        client = self.redis_client
+        sha = client.script_load(self._SCRIPT)
         now = time.time()
         window_start = now - self._WINDOW_SECONDS
         member = f"{now}:{key}"
-        result = self.redis_client.evalsha(
+        result = client.evalsha(
             sha,
             1,
             f"rate_limit:{platform}:{key}",

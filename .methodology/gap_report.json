@@ -1,12 +1,133 @@
 {
   "summary": {
-    "total": 0,
+    "total": 20,
     "missing": 0,
     "incomplete": 0,
-    "orphaned": 0,
+    "orphaned": 20,
     "critical": 0,
     "major": 0,
-    "minor": 0
+    "minor": 20
   },
-  "gaps": []
+  "gaps": [
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'RedisConnectionError' has no corresponding specification in SPEC.md",
+      "action": "Add spec for RedisConnectionError or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'RedisTimeoutError' has no corresponding specification in SPEC.md",
+      "action": "Add spec for RedisTimeoutError or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'RateLimitResult' has no corresponding specification in SPEC.md",
+      "action": "Add spec for RateLimitResult or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'allowed' has no corresponding specification in SPEC.md",
+      "action": "Add spec for allowed or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'denied' has no corresponding specification in SPEC.md",
+      "action": "Add spec for denied or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'RateLimiter' has no corresponding specification in SPEC.md",
+      "action": "Add spec for RateLimiter or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'allow' has no corresponding specification in SPEC.md",
+      "action": "Add spec for allow or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'aallow' has no corresponding specification in SPEC.md",
+      "action": "Add spec for aallow or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'HNSWIndexSpec' has no corresponding specification in SPEC.md",
+      "action": "Add spec for HNSWIndexSpec or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'should_index_row' has no corresponding specification in SPEC.md",
+      "action": "Add spec for should_index_row or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'ChainResult' has no corresponding specification in SPEC.md",
+      "action": "Add spec for ChainResult or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'MiddlewareChain' has no corresponding specification in SPEC.md",
+      "action": "Add spec for MiddlewareChain or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'process' has no corresponding specification in SPEC.md",
+      "action": "Add spec for process or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'IPWhitelistError' has no corresponding specification in SPEC.md",
+      "action": "Add spec for IPWhitelistError or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'IPCheckResult' has no corresponding specification in SPEC.md",
+      "action": "Add spec for IPCheckResult or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'allow' has no corresponding specification in SPEC.md",
+      "action": "Add spec for allow or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'deny' has no corresponding specification in SPEC.md",
+      "action": "Add spec for deny or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'misconfigured' has no corresponding specification in SPEC.md",
+      "action": "Add spec for misconfigured or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'IPWhitelist' has no corresponding specification in SPEC.md",
+      "action": "Add spec for IPWhitelist or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'is_allowed' has no corresponding specification in SPEC.md",
+      "action": "Add spec for is_allowed or remove if unnecessary"
+    }
+  ]
 }

@@ -1,7 +1,7 @@
 """[FR-24] Middleware chain orchestrator.
 
 Acceptance criteria (SRS FR-24):
-    攔截鏈順序：TLS → IP Whitelist → Webhook Signature Validation
+    攔截鏈順序: TLS → IP Whitelist → Webhook Signature Validation
     → Platform Adapter Parse → Rate Limiting → RBAC
 
     - 各層按順序執行
