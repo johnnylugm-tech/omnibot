@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "6cb735bb844a54408f144f9d30b2c613d1a9d34d",
-  "content_sha256": "51257381b5ad4e8ddc70671ce2c1809989dfc207f19da92c5a44cde193bbff4c",
+  "git_sha": "50bcb856e52189cec7fa2079527196406ad3e764",
+  "content_sha256": "5f6e77c32e3c8357030dbd9f07f4f7fe2c28d93b1240014a57ffa154c1331b98",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,10 +11,10 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "7.4%",
-      "test_coverage": "7.4%",
-      "verification_rate": "7.4%",
-      "total_links": 124,
+      "code_coverage": "9.3%",
+      "test_coverage": "9.3%",
+      "verification_rate": "9.3%",
+      "total_links": 128,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -90,7 +90,6 @@
           "FR-67",
           "FR-68",
           "FR-69",
-          "FR-72",
           "FR-73",
           "FR-74",
           "FR-75",
@@ -100,7 +99,6 @@
           "FR-79",
           "FR-80",
           "FR-81",
-          "FR-82",
           "FR-83",
           "FR-84",
           "FR-85",
@@ -192,7 +190,6 @@
           "FR-67",
           "FR-68",
           "FR-69",
-          "FR-72",
           "FR-73",
           "FR-74",
           "FR-75",
@@ -202,7 +199,6 @@
           "FR-79",
           "FR-80",
           "FR-81",
-          "FR-82",
           "FR-83",
           "FR-84",
           "FR-85",
@@ -298,7 +294,6 @@
         "FR-67",
         "FR-68",
         "FR-69",
-        "FR-72",
         "FR-73",
         "FR-74",
         "FR-75",
@@ -308,7 +303,6 @@
         "FR-79",
         "FR-80",
         "FR-81",
-        "FR-82",
         "FR-83",
         "FR-84",
         "FR-85",
@@ -400,7 +394,6 @@
         "FR-67",
         "FR-68",
         "FR-69",
-        "FR-72",
         "FR-73",
         "FR-74",
         "FR-75",
@@ -410,7 +403,6 @@
         "FR-79",
         "FR-80",
         "FR-81",
-        "FR-82",
         "FR-83",
         "FR-84",
         "FR-85",
@@ -1185,10 +1177,14 @@
       },
       "FR-72": {
         "fr_id": "FR-72",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/infra/tracing.py"
+        ],
+        "test_files": [
+          "tests/test_fr72.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
@@ -1275,10 +1271,14 @@
       },
       "FR-82": {
         "fr_id": "FR-82",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/infra/schema.py"
+        ],
+        "test_files": [
+          "tests/test_fr82.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
