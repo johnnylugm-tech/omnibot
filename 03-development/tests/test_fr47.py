@@ -1,1 +1,0 @@
-../../tests/test_fr47.py

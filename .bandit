@@ -1,3 +1,0 @@
-[bandit]
-exclude = /harness/,/tests/,/.venv/,/03-development/tests/
-quiet = true

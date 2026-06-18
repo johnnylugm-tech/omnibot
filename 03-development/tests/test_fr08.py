@@ -1,1 +1,0 @@
-../../tests/test_fr08.py

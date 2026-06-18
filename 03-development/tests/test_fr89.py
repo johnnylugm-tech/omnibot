@@ -1,1 +1,0 @@
-../../tests/test_fr89.py

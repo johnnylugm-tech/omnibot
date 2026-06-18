@@ -1,8 +1,8 @@
 # Harness Methodology — Session Handover
 
-**Checkpoint**: `P3-post-gate2-20260618`  
-**Phase**: P3 — Implementation  
-**Generated**: 2026-06-18T15:45:35Z
+**Checkpoint**: `P2-exit-20260617`  
+**Phase**: P2 — Architecture & Design  
+**Generated**: 2026-06-17T22:55:05Z
 
 > ⚠️  **開始下一個工作階段前，請先執行 `/compact` 壓縮上下文**，再從「接下來的工作」繼續。
 
@@ -14,9 +14,9 @@
 # 1. Clone (if working directory cleared)
 git clone --recurse-submodules https://github.com/johnnylugm-tech/omnibot.git && cd omnibot
 
-# 2. Read plan and start Phase 4
-cat .methodology/phase4_plan.md
-# Follow SKILL.md §0.1 Phase 4 entry check, then execute
+# 2. Read plan and start Phase 3
+cat .methodology/phase3_plan.md
+# Follow SKILL.md §0.1 Phase 3 entry check, then execute
 ```
 
 ---
@@ -31,69 +31,73 @@ git clone --recurse-submodules https://github.com/johnnylugm-tech/omnibot.git /t
 git log --oneline -3
 
 # Confirm FSM state
-cat .methodology/state.json   # expected: phase=3 state=RUNNING last_gate=2
+cat .methodology/state.json   # expected: phase=3 state=RUNNING
 
 # Read active plan
-cat .methodology/phase4_plan.md
+cat .methodology/phase3_plan.md
 ```
 
 | 欄位 | 值 |
 |------|----|
 | Remote | `https://github.com/johnnylugm-tech/omnibot.git` |
 | Branch | `main` |
-| State | `phase=3 state=RUNNING last_gate=2` |
-| Plan | `.methodology/phase4_plan.md` |
+| State | `phase=3 state=RUNNING` |
+| Plan | `.methodology/phase3_plan.md` |
 
 ---
 
 ## 任務背景
 
-P3 Implementation complete. Gate 2 PASS. Ready for P4.
+P2 phase completed — pushed for record.
+
+
+## 交付物清單
+
+- `02-architecture/SAD.md` ✅ (861L)
 
 ## 目前執行狀況
 
-Gate 2 PASS + all 108 FR(s) Gate 1 PASS [FR-01,FR-02,FR-03,FR-04,FR-05,…+103]. Phase 3 formally complete. P4 (verification + adversarial) ready.
-
-**A/B Session Results:**
-  - ? / implementor: **COMPLETED**
+0 FR(s) in quality manifest []. 1/3 P2 deliverables present, Agent-B APPROVED.
 
 **Recently Committed Files:**
-  - `.bandit`
-  - `.methodology/SAB.json`
-  - `.methodology/decision_logs/2026-06-18/GATE_3_220.yaml`
-  - `.methodology/decision_logs/2026-06-18/GATE_3_221.yaml`
-  - `.methodology/decision_logs/2026-06-18/GATE_3_222.yaml`
-  - `.methodology/decision_logs/2026-06-18/GATE_3_223.yaml`
-  - `.methodology/effort_metrics.db`
-  - `.methodology/gate2_result.json`
-  - `.methodology/gate_timestamps.jsonl`
   - `.methodology/quality_manifest.json`
   - `.methodology/state.json`
+  - `00-summary/Phase2_STAGE_PASS.md`
+  - `HANDOVER.md`
+  - `.harness/traces/agent_trajectory.jsonl`
+  - `.methodology/SAB.json`
+  - `.methodology/agent_b_approvals/ADR.md.json`
+  - `.methodology/agent_b_approvals/SAD.md.json`
+  - `.methodology/agent_b_approvals/TEST_INVENTORY.yaml.json`
+  - `.methodology/agent_b_approvals/TEST_SPEC.md.json`
+  - `.methodology/fr_progress.json`
   - `.methodology/trace/attestation.json`
   - `.methodology/trace/attestation.latest.json`
-  - `.mutmut-cache`
-  - `00-summary/Phase3_STAGE_PASS.md`
-  - `01-requirements/SPEC_TRACKING.md`
-  - `01-requirements/TRACEABILITY_MATRIX.md`
-  - `03-development/src/ab_test/manager.py`
-  - `03-development/tests/integration/test_ha_observability_integration.py`
-  - `03-development/tests/integration/test_knowledge_analytics_integration.py`
+  - `02-architecture/SAD.md`
+  - `02-architecture/TEST_SPEC.md`
+  - `02-architecture/adr/ADR.md`
+  - `CLAUDE.md`
+  - `01-requirements/SRS.md`
+  - `SPEC.md`
+  - `.methodology/.state.lock`
 
 ## 接下來的工作
 
-1. advance-phase --completed 3  (transitions to P4)
-2. Spawn Phase 4 orchestrator (verification + adversarial bug hunt)
-3. Gate 3 at P4 exit (target composite ≥ 80)
+1. Open `.methodology/phase3_plan.md` and follow from the top
+2. Implement each FR with TDD (Gate 1 target per FR ≥75)
+3. Push P3-mid checkpoint at ≥50 % FR Gate 1 PASS
+4. Push P3-pre-gate2 checkpoint when all FRs done
 
 ## 注意事項
 
 - 100% follow SKILL.md
 - Do NOT commit `.sessi-work/` or `.methodology/` runtime artifacts
 - Git failures are warnings — they never block the pipeline
+- Phase checkpoint push
 
 ## 附加資訊
 
-- **fr_count**: 108
+- **fr_count**: 0
 
 ---
 *由 `HandoverGenerator` 自動生成。下次 push 時此檔案將被覆寫。*
