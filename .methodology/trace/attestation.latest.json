@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "b0a1df51d50d36e8e8d44e306c43d6eaa35509ec",
-  "content_sha256": "457ce14a57e102c0a3d7eeb63b2847d3f3d19e17ffe9a025a8b66d59cca7d4e3",
+  "git_sha": "c63b95df70ded32f089fcb8727ed0882e1ccb78a",
+  "content_sha256": "6bfa31a66c0abb2eea1524479c162832424029649ad6604fa8b56ef61abff00b",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,10 +11,10 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "0.0%",
-      "test_coverage": "0.0%",
-      "verification_rate": "0.0%",
-      "total_links": 108,
+      "code_coverage": "2.8%",
+      "test_coverage": "2.8%",
+      "verification_rate": "2.8%",
+      "total_links": 114,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -47,9 +47,6 @@
           "FR-18",
           "FR-19",
           "FR-20",
-          "FR-21",
-          "FR-22",
-          "FR-23",
           "FR-24",
           "FR-25",
           "FR-26",
@@ -157,9 +154,6 @@
           "FR-18",
           "FR-19",
           "FR-20",
-          "FR-21",
-          "FR-22",
-          "FR-23",
           "FR-24",
           "FR-25",
           "FR-26",
@@ -271,9 +265,6 @@
         "FR-18",
         "FR-19",
         "FR-20",
-        "FR-21",
-        "FR-22",
-        "FR-23",
         "FR-24",
         "FR-25",
         "FR-26",
@@ -381,9 +372,6 @@
         "FR-18",
         "FR-19",
         "FR-20",
-        "FR-21",
-        "FR-22",
-        "FR-23",
         "FR-24",
         "FR-25",
         "FR-26",
@@ -726,28 +714,40 @@
       },
       "FR-21": {
         "fr_id": "FR-21",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/infra/rate_limit.py"
+        ],
+        "test_files": [
+          "tests/test_fr21.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-22": {
         "fr_id": "FR-22",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/infra/rate_limit.py"
+        ],
+        "test_files": [
+          "tests/test_fr22.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-23": {
         "fr_id": "FR-23",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/middleware/ip_whitelist.py"
+        ],
+        "test_files": [
+          "tests/test_fr23.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },

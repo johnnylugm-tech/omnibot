@@ -18,16 +18,13 @@ from __future__ import annotations
 
 import asyncio
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test (does not exist yet — RED state).
 #
 # ModuleNotFoundError at pytest collection time is the EXPECTED red signal.
 # Do NOT wrap this import in try/except; the contract permits Exit Code 2.
 # ---------------------------------------------------------------------------
-from app.infra.rate_limit import RateLimiter  # noqa: F401  -- RED expected
-
+from app.infra.rate_limit import RateLimiter
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):

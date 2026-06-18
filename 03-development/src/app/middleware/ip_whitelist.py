@@ -40,17 +40,17 @@ class IPCheckResult:
     allowed: bool = False
 
     @classmethod
-    def allow(cls) -> "IPCheckResult":
+    def allow(cls) -> IPCheckResult:
         """Caller IP matched the whitelist — request may proceed."""
         return cls(status=200, allowed=True)
 
     @classmethod
-    def deny(cls) -> "IPCheckResult":
+    def deny(cls) -> IPCheckResult:
         """Caller IP did not match — FR-23 mandates an empty body for 403."""
         return cls(status=403)
 
     @classmethod
-    def misconfigured(cls, body: bytes) -> "IPCheckResult":
+    def misconfigured(cls, body: bytes) -> IPCheckResult:
         """Caller IP could not be evaluated (empty config / no IP)."""
         return cls(status=400, body=body, allowed=False)
 

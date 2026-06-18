@@ -27,6 +27,7 @@ import threading
 import time
 from collections import deque
 from dataclasses import dataclass
+from typing import ClassVar
 
 try:
     from redis.exceptions import ConnectionError as RedisConnectionError
@@ -87,7 +88,7 @@ class RateLimiter:
     the limiter fails open per FR-22.
     """
 
-    LIMITS: dict[str, int] = {
+    LIMITS: ClassVar[dict[str, int]] = {
         "telegram": 30,
         "line": 30,
         "messenger": 30,
