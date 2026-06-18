@@ -1,4 +1,9 @@
-"""Integration tests: message processing pipeline — adapters → models → DST → response."""
+"""Integration tests: message processing pipeline — adapters → models → DST → response.
+
+NFR coverage: NFR-01 (p95 end-to-end latency < 1s), NFR-02 (L1-L3 latency < 5ms),
+NFR-03 (L4 classifier < 200ms), NFR-05 (A2A timeout = 2.0s),
+NFR-29 (agentic tool success rate ≥ 95%).
+"""
 import datetime
 
 

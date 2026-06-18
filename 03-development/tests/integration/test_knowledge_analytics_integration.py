@@ -1,4 +1,11 @@
-"""Integration tests: knowledge retrieval, analytics, rate limiting, A/B, judge."""
+"""Integration tests: knowledge retrieval, analytics, rate limiting, A/B, judge.
+
+NFR coverage: NFR-04 (Embedding API < 300ms), NFR-07 (Agent Card TTL 300s),
+NFR-08 (Embedding job p95 < 30s), NFR-23 (FCR ≥ 90%),
+NFR-24 (CSAT target 4.8), NFR-25 (Escalation SLA ≥ 95%),
+NFR-26 (LLM Judge Cohen's Kappa ≥ 0.7), NFR-27 (Grounding cosine ≥ 0.75),
+NFR-28 (Recall@3 ≥ 92%).
+"""
 
 
 def test_chunking_and_hybrid_knowledge_pipeline():

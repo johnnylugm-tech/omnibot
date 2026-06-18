@@ -1,4 +1,11 @@
-"""Integration tests: security pipeline — Paladin + GDPR + PII + TDE + RBAC."""
+"""Integration tests: security pipeline — Paladin + GDPR + PII + TDE + RBAC.
+
+NFR coverage: NFR-15 (OWASP LLM01 compliance), NFR-16 (security block rate ≥ 95%),
+NFR-17 (secrets not committed), NFR-20 (Taiwan PDPA compliance),
+NFR-21 (GDPR data minimisation), NFR-22 (SOC2 audit trail),
+NFR-34 (IP whitelist fail-secure), NFR-35 (IP whitelist max 100 CIDR),
+NFR-36 (M2M token expiry), NFR-38 (ClamAV scan p95 < 500ms).
+"""
 
 
 def test_paladin_pipeline_full_flow():

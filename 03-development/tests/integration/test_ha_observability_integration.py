@@ -1,4 +1,11 @@
-"""Integration tests: HA + observability — CircuitBreaker, RetryPolicy, metrics, logging."""
+"""Integration tests: HA + observability — CircuitBreaker, RetryPolicy, metrics, logging.
+
+NFR coverage: NFR-06 (LLM fallback switch < 500ms), NFR-09 (2000 TPS sustained),
+NFR-10 (99.9% availability), NFR-11 (early-warning < 99.95%), NFR-12 (HighLatency alert),
+NFR-13 (error rate alert), NFR-14 (DR recovery < 5 min), NFR-30 (K8s HPA config),
+NFR-31 (OpenTelemetry trace per request), NFR-32 (unit 70% + integration 20% coverage),
+NFR-33 (rate limiter fail-open on Redis unavailability).
+"""
 import pytest
 
 
