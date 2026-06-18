@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import ipaddress
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass
 
 logger = logging.getLogger("omnibot.ip_whitelist")
@@ -88,15 +89,11 @@ class IPWhitelist:
 
     _MAX_ENTRIES = 100  # FR-25 cap
 
-    def __init__(self, cidrs) -> None:
-        if isinstance(cidrs, str):
-            cidrs = [piece.strip() for piece in cidrs.split(",")]
-        else:
-            cidrs = list(cidrs)
-
-        # Filter empty fragments (e.g. trailing comma in env var) but
-        # remember whether the input was effectively empty.
-        self._cidrs: list[str] = [c for c in cidrs if c]
+    def __init__(self, cidrs: str | Iterable[str]) -> None:
+        # Normalize: accept either a comma-separated string or any iterable.
+        # Strip whitespace and drop empty fragments (e.g. trailing comma in
+        # an env var) so downstream validation sees only meaningful entries.
+        self._cidrs: list[str] = self._normalize_cidrs(cidrs)
 
         # [FR-25] Cap the number of configured CIDR blocks. Exceeding the
         # cap is a startup-time configuration error, surfaced as
@@ -113,15 +110,23 @@ class IPWhitelist:
         # ValueError from ipaddress.ip_network. Re-raise as
         # IPWhitelistError so the startup path has a single, well-defined
         # exception type to catch and the application fails fast.
-        networks: list[ipaddress._BaseNetwork] = []
-        for cidr in self._cidrs:
-            try:
-                networks.append(ipaddress.ip_network(cidr, strict=False))
-            except ValueError as exc:
-                raise IPWhitelistError(
-                    f"ip_whitelist_invalid_cidr: {cidr!r} ({exc})"
-                ) from exc
-        self._networks = networks
+        self._networks = self._parse_networks(self._cidrs)
+
+    # ------------------------------------------------------------------
+    # Input handling
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _normalize_cidrs(cidrs: str | Iterable[str]) -> list[str]:
+        """Return the non-empty CIDR strings from the input.
+
+        Accepts either a comma-separated string (``"10.0.0.0/8, 192.168/16"``)
+        or any iterable of CIDR strings. String entries are stripped;
+        iterable entries are passed through (the caller is responsible for
+        whitespace). Empty fragments are dropped.
+        """
+        if isinstance(cidrs, str):
+            return [piece.strip() for piece in cidrs.split(",") if piece.strip()]
+        return [c for c in cidrs if c]
 
     # ------------------------------------------------------------------
     # Public API
@@ -167,6 +172,21 @@ class IPWhitelist:
     # ------------------------------------------------------------------
     # Internals
     # ------------------------------------------------------------------
+    @staticmethod
+    def _parse_networks(
+        cidrs: list[str],
+    ) -> list[ipaddress.IPv4Network | ipaddress.IPv6Network]:
+        """Parse each CIDR into a network, surfacing malformed entries as ``IPWhitelistError``."""
+        networks: list[ipaddress.IPv4Network | ipaddress.IPv6Network] = []
+        for cidr in cidrs:
+            try:
+                networks.append(ipaddress.ip_network(cidr, strict=False))
+            except ValueError as exc:
+                raise IPWhitelistError(
+                    f"ip_whitelist_invalid_cidr: {cidr!r} ({exc})"
+                ) from exc
+        return networks
+
     @staticmethod
     def _resolve_ip(
         x_forwarded_for: str | None,
