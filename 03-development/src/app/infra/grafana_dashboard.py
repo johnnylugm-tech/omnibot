@@ -58,34 +58,46 @@ class GrafanaPanel:
     time_ranges: tuple[str, ...] = SUPPORTED_TIME_RANGES
 
 
+def _make_panel(name: str, kind: PanelKind, title: str, metric: str) -> GrafanaPanel:
+    """Construct a Prometheus-wired panel with FR-74 defaults.
+
+    All FR-74 panels share ``datasource="prometheus"`` and the spec-mandated
+    refresh ranges, so they are applied here rather than repeated at every
+    call site.
+    """
+    return GrafanaPanel(
+        name=name,
+        title=title,
+        kind=kind,
+        datasource="prometheus",
+        metric=metric,
+    )
+
+
 # Canonical FR-74 dashboard: exactly 4 panels, each wired to Prometheus.
 GRAFANA_DASHBOARD: Mapping[str, GrafanaPanel] = {
-    "fcr_line": GrafanaPanel(
+    "fcr_line": _make_panel(
         name="fcr_line",
-        title="First Contact Resolution",
         kind="line",
-        datasource="prometheus",
+        title="First Contact Resolution",
         metric="fcr_total",
     ),
-    "p95_gauge": GrafanaPanel(
+    "p95_gauge": _make_panel(
         name="p95_gauge",
-        title="p95 Response Latency",
         kind="gauge",
-        datasource="prometheus",
+        title="p95 Response Latency",
         metric="response_duration_seconds",
     ),
-    "knowledge_source_pie": GrafanaPanel(
+    "knowledge_source_pie": _make_panel(
         name="knowledge_source_pie",
-        title="Knowledge Source Distribution",
         kind="pie",
-        datasource="prometheus",
+        title="Knowledge Source Distribution",
         metric="knowledge_hit_total",
     ),
-    "cost_time_series": GrafanaPanel(
+    "cost_time_series": _make_panel(
         name="cost_time_series",
-        title="Monthly Cost Trend",
         kind="time_series",
-        datasource="prometheus",
+        title="Monthly Cost Trend",
         metric="llm_tokens_total",
     ),
 }
