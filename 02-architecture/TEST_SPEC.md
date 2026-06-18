@@ -182,6 +182,7 @@
 | 1 | `test_fr07_unified_message_telegram_valid` | platform="telegram"; message_type="text"; content="hello" | happy_path | Q1 |
 | 2 | `test_fr07_unified_message_frozen_immutable` | platform="telegram"; attempt_mutate="content" | validation | Q2 |
 | 3 | `test_fr07_unified_message_all_platforms_valid` | platforms="telegram,line,messenger,whatsapp,web,a2a" | happy_path | Q1 |
+| 4 | `test_fr07_must_not_mutate_frozen_dataclass` | attempt_field="content"; new_value="hacked"; expected_error="FrozenInstanceError" | negative_constraint | Q8 |
 
 **Sub-assertions** (predicate over Inputs / `result`):
 
@@ -495,6 +496,7 @@
 | 3 | `test_fr22_failopen_warning_logged` | redis_status="unavailable"; expected_log_level="WARNING" | validation | Q2 |
 | 4 | `test_fr22_redis_recovers_after_transient_outage` | outage_duration_ms="500"; expected_recovery="true" | fault_injection | Q6/1b/NP-07 |
 | 5 | `test_fr22_redis_rate_limit_cache_hit_invoked` | platform="telegram"; request_count="5"; expected_redis_calls="5" | integration | Q6/1b/NP-07 |
+| 6 | `test_fr22_must_not_raise_on_redis_unavailable` | redis_status="unavailable"; expected_exception="none" | negative_constraint | Q8 |
 
 **Sub-assertions** (predicate over Inputs / `result`):
 
@@ -871,6 +873,7 @@
 | 3 | `test_fr41_timeout_2s_returns_error` | agent_latency_ms="3000"; timeout_ms="2000" | fault_injection | Q6/NP-15 |
 | 4 | `test_fr41_unreachable_returns_empty_tools_no_exception` | agent_url="http://unreachable"; expected_tools="[]" | fault_injection | Q5/NP-07 |
 | 5 | `test_fr41_agent_card_cache_expires_after_300s` | elapsed_seconds="301"; expected_refetch="true" | boundary | Q3 |
+| 6 | `test_fr41_must_not_raise_on_unreachable` | agent_url="http://unreachable"; expected_exception="none" | negative_constraint | Q8 |
 
 **Sub-assertions** (predicate over Inputs / `result`):
 
@@ -947,6 +950,7 @@
 |---|---|---|---|---|
 | 1 | `test_fr45_aee_and_dst_share_tool_definition_import` | modules="aee,dst"; expected_import_path="same" | happy_path | Q1 |
 | 2 | `test_fr45_single_tool_definition_class_no_duplication` | class_count="1" | validation | Q2 |
+| 3 | `test_fr45_must_not_duplicate_tool_definition` | modules="aee,dst"; expected_class_count="1" | negative_constraint | Q8 |
 
 **Sub-assertions** (predicate over Inputs / `result`):
 
@@ -1198,12 +1202,14 @@
 |---|---|---|---|---|
 | 1 | `test_fr58_user_ws_message_reply_pushed` | event="message.reply"; message_id="msg-001"; content="hello" | happy_path | Q1 |
 | 2 | `test_fr58_user_ws_jwt_verified` | jwt="valid-user-jwt"; expected_connected="true" | validation | Q2 |
+| 3 | `test_fr58_must_not_c1` | ws_client_polling_attempts="0"; expected_push_only="true" | negative_constraint | Q8 |
 
 **Sub-assertions** (predicate over Inputs / `result`):
 
 | rule_id | predicate (over Inputs / result) | applies_to (case #) |
 |---|---|---|
 | fr58-ok | `result is not None` | 1 |
+| q8_c1 | `must not require client polling — server MUST push events proactively` | 3 |
 
 ---
 
@@ -1256,6 +1262,7 @@
 | 2 | `test_fr61_permission_matrix_complete` | roles_count="7"; resources="knowledge,escalate,audit,experiment,system,pii" | happy_path | Q1 |
 | 3 | `test_fr61_admin_has_all_resources` | role="admin"; expected_all_permissions="true" | validation | Q2 |
 | 4 | `test_fr61_auditor_pii_none_explicit_in_matrix` | role="auditor"; pii_permission="pii:none"; expected_explicit="true" | validation | Q2 |
+| 5 | `test_fr61_must_not_pii_decrypt_for_auditor` | role="auditor"; action="pii:decrypt"; expected_status="403" | negative_constraint | Q8 |
 
 **Sub-assertions** (predicate over Inputs / `result`):
 
@@ -1371,6 +1378,7 @@
 |---|---|---|---|---|
 | 1 | `test_fr67_accuracy_equals_min_of_both_judges` | primary_score="4"; secondary_score="3"; expected_accuracy="3" | happy_path | Q1 |
 | 2 | `test_fr67_primary_higher_secondary_lower_uses_secondary` | primary_score="5"; secondary_score="2"; expected_accuracy="2" | validation | Q2 |
+| 3 | `test_fr67_must_not_use_max_for_accuracy_aggregation` | primary_score="5"; secondary_score="1"; expected_accuracy="1"; forbidden_result="5" | negative_constraint | Q8 |
 
 **Sub-assertions** (predicate over Inputs / `result`):
 
@@ -1640,6 +1648,7 @@
 | 2 | `test_fr81_delay_capped_at_30s` | attempt="10"; base_delay="1.0"; expected_max_delay="30" | boundary | Q3 |
 | 3 | `test_fr81_jitter_applied` | base_delay="4.0"; expected_jitter_range="0.5 to 1.0" | validation | Q2 |
 | 4 | `test_fr81_base_delay_1s` | attempt="1"; base_delay="1.0"; expected_delay_range="0.5s to 2.0s" | happy_path | Q1 |
+| 5 | `test_fr81_must_not_thundering_herd_without_jitter` | concurrent_retries="10"; expected_delay_variance_ms=">100" | negative_constraint | Q8 |
 
 **Sub-assertions** (predicate over Inputs / `result`):
 
@@ -2010,6 +2019,8 @@
 | 4 | `test_fr100_file_above_10mb_rejected` | file_size_mb="11"; limit_mb="10"; expected_status="rejected" | boundary | Q3 |
 | 5 | `test_fr100_clamav_down_503_file_scan_unavailable` | clamav_status="down"; expected_status="503"; expected_error="FILE_SCAN_UNAVAILABLE" | fault_injection | Q5/NP-07 |
 | 6 | `test_fr100_clamav_scan_p95_under_500ms` | file_type="pdf"; p95_limit_ms="500" | nfr_pattern | Q6/NP-06 |
+| 7 | `test_fr100_clamav_timeout_terminates_scan` | scan_timeout_ms="500"; clamav_delay_ms="600"; expected_terminated="true" | fault_injection | Q6/1b/NP-15 |
+| 8 | `test_fr100_must_not_allow_file_when_clamav_unavailable` | clamav_status="unavailable"; expected_allowed="false" | negative_constraint | Q8 |
 
 **Sub-assertions** (predicate over Inputs / `result`):
 
@@ -2221,20 +2232,20 @@
 
 | # | Test Function | Inputs | Type | Derivation |
 |---|---|---|---|---|
-| 1 | `test_webhook_telegram_valid_signature_returns_200` | platform="telegram"; signature="valid" | integration | Step 2.5 |
-| 2 | `test_webhook_telegram_invalid_signature_returns_401` | platform="telegram"; signature="bad" | integration | Step 2.5 |
-| 3 | `test_webhook_telegram_rate_limit_returns_429` | platform="telegram"; burst="31" | integration | Step 2.5 |
-| 4 | `test_webhook_line_valid_signature_returns_200` | platform="line"; signature="valid" | integration | Step 2.5 |
-| 5 | `test_webhook_line_invalid_signature_returns_401` | platform="line"; signature="bad" | integration | Step 2.5 |
-| 6 | `test_webhook_messenger_hub_challenge_returns_challenge` | method="GET"; hub_challenge="abc" | integration | Step 2.5 |
-| 7 | `test_webhook_whatsapp_hub_challenge_returns_challenge` | method="GET"; hub_challenge="xyz" | integration | Step 2.5 |
-| 8 | `test_web_guest_session_returns_jwt` | path="/api/v1/web/guest-session" | integration | Step 2.5 |
-| 9 | `test_web_message_invalid_jwt_returns_401` | authorization="Bearer bad" | integration | Step 2.5 |
-| 10 | `test_a2a_rpc_valid_m2m_token_returns_200` | authorization="Bearer valid-m2m" | integration | Step 2.5 |
-| 11 | `test_a2a_rpc_invalid_m2m_token_returns_401` | authorization="Bearer bad-m2m" | integration | Step 2.5 |
-| 12 | `test_knowledge_create_requires_knowledge_write` | role="customer"; action="create"; expected_status="403" | integration | Step 2.5 |
-| 13 | `test_knowledge_delete_requires_knowledge_delete` | role="editor"; action="delete"; expected_status="403" | integration | Step 2.5 |
-| 14 | `test_health_endpoint_returns_200` | path="/api/v1/health"; expected_status="200" | integration | Step 2.5 |
+| 1 | `test_webhook_telegram_valid_signature_returns_200` | platform="telegram"; signature="valid" | interface_contract | Step 2.5 |
+| 2 | `test_webhook_telegram_invalid_signature_returns_401` | platform="telegram"; signature="bad" | interface_contract | Step 2.5 |
+| 3 | `test_webhook_telegram_rate_limit_returns_429` | platform="telegram"; burst="31" | interface_contract | Step 2.5 |
+| 4 | `test_webhook_line_valid_signature_returns_200` | platform="line"; signature="valid" | interface_contract | Step 2.5 |
+| 5 | `test_webhook_line_invalid_signature_returns_401` | platform="line"; signature="bad" | interface_contract | Step 2.5 |
+| 6 | `test_webhook_messenger_hub_challenge_returns_challenge` | method="GET"; hub_challenge="abc" | interface_contract | Step 2.5 |
+| 7 | `test_webhook_whatsapp_hub_challenge_returns_challenge` | method="GET"; hub_challenge="xyz" | interface_contract | Step 2.5 |
+| 8 | `test_web_guest_session_returns_jwt` | path="/api/v1/web/guest-session" | interface_contract | Step 2.5 |
+| 9 | `test_web_message_invalid_jwt_returns_401` | authorization="Bearer bad" | interface_contract | Step 2.5 |
+| 10 | `test_a2a_rpc_valid_m2m_token_returns_200` | authorization="Bearer valid-m2m" | interface_contract | Step 2.5 |
+| 11 | `test_a2a_rpc_invalid_m2m_token_returns_401` | authorization="Bearer bad-m2m" | interface_contract | Step 2.5 |
+| 12 | `test_knowledge_create_requires_knowledge_write` | role="customer"; action="create"; expected_status="403" | interface_contract | Step 2.5 |
+| 13 | `test_knowledge_delete_requires_knowledge_delete` | role="editor"; action="delete"; expected_status="403" | interface_contract | Step 2.5 |
+| 14 | `test_health_endpoint_returns_200` | path="/api/v1/health"; expected_status="200" | interface_contract | Step 2.5 |
 
 ### Backward Compatibility
 
@@ -2249,16 +2260,18 @@
 | Metric | Count |
 |---|---|
 | FRs covered | 108 |
-| Total test cases | 432 |
-| By type: happy_path | 130 |
-| By type: validation | 114 |
-| By type: boundary | 22 |
+| Total test cases | 442 |
+| By type: happy_path | 169 |
+| By type: validation | 125 |
+| By type: boundary | 24 |
 | By type: state_transition | 4 |
-| By type: fault_injection | 35 |
-| By type: nfr_pattern | 57 |
-| By type: integration | 70 |
+| By type: fault_injection | 27 |
+| By type: nfr_pattern | 40 |
+| By type: integration | 30 |
+| By type: negative_constraint | 9 |
+| By type: interface_contract | 14 |
 | Active NFR patterns applied | 15 (NP-01 through NP-15) |
-| Step 1b forced integration tests | 17 |
+| Step 1b forced integration tests | 18 |
 | Cross-cutting test cases | 38 |
 
 ---

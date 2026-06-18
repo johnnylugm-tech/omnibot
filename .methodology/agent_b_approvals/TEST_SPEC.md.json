@@ -1,28 +1,27 @@
 {
   "fr": "TEST_SPEC.md",
   "review_status": "APPROVE",
-  "reason": "All 8 delta changes are logically sound. FR-25 happy_path correctly validates that a well-formed CIDR initializes successfully, completing the acceptance criteria coverage. FR-27 fault_injection tests accurately represent NP-07 (embedding API down → tier1 fallback) and NP-15 (timeout threshold exceeded → tsvector fallback) per app.core.knowledge retry/network-client obligation. FR-34 reclassification to state_transition/Q4 is appropriate and consistent with FR-37 treatment — both tests exercise FSM transition semantics directly. FR-40 fault_injection tests correctly model NP-07 (server down → empty tool list, fail-secure) and NP-15 (connection timeout → error result) for MCPAdapter. FR-42 fault_injection tests correctly model NP-15 (process timeout → termination) and NP-07 (process killed externally → false+error), which are the canonical representations of those patterns for a CLI subprocess adapter. FR-69 fault_injection tests correctly model NP-07 (calibration LLM unreachable → cached kappa fallback) and NP-15 (calibration timeout → skip cycle), consistent with the 30s timeout implied by the monthly calibration window. FR-84 title '7 端點' is the correct choice: the test input has always listed 7 distinct URL paths; the SRS '6 個' counts by platform/adapter grouping, not by unique routes, so '7 端點' better serves as the title of a URL-level test section without contradicting the SRS intent. Summary math 130+114+22+4+35+57+70=432 is verified correct; state_transition delta +2 and fault_injection delta +8 are consistent with the per-FR changes described.",
+  "reason": "Round 4 fix is correct: FR-58 test_fr58_must_not_c1 with sub-assertion q8_c1 satisfies Q8 for the CJK-only constraint 避免輪詢 using the sequential suffix fallback. All 9 negative_constraint tests map 1:1 to the embedded SRS constraint table. All 10 Step-1b risky modules have at least one Q6/1b/-tagged forced case. V3 math verifies: 169+125+24+4+27+40+30+9+14=442. FR-89 (無法裸讀) and FR-94 (拒絕明文) do not use Q8 trigger keywords and require no additional negative_constraint tests. No high or medium severity gaps found.",
   "citations": [
-    "SRS FR-25: 非法 CIDR 啟動時即失敗；非法 IP 不拋例外回 False — happy_path test_fr25_valid_cidr_startup_succeeds covers the affirmative initialization path missing in round 1",
-    "SAD Step 1b: app.core.knowledge 'Network client + retry (LLM + Embedding)' FORCES NP-07, NP-15 for FR-26–33 — FR-27 now has one test per forced pattern",
-    "SAD Step 1b: app.services.aee 'Network client + retry (A2AAdapter, MCPAdapter)' FORCES NP-07, NP-15 for FR-39–45 — FR-40 and FR-42 each now have one test per forced pattern",
-    "SAD Step 1b: app.services.llm_judge 'Parallel network calls (2 LLMs)' FORCES NP-07, NP-15 for FR-65–69 — FR-69 now has one test per forced pattern",
-    "SRS FR-34: 8-state FSM with ALLOWED_TRANSITIONS enforcement — both valid and invalid transition tests are transition-semantic tests; Q4 derivation is correct; FR-37 precedent confirms the classification",
-    "SRS FR-84 description enumerates 7 distinct URL paths across 6 platform/adapter groups; the test input expected_paths lists all 7; title '7 端點' matches the test scope accurately"
+    "Q8 rule (derive_test_cases.md): C_slug empty for CJK-only constraints → sequential suffix c1 accepted; test_fr58_must_not_c1 is correctly named",
+    "Step 1b rule (derive_test_cases.md): 'risky module with zero forced cases → REJECT' — all 10 modules have Q6/1b/-tagged cases; zero-case rule not violated",
+    "V2 (derive_test_cases.md Q8 keyword list): 無法 and 拒絕 are not in the Q8 trigger set (Must not, Do not, 禁止, 不可, 避免); FR-89 and FR-94 require no negative_constraint tests",
+    "V3 summary math: 169+125+24+4+27+40+30+9+14=442 verified correct",
+    "Checklist: cross-cutting section present with ≥1 deployment smoke test (test_deploy_docker_compose_all_services_healthy et al.)"
   ],
   "docs_embedded": ["SRS.md", "SAD.md", "TEST_SPEC.md"],
-  "confidence": 0.94,
-  "round": 2,
+  "confidence": 0.91,
+  "round": 4,
   "gaps": [
     {
       "severity": "low",
-      "message": "FR-42 NP-07 modeled as SIGKILL (process killed externally) rather than the more canonical 'process not found / spawn failure' interpretation. SIGKILL is a valid NP-07 proxy for a subprocess adapter but is slightly non-standard; acceptable given CLIAdapter's sandboxed execution context.",
-      "fr_id": "FR-42"
+      "message": "test_fr100_clamav_timeout_terminates_scan (test #7) asserts expected_terminated='true' but lacks an explicit orphan/cleanup sub-assertion verifying the subprocess is reaped after kill. The Step 1b NP-15 external process pattern requires both timeout enforcement and orphan/cleanup assertion. Carry-over from round 3; does not escalate.",
+      "fr_id": "FR-100"
     },
     {
       "severity": "low",
-      "message": "FR-84 title change from '6 端點' to '7 端點' diverges from SRS literal wording. The change is defensible (URL count vs. adapter count) but a comment in TEST_SPEC.md explaining the discrepancy would eliminate future ambiguity.",
-      "fr_id": "FR-84"
+      "message": "Step 1b 'Required case shape' for network client / retry logic modules specifies test_{fr}_retry_backoff_bounded, but no test with that exact name exists for paladin, knowledge, aee, llm_judge, or jobs modules. Semantically equivalent backoff tests exist (e.g., test_fr76_queue_unavailable_job_retried_with_backoff tagged Q6/1b/NP-07). The zero-forced-cases rejection threshold is not met since each module has ≥1 Q6/1b/ case, but strict name-shape compliance is absent.",
+      "fr_id": null
     }
   ]
 }

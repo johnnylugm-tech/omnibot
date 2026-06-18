@@ -442,6 +442,15 @@ The following modules have architecture-risk traits that FORCE NFR patterns in T
 | `app.services.llm_judge` | Parallel network calls (2 LLMs) | NP-07, NP-15 | Both judges parallel; partial failure |
 | `app.services.media` | External process (ClamAV Docker) | NP-15 | ClamAV down→fail-secure 503 |
 
+### 5.2 CRG Architecture Dimension Risks (Gate 3/4)
+
+These entries document modules evaluated against CRG scoring criteria for Gate 3/4. Entries marked "will NOT trigger" were assessed and confirmed below threshold.
+
+| Module | CRG Evaluation | Result | Gate Handling |
+|--------|---------------|--------|---------------|
+| `app.core.pipeline` | Star-topology orchestrator evaluated for Leiden false positive. Harness detection criteria (`evaluate_dimension.md` §Orchestrator Pattern): community size > 50 AND hub fan_out > 8. Actual: core community size = 7 nodes (pipeline + 6 siblings); pipeline fan_out = 6. Both thresholds NOT met. | **Will NOT trigger** Leiden false positive | No DA waiver needed. No Gate action required for this module. |
+| `app.infra.config` | Hub fan_in = 8: all 8 sibling infra modules (database / rate_limit / redis_streams / jobs / circuit_breaker / observability / security / deployment) import config. Exactly hits `HUB_HIGH_FAN_IN = 8` threshold → CRG emits advisory finding (high severity if untested, medium if tested). Does not affect `community_cohesion.score`. | **Will trigger** HUB_HIGH_FAN_IN advisory | No score impact. Document as intentional infrastructure hub pattern in Gate 3 architecture findings. |
+
 ---
 
 ## 6. Data Flow Diagrams
