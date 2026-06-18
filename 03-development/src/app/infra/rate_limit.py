@@ -63,6 +63,16 @@ class RateLimitResult:
     status: int
     reason: str = ""
 
+    @classmethod
+    def allowed(cls) -> RateLimitResult:
+        """Construct a pass-through result (status=200, no reason)."""
+        return cls(200, "")
+
+    @classmethod
+    def denied(cls) -> RateLimitResult:
+        """Construct a rate-limited result (status=429, RATE_LIMIT_EXCEEDED)."""
+        return cls(429, "RATE_LIMIT_EXCEEDED")
+
 
 class RateLimiter:
     """Sliding-window rate limiter, bucketed per platform.
@@ -122,33 +132,35 @@ class RateLimiter:
         if limit is None:
             # Unknown platform — fail-open; the platform layer is the
             # authority for which platforms exist.
-            return RateLimitResult(200, "")
+            return RateLimitResult.allowed()
 
         if self.redis_client is not None:
-            try:
-                count = self._redis_check(platform, key)
-            except _FAIL_OPEN_EXCEPTIONS as exc:
-                # FR-22 fail-open: log and pass. Do NOT cache the outage;
-                # the next call will retry Redis so we recover automatically.
-                logger.warning(
-                    "rate_limit_redis_unavailable",
-                    extra={
-                        "platform": platform,
-                        "key": key,
-                        "error_type": type(exc).__name__,
-                        "error": str(exc),
-                    },
-                )
-                return RateLimitResult(200, "")
-
-            if count > limit:
-                return RateLimitResult(429, "RATE_LIMIT_EXCEEDED")
-            return RateLimitResult(200, "")
+            return self._redis_decide(platform, key, limit)
 
         # No Redis client → in-memory fallback (FR-21 path).
         return self._in_memory_check(platform, limit)
 
-    def _redis_check(self, platform: str, key: str) -> int:
+    def _redis_decide(self, platform: str, key: str, limit: int) -> RateLimitResult:
+        """Consult Redis and apply the limit. Fail-open on outage (FR-22)."""
+        try:
+            count = self._redis_count(platform, key)
+        except _FAIL_OPEN_EXCEPTIONS as exc:
+            # FR-22 fail-open: log and pass. Do NOT cache the outage;
+            # the next call will retry Redis so we recover automatically.
+            logger.warning(
+                "rate_limit_redis_unavailable",
+                extra={
+                    "platform": platform,
+                    "key": key,
+                    "error_type": type(exc).__name__,
+                    "error": str(exc),
+                },
+            )
+            return RateLimitResult.allowed()
+
+        return RateLimitResult.denied() if count > limit else RateLimitResult.allowed()
+
+    def _redis_count(self, platform: str, key: str) -> int:
         sha = self.redis_client.script_load(self._SCRIPT)
         now = time.time()
         window_start = now - self._WINDOW_SECONDS
@@ -173,6 +185,6 @@ class RateLimiter:
             while bucket and bucket[0] < window_start:
                 bucket.popleft()
             if len(bucket) >= limit:
-                return RateLimitResult(429, "RATE_LIMIT_EXCEEDED")
+                return RateLimitResult.denied()
             bucket.append(now)
-            return RateLimitResult(200, "")
+            return RateLimitResult.allowed()
