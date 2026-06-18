@@ -39,6 +39,21 @@ class IPCheckResult:
     body: bytes = b""
     allowed: bool = False
 
+    @classmethod
+    def allow(cls) -> "IPCheckResult":
+        """Caller IP matched the whitelist — request may proceed."""
+        return cls(status=200, allowed=True)
+
+    @classmethod
+    def deny(cls) -> "IPCheckResult":
+        """Caller IP did not match — FR-23 mandates an empty body for 403."""
+        return cls(status=403)
+
+    @classmethod
+    def misconfigured(cls, body: bytes) -> "IPCheckResult":
+        """Caller IP could not be evaluated (empty config / no IP)."""
+        return cls(status=400, body=body, allowed=False)
+
 
 class IPWhitelist:
     """CIDR membership check with X-Forwarded-For resolution.
@@ -86,11 +101,7 @@ class IPWhitelist:
                 "ip_whitelist_empty_config",
                 extra={"cidrs": self._cidrs},
             )
-            return IPCheckResult(
-                status=400,
-                body=b"ip whitelist is empty",
-                allowed=False,
-            )
+            return IPCheckResult.misconfigured(b"ip whitelist is empty")
 
         resolved = self._resolve_ip(x_forwarded_for, ip, client_host)
         if resolved is None:
@@ -102,15 +113,13 @@ class IPWhitelist:
                     "client_host": client_host,
                 },
             )
-            return IPCheckResult(
-                status=400,
-                body=b"no client ip available",
-                allowed=False,
-            )
+            return IPCheckResult.misconfigured(b"no client ip available")
 
-        if self._matches(resolved):
-            return IPCheckResult(status=200, body=b"", allowed=True)
-        return IPCheckResult(status=403, body=b"", allowed=False)
+        return (
+            IPCheckResult.allow()
+            if self._matches(resolved)
+            else IPCheckResult.deny()
+        )
 
     # ------------------------------------------------------------------
     # Internals
