@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "e539e0714de30bcf1e8d7c5b72c1fb92081846de",
-  "content_sha256": "cb253b027219bc93c59901f423296c8f72d8d8d5676e524ef31f93efabbd44f9",
+  "git_sha": "3a789f85683142332eb945c2ca7c4198ce9c64bf",
+  "content_sha256": "01f27347e6e9360dc8fdb4c4749126fc6db142c776ed130e368046e8ade68641",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,10 +11,10 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "0.9%",
-      "test_coverage": "1.9%",
-      "verification_rate": "0.9%",
-      "total_links": 111,
+      "code_coverage": "1.9%",
+      "test_coverage": "2.8%",
+      "verification_rate": "1.9%",
+      "total_links": 113,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -47,7 +47,6 @@
           "FR-18",
           "FR-19",
           "FR-20",
-          "FR-22",
           "FR-23",
           "FR-24",
           "FR-25",
@@ -156,7 +155,6 @@
           "FR-18",
           "FR-19",
           "FR-20",
-          "FR-23",
           "FR-24",
           "FR-25",
           "FR-26",
@@ -268,7 +266,6 @@
         "FR-18",
         "FR-19",
         "FR-20",
-        "FR-22",
         "FR-23",
         "FR-24",
         "FR-25",
@@ -377,7 +374,6 @@
         "FR-18",
         "FR-19",
         "FR-20",
-        "FR-23",
         "FR-24",
         "FR-25",
         "FR-26",
@@ -733,9 +729,11 @@
       },
       "FR-22": {
         "fr_id": "FR-22",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
+        "code_files": [
+          "03-development/src/app/infra/rate_limit.py"
+        ],
         "test_files": [
           "tests/test_fr22.py"
         ],
@@ -747,7 +745,9 @@
         "status": "pending",
         "srs_section": "SAD.md",
         "code_files": [],
-        "test_files": [],
+        "test_files": [
+          "tests/test_fr23.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
