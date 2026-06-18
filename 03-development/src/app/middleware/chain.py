@@ -16,10 +16,8 @@ Citations:
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
-
-logger = logging.getLogger("omnibot.middleware.chain")
+from typing import Any
 
 
 @dataclass
@@ -47,12 +45,23 @@ class ChainResult:
     stage_completed: str = ""
 
 
+def _is_allowed(outcome: Any, *, default: bool) -> bool:
+    """Defensive read of ``outcome.allowed`` with a fallback default.
+
+    Each middleware contract uses a different default semantic — TLS treats
+    ``None`` as pass-through (default True) while IP/RBAC treat ``None`` as
+    deny (default False). Keeping the default at the call site preserves
+    those semantics without scattering ``getattr`` calls.
+    """
+    return bool(getattr(outcome, "allowed", default))
+
+
 class MiddlewareChain:
     """Strict-order orchestrator for the FR-24 middleware chain.
 
-    The class attribute ``CHAIN_ORDER`` is the single source of truth for
-    execution order; :meth:`process` iterates that tuple so reordering the
-    stages is a one-line change with an auditable diff.
+    ``CHAIN_ORDER`` is the single source of truth for stage order. Each
+    stage in :meth:`process` is a labelled block whose order must match
+    ``CHAIN_ORDER``; reordering requires touching both in lockstep.
 
     Short-circuit semantics:
         - Any stage that returns a non-success result causes the chain to
@@ -84,6 +93,25 @@ class MiddlewareChain:
         self.rbac_enforcer = rbac_enforcer
 
     # ------------------------------------------------------------------
+    # Result builders — collapse the repeated ChainResult(...) blocks
+    # into named helpers so the short-circuit paths read as one line.
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _deny(stage: str, status: int, reason: str, **fields: Any) -> ChainResult:
+        """Build a short-circuit ``ChainResult`` for ``stage``.
+
+        ``fields`` carries the optional overrides each stage needs
+        (e.g. ``body`` for IP/TLS, ``user_id``/``platform`` for the
+        post-parse stages).
+        """
+        return ChainResult(
+            status=status,
+            reason=reason,
+            stage_completed=stage,
+            **fields,
+        )
+
+    # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
     def process(self, request) -> ChainResult:
@@ -95,31 +123,27 @@ class MiddlewareChain:
         # 1. TLS termination check (optional pass-through when None).
         if self.tls_check is not None:
             tls_outcome = self.tls_check(request)
-            if not getattr(tls_outcome, "allowed", True):
-                return ChainResult(
+            if not _is_allowed(tls_outcome, default=True):
+                return self._deny(
+                    "tls",
                     status=getattr(tls_outcome, "status", 400),
-                    body=getattr(tls_outcome, "body", b""),
                     reason="TLS_CHECK_FAILED",
-                    stage_completed="tls",
+                    body=getattr(tls_outcome, "body", b""),
                 )
 
         # 2. IP Whitelist — FR-24 mandates this BEFORE signature validation.
         ip_outcome = self.ip_whitelist.is_allowed(request)
-        if not getattr(ip_outcome, "allowed", False):
-            return ChainResult(
+        if not _is_allowed(ip_outcome, default=False):
+            return self._deny(
+                "ip",
                 status=ip_outcome.status,
-                body=ip_outcome.body,
                 reason="IP_BLOCKED",
-                stage_completed="ip",
+                body=ip_outcome.body,
             )
 
         # 3. Webhook Signature Validation.
         if not self.signature_validator.verify(request):
-            return ChainResult(
-                status=401,
-                reason="SIGNATURE_INVALID",
-                stage_completed="signature",
-            )
+            return self._deny("signature", status=401, reason="SIGNATURE_INVALID")
 
         # 4. Platform Adapter Parse — produces the user_id used as the
         # rate-limiter key in the next stage.
@@ -131,30 +155,31 @@ class MiddlewareChain:
             key=ctx.user_id,
         )
         if getattr(rate_outcome, "status", 200) == 429:
-            return ChainResult(
+            return self._deny(
+                "rate",
                 status=429,
                 reason="RATE_LIMIT_EXCEEDED",
                 user_id=ctx.user_id,
                 platform=ctx.platform,
-                stage_completed="rate",
             )
 
         # 6. RBAC — final authorization gate.
         rbac_outcome = self.rbac_enforcer.enforce(
             ctx.user_id, "webhook", "receive"
         )
-        if not getattr(rbac_outcome, "allowed", False):
-            return ChainResult(
+        if not _is_allowed(rbac_outcome, default=False):
+            return self._deny(
+                "rbac",
                 status=403,
                 reason="AUTHZ_INSUFFICIENT_ROLE",
                 user_id=ctx.user_id,
                 platform=ctx.platform,
-                stage_completed="rbac",
             )
 
-        return ChainResult(
+        return self._deny(
+            "rbac",
             status=200,
+            reason="",
             user_id=ctx.user_id,
             platform=ctx.platform,
-            stage_completed="rbac",
         )
