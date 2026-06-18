@@ -1,11 +1,12 @@
-"""[FR-21] Redis sliding window rate limiter.
+"""[FR-21] Sliding window rate limiter.
 
-Per-platform sliding-window rate limiter. Production path executes a
-single atomic Lua ZSET script against the injected Redis client; when
-``redis_client`` is ``None`` (tests, or a failed connection) the
-implementation falls back to an in-process sliding window that
-preserves the same atomicity guarantee via a single ``threading.Lock``
-and serialization on the asyncio event loop.
+Per-platform sliding-window rate limiter. Atomicity is provided by a
+single ``threading.Lock`` guarding the per-platform deque of
+monotonic timestamps; under asyncio, callers serialize on the event
+loop because the critical section performs no ``await``.
+
+``redis_client`` is accepted for API parity with the production
+Redis-backed path but is not exercised by the current implementation.
 
 Citations:
 - SRS.md FR-21 (description line 59, spec block lines 590-595)
@@ -56,28 +57,28 @@ class RateLimiter:
     _WINDOW_SECONDS: float = 1.0
 
     def __init__(self, redis_client=None) -> None:
-        # Inject; do not connect. The production Lua path is taken when
-        # ``redis_client`` is not None and exposes ``eval``.
+        # Inject; do not connect. Accepted for API parity with the
+        # production Redis-backed path; not exercised here.
         self.redis_client = redis_client
-        # In-memory fallback state: platform -> deque of monotonic timestamps.
+        # platform -> deque of monotonic timestamps inside the window.
         self._buckets: dict[str, deque[float]] = {}
         self._lock = threading.Lock()
 
     def allow(self, *, platform: str, key: str) -> RateLimitResult:
         """Synchronous per-platform rate-limit check.
 
-        ``key`` is accepted for API parity with the production Lua path
-        (per-user sub-bucketing); in this in-memory fallback the
-        platform-wide bucket is authoritative.
+        ``key`` is accepted for API parity with the production
+        per-user sub-bucketing path; the in-memory implementation
+        keys only by platform.
         """
         return self._check_and_record(platform)
 
     async def aallow(self, *, platform: str, key: str) -> RateLimitResult:
         """Async counterpart to :meth:`allow`.
 
-        Internally synchronous on the event loop: with no ``await`` inside
-        the critical section, asyncio serializes concurrent callers, so
-        the bucket mutation is atomic for the race-condition test.
+        Internally synchronous on the event loop: with no ``await``
+        inside the critical section, asyncio serializes concurrent
+        callers, so the bucket mutation is atomic.
         """
         return self._check_and_record(platform)
 
