@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "26a55efe38829b08a6d1887825804c6b5a26c73a",
-  "content_sha256": "b22fadd3e208f5edb934cc2bd0be3a56defcda6825bd7eb5a5bf3efeabf17876",
+  "git_sha": "011852ea158aa155e2a62fe7ab8f9d684efd87ea",
+  "content_sha256": "f1a3a1808b482b8c2e5f8718dbea2dd37c1f41dbb291685e129e0ae0b296e141",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -14,7 +14,7 @@
       "code_coverage": "0.9%",
       "test_coverage": "0.9%",
       "verification_rate": "0.9%",
-      "total_links": 110,
+      "total_links": 111,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -518,6 +518,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/src/models/unified_message.py",
           "03-development/tests/test_fr07.py"
         ],
         "test_files": [
