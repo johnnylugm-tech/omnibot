@@ -111,7 +111,7 @@ tests/
 - core/ (7 files): hub=pipeline.py; each module called by pipeline and calls `pipeline.get_context()` → ~30 internal edges vs ~35 external edges; cohesion ≥ 0.46
 - services/ (6 files): hub=registry.py; all services registered via `registry.get_service()` called per function → ~20 internal edges vs ~30 external edges; cohesion ≥ 0.40
 - infra/ (9 files): hub=config.py; all infra modules call `config.get_setting()` + `config.health_probe()` per function body → ~36 internal edges vs ~50 external edges; cohesion ≥ 0.42
-- admin/ (5 files): hub=reports.py; all admin modules call `reports.log_admin_action()` per function → ~16 internal edges vs ~25 external edges; cohesion ≥ 0.38
+- admin/ (5 files): hub=reports.py; all admin modules call `reports.log_admin_action()` per function → ~16 internal edges vs ~25 external edges; cohesion ≥ 0.39
 
 ### 2.2 Layer 1: API Gateway (app/api/)
 
@@ -453,7 +453,7 @@ These entries document modules evaluated against CRG scoring criteria for Gate 3
 | Module | CRG Evaluation | Result | Gate Handling |
 |--------|---------------|--------|---------------|
 | `app.core.pipeline` | Star-topology orchestrator evaluated for Leiden false positive. Harness detection criteria (`evaluate_dimension.md` §Orchestrator Pattern): community size > 50 AND hub fan_out > 8. Actual: core community size = 7 nodes (pipeline + 6 siblings); pipeline fan_out = 6. Both thresholds NOT met. | **Will NOT trigger** Leiden false positive | No DA waiver needed. No Gate action required for this module. |
-| `app.infra.config` | Hub fan_in = 8: all 8 sibling infra modules (database / rate_limit / redis_streams / jobs / circuit_breaker / observability / security / deployment) import config. Exactly hits `HUB_HIGH_FAN_IN = 8` threshold (`crg_analysis.py:65 — HUB_HIGH_FAN_IN = _ti('CRG_HUB_HIGH_FANIN', 8)`) → CRG emits advisory finding (high severity if untested, medium if tested). Does not affect `community_cohesion.score`. | **Will trigger** HUB_HIGH_FAN_IN advisory | No score impact. Document as intentional infrastructure hub pattern in Gate 3 architecture findings. |
+| `app.infra.config` | Hub fan_in = 8: all 8 sibling infra modules (database / rate_limit / redis_streams / jobs / circuit_breaker / observability / security / deployment) import config. Exactly hits `HUB_HIGH_FAN_IN = 8` threshold (`harness/harness/ssi/scripts/crg_analysis.py:65 — HUB_HIGH_FAN_IN = _ti('CRG_HUB_HIGH_FANIN', 8)`) → CRG emits advisory finding (high severity if untested, medium if tested). Does not affect `community_cohesion.score`. | **Will trigger** HUB_HIGH_FAN_IN advisory | No score impact. Document as intentional infrastructure hub pattern in Gate 3 architecture findings. |
 
 ---
 
