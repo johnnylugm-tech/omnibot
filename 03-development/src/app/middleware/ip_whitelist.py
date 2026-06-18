@@ -1,4 +1,5 @@
-"""[FR-23] CIDR-based IP whitelist with X-Forwarded-For support.
+"""[FR-23][FR-25] CIDR-based IP whitelist with X-Forwarded-For support
+and fail-secure error handling.
 
 Acceptance criteria (SRS FR-23):
     - CIDR format, up to 100 entries, loaded from ``IP_WHITELIST_CIDRS``
@@ -8,11 +9,22 @@ Acceptance criteria (SRS FR-23):
     - No match → 403 Forbidden with empty body.
     - Empty whitelist or missing IP header → 400 + WARNING log.
 
+Acceptance criteria (SRS FR-25):
+    - Invalid CIDR at startup → raise ``IPWhitelistError`` so the app
+      fails fast instead of silently loading a broken whitelist.
+    - Invalid IP in :meth:`IPWhitelist.is_allowed` → return False (deny)
+      without raising; the request must not surface a 500 to the caller.
+
 Citations:
 - SRS.md FR-23 (description line ~62, spec block)
 - 02-architecture/TEST_SPEC.md FR-23 (whitelisted_ip_passes,
   nonwhitelisted_ip_403_empty_body, x_forwarded_for_leftmost_used,
   empty_whitelist_400_warning, fallback_to_request_client_host)
+- SRS.md FR-25 (description line ~63, spec block)
+- 02-architecture/TEST_SPEC.md FR-25
+  (test_fr25_valid_cidr_startup_succeeds,
+   test_fr25_invalid_cidr_raises_IPWhitelistError_at_startup,
+   test_fr25_invalid_ip_returns_false_no_exception)
 """
 
 from __future__ import annotations
@@ -22,6 +34,15 @@ import logging
 from dataclasses import dataclass
 
 logger = logging.getLogger("omnibot.ip_whitelist")
+
+
+class IPWhitelistError(Exception):
+    """Raised at startup when the IP whitelist config is malformed.
+
+    [FR-25] fail-secure: an invalid CIDR must abort initialization so the
+    application cannot start with a silently-broken whitelist that might
+    let unauthorized traffic through.
+    """
 
 
 @dataclass(frozen=True)
@@ -76,9 +97,31 @@ class IPWhitelist:
         # Filter empty fragments (e.g. trailing comma in env var) but
         # remember whether the input was effectively empty.
         self._cidrs: list[str] = [c for c in cidrs if c]
-        self._networks: list[ipaddress._BaseNetwork] = [
-            ipaddress.ip_network(c, strict=False) for c in self._cidrs
-        ]
+
+        # [FR-25] Cap the number of configured CIDR blocks. Exceeding the
+        # cap is a startup-time configuration error, surfaced as
+        # IPWhitelistError so the application refuses to come up rather
+        # than silently accepting an unbounded config.
+        if len(self._cidrs) > self._MAX_ENTRIES:
+            raise IPWhitelistError(
+                f"ip_whitelist_too_many_entries: got {len(self._cidrs)} "
+                f"cidrs, max is {self._MAX_ENTRIES}"
+            )
+
+        # [FR-25] Parse each CIDR entry. A malformed entry (e.g.
+        # "256.0.0.0/8" — octet > 255, or a missing slash) raises
+        # ValueError from ipaddress.ip_network. Re-raise as
+        # IPWhitelistError so the startup path has a single, well-defined
+        # exception type to catch and the application fails fast.
+        networks: list[ipaddress._BaseNetwork] = []
+        for cidr in self._cidrs:
+            try:
+                networks.append(ipaddress.ip_network(cidr, strict=False))
+            except ValueError as exc:
+                raise IPWhitelistError(
+                    f"ip_whitelist_invalid_cidr: {cidr!r} ({exc})"
+                ) from exc
+        self._networks = networks
 
     # ------------------------------------------------------------------
     # Public API
