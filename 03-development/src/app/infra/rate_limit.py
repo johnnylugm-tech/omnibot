@@ -1,24 +1,54 @@
-"""[FR-21] Sliding window rate limiter.
+"""[FR-21][FR-22] Sliding window rate limiter with Redis fail-open.
 
-Per-platform sliding-window rate limiter. Atomicity is provided by a
-single ``threading.Lock`` guarding the per-platform deque of
-monotonic timestamps; under asyncio, callers serialize on the event
-loop because the critical section performs no ``await``.
+Per-platform sliding-window rate limiter.
 
-``redis_client`` is accepted for API parity with the production
-Redis-backed path but is not exercised by the current implementation.
+[FR-21] In-memory sliding window when no Redis client is injected.
+       Atomic under asyncio concurrency because the critical section
+       performs no ``await``.
+
+[FR-22] When the injected Redis client raises ConnectionError or
+       TimeoutError, the limiter MUST fail open:
+         - emit a WARNING log entry
+         - return RateLimitResult(status=200, reason="")
+       Fail-open does NOT latch: subsequent ``allow()`` calls continue
+       to consult Redis once it is reachable again.
 
 Citations:
 - SRS.md FR-21 (description line 59, spec block lines 590-595)
-- 02-architecture/TEST_SPEC.md FR-21
+- SRS.md FR-22 (description line 60, spec block lines 597-602)
+- 02-architecture/TEST_SPEC.md FR-21 (Redis sliding window)
+- 02-architecture/TEST_SPEC.md FR-22 (fail-open on Redis outage)
 """
 
 from __future__ import annotations
 
+import logging
 import threading
 import time
 from collections import deque
 from dataclasses import dataclass
+
+try:
+    from redis.exceptions import ConnectionError as RedisConnectionError
+    from redis.exceptions import TimeoutError as RedisTimeoutError
+except ImportError:  # pragma: no cover -- redis lib is in pyproject dependencies
+    class RedisConnectionError(Exception):  # type: ignore[no-redef]
+        pass
+
+    class RedisTimeoutError(Exception):  # type: ignore[no-redef]
+        pass
+
+# FR-22 fail-open triggers: any Redis-side connection or timeout failure.
+# The built-in ConnectionError covers the test mock; the redis.* exceptions
+# cover production traffic from redis-py.
+_FAIL_OPEN_EXCEPTIONS: tuple[type[BaseException], ...] = (
+    RedisConnectionError,
+    RedisTimeoutError,
+    ConnectionError,
+)
+
+
+logger = logging.getLogger("omnibot.rate_limit")
 
 
 @dataclass(frozen=True)
@@ -26,10 +56,8 @@ class RateLimitResult:
     """Outcome of a rate-limit check.
 
     Attributes:
-        status: HTTP-style code carried by the platform contract.
-            200 = allowed, 429 = rate-limited.
-        reason: Machine-readable reason. ``"RATE_LIMIT_EXCEEDED"`` on 429,
-            empty string otherwise.
+        status: 200 allowed, 429 rate-limited.
+        reason: ``"RATE_LIMIT_EXCEEDED"`` on 429, empty string otherwise.
     """
 
     status: int
@@ -43,6 +71,10 @@ class RateLimiter:
         telegram / line / messenger / whatsapp : 30
         web                                     : 10
         agent                                   : 100
+
+    With ``redis_client`` injected the limiter consults a single atomic
+    Lua ZSET script (no GET-then-ZADD race). When Redis is unavailable
+    the limiter fails open per FR-22.
     """
 
     LIMITS: dict[str, int] = {
@@ -56,9 +88,16 @@ class RateLimiter:
 
     _WINDOW_SECONDS: float = 1.0
 
+    # Sliding window: trim expired, add this request, return count. Atomic.
+    _SCRIPT = (
+        "redis.call('ZREMRANGEBYSCORE', KEYS[1], '-inf', tonumber(ARGV[1]));"
+        "redis.call('ZADD', KEYS[1], tonumber(ARGV[2]), ARGV[3]);"
+        "redis.call('EXPIRE', KEYS[1], 2);"
+        "return redis.call('ZCARD', KEYS[1]);"
+    )
+
     def __init__(self, redis_client=None) -> None:
-        # Inject; do not connect. Accepted for API parity with the
-        # production Redis-backed path; not exercised here.
+        # Inject; do not connect.
         self.redis_client = redis_client
         # platform -> deque of monotonic timestamps inside the window.
         self._buckets: dict[str, deque[float]] = {}
@@ -67,28 +106,64 @@ class RateLimiter:
     def allow(self, *, platform: str, key: str) -> RateLimitResult:
         """Synchronous per-platform rate-limit check.
 
-        ``key`` is accepted for API parity with the production
-        per-user sub-bucketing path; the in-memory implementation
-        keys only by platform.
+        ``key`` sub-buckets per user inside the platform window.
         """
-        return self._check_and_record(platform)
+        return self._check_and_record(platform, key)
 
     async def aallow(self, *, platform: str, key: str) -> RateLimitResult:
         """Async counterpart to :meth:`allow`.
 
-        Internally synchronous on the event loop: with no ``await``
-        inside the critical section, asyncio serializes concurrent
-        callers, so the bucket mutation is atomic.
+        Identical fail-open semantics: redis outage → 200 + WARNING log.
         """
-        return self._check_and_record(platform)
+        return self._check_and_record(platform, key)
 
-    def _check_and_record(self, platform: str) -> RateLimitResult:
+    def _check_and_record(self, platform: str, key: str) -> RateLimitResult:
         limit = self.LIMITS.get(platform)
         if limit is None:
             # Unknown platform — fail-open; the platform layer is the
             # authority for which platforms exist.
             return RateLimitResult(200, "")
 
+        if self.redis_client is not None:
+            try:
+                count = self._redis_check(platform, key)
+            except _FAIL_OPEN_EXCEPTIONS as exc:
+                # FR-22 fail-open: log and pass. Do NOT cache the outage;
+                # the next call will retry Redis so we recover automatically.
+                logger.warning(
+                    "rate_limit_redis_unavailable",
+                    extra={
+                        "platform": platform,
+                        "key": key,
+                        "error_type": type(exc).__name__,
+                        "error": str(exc),
+                    },
+                )
+                return RateLimitResult(200, "")
+
+            if count > limit:
+                return RateLimitResult(429, "RATE_LIMIT_EXCEEDED")
+            return RateLimitResult(200, "")
+
+        # No Redis client → in-memory fallback (FR-21 path).
+        return self._in_memory_check(platform, limit)
+
+    def _redis_check(self, platform: str, key: str) -> int:
+        sha = self.redis_client.script_load(self._SCRIPT)
+        now = time.time()
+        window_start = now - self._WINDOW_SECONDS
+        member = f"{now}:{key}"
+        result = self.redis_client.evalsha(
+            sha,
+            1,
+            f"rate_limit:{platform}:{key}",
+            window_start,
+            now,
+            member,
+        )
+        return int(result)
+
+    def _in_memory_check(self, platform: str, limit: int) -> RateLimitResult:
         now = time.monotonic()
         window_start = now - self._WINDOW_SECONDS
 
