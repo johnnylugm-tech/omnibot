@@ -24,4 +24,4 @@ class ABTestManager:
         exp = self._experiments.get(experiment)
         if not exp:
             return ""
-        return random.choice(exp["variants"])
+        return random.choice(exp["variants"])  # nosec B311

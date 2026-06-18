@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "0ee152043afa54d3bfdfb79790e652ba570a6370",
-  "content_sha256": "b2b478007918bbd80d2197adf5e96ad72d34f9fae24cd3e00e6b73ed6265edf0",
+  "git_sha": "024403a753de3dcec5bad65d307aa23d2a86a463",
+  "content_sha256": "cd23e31652c3c21f8008188f7c14701511885cb7150a264d555abbafea8e99e6",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -14,7 +14,7 @@
       "code_coverage": "100.0%",
       "test_coverage": "100.0%",
       "verification_rate": "100.0%",
-      "total_links": 401,
+      "total_links": 509,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [],
@@ -33,6 +33,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/adapters/telegram.py",
+          "03-development/tests/test_fr01.py",
           "tests/test_fr01.py"
         ],
         "test_files": [
@@ -47,6 +48,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/adapters/line.py",
+          "03-development/tests/test_fr02.py",
           "tests/test_fr02.py"
         ],
         "test_files": [
@@ -61,6 +63,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/adapters/messenger.py",
+          "03-development/tests/test_fr03.py",
           "tests/test_fr03.py"
         ],
         "test_files": [
@@ -75,6 +78,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/adapters/whatsapp.py",
+          "03-development/tests/test_fr04.py",
           "tests/test_fr04.py"
         ],
         "test_files": [
@@ -89,6 +93,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/adapters/web.py",
+          "03-development/tests/test_fr05.py",
           "tests/test_fr05.py"
         ],
         "test_files": [
@@ -103,6 +108,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/adapters/a2a.py",
+          "03-development/tests/test_fr06.py",
           "tests/test_fr06.py"
         ],
         "test_files": [
@@ -117,6 +123,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/models/unified_message.py",
+          "03-development/tests/test_fr07.py",
           "tests/test_fr07.py"
         ],
         "test_files": [
@@ -131,6 +138,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/models/unified_response.py",
+          "03-development/tests/test_fr08.py",
           "tests/test_fr08.py"
         ],
         "test_files": [
@@ -145,6 +153,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/models/api_response.py",
+          "03-development/tests/test_fr09.py",
           "tests/test_fr09.py"
         ],
         "test_files": [
@@ -159,6 +168,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/security/paladin.py",
+          "03-development/tests/test_fr10.py",
           "tests/test_fr10.py"
         ],
         "test_files": [
@@ -173,6 +183,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/media/handler.py",
+          "03-development/tests/test_fr100.py",
           "tests/test_fr100.py"
         ],
         "test_files": [
@@ -187,6 +198,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/webui/knowledge.py",
+          "03-development/tests/test_fr101.py",
           "tests/test_fr101.py"
         ],
         "test_files": [
@@ -201,6 +213,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/webui/debugger.py",
+          "03-development/tests/test_fr102.py",
           "tests/test_fr102.py"
         ],
         "test_files": [
@@ -215,6 +228,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/webui/dashboard.py",
+          "03-development/tests/test_fr103.py",
           "tests/test_fr103.py"
         ],
         "test_files": [
@@ -229,6 +243,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/webui/portal.py",
+          "03-development/tests/test_fr104.py",
           "tests/test_fr104.py"
         ],
         "test_files": [
@@ -243,6 +258,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/analytics/odd_sql.py",
+          "03-development/tests/test_fr105.py",
           "tests/test_fr105.py"
         ],
         "test_files": [
@@ -257,6 +273,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/loadtest/k6.py",
+          "03-development/tests/test_fr106.py",
           "tests/test_fr106.py"
         ],
         "test_files": [
@@ -271,6 +288,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/testing/strategy.py",
+          "03-development/tests/test_fr107.py",
           "tests/test_fr107.py"
         ],
         "test_files": [
@@ -285,6 +303,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/testing/golden_dataset.py",
+          "03-development/tests/test_fr108.py",
           "tests/test_fr108.py"
         ],
         "test_files": [
@@ -299,6 +318,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/security/paladin.py",
+          "03-development/tests/test_fr11.py",
           "tests/test_fr11.py"
         ],
         "test_files": [
@@ -313,6 +333,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/security/paladin.py",
+          "03-development/tests/test_fr12.py",
           "tests/test_fr12.py"
         ],
         "test_files": [
@@ -327,6 +348,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/security/paladin.py",
+          "03-development/tests/test_fr13.py",
           "tests/test_fr13.py"
         ],
         "test_files": [
@@ -341,6 +363,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/security/paladin.py",
+          "03-development/tests/test_fr14.py",
           "tests/test_fr14.py"
         ],
         "test_files": [
@@ -355,6 +378,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/security/paladin.py",
+          "03-development/tests/test_fr15.py",
           "tests/test_fr15.py"
         ],
         "test_files": [
@@ -369,6 +393,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/security/paladin.py",
+          "03-development/tests/test_fr16.py",
           "tests/test_fr16.py"
         ],
         "test_files": [
@@ -383,6 +408,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/security/paladin.py",
+          "03-development/tests/test_fr17.py",
           "tests/test_fr17.py"
         ],
         "test_files": [
@@ -397,6 +423,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/pii/masking.py",
+          "03-development/tests/test_fr18.py",
           "tests/test_fr18.py"
         ],
         "test_files": [
@@ -411,6 +438,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/pii/masking.py",
+          "03-development/tests/test_fr19.py",
           "tests/test_fr19.py"
         ],
         "test_files": [
@@ -425,6 +453,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/pii/masking.py",
+          "03-development/tests/test_fr20.py",
           "tests/test_fr20.py"
         ],
         "test_files": [
@@ -439,6 +468,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/rate_limit/rate_limiter.py",
+          "03-development/tests/test_fr21.py",
           "tests/test_fr21.py"
         ],
         "test_files": [
@@ -453,6 +483,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/rate_limit/ip_whitelist.py",
+          "03-development/tests/test_fr22.py",
           "tests/test_fr22.py"
         ],
         "test_files": [
@@ -466,6 +497,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr23.py",
           "tests/test_fr23.py"
         ],
         "test_files": [
@@ -479,6 +511,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr24.py",
           "tests/test_fr24.py"
         ],
         "test_files": [
@@ -492,6 +525,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr25.py",
           "tests/test_fr25.py"
         ],
         "test_files": [
@@ -506,6 +540,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/knowledge/hybrid.py",
+          "03-development/tests/test_fr26.py",
           "tests/test_fr26.py"
         ],
         "test_files": [
@@ -520,6 +555,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/knowledge/chunking.py",
+          "03-development/tests/test_fr27.py",
           "tests/test_fr27.py"
         ],
         "test_files": [
@@ -534,6 +570,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/knowledge/hnsw.py",
+          "03-development/tests/test_fr28.py",
           "tests/test_fr28.py"
         ],
         "test_files": [
@@ -547,6 +584,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr29.py",
           "tests/test_fr29.py"
         ],
         "test_files": [
@@ -560,6 +598,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr30.py",
           "tests/test_fr30.py"
         ],
         "test_files": [
@@ -573,6 +612,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr31.py",
           "tests/test_fr31.py"
         ],
         "test_files": [
@@ -586,6 +626,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr32.py",
           "tests/test_fr32.py"
         ],
         "test_files": [
@@ -599,6 +640,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr33.py",
           "tests/test_fr33.py"
         ],
         "test_files": [
@@ -613,6 +655,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/dst/dialogue_state.py",
+          "03-development/tests/test_fr34.py",
           "tests/test_fr34.py"
         ],
         "test_files": [
@@ -627,6 +670,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/dst/dialogue_state.py",
+          "03-development/tests/test_fr35.py",
           "tests/test_fr35.py"
         ],
         "test_files": [
@@ -641,6 +685,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/dst/dialogue_state.py",
+          "03-development/tests/test_fr36.py",
           "tests/test_fr36.py"
         ],
         "test_files": [
@@ -654,6 +699,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr37.py",
           "tests/test_fr37.py"
         ],
         "test_files": [
@@ -667,6 +713,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr38.py",
           "tests/test_fr38.py"
         ],
         "test_files": [
@@ -681,6 +728,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/aee/adapter.py",
+          "03-development/tests/test_fr39.py",
           "tests/test_fr39.py"
         ],
         "test_files": [
@@ -695,6 +743,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/aee/adapter.py",
+          "03-development/tests/test_fr40.py",
           "tests/test_fr40.py"
         ],
         "test_files": [
@@ -709,6 +758,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/aee/adapter.py",
+          "03-development/tests/test_fr41.py",
           "tests/test_fr41.py"
         ],
         "test_files": [
@@ -723,6 +773,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/aee/adapter.py",
+          "03-development/tests/test_fr42.py",
           "tests/test_fr42.py"
         ],
         "test_files": [
@@ -737,6 +788,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/aee/adapter.py",
+          "03-development/tests/test_fr43.py",
           "tests/test_fr43.py"
         ],
         "test_files": [
@@ -751,6 +803,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/aee/executor.py",
+          "03-development/tests/test_fr44.py",
           "tests/test_fr44.py"
         ],
         "test_files": [
@@ -764,6 +817,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr45.py",
           "tests/test_fr45.py"
         ],
         "test_files": [
@@ -778,6 +832,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/emotion/analyzer.py",
+          "03-development/tests/test_fr46.py",
           "tests/test_fr46.py"
         ],
         "test_files": [
@@ -792,6 +847,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/emotion/tracker.py",
+          "03-development/tests/test_fr47.py",
           "tests/test_fr47.py"
         ],
         "test_files": [
@@ -805,6 +861,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr48.py",
           "tests/test_fr48.py"
         ],
         "test_files": [
@@ -818,6 +875,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr49.py",
           "tests/test_fr49.py"
         ],
         "test_files": [
@@ -832,6 +890,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/response/generator.py",
+          "03-development/tests/test_fr50.py",
           "tests/test_fr50.py"
         ],
         "test_files": [
@@ -845,6 +904,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr51.py",
           "tests/test_fr51.py"
         ],
         "test_files": [
@@ -858,6 +918,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr52.py",
           "tests/test_fr52.py"
         ],
         "test_files": [
@@ -871,6 +932,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr53.py",
           "tests/test_fr53.py"
         ],
         "test_files": [
@@ -885,6 +947,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/escalation/manager.py",
+          "03-development/tests/test_fr54.py",
           "tests/test_fr54.py"
         ],
         "test_files": [
@@ -898,6 +961,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr55.py",
           "tests/test_fr55.py"
         ],
         "test_files": [
@@ -911,6 +975,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr56.py",
           "tests/test_fr56.py"
         ],
         "test_files": [
@@ -925,6 +990,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/websocket/handler.py",
+          "03-development/tests/test_fr57.py",
           "tests/test_fr57.py"
         ],
         "test_files": [
@@ -938,6 +1004,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr58.py",
           "tests/test_fr58.py"
         ],
         "test_files": [
@@ -951,6 +1018,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr59.py",
           "tests/test_fr59.py"
         ],
         "test_files": [
@@ -965,6 +1033,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/rbac/enforcer.py",
+          "03-development/tests/test_fr60.py",
           "tests/test_fr60.py"
         ],
         "test_files": [
@@ -978,6 +1047,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr61.py",
           "tests/test_fr61.py"
         ],
         "test_files": [
@@ -991,6 +1061,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr62.py",
           "tests/test_fr62.py"
         ],
         "test_files": [
@@ -1005,6 +1076,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/ab_test/manager.py",
+          "03-development/tests/test_fr63.py",
           "tests/test_fr63.py"
         ],
         "test_files": [
@@ -1018,6 +1090,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr64.py",
           "tests/test_fr64.py"
         ],
         "test_files": [
@@ -1032,6 +1105,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/judge/llm_judge.py",
+          "03-development/tests/test_fr65.py",
           "tests/test_fr65.py"
         ],
         "test_files": [
@@ -1045,6 +1119,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr66.py",
           "tests/test_fr66.py"
         ],
         "test_files": [
@@ -1058,6 +1133,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr67.py",
           "tests/test_fr67.py"
         ],
         "test_files": [
@@ -1071,6 +1147,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr68.py",
           "tests/test_fr68.py"
         ],
         "test_files": [
@@ -1084,6 +1161,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr69.py",
           "tests/test_fr69.py"
         ],
         "test_files": [
@@ -1098,6 +1176,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/observability/logger.py",
+          "03-development/tests/test_fr70.py",
           "tests/test_fr70.py"
         ],
         "test_files": [
@@ -1112,6 +1191,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/observability/metrics.py",
+          "03-development/tests/test_fr71.py",
           "tests/test_fr71.py"
         ],
         "test_files": [
@@ -1126,6 +1206,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/observability/tracing.py",
+          "03-development/tests/test_fr72.py",
           "tests/test_fr72.py"
         ],
         "test_files": [
@@ -1140,6 +1221,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/observability/alerts.py",
+          "03-development/tests/test_fr73.py",
           "tests/test_fr73.py"
         ],
         "test_files": [
@@ -1153,6 +1235,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr74.py",
           "tests/test_fr74.py"
         ],
         "test_files": [
@@ -1167,6 +1250,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/jobs/worker.py",
+          "03-development/tests/test_fr75.py",
           "tests/test_fr75.py"
         ],
         "test_files": [
@@ -1181,6 +1265,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/jobs/embedding_job.py",
+          "03-development/tests/test_fr76.py",
           "tests/test_fr76.py"
         ],
         "test_files": [
@@ -1194,6 +1279,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr77.py",
           "tests/test_fr77.py"
         ],
         "test_files": [
@@ -1207,6 +1293,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr78.py",
           "tests/test_fr78.py"
         ],
         "test_files": [
@@ -1220,6 +1307,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/tests/test_fr79.py",
           "tests/test_fr79.py"
         ],
         "test_files": [
@@ -1234,6 +1322,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/ha/redis_streams.py",
+          "03-development/tests/test_fr80.py",
           "tests/test_fr80.py"
         ],
         "test_files": [
@@ -1248,6 +1337,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/ha/retry.py",
+          "03-development/tests/test_fr81.py",
           "tests/test_fr81.py"
         ],
         "test_files": [
@@ -1262,6 +1352,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/db/schema.py",
+          "03-development/tests/test_fr82.py",
           "tests/test_fr82.py"
         ],
         "test_files": [
@@ -1276,6 +1367,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/db/schema.py",
+          "03-development/tests/test_fr83.py",
           "tests/test_fr83.py"
         ],
         "test_files": [
@@ -1290,6 +1382,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/api/webhooks.py",
+          "03-development/tests/test_fr84.py",
           "tests/test_fr84.py"
         ],
         "test_files": [
@@ -1304,6 +1397,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/api/management.py",
+          "03-development/tests/test_fr85.py",
           "tests/test_fr85.py"
         ],
         "test_files": [
@@ -1318,6 +1412,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/api/auth.py",
+          "03-development/tests/test_fr86.py",
           "tests/test_fr86.py"
         ],
         "test_files": [
@@ -1332,6 +1427,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/api/m2m.py",
+          "03-development/tests/test_fr87.py",
           "tests/test_fr87.py"
         ],
         "test_files": [
@@ -1346,6 +1442,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/api/gdpr.py",
+          "03-development/tests/test_fr88.py",
           "tests/test_fr88.py"
         ],
         "test_files": [
@@ -1360,6 +1457,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/security/tde.py",
+          "03-development/tests/test_fr89.py",
           "tests/test_fr89.py"
         ],
         "test_files": [
@@ -1374,6 +1472,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/security/redis_security.py",
+          "03-development/tests/test_fr90.py",
           "tests/test_fr90.py"
         ],
         "test_files": [
@@ -1388,6 +1487,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/security/gdpr.py",
+          "03-development/tests/test_fr91.py",
           "tests/test_fr91.py"
         ],
         "test_files": [
@@ -1402,6 +1502,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/security/gdpr.py",
+          "03-development/tests/test_fr92.py",
           "tests/test_fr92.py"
         ],
         "test_files": [
@@ -1416,6 +1517,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/security/gdpr.py",
+          "03-development/tests/test_fr93.py",
           "tests/test_fr93.py"
         ],
         "test_files": [
@@ -1430,6 +1532,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/security/gdpr.py",
+          "03-development/tests/test_fr94.py",
           "tests/test_fr94.py"
         ],
         "test_files": [
@@ -1444,6 +1547,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/deployment/docker.py",
+          "03-development/tests/test_fr95.py",
           "tests/test_fr95.py"
         ],
         "test_files": [
@@ -1458,6 +1562,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/deployment/kubernetes.py",
+          "03-development/tests/test_fr96.py",
           "tests/test_fr96.py"
         ],
         "test_files": [
@@ -1472,6 +1577,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/deployment/backup.py",
+          "03-development/tests/test_fr97.py",
           "tests/test_fr97.py"
         ],
         "test_files": [
@@ -1486,6 +1592,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/deployment/rollback.py",
+          "03-development/tests/test_fr98.py",
           "tests/test_fr98.py"
         ],
         "test_files": [
@@ -1500,6 +1607,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/ha/circuit_breaker.py",
+          "03-development/tests/test_fr99.py",
           "tests/test_fr99.py"
         ],
         "test_files": [

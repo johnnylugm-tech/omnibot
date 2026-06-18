@@ -11,7 +11,7 @@ NFR-28 (Recall@3 ≥ 92%).
 def test_chunking_and_hybrid_knowledge_pipeline():
     """ChunkingStrategy splits text; HybridKnowledge indexes and retrieves."""
     from src.knowledge.chunking import ChunkingStrategy
-    from src.knowledge.hybrid import HybridKnowledge, KnowledgeResult
+    from src.knowledge.hybrid import HybridKnowledge
 
     chunker = ChunkingStrategy(chunk_size=100, overlap=10)
     long_text = "A" * 300

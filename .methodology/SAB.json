@@ -7,13 +7,18 @@
     {
       "name": "api",
       "modules": [
-        "app.api.common",
-        "app.api.main",
-        "app.api.webhooks",
-        "app.api.management",
-        "app.api.auth",
-        "app.api.websocket",
-        "app.api.agent_card"
+        "src.api.auth",
+        "src.api.webhooks",
+        "src.api.management",
+        "src.api.gdpr",
+        "src.api.m2m",
+        "src.websocket.handler",
+        "src.adapters.a2a",
+        "src.adapters.web",
+        "src.adapters.whatsapp",
+        "src.adapters.telegram",
+        "src.adapters.line",
+        "src.adapters.messenger"
       ],
       "allowed_dependencies": [
         "core",
@@ -24,13 +29,18 @@
     {
       "name": "core",
       "modules": [
-        "app.core.pipeline",
-        "app.core.paladin",
-        "app.core.pii",
-        "app.core.knowledge",
-        "app.core.dst",
-        "app.core.response",
-        "app.core.emotion"
+        "src.security.paladin",
+        "src.pii.masking",
+        "src.knowledge.chunking",
+        "src.knowledge.hybrid",
+        "src.knowledge.hnsw",
+        "src.dst.dialogue_state",
+        "src.response.generator",
+        "src.emotion.analyzer",
+        "src.emotion.tracker",
+        "src.models.unified_message",
+        "src.models.unified_response",
+        "src.models.api_response"
       ],
       "allowed_dependencies": [
         "infra",
@@ -40,12 +50,14 @@
     {
       "name": "services",
       "modules": [
-        "app.services.registry",
-        "app.services.aee",
-        "app.services.escalation",
-        "app.services.ab_testing",
-        "app.services.llm_judge",
-        "app.services.media"
+        "src.aee.adapter",
+        "src.aee.executor",
+        "src.escalation.manager",
+        "src.ab_test.manager",
+        "src.judge.llm_judge",
+        "src.media.handler",
+        "src.testing.golden_dataset",
+        "src.testing.strategy"
       ],
       "allowed_dependencies": [
         "infra"
@@ -55,25 +67,38 @@
       "name": "infra",
       "modules": [
         "app.infra.config",
-        "app.infra.database",
-        "app.infra.rate_limit",
-        "app.infra.redis_streams",
-        "app.infra.jobs",
-        "app.infra.circuit_breaker",
-        "app.infra.observability",
-        "app.infra.security",
-        "app.infra.deployment"
+        "src.db.schema",
+        "src.rate_limit.rate_limiter",
+        "src.rate_limit.ip_whitelist",
+        "src.ha.redis_streams",
+        "src.ha.circuit_breaker",
+        "src.ha.retry",
+        "src.jobs.worker",
+        "src.jobs.embedding_job",
+        "src.observability.alerts",
+        "src.observability.metrics",
+        "src.observability.tracing",
+        "src.observability.logger",
+        "src.security.tde",
+        "src.security.redis_security",
+        "src.security.gdpr",
+        "src.deployment.backup",
+        "src.deployment.docker",
+        "src.deployment.kubernetes",
+        "src.deployment.rollback",
+        "src.loadtest.k6"
       ],
       "allowed_dependencies": []
     },
     {
       "name": "admin",
       "modules": [
-        "app.admin.reports",
-        "app.admin.rbac",
-        "app.admin.gdpr",
-        "app.admin.webui",
-        "app.admin.odd_sql"
+        "src.rbac.enforcer",
+        "src.webui.portal",
+        "src.webui.debugger",
+        "src.webui.dashboard",
+        "src.webui.knowledge",
+        "src.analytics.odd_sql"
       ],
       "allowed_dependencies": [
         "infra"

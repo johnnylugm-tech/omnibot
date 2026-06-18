@@ -105,7 +105,9 @@ def test_alert_rules_integration():
 
 def test_structured_logger_and_tracer_integration():
     """StructuredLogger emits JSON; OTelTracer starts spans and injects context."""
-    import json, io, sys
+    import io
+    import json
+    import sys
     from src.observability.logger import StructuredLogger
     from src.observability.tracing import OTelTracer
 
@@ -119,7 +121,7 @@ def test_structured_logger_and_tracer_integration():
     finally:
         sys.stderr = old_stderr
 
-    lines = [l for l in buf.getvalue().strip().splitlines() if l]
+    lines = [line for line in buf.getvalue().strip().splitlines() if line]
     assert len(lines) == 2
     first = json.loads(lines[0])
     assert first["level"] == "INFO"

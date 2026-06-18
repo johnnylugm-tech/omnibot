@@ -1,0 +1,11 @@
+ctx:
+  agent_id: GATE
+  phase: 3
+  fr_id: null
+  trace_id: c2ae9c64
+  timestamp: '2026-06-18T15:45:22.065621+00:00'
+decision: GATE_PASS
+reasoning: 'Gate 2: score=95.9, critical=0, high=0'
+scores:
+  gate_score: 95.9
+metadata: {}

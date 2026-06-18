@@ -89,7 +89,7 @@ def embed(texts: list[str], embed_type: str = "db") -> list[list[float]]:
             "Content-Type": "application/json",
         },
     )
-    with urllib.request.urlopen(req, timeout=10) as r:
+    with urllib.request.urlopen(req, timeout=10) as r:  # nosec B310
         data = json.loads(r.read())
     base = data.get("base_resp", {})
     if base.get("status_code", 0) != 0:

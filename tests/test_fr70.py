@@ -8,7 +8,9 @@ Citations:
 
 def test_fr70_log_json_parseable():
     """[FR-70] log_json_parseable."""
-    import json, io, sys
+    import io
+    import json
+    import sys
     from src.observability.logger import StructuredLogger
     log = StructuredLogger("test")
     buf = io.StringIO()
@@ -19,7 +21,7 @@ def test_fr70_log_json_parseable():
         log.error("error message")
     finally:
         sys.stderr = old_stderr
-    lines = [l for l in buf.getvalue().strip().splitlines() if l]
+    lines = [line for line in buf.getvalue().strip().splitlines() if line]
     assert len(lines) == 2
     parsed = json.loads(lines[0])
     assert parsed["level"] == "INFO"
