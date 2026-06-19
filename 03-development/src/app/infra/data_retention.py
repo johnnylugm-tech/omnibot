@@ -37,7 +37,8 @@ class MessagesRetentionPolicy:
             moves to cold storage.
         target: source table name whose rows this policy governs.
         archive_format: cold-storage format family descriptor
-            (e.g. ``"Parquet/S3"``).
+            (e.g. ``"Parquet/S3"``). Read directly via the attribute;
+            no accessor method is required.
         archive_action: scheduler action token (``"archive"``).
     """
 
@@ -49,10 +50,6 @@ class MessagesRetentionPolicy:
     def should_archive(self, age_days: int) -> bool:
         """Return True iff the record's age has reached the retention horizon."""
         return age_days >= self.retention_days
-
-    def archive_target(self) -> str:
-        """Return the cold-storage descriptor (format family)."""
-        return self.archive_format
 
 
 # ---------------------------------------------------------------------------
