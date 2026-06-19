@@ -16,7 +16,7 @@ Citations:
 from __future__ import annotations
 
 import json
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable
 
 from app.services.aee.adapter import (
     ToolDefinition,
@@ -26,15 +26,41 @@ from app.services.aee.adapter import (
 )
 
 
-# ---------------------------------------------------------------------------
-# Default shipping tools (FR-43 預設工具).
-#
-# Handlers receive keyword arguments unpacked from the arguments payload.
-# ``get_shipping_status`` returns a plain dict (auto-wrapped via ``ok()``).
-# ``update_shipping_address`` returns a ``ToolExecutionResult`` directly
-# because it carries a built-in failure branch when the order has
-# already shipped / been delivered.
-# ---------------------------------------------------------------------------
+# Order statuses that BLOCK address updates per SRS FR-43: "出貨前才允許".
+_BLOCKED_ADDRESS_STATUSES: frozenset[str] = frozenset({"shipped", "delivered"})
+
+# Default shipping tool definitions (FR-43 預設工具). Promoted to module
+# scope so the JSON schemas are inspectable / reusable and not buried
+# inside an instance method.
+_GET_SHIPPING_STATUS_TOOL = ToolDefinition(
+    name="get_shipping_status",
+    description="查詢訂單物流狀態",
+    parameters_schema={
+        "type": "object",
+        "properties": {"order_id": {"type": "string"}},
+        "required": ["order_id"],
+    },
+    protocol="internal",
+    handler_ref="get_shipping_status",
+)
+
+_UPDATE_SHIPPING_ADDRESS_TOOL = ToolDefinition(
+    name="update_shipping_address",
+    description="更新配送地址（出貨前才允許）",
+    parameters_schema={
+        "type": "object",
+        "properties": {
+            "order_id": {"type": "string"},
+            "new_address": {"type": "string"},
+            "status": {"type": "string"},
+        },
+        "required": ["order_id", "new_address"],
+    },
+    protocol="internal",
+    handler_ref="update_shipping_address",
+)
+
+
 def _get_shipping_status_handler(order_id: str) -> dict:
     """[FR-43] 預設工具：查詢訂單物流狀態.
 
@@ -58,11 +84,11 @@ def _update_shipping_address_handler(
 
     Citations:
     - SRS.md FR-43 "update_shipping_address 在 shipped/delivered 狀態
-      拒絕修改"：當 ``status in {"shipped", "delivered"}`` 直接回
+      拒絕修改"：當 ``status in BLOCKED_ADDRESS_STATUSES`` 直接回
       ``success=False``，error_message 必須包含 shipped / delivered /
       cannot 等關鍵字以便 caller / user 識別。
     """
-    if status in {"shipped", "delivered"}:
+    if status in _BLOCKED_ADDRESS_STATUSES:
         return fail(
             f"Cannot update shipping address: order {order_id} has "
             f"already been {status}."
@@ -94,7 +120,7 @@ class ToolExecutor:
 
     def __init__(
         self,
-        handlers: Optional[dict[str, Callable[..., Any]]] = None,
+        handlers: dict[str, Callable[..., Any]] | None = None,
         default_tools: bool = True,
     ) -> None:
         """Construct the executor; pre-register default shipping tools.
@@ -126,38 +152,8 @@ class ToolExecutor:
     # ------------------------------------------------------------------ FR-43
     def _register_default_tools(self) -> None:
         """[FR-43] 註冊預設物流工具 — get_shipping_status / update_shipping_address."""
-        self.register(
-            ToolDefinition(
-                name="get_shipping_status",
-                description="查詢訂單物流狀態",
-                parameters_schema={
-                    "type": "object",
-                    "properties": {"order_id": {"type": "string"}},
-                    "required": ["order_id"],
-                },
-                protocol="internal",
-                handler_ref="get_shipping_status",
-            ),
-            _get_shipping_status_handler,
-        )
-        self.register(
-            ToolDefinition(
-                name="update_shipping_address",
-                description="更新配送地址（出貨前才允許）",
-                parameters_schema={
-                    "type": "object",
-                    "properties": {
-                        "order_id": {"type": "string"},
-                        "new_address": {"type": "string"},
-                        "status": {"type": "string"},
-                    },
-                    "required": ["order_id", "new_address"],
-                },
-                protocol="internal",
-                handler_ref="update_shipping_address",
-            ),
-            _update_shipping_address_handler,
-        )
+        self.register(_GET_SHIPPING_STATUS_TOOL, _get_shipping_status_handler)
+        self.register(_UPDATE_SHIPPING_ADDRESS_TOOL, _update_shipping_address_handler)
 
     def register(
         self,
@@ -177,10 +173,24 @@ class ToolExecutor:
         self._tools[tool.name] = tool
         self._handlers[tool.name] = handler
 
+    @staticmethod
+    def _decode_arguments(arguments_json: str | dict) -> dict | ToolExecutionResult:
+        """[FR-43] Decode ``arguments_json`` (str or dict) → dict.
+
+        On invalid JSON, returns a pre-built ``ToolExecutionResult``
+        failure so the caller can pass it through unchanged.
+        """
+        if not isinstance(arguments_json, str):
+            return arguments_json
+        try:
+            return json.loads(arguments_json)
+        except json.JSONDecodeError as exc:
+            return fail(f"Invalid JSON arguments: {exc}")
+
     def execute(
         self,
         tool_name: str,
-        arguments_json: Union[str, dict],
+        arguments_json: str | dict,
     ) -> ToolExecutionResult:
         """[FR-43] 分派工具呼叫並回傳 ``ToolExecutionResult``.
 
@@ -206,13 +216,9 @@ class ToolExecutor:
         if handler is None:
             return fail(f"Tool '{tool_name}' is not registered")
 
-        if isinstance(arguments_json, str):
-            try:
-                arguments = json.loads(arguments_json)
-            except json.JSONDecodeError as exc:
-                return fail(f"Invalid JSON arguments for '{tool_name}': {exc}")
-        else:
-            arguments = arguments_json
+        arguments = self._decode_arguments(arguments_json)
+        if isinstance(arguments, ToolExecutionResult):
+            return arguments
 
         try:
             result = handler(**arguments)
