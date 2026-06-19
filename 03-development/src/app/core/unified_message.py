@@ -24,7 +24,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 
 class Platform(str, Enum):
@@ -88,9 +88,9 @@ class UnifiedMessage:
 
     platform: Platform
     platform_user_id: str
-    unified_user_id: Optional[str]
+    unified_user_id: str | None
     message_type: MessageType
     content: str
     raw_payload: Any
     received_at: datetime
-    reply_token: Optional[str]  # LINE-only; None on every other platform
+    reply_token: str | None  # LINE-only; None on every other platform
