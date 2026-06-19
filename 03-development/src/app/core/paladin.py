@@ -259,6 +259,21 @@ class PromptInjectionDefense:
 PromptInjectionDefense._SPOTLIGHT_START = "<<<SPOTLIGHT_START>>>"
 PromptInjectionDefense._SPOTLIGHT_END = "<<<SPOTLIGHT_END>>>"
 
+# Sandwich-prompt section markers. Defined once so the literal tokens
+# (PRIORITY: HIGHEST, UNTRUSTED DATA BOUNDARY) live in exactly one place
+# — every block builder reads from this table, no copy/paste.
+_PRIORITY_TAG = "PRIORITY: HIGHEST"
+_UNTRUSTED_TAG = "UNTRUSTED DATA BOUNDARY"
+
+
+def _wrap_priority_block(label: str, body: str) -> str:
+    """Wrap ``body`` in a ``[LABEL | PRIORITY: HIGHEST] … [/LABEL]`` block.
+
+    Used for both the leading system intent block and the trailing
+    reinforcement block — same shape, different label.
+    """
+    return f"[{label} | {_PRIORITY_TAG}]\n{body}\n[/{label}]"
+
 
 def _build_sandwich_prompt(
     self: "PromptInjectionDefense",
@@ -300,29 +315,18 @@ def _build_sandwich_prompt(
         - 03-development/tests/test_fr12.py:136-337 (all 4 cases)
     """
     if not isinstance(user_text, str):
-        raise TypeError(
-            "build_sandwich_prompt requires str user_text"
-        )
-    system_block = (
-        f"[SYSTEM | PRIORITY: HIGHEST]\n"
-        f"{system_prompt}\n"
-        f"[/SYSTEM]"
+        raise TypeError("build_sandwich_prompt requires str user_text")
+
+    system_block = _wrap_priority_block("SYSTEM", system_prompt)
+    reinforcement_block = _wrap_priority_block(
+        "SYSTEM REINFORCEMENT", system_prompt
     )
     user_block = (
-        f"[USER | UNTRUSTED DATA BOUNDARY]\n"
+        f"[USER | {_UNTRUSTED_TAG}]\n"
         f"{self._SPOTLIGHT_START}{user_text}{self._SPOTLIGHT_END}\n"
-        f"[/USER | END UNTRUSTED DATA BOUNDARY]"
+        f"[/USER | END {_UNTRUSTED_TAG}]"
     )
-    reinforcement_block = (
-        "[SYSTEM REINFORCEMENT | PRIORITY: HIGHEST]\n"
-        f"{system_prompt}\n"
-        "[/SYSTEM REINFORCEMENT]"
-    )
-    return (
-        f"{system_block}\n\n"
-        f"{user_block}\n\n"
-        f"{reinforcement_block}"
-    )
+    return f"{system_block}\n\n{user_block}\n\n{reinforcement_block}"
 
 
 PromptInjectionDefense.build_sandwich_prompt = _build_sandwich_prompt
