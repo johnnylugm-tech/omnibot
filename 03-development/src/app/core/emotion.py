@@ -229,8 +229,8 @@ def emotion_current_weighted_score(score: float, hours_ago: float) -> float:
         - SRS.md FR-47 -- implementation function ``emotion_current_weighted_score`` (line 808).
         - SRS.md FR-47 -- "decay = exp(-0.693 * hours_ago / 24.0)" (line 105).
     """
-    decay = math.exp(-_DECAY_K * float(hours_ago) / HALF_LIFE_HOURS)
-    return float(score) * decay
+    decay = math.exp(-_DECAY_K * hours_ago / HALF_LIFE_HOURS)
+    return score * decay
 
 
 __all__ = [
