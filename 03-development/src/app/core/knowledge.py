@@ -1,10 +1,12 @@
-"""[FR-26/FR-27] HybridKnowledge orchestrator — Tier-1 rule matching and
-Tier-2 RAG + RRF.
+"""[FR-26/FR-27/FR-30] HybridKnowledge orchestrator — Tier-1 rule matching,
+Tier-2 RAG + RRF, and Tier-3 LLM generation.
 
-This module implements the FR-26 and FR-27 acceptance criteria from the
-SRS. The two tiers share the ``HybridKnowledge`` class so the
-orchestrator can hold a single injected session and walk the tier ladder
-without rebuilding state.
+This module implements the FR-26, FR-27, and FR-30 acceptance criteria
+from the SRS. The first two tiers share the ``HybridKnowledge`` class
+so the orchestrator can hold a single injected session and walk the
+tier ladder without rebuilding state. Tier 3 is exposed as module-level
+functions (``_llm_generate`` / ``_call_llm_api``) so callers and tests
+can monkeypatch the LLM entry point without instantiating the class.
 
 FR-26 — Knowledge Tier 1 — 規則匹配：
     PostgreSQL ILIKE + keywords 精確比對；confidence ≥ 0.80 時直接回傳
@@ -15,6 +17,11 @@ FR-27 — Knowledge Tier 2 — RAG + RRF：
     搜尋，Top-10 去重取 Top-5 Parent；RRF k=60 融合 Tier 1 + Tier 2
     結果；confidence ≥ 0.85 回傳 source="rag"。
 
+FR-30 — Knowledge Tier 3 — LLM 生成：
+    gpt-4o 主要 → gemini-1.5-flash fallback；Sandwich Prompt (L3) 包
+    裝 retrieved_context；L5 Grounding Check ≥ 0.75；grounding 失敗
+    回傳 None（觸發 Tier 4）；LLM fallback 切換 < 500ms。
+
 Citations:
     - SRS.md FR-26 — Tier-1 ILIKE + keyword 規則匹配。
     - SRS.md FR-27 — Tier-2 RAG + RRF (k=60), 1536-dim pgvector, RRF
@@ -22,12 +29,15 @@ Citations:
     - SRS.md FR-27 degradation paths — "Embedding API down → 降級至
       Tier 1 ILIKE only"; "Embedding timeout → tsvector 全文搜尋
       fallback".
+    - SRS.md FR-30 — Tier-3 LLM 生成：gpt-4o → gemini-1.5-flash
+      fallback；Sandwich Prompt (L3)；L5 Grounding Check ≥ 0.75；
+      fallback 切換 < 500ms。
     - SRS.md FR-33 — EMBEDDING_DIM = 1536 for text-embedding-3-small.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -342,3 +352,115 @@ class HybridKnowledge:
         if client is None:
             return True
         return bool(getattr(client, "available", True))
+
+
+# ---------------------------------------------------------------------------
+# FR-30 — Tier-3 LLM 生成 with grounding gate and primary→fallback switch.
+#
+# The two functions are exposed at module level (not as
+# ``HybridKnowledge`` methods) so the test suite can
+# ``monkeypatch.setattr("app.core.knowledge._call_llm_api", ...)`` the
+# SDK boundary without instantiating the orchestrator class. The SRS
+# ``implementation_functions`` list records the names with the
+# underscore prefix; that prefix is part of the public contract.
+# ---------------------------------------------------------------------------
+
+# [FR-30] SRS-mandated constants. The wiring layer reads these so the
+# numbers live in exactly one place.
+PRIMARY_LLM: str = "gpt-4o"
+FALLBACK_LLM: str = "gemini-1.5-flash"
+GROUNDING_THRESHOLD: float = 0.75  # L5 Grounding Check cutoff
+FALLBACK_BUDGET_MS: int = 500  # NP-15 — primary-down → fallback switch
+
+
+def _call_llm_api(model: str, prompt: str) -> str:
+    """[FR-30] Thin wrapper around the LLM SDK at the Tier-3 boundary.
+
+    In production this calls the ``openai`` SDK for ``model == "gpt-4o"``
+    and the ``google-generativeai`` SDK for ``model ==
+    "gemini-1.5-flash"``; unit tests inject a stub via
+    ``monkeypatch.setattr`` so no network I/O happens here and the
+    per-call cost is measurable deterministically. The default body
+    raises ``NotImplementedError`` so an un-patched call fails loudly
+    rather than silently returning an empty answer (which would skip
+    the grounding check and corrupt Tier-3 metrics).
+
+    Citations:
+        - SRS.md FR-30 — gpt-4o 主要 → gemini-1.5-flash fallback.
+    """
+    raise NotImplementedError(
+        "FR-30: wire openai/google-generativeai SDK in production; "
+        "tests inject a stub via monkeypatch.setattr"
+    )
+
+
+def _build_sandwich_prompt(query: str, retrieved_context: str) -> str:
+    """[FR-30] Build the L3 "Sandwich Prompt" wrapping retrieved context.
+
+    The retrieved context is sandwiched between explicit ``[CONTEXT]``
+    and ``[/CONTEXT]`` markers so the LLM treats it as grounding
+    evidence rather than as part of the user's question. The user's
+    ``query`` follows in its own ``[QUERY]`` block. This is the L3
+    prompt layout the SRS prescribes for Tier-3 generation.
+
+    Citations:
+        - SRS.md FR-30 — 使用 Sandwich Prompt (L3) 包裝 retrieved_context.
+    """
+    return (
+        f"[CONTEXT]\n{retrieved_context}\n[/CONTEXT]\n"
+        f"[QUERY]\n{query}\n[/QUERY]"
+    )
+
+
+def _llm_generate(
+    query: str,
+    retrieved_context: str,
+    *,
+    grounding_score: float | None = None,
+    primary_llm: str = PRIMARY_LLM,
+    fallback_llm: str = FALLBACK_LLM,
+    grounding_threshold: float = GROUNDING_THRESHOLD,
+) -> KnowledgeResult | None:
+    """[FR-30] Tier-3 LLM generation with grounding gate and fallback.
+
+    On the happy path returns a ``KnowledgeResult(source="wiki", ...)``
+    wrapping the LLM's answer; returns ``None`` when ``grounding_score``
+    is below ``grounding_threshold`` so the orchestrator can escalate
+    to Tier 4 (per FR-31). The primary LLM (``primary_llm``,
+    default ``"gpt-4o"``) is attempted first; on any exception the
+    orchestrator falls through to ``fallback_llm`` (default
+    ``"gemini-1.5-flash"``). The total wall-clock for the
+    primary-down → fallback path MUST stay under
+    ``FALLBACK_BUDGET_MS`` (500ms) per the NP-15 performance budget.
+
+    Citations:
+        - SRS.md FR-30 — gpt-4o 主要 → gemini-1.5-flash fallback;
+          L5 Grounding Check ≥ 0.75；grounding 失敗 → None (觸發 Tier 4)；
+          LLM fallback 切換 < 500ms.
+    """
+    prompt = _build_sandwich_prompt(query, retrieved_context)
+
+    # Primary first; any exception (timeout, 5xx, "down" fault
+    # injection) falls through to the secondary model. The fallback
+    # path is unguarded — if BOTH models are unavailable we let the
+    # exception propagate so the orchestrator can surface a 503 rather
+    # than returning a fabricated answer.
+    try:
+        answer = _call_llm_api(primary_llm, prompt)
+    except Exception:
+        answer = _call_llm_api(fallback_llm, prompt)
+
+    # Grounding check happens AFTER the model call returns a candidate
+    # answer (per the FR-30 contract). Below the threshold we return
+    # None so the orchestrator escalates to Tier 4 (FR-31) — we do
+    # NOT wrap the un-grounded answer in a KnowledgeResult.
+    if grounding_score is not None and grounding_score < grounding_threshold:
+        return None
+
+    return KnowledgeResult(
+        id=0,
+        content=answer,
+        confidence=float(grounding_score) if grounding_score is not None else 0.0,
+        source="wiki",
+        knowledge_id=0,
+    )

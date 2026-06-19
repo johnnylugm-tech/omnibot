@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import re
+from dataclasses import dataclass
+
 """[FR-18] PIIMasking — detect and mask Taiwan phone / email / address / credit-card.
 
 SRS FR-18: "PIIMasking: 偵測並遮蔽電話 (台灣格式 \\d{10,11}), Email,
@@ -44,9 +47,6 @@ Citations:
     - 03-development/tests/test_fr20.py:163-217 (audit_log_has_conversation_id)
     - 03-development/tests/test_fr20.py:245-288 (90day_anonymize_scheduled)
 """
-
-import re
-from dataclasses import dataclass
 
 
 # ---------------------------------------------------------------------------
