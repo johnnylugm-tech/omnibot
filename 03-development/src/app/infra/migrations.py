@@ -72,31 +72,35 @@ class MigrationRunner:
         ac.set_main_option("sqlalchemy.url", cfg.db_url)
         return ac
 
-    def upgrade(self, config: MigrationConfig) -> MigrationResult:
-        """Apply pending migrations forward to ``config.target_revision``."""
+    def _step(
+        self,
+        config: MigrationConfig,
+        direction: str,
+    ) -> MigrationResult:
+        """Run a single alembic step in ``direction`` and envelope the outcome."""
         ac = self._build_alembic_config(config)
-        _alembic_command.upgrade(ac, config.target_revision)
+        alembic_call = (
+            _alembic_command.upgrade
+            if direction == "upgrade"
+            else _alembic_command.downgrade
+        )
+        alembic_call(ac, config.target_revision)
         return MigrationResult(
             success=True,
-            direction="upgrade",
+            direction=direction,
             target_revision=config.target_revision,
             rows_affected=0,
             snapshot_path=config.snapshot_path,
-            steps=("upgrade",),
+            steps=(direction,),
         )
+
+    def upgrade(self, config: MigrationConfig) -> MigrationResult:
+        """Apply pending migrations forward to ``config.target_revision``."""
+        return self._step(config, "upgrade")
 
     def downgrade(self, config: MigrationConfig) -> MigrationResult:
         """Reverse migrations down to ``config.target_revision``."""
-        ac = self._build_alembic_config(config)
-        _alembic_command.downgrade(ac, config.target_revision)
-        return MigrationResult(
-            success=True,
-            direction="downgrade",
-            target_revision=config.target_revision,
-            rows_affected=0,
-            snapshot_path=config.snapshot_path,
-            steps=("downgrade",),
-        )
+        return self._step(config, "downgrade")
 
     def run_roundtrip(
         self,
@@ -111,32 +115,21 @@ class MigrationRunner:
         must leave those rows intact, so the returned ``rows_affected``
         is set to ``seed_rows`` to record the observed post-cycle count.
         """
+        cycle: tuple[tuple[str, str], ...] = (
+            ("upgrade", "head"),
+            ("downgrade", "base"),
+            ("upgrade", "head"),
+        )
         steps: list[str] = []
-
-        # Step 1: upgrade to head.
-        up_cfg = MigrationConfig(
-            db_url=config.db_url,
-            target_revision="head",
-            staging_validated=config.staging_validated,
-            snapshot_path=config.snapshot_path,
-        )
-        self.upgrade(up_cfg)
-        steps.append("upgrade")
-
-        # Step 2: downgrade to base (full reverse).
-        down_cfg = MigrationConfig(
-            db_url=config.db_url,
-            target_revision="base",
-            staging_validated=config.staging_validated,
-            snapshot_path=config.snapshot_path,
-        )
-        self.downgrade(down_cfg)
-        steps.append("downgrade")
-
-        # Step 3: re-upgrade to head — proves the migration is
-        # idempotent across a full reverse cycle.
-        self.upgrade(up_cfg)
-        steps.append("upgrade")
+        for direction, revision in cycle:
+            step_cfg = MigrationConfig(
+                db_url=config.db_url,
+                target_revision=revision,
+                staging_validated=config.staging_validated,
+                snapshot_path=config.snapshot_path,
+            )
+            self._step(step_cfg, direction)
+            steps.append(direction)
 
         return MigrationResult(
             success=True,
