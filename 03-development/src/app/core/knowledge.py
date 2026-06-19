@@ -475,3 +475,79 @@ def _llm_generate(
         source="wiki",
         knowledge_id=0,
     )
+
+
+# ---------------------------------------------------------------------------
+# FR-31 — Tier-4 human escalation sentinel.
+#
+# The function is exposed at module level (not as ``HybridKnowledge``
+# method) so the orchestrator's last-resort fallback can call it as a
+# free function without instantiating the class. The underscore-prefixed
+# name matches the SRS ``implementation_functions`` list
+# (``HybridKnowledge._escalate``) and is part of the public contract.
+# ---------------------------------------------------------------------------
+
+# [FR-31] SRS-mandated reason enum. The four values enumerate the
+# distinct paths by which the orchestrator can reach Tier 4: Tier-1
+# misses the rule store, Tier-2 has no relevant RAG context, Tier-3's
+# grounding score is below 0.75, or the query trips the
+# emotion / sensitive-content guard.
+VALID_ESCALATE_REASONS: frozenset[str] = frozenset(
+    {"no_rule_match", "out_of_scope", "low_confidence", "emotion_trigger"}
+)
+
+
+def _escalate(
+    tier1_result: KnowledgeResult | None,
+    tier2_result: KnowledgeResult | None,
+    tier3_result: KnowledgeResult | None,
+    reason: str,
+) -> KnowledgeResult:
+    """[FR-31] Tier-4 human escalation sentinel.
+
+    Returns a ``KnowledgeResult`` with ``source="escalate"`` and
+    ``id=-1`` so the orchestrator can route the request to a human
+    operator instead of consuming a knowledge-base row. ``reason`` MUST
+    be one of ``VALID_ESCALATE_REASONS``; invalid values raise
+    ``ValueError`` so a typo in the calling code cannot silently route
+    a request to a human with a nonsense reason. The reason is
+    JSON-encoded on ``content`` so downstream operators can see WHY a
+    request was escalated without sniffing other fields.
+
+    The function is total: it never raises for a valid reason
+    regardless of which tiers returned what — a Tier-2 hit combined
+    with a Tier-3 escalation (e.g. grounding failure after a RAG hit)
+    still produces a well-typed ``KnowledgeResult`` with the
+    ``source="escalate"`` / ``id=-1`` markers so the orchestrator's
+    last-resort fallback is never ambiguous.
+
+    Citations:
+        - SRS.md FR-31 (line 74) — Knowledge Tier 4 — 人工轉接：
+          所有 Tier 1/2/3 無法處理時 escalate；reason 含
+          no_rule_match/out_of_scope/low_confidence/emotion_trigger；
+          source="escalate"，id=-1.
+        - SRS.md FR-32 (line 75) — KnowledgeResult.id=-1 代表非知識庫來源.
+    """
+    if reason not in VALID_ESCALATE_REASONS:
+        raise ValueError(
+            f"FR-31: invalid escalate reason={reason!r}; "
+            f"must be one of {sorted(VALID_ESCALATE_REASONS)}"
+        )
+
+    # JSON-encode the reason onto content so downstream operators can
+    # see WHY a request was escalated. The encoded form keeps the
+    # reason as a substring of ``content`` (so callers that grep for
+    # it do not need a dedicated ``reason`` field) while remaining
+    # machine-parseable.
+    del tier1_result, tier2_result, tier3_result  # tier inputs are
+    # consumed only by the orchestrator; the sentinel itself is
+    # reason-agnostic in its source/id fields per FR-31.
+
+    payload = '{"reason": "' + reason + '"}'
+    return KnowledgeResult(
+        id=-1,
+        content=payload,
+        confidence=0.0,
+        source="escalate",
+        knowledge_id=-1,
+    )
