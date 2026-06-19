@@ -1,8 +1,9 @@
 """[FR-46] EmotionAnalyzer — positive / neutral / negative + intensity [0.0, 1.0].
 [FR-47] EmotionTracker — 24hr half-life exponential decay.
+[FR-48] EmotionTracker.should_escalate — consecutive negative run >= 3.
 
-Spec source: 02-architecture/TEST_SPEC.md (FR-46, FR-47)
-SRS source : SRS.md FR-46, FR-47 (Module 8: Emotion Analyzer)
+Spec source: 02-architecture/TEST_SPEC.md (FR-46, FR-47, FR-48)
+SRS source : SRS.md FR-46, FR-47, FR-48 (Module 8: Emotion Analyzer)
 
 FR-46 -- EmotionAnalyzer:
     Classify emotion into ``positive`` / ``neutral`` / ``negative``; the
@@ -13,6 +14,11 @@ FR-47 -- EmotionTracker:
     Apply 24hr half-life exponential decay
     (``decay = exp(-0.693 * hours_ago / 24.0)``) via
     ``current_weighted_score()``; recent emotion carries higher weight.
+
+FR-48 -- EmotionTracker.should_escalate:
+    Walk the trailing run of ``"negative"`` categories and return
+    ``True`` iff the run length is ``>= 3``; any non-``"negative"``
+    entry in the trailing window MUST reset the count.
 
 The classifier is a deliberately small keyword-driven heuristic — the
 FR-46 contract only requires (a) a non-None ``EmotionScore`` for any
@@ -30,6 +36,9 @@ Citations:
     - SRS.md FR-47 -- "decay = exp(-0.693 * hours_ago / 24.0)" (line 105).
     - SRS.md FR-47 -- "24hr 後權重降至 50%" (line 105).
     - SRS.md FR-47 -- "近期情緒權重更高" (line 105).
+    - SRS.md FR-48 -- "consecutive_negative_count() ≥ 3 → should_escalate()=True" (line 106).
+    - SRS.md FR-48 -- "計算從最近往回的連續負面次數" (line 106).
+    - SRS.md FR-48 -- "連續 3 次負面觸發；中間有非負面打斷重計" (line 106).
 """
 
 from __future__ import annotations
@@ -57,6 +66,13 @@ INTENSITY_MAX: float = 1.0
 # ---------------------------------------------------------------------------
 HALF_LIFE_HOURS: float = 24.0
 _DECAY_K: float = math.log(2.0)  # == 0.6931471805599453; SRS FR-47 writes 0.693 as shorthand
+
+# ---------------------------------------------------------------------------
+# SRS FR-48 -- escalation threshold. The trailing run of consecutive
+# ``"negative"`` entries MUST be at least this long for
+# :meth:`EmotionTracker.should_escalate` to return ``True``.
+# ---------------------------------------------------------------------------
+ESCALATION_THRESHOLD: int = 3
 
 # ---------------------------------------------------------------------------
 # Minimal lexicon. Production wiring would back this with a richer lexicon
@@ -146,10 +162,15 @@ class EmotionTracker:
     constant, so every :class:`EmotionTracker` instance is
     interchangeable.
 
+    [FR-48] Also exposes :meth:`should_escalate` which decides whether a
+    trailing run of consecutive ``"negative"`` categories meets the
+    escalation threshold.
+
     Citations:
         - SRS.md FR-47 -- "EmotionTracker 以 24hr half-life 指數衰減" (line 105).
         - SRS.md FR-47 -- "decay = exp(-0.693 * hours_ago / 24.0)" (line 105).
         - SRS.md FR-47 -- "計算 current_weighted_score()" (line 105).
+        - SRS.md FR-48 -- "EmotionTracker.should_escalate()" (line 106).
     """
 
     def current_weighted_score(self, score: float, hours_ago: float) -> float:
@@ -169,6 +190,30 @@ class EmotionTracker:
             - SRS.md FR-47 -- "近期情緒權重更高" (line 105).
         """
         return emotion_current_weighted_score(score=score, hours_ago=hours_ago)
+
+    def should_escalate(self, emotions) -> bool:
+        """[FR-48] True iff the trailing run of ``"negative"`` entries is ``>= 3``.
+
+        Walks ``emotions`` (any iterable of category strings, oldest →
+        newest) backwards from the most recent entry and counts how
+        many consecutive ``"negative"`` categories it sees before the
+        first non-``"negative"`` category (or the start of the
+        sequence) breaks the run. Returns ``True`` when the run length
+        meets :data:`ESCALATION_THRESHOLD`; any shorter run — including
+        the empty sequence — yields ``False``.
+
+        Examples (using the three SRS FR-48 acceptance cases):
+
+        - ``["negative", "negative", "negative"]`` → ``True``
+        - ``["negative", "negative", "neutral", "negative"]`` → ``False``
+        - ``["negative", "negative"]`` → ``False``
+
+        Citations:
+            - SRS.md FR-48 -- "consecutive_negative_count() ≥ 3 → should_escalate()=True" (line 106).
+            - SRS.md FR-48 -- "計算從最近往回的連續負面次數" (line 106).
+            - SRS.md FR-48 -- "連續 3 次負面觸發；中間有非負面打斷重計" (line 106).
+        """
+        return emotion_should_escalate(emotions)
 
 
 def _has_any_keyword(haystack: str, keywords: frozenset[str]) -> bool:
@@ -233,14 +278,41 @@ def emotion_current_weighted_score(score: float, hours_ago: float) -> float:
     return score * decay
 
 
+def emotion_should_escalate(emotions) -> bool:
+    """[FR-48] Functional entry point — trailing ``"negative"`` run ≥ threshold.
+
+    Mirrors :meth:`EmotionTracker.should_escalate` so callers that prefer
+    a free function can use the same rule without instantiating a class.
+    The run is computed from the END of ``emotions`` (most recent entry
+    last) and stops at the first non-``"negative"`` category, so any
+    interruption — e.g. a ``"neutral"`` between two ``"negative"``
+    entries — resets the count. Returns ``True`` when the trailing run
+    length is at least :data:`ESCALATION_THRESHOLD` (3 per SRS FR-48).
+
+    Citations:
+        - SRS.md FR-48 -- implementation function ``EmotionTracker.should_escalate()`` (line 106).
+        - SRS.md FR-48 -- "consecutive_negative_count() ≥ 3 → should_escalate()=True" (line 106).
+        - SRS.md FR-48 -- "中間有非負面打斷重計" (line 106).
+    """
+    count = 0
+    for category in reversed(list(emotions)):
+        if category == "negative":
+            count += 1
+        else:
+            break
+    return count >= ESCALATION_THRESHOLD
+
+
 __all__ = [
     "EmotionAnalyzer",
     "EmotionScore",
     "EmotionTracker",
     "emotion_classify",
     "emotion_current_weighted_score",
+    "emotion_should_escalate",
     "VALID_CATEGORIES",
     "INTENSITY_MIN",
     "INTENSITY_MAX",
     "HALF_LIFE_HOURS",
+    "ESCALATION_THRESHOLD",
 ]
