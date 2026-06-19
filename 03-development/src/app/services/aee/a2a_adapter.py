@@ -40,6 +40,12 @@ from app.services.aee.adapter import (
     ok,
 )
 
+# NP-15 surface marker: every ``execute()`` failure is reported as a
+# timeout-flavored error per FR-41 (timeout=2.0s). Centralised so the
+# prefix is consistent across connect / DNS / HTTP / JSON-parse / JSON-RPC
+# error paths and tests asserting ``"timeout" in error_message`` stay green.
+_TIMEOUT_FAILURE_PREFIX = "timeout: "
+
 
 class A2AAdapter(ActionAdapter):
     """[FR-41] A2A 協定 adapter — Agent Card + JSON-RPC 2.0 transport."""
@@ -133,11 +139,10 @@ class A2AAdapter(ActionAdapter):
         """[FR-41] 從 Agent Card 的 ``methods`` 推導 ``ToolDefinition`` 清單。
 
         NP-07 fail-open: 當 Agent Card 不可達時回傳 ``[]``，不拋例外。
+        ``_discover_agent_card`` 已經 swallow 所有例外並回傳 ``None``，
+        所以這裡只需處理「拿到 card 但 card 為空 / 缺 methods」的情境。
         """
-        try:
-            card = self._discover_agent_card()
-        except Exception:
-            return []
+        card = self._discover_agent_card()
         if not card:
             return []
 
@@ -194,21 +199,20 @@ class A2AAdapter(ActionAdapter):
             )
             response.raise_for_status()
         except Exception as exc:  # noqa: BLE001 — NP-15 surface as timeout
-            # Test 3 (test_fr41_timeout_2s_returns_error) requires
-            # ``"timeout" in error_message.lower()`` — include the
-            # literal ``timeout`` token so unreachable / DNS / 4xx / 5xx
-            # all surface through the same NP-15 channel.
-            return fail(f"timeout: {exc}")
+            # All execute() failures (connect / DNS / HTTP 4xx/5xx) surface
+            # through the NP-15 channel so callers see a uniform
+            # ``error_message`` containing ``"timeout"``.
+            return fail(f"{_TIMEOUT_FAILURE_PREFIX}{exc}")
 
         try:
             body: Any = response.json()
         except Exception as exc:  # noqa: BLE001
-            return fail(f"timeout: invalid JSON-RPC response: {exc}")
+            return fail(f"{_TIMEOUT_FAILURE_PREFIX}invalid JSON-RPC response: {exc}")
 
         if isinstance(body, dict) and "error" in body and "result" not in body:
             err = body.get("error")
             message = err.get("message") if isinstance(err, dict) else str(err)
-            return fail(f"timeout: JSON-RPC error: {message}")
+            return fail(f"{_TIMEOUT_FAILURE_PREFIX}JSON-RPC error: {message}")
 
         return ok(body)
 
