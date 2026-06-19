@@ -27,8 +27,9 @@ Citations:
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Literal, Mapping
+from typing import Literal
 
 # Closed enum of the four FR-74 panel widget kinds.
 PanelKind = Literal["line", "gauge", "pie", "time_series"]

@@ -34,8 +34,9 @@ from __future__ import annotations
 
 import sys
 import threading
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any
 
 
 class BusyGroupError(Exception):

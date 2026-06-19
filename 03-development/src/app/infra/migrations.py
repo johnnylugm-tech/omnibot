@@ -25,7 +25,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Optional
 
 import alembic.command as _alembic_command
 from alembic.config import Config as _AlembicConfig
@@ -43,7 +42,7 @@ class MigrationConfig:
     db_url: str
     target_revision: str
     staging_validated: bool = False
-    snapshot_path: Optional[str] = None
+    snapshot_path: str | None = None
 
 
 @dataclass(frozen=True)
@@ -54,8 +53,8 @@ class MigrationResult:
     direction: str
     target_revision: str
     rows_affected: int = 0
-    error: Optional[str] = None
-    snapshot_path: Optional[str] = None
+    error: str | None = None
+    snapshot_path: str | None = None
     steps: tuple[str, ...] = field(default_factory=tuple)
 
 
