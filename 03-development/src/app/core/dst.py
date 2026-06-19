@@ -67,6 +67,13 @@ import threading
 
 import tiktoken
 
+# [FR-45] Single-source-of-truth: ToolDefinition lives in
+# ``app.services.aee.adapter`` per FR-39. DST MUST re-import (not
+# redefine) so that ``app.core.dst.ToolDefinition`` and
+# ``app.services.aee.adapter.ToolDefinition`` resolve to the SAME class
+# object — see SRS.md FR-45.
+from app.services.aee.adapter import ToolDefinition  # noqa: F401  -- [FR-45]
+
 # ---------------------------------------------------------------------------
 # ALLOWED_TRANSITIONS — frozen edge table.
 #
