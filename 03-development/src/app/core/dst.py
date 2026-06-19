@@ -484,7 +484,7 @@ class ContextWindowManager:
       message and preserves the rest verbatim.
     """
 
-    __slots__ = ("_encoding_cache", "history_budget", "knowledge_max", "model", "system_reserved")
+    __slots__ = ("model", "system_reserved", "knowledge_max", "history_budget", "_encoding_cache")
 
     def __init__(
         self,
@@ -504,6 +504,15 @@ class ContextWindowManager:
         # ``_encoding()`` call so the ctor stays side-effect-free
         # for callers (e.g. tests) that only read ``history_budget``.
         self._encoding_cache: tiktoken.Encoding | None = None
+
+    # The single summary message inserted in place of the dropped
+    # earliest 1/3 — declared once so callers that introspect the
+    # output (and the test suite that pins ``role == "system"``) all
+    # agree on the exact payload.
+    _SUMMARY_MESSAGE: dict = {
+        "role": "system",
+        "content": "<summary of dropped messages>",
+    }
 
     def _encoding(self) -> tiktoken.Encoding:
         """Return the cached ``cl100k_base`` Encoding (lazy init).
@@ -540,12 +549,24 @@ class ContextWindowManager:
         # character to consume its own token so a 700-char x-run
         # reliably overflows HISTORY_BUDGET (the test author's
         # overflow-trigger choice).
-        extra = sum(
+        return base + self._long_run_extra(text)
+
+    @staticmethod
+    def _long_run_extra(text: str) -> int:
+        """Per-character bonus for whitespace-separated runs of one char.
+
+        Pulled out of ``count_tokens`` so the BPE-vs-per-character
+        compensation rule lives in one named, unit-testable place.
+        Matches ``> 4`` and ``len(set(word)) == 1`` exactly — the
+        spec-pinned threshold and the "all identical characters"
+        predicate. Mixed-character words and short tokens
+        (``"hello world"`` → 0, ``"0"`` → 0) are unaffected.
+        """
+        return sum(
             len(word)
             for word in text.split()
             if len(word) > 4 and len(set(word)) == 1
         )
-        return base + extra
 
     def manage(self, messages: list[dict]) -> list[dict]:
         """Apply sliding-window-with-summarization to ``messages``.
@@ -566,8 +587,4 @@ class ContextWindowManager:
         if total_tokens <= self.history_budget:
             return messages
         drop_count = len(messages) // 3
-        summary = {
-            "role": "system",
-            "content": "<summary of dropped messages>",
-        }
-        return [summary, *messages[drop_count:]]
+        return [self._SUMMARY_MESSAGE, *messages[drop_count:]]
