@@ -702,7 +702,7 @@ class GroundingChecker:
         dot = 0.0
         norm_a = 0.0
         norm_b = 0.0
-        for x, y in zip(a, b):
+        for x, y in zip(a, b, strict=True):
             dot += x * y
             norm_a += x * x
             norm_b += y * y
@@ -772,9 +772,9 @@ class GroundingChecker:
 # ---------------------------------------------------------------------------
 # [FR-15] PALADIN routing orchestrator — ``PALADINPipeline``
 #
-# SRS FR-15: "PALADIN L4 平行化執行策略：low risk → 跳過 L4 直接 L3；
-# medium risk → L4 與 L3 平行 (L3 不等待 L4)；high/critical → 同步 L4
-# 阻擋 (不呼叫 L3)；L4 觸發率 < 5% 總流量."
+# SRS FR-15: "PALADIN L4 平行化執行策略: low risk → 跳過 L4 直接 L3;
+# medium risk → L4 與 L3 平行 (L3 不等待 L4); high/critical → 同步 L4
+# 阻擋 (不呼叫 L3); L4 觸發率 < 5% 總流量."
 #
 # The orchestrator is dependency-injected: callers supply the L4
 # ``classifier`` and the ``tier3_call`` async callable so unit tests can

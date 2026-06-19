@@ -16,13 +16,13 @@ MUST be replaced with an apology / correction message AND emit a
 trail records the failure.
 
 Citations:
-    - SRS.md FR-17 — "Telegram deleteMessage（48hr 內）; LINE 不支援
-      刪除 → 補發道歉訊息; Messenger DELETE（10 分鐘內）; WhatsApp
+    - SRS.md FR-17 — "Telegram deleteMessage (48hr 內); LINE 不支援
+      刪除 → 補發道歉訊息; Messenger DELETE (10 分鐘內); WhatsApp
       受限 → 補發更正; Web WebSocket 直接替換; A2A 回傳 revoked: true"
     - SRS.md FR-17 fail-secure clause — "Telegram 48hr 視窗過期或
       API 拒絕 → 補發道歉 + 記錄 retraction_failed 至 security_logs.
       Messenger 10min 視窗過期 → 同 Telegram 補發道歉. 所有撤回失敗
-      均 fail-secure（不重試，補發更正，記錄日誌）"
+      均 fail-secure (不重試, 補發更正, 記錄日誌)"
 """
 
 from __future__ import annotations

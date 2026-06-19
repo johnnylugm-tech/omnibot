@@ -1,9 +1,9 @@
 """[FR-18] PIIMasking — detect and mask Taiwan phone / email / address / credit-card.
 
-SRS FR-18: "PIIMasking：偵測並遮蔽電話（台灣格式 \\d{10,11}）、Email、
-台灣地址（市縣路街巷弄號樓正則）、信用卡（16 位 + Luhn 校驗）；遮蔽
-格式 `[{pii_type}_masked]`。所有四類 PII 正確遮蔽；信用卡 Luhn 校驗
-失敗者不遮蔽；mask_count 正確回傳。"
+SRS FR-18: "PIIMasking: 偵測並遮蔽電話 (台灣格式 \\d{10,11}), Email,
+台灣地址 (市縣路街巷弄號樓正則), 信用卡 (16 位 + Luhn 校驗); 遮蔽
+格式 `[{pii_type}_masked]`. 所有四類 PII 正確遮蔽; 信用卡 Luhn 校驗
+失敗者不遮蔽; mask_count 正確回傳."
 
 The masker is pure-Python (regex + Luhn checksum). It performs no I/O so
 the call fits inside the request hot path without extra latency budget.
@@ -138,6 +138,20 @@ class PIIMasking:
         ("address", _ADDRESS_RE),
     )
 
+    # FR-19 escalation keywords. SRS FR-19: "密碼/銀行帳戶/信用卡號/提款卡
+    # 關鍵字 → should_escalate() 回傳 True". A plain ``in`` substring
+    # scan is sufficient — none of the four tokens is a substring of any
+    # other, and the negative-path test ("我想查詢訂單狀態") shares zero
+    # characters with any token, so a substring check cannot spuriously
+    # match ordinary support vocabulary. No regex compile cost on the
+    # hot path.
+    _ESCALATION_KEYWORDS: tuple[str, ...] = (
+        "密碼",
+        "銀行帳戶",
+        "信用卡號",
+        "提款卡",
+    )
+
     def mask(self, text: str) -> MaskResult:
         """[FR-18] Detect and mask every PII substring in ``text``.
 
@@ -157,15 +171,28 @@ class PIIMasking:
         )
 
     def should_escalate(self, text: str) -> bool:
-        """[FR-19 hook] Reserved for the FR-19 escalation rule.
+        """[FR-19] Return True iff ``text`` carries a PII-escalation keyword.
 
-        FR-18 does not exercise this method, but the SRS colocates
-        ``should_escalate`` on the same ``PIIMasking`` class. The default
-        implementation returns ``False`` so existing FR-18 callers are
-        unaffected when FR-19 lands.
+        SRS FR-19: "PII 敏感關鍵字觸發轉接：偵測 密碼/銀行帳戶/信用卡號/
+        提款卡 關鍵字 → should_escalate() 回傳 True. 四個敏感關鍵字觸發
+        should_escalate()=True；其他關鍵字不誤判."
+
+        Returns:
+            True the moment any of the four canonical keywords appears
+            as a substring of ``text``; False otherwise (including on
+            empty input — no token can match an empty string).
+
+        Citations:
+            - SRS.md FR-19 (PII escalation trigger, false-positive guard)
+            - 02-architecture/TEST_SPEC.md FR-19 (cases 1-5: 密碼,
+              銀行帳戶, 信用卡號, 提款卡, neutral text)
+            - 03-development/tests/test_fr19.py:55-77 (password case)
+            - 03-development/tests/test_fr19.py:82-106 (bank-account case)
+            - 03-development/tests/test_fr19.py:111-139 (credit-card case)
+            - 03-development/tests/test_fr19.py:144-173 (debit-card case)
+            - 03-development/tests/test_fr19.py:178-209 (negative case)
         """
-        del text  # silence linters; FR-19 will read the masked output
-        return False
+        return any(keyword in text for keyword in self._ESCALATION_KEYWORDS)
 
     @staticmethod
     def get_mask_format(pii_type: str) -> str:
