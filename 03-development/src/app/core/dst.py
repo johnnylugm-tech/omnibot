@@ -188,15 +188,15 @@ class DialogueState:
           DST may then advance to ``AWAITING_CONFIRMATION`` per
           SRS FR-35 "slot 填完後進入 AWAITING_CONFIRMATION".
         """
-        required = INTENT_TO_SLOTS.get(self.intent)
-        if not required:
-            # No intent / unknown intent → no known required slots.
-            return []
+        # No intent / unknown intent → no known required slots → nothing
+        # can be missing. ``()`` as the default lets the loop below
+        # bail out via the empty-tuple iteration.
+        required = INTENT_TO_SLOTS.get(self.intent, ())
         missing: list[str] = []
         for slot_name in required:
-            value = self.slots.get(slot_name)
             # An empty string (or whitespace-only) counts as "not yet
             # filled" — the user has not provided a real answer.
-            if not value or not str(value).strip():
+            value = self.slots.get(slot_name, "")
+            if not str(value).strip():
                 missing.append(slot_name)
         return missing
