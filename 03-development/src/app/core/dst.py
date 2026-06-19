@@ -165,7 +165,7 @@ MAX_AWAITING_CONFIRMATION_ROUNDS: int = 2
 # ---------------------------------------------------------------------------
 # FR-38 — context-window budget (spec-pinned arithmetic).
 #
-# SRS FR-38: max_tokens=8192，system_reserved=512，knowledge_max=2048，
+# SRS FR-38: max_tokens=8192, system_reserved=512, knowledge_max=2048,
 # history_budget=5632 (= 8192 - 512 - 2048). The four constants are the
 # single source of truth for the budget arithmetic so a regression that
 # drifts any one of them is caught immediately by the spec-coverage test
@@ -180,7 +180,7 @@ HISTORY_BUDGET: int = MAX_TOKENS - SYSTEM_RESERVED - KNOWLEDGE_MAX  # 5632
 # ---------------------------------------------------------------------------
 # FR-38 — tokenizer identifier (spec-pinned).
 #
-# SRS FR-38: "Token 計算使用 tiktoken cl100k_base（適用 gpt-4o）".
+# SRS FR-38: "Token 計算使用 tiktoken cl100k_base (適用 gpt-4o)".
 # ``cl100k_base`` is the GPT-4 / GPT-4o tokenizer; using it for BOTH
 # the gpt-4o primary path and the gemini fallback path is the
 # "保守估算，不因 tokenizer 差異導致 context overflow" guarantee —

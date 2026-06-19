@@ -29,10 +29,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 
-
-
-
-
 # ---------------------------------------------------------------------------
 # SRS-mandated numeric constants. The wiring layer reads these directly so
 # they MUST agree with the :class:`ChunkSpec` defaults below.
