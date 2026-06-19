@@ -26,7 +26,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 
 class ResponseSource(str, Enum):
@@ -86,6 +86,6 @@ class UnifiedResponse:
     content: str
     source: ResponseSource
     confidence: float
-    knowledge_id: Optional[str] = None
-    emotion_adjustment: Optional[Any] = None  # EmotionAdjustment object (FR-51)
+    knowledge_id: str | None = None
+    emotion_adjustment: Any | None = None  # EmotionAdjustment object (FR-51)
     quick_replies: list[str] = field(default_factory=list)
