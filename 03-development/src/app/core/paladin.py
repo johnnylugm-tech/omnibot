@@ -485,37 +485,52 @@ class SemanticInjectionClassifier:
 
         # FR-15 routing — low risk does NOT pay the LLM cost.
         if risk_level not in self._HIGH_RISK_LEVELS:
-            return ClassificationResult(
-                is_injection=False,
-                confidence=0.0,
-                injection_type=InjectionType.NONE,
-                is_unverified=False,
-            )
+            return _make_passthrough(is_unverified=False)
 
         try:
-            raw = self._call_llm(text, timeout_ms)
+            verdict = self._call_llm(text, timeout_ms)
             # ``_call_llm`` is an ``async def`` in production but tests
             # monkeypatch it with sync fakes that return dicts directly;
             # handle both shapes on the same code path.
-            if asyncio.iscoroutine(raw):
-                raw = asyncio.run(
-                    asyncio.wait_for(raw, timeout=timeout_ms / 1000.0)
+            if asyncio.iscoroutine(verdict):
+                verdict = asyncio.run(
+                    asyncio.wait_for(verdict, timeout=timeout_ms / 1000.0)
                 )
-            payload = raw
         except (asyncio.TimeoutError, ConnectionError, OSError):
             # Timeout OR downstream down → passthrough, do NOT block.
-            return ClassificationResult(
-                is_injection=False,
-                confidence=0.0,
-                injection_type=InjectionType.NONE,
-                is_unverified=True,
-            )
+            return _make_passthrough(is_unverified=True)
 
-        return ClassificationResult(
-            is_injection=bool(payload.get("is_injection", False)),
-            confidence=float(payload.get("confidence", 0.0)),
-            injection_type=InjectionType(
-                payload.get("injection_type", "none")
-            ),
-            is_unverified=False,
-        )
+        return _result_from_verdict(verdict)
+
+
+def _make_passthrough(*, is_unverified: bool) -> ClassificationResult:
+    """[FR-13] Safe default — used by both the low-risk skip path and
+    the timeout / outage path.
+
+    Both paths share the same field values (``is_injection=False``,
+    ``confidence=0.0``, ``injection_type=NONE``); the only difference is
+    the ``is_unverified`` flag, which the pipeline reads to decide
+    whether to treat the call as a clean pass-through (low-risk skip)
+    or as a degraded fallback (timeout / outage).
+    """
+    return ClassificationResult(
+        is_injection=False,
+        confidence=0.0,
+        injection_type=InjectionType.NONE,
+        is_unverified=is_unverified,
+    )
+
+
+def _result_from_verdict(verdict: dict) -> ClassificationResult:
+    """[FR-13] Map an upstream JSON-like dict to ``ClassificationResult``.
+
+    Centralizes the field-by-field coercion so ``classify`` stays a
+    flat routing function and any future normalization (range clamping,
+    enum aliasing) lives in exactly one place.
+    """
+    return ClassificationResult(
+        is_injection=bool(verdict.get("is_injection", False)),
+        confidence=float(verdict.get("confidence", 0.0)),
+        injection_type=InjectionType(verdict.get("injection_type", "none")),
+        is_unverified=False,
+    )
