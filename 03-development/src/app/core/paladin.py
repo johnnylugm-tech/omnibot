@@ -27,6 +27,7 @@ Citations:
 
 from __future__ import annotations
 
+import asyncio
 import re
 import unicodedata
 from dataclasses import dataclass
@@ -330,3 +331,191 @@ def _build_sandwich_prompt(
 
 
 PromptInjectionDefense.build_sandwich_prompt = _build_sandwich_prompt
+
+
+# ---------------------------------------------------------------------------
+# [FR-13] PALADIN L4 — SemanticInjectionClassifier
+#
+# SRS FR-13: "PALADIN L4 — SemanticInjectionClassifier：LLM-based
+# (gpt-4o-mini 預設)，回傳 `{is_injection, confidence, injection_type:
+# direct_prompt_injection | indirect_injection | jailbreak | none}`；
+# p95 < 200ms；classifier 超時 → 放行並標記 'unverified'."
+#
+# Construction is zero-arg and side-effect-free; the only network hop is
+# ``_call_llm()``, exposed as an instance method so unit tests can
+# monkeypatch the upstream LLM call without touching the classifier
+# logic. The classify() routing:
+#   - risk_level == "low"          → skip the LLM, return a safe default
+#                                     (FR-15 routing — "low risk → 跳過 L4").
+#   - asyncio.TimeoutError / OS    → return is_unverified=True
+#                                     (pipeline passthrough — do NOT block
+#                                     on a stalled or down classifier,
+#                                     per NP-07 fault-injection contract).
+#   - success                      → map the upstream JSON-like dict to
+#                                     a frozen ClassificationResult.
+#
+# Citations:
+#   - SRS.md FR-13 (PALADIN L4 SemanticInjectionClassifier acceptance)
+#   - 02-architecture/TEST_SPEC.md FR-13 (case 1: valid JSON; case 2:
+#     timeout passthrough; case 3: 4-value enum; case 4: p95 < 200ms;
+#     case 5: low-risk skip; case 6: outage graceful degradation)
+#   - 03-development/tests/test_fr13.py:192-230 (case 1: valid JSON)
+#   - 03-development/tests/test_fr13.py:233-280 (case 2: timeout
+#     passthrough)
+#   - 03-development/tests/test_fr13.py:283-341 (case 3: 4-value enum)
+#   - 03-development/tests/test_fr13.py:344-396 (case 4: p95 < 200ms)
+#   - 03-development/tests/test_fr13.py:399-453 (case 5: low-risk skip)
+#   - 03-development/tests/test_fr13.py:456-499 (case 6: outage graceful
+#     degradation)
+#   - SRS.md FR-15 (low-risk L4 skip; classify() is the routing hook)
+# ---------------------------------------------------------------------------
+from enum import Enum
+
+
+class InjectionType(str, Enum):
+    """[FR-13] Valid values for ``SemanticInjectionClassifier`` injection_type.
+
+    Exactly four members per SRS FR-13 (the downstream FR-16 retrospective
+    block branches on enum identity, so missing or extra values would
+    break that branch). ``str`` mixin lets callers compare members to
+    bare ``str`` literals when needed for logging.
+    """
+
+    DIRECT_PROMPT_INJECTION = "direct_prompt_injection"
+    INDIRECT_INJECTION = "indirect_injection"
+    JAILBREAK = "jailbreak"
+    NONE = "none"
+
+
+@dataclass(frozen=True)
+class ClassificationResult:
+    """[FR-13] Outcome of a single ``SemanticInjectionClassifier.classify`` call.
+
+    The frozen dataclass shape is part of the public contract — the
+    pipeline reads all four fields after each call, and FR-16 branches
+    on ``injection_type`` enum identity, so the field set must stay
+    stable.
+    """
+
+    is_injection: bool
+    confidence: float
+    injection_type: InjectionType
+    is_unverified: bool = False
+
+
+class SemanticInjectionClassifier:
+    """[FR-13] PALADIN L4 — LLM-based semantic injection classifier.
+
+    SRS FR-13: ``SemanticInjectionClassifier.classify()`` p95 < 200ms.
+
+    Construction is zero-arg and side-effect-free (no network I/O at
+    init, no module-level state mutation). The classifier routes on
+    ``risk_level`` — ``"low"`` skips the LLM cost (FR-15); any other
+    level calls ``_call_llm()`` once and translates its outcome into a
+    ``ClassificationResult``. ``_call_llm()`` is intentionally a single
+    instance-method hook so tests can monkeypatch the network call
+    without touching the classifier logic.
+    """
+
+    DEFAULT_TIMEOUT_MS = 200.0
+    _HIGH_RISK_LEVELS = frozenset({"medium", "high", "critical"})
+
+    def __init__(self) -> None:
+        # Zero-arg; no network I/O at init (so a unit-test fixture can
+        # spin one up with no setup, and so construction stays cheap
+        # on the request hot path).
+        pass
+
+    async def _call_llm(self, text: str, timeout_ms: float) -> dict:
+        """[FR-13] Single network hook — tests monkeypatch this.
+
+        Default implementation raises ``NotImplementedError``; the
+        production wiring (omitted from the unit-test scope) supplies
+        an OpenAI gpt-4o-mini call wrapped in ``asyncio.wait_for`` so
+        an upstream stall surfaces as ``asyncio.TimeoutError`` rather
+        than blocking the request. A downstream outage must surface
+        as ``ConnectionError`` / ``OSError`` — classify() catches both
+        and degrades to the unverified passthrough (NP-07).
+        """
+        raise NotImplementedError
+
+    def classify(
+        self,
+        text: str,
+        *,
+        risk_level: str = "medium",
+        timeout_ms: float = DEFAULT_TIMEOUT_MS,
+    ) -> ClassificationResult:
+        """[FR-13] Classify ``text`` for prompt injection.
+
+        Routing:
+          - ``risk_level == "low"`` → skip the LLM cost (FR-15).
+          - timeout / outage        → return ``is_unverified=True``
+            (pipeline passthrough — never block on a stalled LLM).
+          - success                 → return the upstream verdict.
+
+        Args:
+            text: Already L1-sanitized + L2-cleared user input.
+            risk_level: Routing hint; one of ``"low"``, ``"medium"``,
+                ``"high"``, ``"critical"``. Only ``"low"`` triggers
+                the LLM-skip path; all other levels pay the LLM cost.
+            timeout_ms: Maximum upstream wait in milliseconds. The
+                call is wrapped in ``asyncio.wait_for(..., timeout=
+                timeout_ms/1000)`` so a stalled LLM surfaces as
+                ``asyncio.TimeoutError`` and is translated to the
+                unverified passthrough.
+
+        Returns:
+            ``ClassificationResult`` carrying the three required fields
+            (``is_injection``, ``confidence``, ``injection_type``)
+            plus the ``is_unverified`` passthrough flag.
+
+        Raises:
+            TypeError: ``text`` is not a ``str``.
+
+        Citations:
+            - SRS.md FR-13 (PALADIN L4 acceptance criteria)
+            - SRS.md FR-15 (low-risk L4 skip)
+            - 03-development/tests/test_fr13.py:192-499 (cases 1-6)
+        """
+        if not isinstance(text, str):
+            raise TypeError(
+                "SemanticInjectionClassifier.classify requires str text"
+            )
+
+        # FR-15 routing — low risk does NOT pay the LLM cost.
+        if risk_level not in self._HIGH_RISK_LEVELS:
+            return ClassificationResult(
+                is_injection=False,
+                confidence=0.0,
+                injection_type=InjectionType.NONE,
+                is_unverified=False,
+            )
+
+        try:
+            raw = self._call_llm(text, timeout_ms)
+            # ``_call_llm`` is an ``async def`` in production but tests
+            # monkeypatch it with sync fakes that return dicts directly;
+            # handle both shapes on the same code path.
+            if asyncio.iscoroutine(raw):
+                raw = asyncio.run(
+                    asyncio.wait_for(raw, timeout=timeout_ms / 1000.0)
+                )
+            payload = raw
+        except (asyncio.TimeoutError, ConnectionError, OSError):
+            # Timeout OR downstream down → passthrough, do NOT block.
+            return ClassificationResult(
+                is_injection=False,
+                confidence=0.0,
+                injection_type=InjectionType.NONE,
+                is_unverified=True,
+            )
+
+        return ClassificationResult(
+            is_injection=bool(payload.get("is_injection", False)),
+            confidence=float(payload.get("confidence", 0.0)),
+            injection_type=InjectionType(
+                payload.get("injection_type", "none")
+            ),
+            is_unverified=False,
+        )
