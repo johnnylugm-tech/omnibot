@@ -6,12 +6,12 @@ SRS FR-10: "PALADIN L1 — InputSanitizer：NFKC 正規化 + homoglyph 替換
 Pipeline:
     1. ``unicodedata.normalize('NFKC', text)`` — folds fullwidth and
        compatibility forms into their canonical ASCII equivalents.
-    2. Homoglyph replacement — Cyrillic / Greek letters that visually
-       mimic ASCII letters are mapped to their ASCII counterpart
-       (U+0422 → 'T', U+0391 → 'A', …).
-    3. Control-character strip — C0 (U+0000..U+001F) and C1
-       (U+007F..U+009F) codepoints are dropped so they cannot smuggle
-       past regex-based downstream filters.
+    2. ``str.translate()`` — Cyrillic / Greek homoglyphs are mapped to
+       their ASCII counterpart (U+0422 → 'T', U+0391 → 'A', …); C0
+       (U+0000..U+001F) and C1 (U+007F..U+009F) control characters are
+       deleted so they cannot smuggle past regex-based downstream
+       filters. Both maps are merged into a single pre-computed
+       translation table.
 
 Citations:
     - SRS.md FR-10 (PALADIN L1 InputSanitizer acceptance criteria)
@@ -48,8 +48,16 @@ _HOMOGLYPHS: dict[str, str] = {
 }
 
 # C0 (U+0000..U+001F) + DEL (U+007F) + C1 (U+0080..U+009F).
-_CONTROL_CHARS: frozenset[str] = frozenset(
-    chr(cp) for cp in list(range(0x00, 0x20)) + list(range(0x7F, 0xA0))
+_CONTROL_CHARS: dict[str, None] = {
+    chr(cp): None for cp in (*range(0x00, 0x20), *range(0x7F, 0xA0))
+}
+
+# Pre-computed translate table: homoglyphs map to their ASCII
+# counterpart, control chars map to ``None`` (delete). Built once at
+# import time so the per-call sanitize() is a single ``.translate()``
+# pass — replaces a two-stage join+get / join+in with one C-level sweep.
+_TRANSLATE_TABLE: dict[int, int | str | None] = str.maketrans(
+    {**_HOMOGLYPHS, **_CONTROL_CHARS}
 )
 
 
@@ -71,8 +79,7 @@ class InputSanitizer:
 
         Steps (see module docstring):
             1. NFKC normalize.
-            2. Replace Cyrillic / Greek homoglyphs with ASCII.
-            3. Strip C0 / C1 control characters.
+            2. Translate — homoglyphs → ASCII, control chars → delete.
 
         Args:
             text: Arbitrary user input.
@@ -90,7 +97,4 @@ class InputSanitizer:
         """
         if not isinstance(text, str):
             raise TypeError("InputSanitizer.sanitize requires str input")
-        normalized = unicodedata.normalize("NFKC", text)
-        replaced = "".join(_HOMOGLYPHS.get(ch, ch) for ch in normalized)
-        cleaned = "".join(ch for ch in replaced if ch not in _CONTROL_CHARS)
-        return cleaned
+        return unicodedata.normalize("NFKC", text).translate(_TRANSLATE_TABLE)
