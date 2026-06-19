@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "64163fabf5d5ababf23002a92f69345732e60347",
-  "content_sha256": "79bd3c0f19d8a492138f0a65d6a6d894e30b59aa25b671a80c0a24bfd560e067",
+  "git_sha": "4c231df74a478eb23e6ea59b6236340dca8b2f42",
+  "content_sha256": "f03bbe2013301d286372b58435114f7a9aa2e1a7ecc39964219a80cffa2aa997",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,10 +11,10 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "28.7%",
-      "test_coverage": "29.6%",
-      "verification_rate": "28.7%",
-      "total_links": 180,
+      "code_coverage": "30.6%",
+      "test_coverage": "32.4%",
+      "verification_rate": "30.6%",
+      "total_links": 186,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -33,9 +33,6 @@
           "FR-106",
           "FR-107",
           "FR-108",
-          "FR-18",
-          "FR-19",
-          "FR-20",
           "FR-26",
           "FR-27",
           "FR-28",
@@ -89,6 +86,7 @@
           "FR-86",
           "FR-87",
           "FR-88",
+          "FR-91",
           "FR-92",
           "FR-93",
           "FR-94",
@@ -112,9 +110,6 @@
           "FR-106",
           "FR-107",
           "FR-108",
-          "FR-19",
-          "FR-20",
-          "FR-26",
           "FR-27",
           "FR-28",
           "FR-30",
@@ -194,9 +189,6 @@
         "FR-106",
         "FR-107",
         "FR-108",
-        "FR-18",
-        "FR-19",
-        "FR-20",
         "FR-26",
         "FR-27",
         "FR-28",
@@ -250,6 +242,7 @@
         "FR-86",
         "FR-87",
         "FR-88",
+        "FR-91",
         "FR-92",
         "FR-93",
         "FR-94",
@@ -273,9 +266,6 @@
         "FR-106",
         "FR-107",
         "FR-108",
-        "FR-19",
-        "FR-20",
-        "FR-26",
         "FR-27",
         "FR-28",
         "FR-30",
@@ -626,9 +616,11 @@
       },
       "FR-18": {
         "fr_id": "FR-18",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
+        "code_files": [
+          "03-development/src/app/core/pii.py"
+        ],
         "test_files": [
           "tests/test_fr18.py"
         ],
@@ -637,19 +629,28 @@
       },
       "FR-19": {
         "fr_id": "FR-19",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/core/pii.py"
+        ],
+        "test_files": [
+          "tests/test_fr19.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-20": {
         "fr_id": "FR-20",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/core/pii.py",
+          "03-development/src/app/infra/data_retention.py"
+        ],
+        "test_files": [
+          "tests/test_fr20.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
@@ -723,7 +724,9 @@
         "status": "pending",
         "srs_section": "SAD.md",
         "code_files": [],
-        "test_files": [],
+        "test_files": [
+          "tests/test_fr26.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
@@ -1353,11 +1356,9 @@
       },
       "FR-91": {
         "fr_id": "FR-91",
-        "status": "verified",
+        "status": "pending",
         "srs_section": "SAD.md",
-        "code_files": [
-          "03-development/src/app/infra/data_retention.py"
-        ],
+        "code_files": [],
         "test_files": [
           "tests/test_fr91.py"
         ],
