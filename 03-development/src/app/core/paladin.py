@@ -131,20 +131,34 @@ class InputSanitizer:
 #     guard)
 #   - 03-development/tests/test_fr11.py:300-334 (p95 < 3ms latency case)
 # ---------------------------------------------------------------------------
-_SUSPICIOUS_PATTERNS: list[re.Pattern[str]] = [
-    re.compile(r"ignore\s+(?:all\s+)?(?:previous|prior|above)\s+instructions?", re.IGNORECASE),
-    re.compile(r"system\s*:\s*you\s+are\s+now", re.IGNORECASE),
-    re.compile(r"pretend\s+you\s+(?:are|were)\s+", re.IGNORECASE),
-    re.compile(r"act\s+as\s+(?:an?\s+)?", re.IGNORECASE),
-    re.compile(r"forget\s+everything(?:\s+you\s+know)?", re.IGNORECASE),
-    re.compile(r"disregard\s+(?:all|any|the)\s+", re.IGNORECASE),
-    re.compile(r"override\s+(?:all|any|the|system)\s+", re.IGNORECASE),
-    re.compile(r"reveal\s+(?:the\s+)?(?:system|hidden|secret)\s+prompt", re.IGNORECASE),
-    re.compile(r"developer\s+mode", re.IGNORECASE),
-    re.compile(r"jailbreak", re.IGNORECASE),
-    re.compile(r"DAN\b", re.IGNORECASE),
-    re.compile(r"<\s*\|.*?\|", re.DOTALL),                      # <|...|> markers
-    re.compile(r"###\s*(?:system|assistant|instruction)\s*:", re.IGNORECASE),
+# Canonical 13-pattern injection set per SRS FR-11. Each entry is
+# ``(regex_source, flags)``; the order is not significant — matching any
+# one is enough to flag the input. The compiled pair list below is
+# derived from this table so each source string lives in exactly one
+# place (no copy/paste between ``re.compile`` and the captured ``.pattern``
+# we return to callers for logging).
+_RAW_SUSPICIOUS_PATTERNS: tuple[tuple[str, int], ...] = (
+    (r"ignore\s+(?:all\s+)?(?:previous|prior|above)\s+instructions?", re.IGNORECASE),
+    (r"system\s*:\s*you\s+are\s+now", re.IGNORECASE),
+    (r"pretend\s+you\s+(?:are|were)\s+", re.IGNORECASE),
+    (r"act\s+as\s+(?:an?\s+)?", re.IGNORECASE),
+    (r"forget\s+everything(?:\s+you\s+know)?", re.IGNORECASE),
+    (r"disregard\s+(?:all|any|the)\s+", re.IGNORECASE),
+    (r"override\s+(?:all|any|the|system)\s+", re.IGNORECASE),
+    (r"reveal\s+(?:the\s+)?(?:system|hidden|secret)\s+prompt", re.IGNORECASE),
+    (r"developer\s+mode", re.IGNORECASE),
+    (r"jailbreak", re.IGNORECASE),
+    (r"DAN\b", re.IGNORECASE),
+    (r"<\s*\|.*?\|", re.DOTALL),                                # <|...|> markers
+    (r"###\s*(?:system|assistant|instruction)\s*:", re.IGNORECASE),
+)
+
+# Each entry is a ``(compiled_pattern, source)`` pair. The source is
+# captured once at import time so the hot path does not have to reach
+# for ``Pattern.pattern`` on every hit.
+_SUSPICIOUS_PATTERNS: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(source, flags), source)
+    for source, flags in _RAW_SUSPICIOUS_PATTERNS
 ]
 
 
@@ -199,7 +213,7 @@ class PromptInjectionDefense:
         """
         if not isinstance(text, str):
             raise TypeError("PromptInjectionDefense.check_input requires str input")
-        for pattern in _SUSPICIOUS_PATTERNS:
+        for pattern, source in _SUSPICIOUS_PATTERNS:
             if pattern.search(text):
-                return _DetectionResult(is_suspicious=True, matched_pattern=pattern.pattern)
+                return _DetectionResult(is_suspicious=True, matched_pattern=source)
         return _DetectionResult(is_suspicious=False, matched_pattern=None)
