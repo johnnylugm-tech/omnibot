@@ -68,49 +68,63 @@ class HybridKnowledge:
         """[FR-26] Store the injected DB session; no real engine is built."""
         self._session = session
 
+    # SQL template for the Tier-1 rule lookup. ``:limit`` is bound at
+    # execute-time so the constant ``RULE_LIMIT`` stays the single source
+    # of truth (test assertions grep the rendered statement for LIMIT).
+    _RULE_SQL = (
+        "SELECT id, knowledge_id, content, match_type "
+        "FROM knowledge_base "
+        "WHERE content ILIKE :pattern "
+        "   OR :query = ANY(keywords) "
+        "ORDER BY id "
+        "LIMIT :limit"
+    )
+
     def _rule_match(self, query: str) -> KnowledgeResult | None:
-        """[FR-26] Tier-1 ILIKE search, capped at LIMIT 5.
+        """[FR-26] Tier-1 ILIKE search, capped at LIMIT ``RULE_LIMIT``.
 
         Issues a single SQL statement against ``knowledge_base`` using
         an ILIKE substring pattern plus a keywords-array overlap, applies
-        ``LIMIT 5`` so a generic term cannot over-fetch, then scores the
-        best row by ``match_type`` (``exact`` → 0.95, ``partial`` → 0.70)
-        and returns a ``KnowledgeResult`` only when the score is at
-        least ``CONFIDENCE_THRESHOLD`` (0.80). A weaker hit returns
+        ``RULE_LIMIT`` so a generic term cannot over-fetch, then scores
+        the best row by ``match_type`` (``exact`` → 0.95, ``partial`` →
+        0.70) and returns a ``KnowledgeResult`` only when the score is
+        at least ``CONFIDENCE_THRESHOLD`` (0.80). A weaker hit returns
         ``None`` so the orchestrator falls through to Tier 2.
         """
         if not query:
             return None
 
-        sql = (
-            "SELECT id, knowledge_id, content, match_type "
-            "FROM knowledge_base "
-            "WHERE content ILIKE :pattern "
-            "   OR :query = ANY(keywords) "
-            "ORDER BY id "
-            "LIMIT 5"
-        )
         result = self._session.execute(
-            sql,
-            {"pattern": f"%{query}%", "query": query},
+            self._RULE_SQL,
+            {
+                "pattern": f"%{query}%",
+                "query": query,
+                "limit": self.RULE_LIMIT,
+            },
         )
         rows = result.fetchall()
         if not rows:
             return None
 
-        confidence = self._score(rows[0], query)
+        best = rows[0]
+        confidence = self._score(best, query)
         if confidence < self.CONFIDENCE_THRESHOLD:
             return None
+        return self._to_result(best, confidence)
 
+    @staticmethod
+    def _to_result(row: Any, confidence: float) -> KnowledgeResult:
+        """[FR-26] Build a Tier-1 ``KnowledgeResult`` from the best row."""
         return KnowledgeResult(
-            id=getattr(rows[0], "id", 0),
-            content=getattr(rows[0], "content", ""),
+            id=row.id,
+            content=row.content,
             confidence=confidence,
             source="rule",
-            knowledge_id=getattr(rows[0], "knowledge_id", 0),
+            knowledge_id=row.knowledge_id,
         )
 
-    def _score(self, row: Any, query: str) -> float:
+    @classmethod
+    def _score(cls, row: Any, query: str) -> float:
         """[FR-26] Map a row to an exact (0.95) or partial (0.70) score.
 
         Prefers the explicit ``match_type`` column when present (the
@@ -120,10 +134,9 @@ class HybridKnowledge:
         """
         match_type = getattr(row, "match_type", None)
         if match_type == "exact":
-            return self.CONFIDENCE_EXACT
+            return cls.CONFIDENCE_EXACT
         if match_type == "partial":
-            return self.CONFIDENCE_PARTIAL
-        content = getattr(row, "content", "")
+            return cls.CONFIDENCE_PARTIAL
         return (
-            self.CONFIDENCE_EXACT if content == query else self.CONFIDENCE_PARTIAL
+            cls.CONFIDENCE_EXACT if row.content == query else cls.CONFIDENCE_PARTIAL
         )
