@@ -579,8 +579,6 @@ def _await_coro_from_sync(coro, timeout_ms: float):
 
     # Running loop already exists (FR-15 async path). Run the
     # coroutine on a worker thread with its own fresh event loop.
-    import threading
-
     holder: dict = {}
 
     def _runner() -> None:
@@ -821,6 +819,12 @@ class ProcessResult:
 
 _RISK_LEVELS = frozenset({"low", "medium", "high", "critical"})
 
+# ``ProcessResult.block_reason`` values surfaced to downstream consumers
+# (FR-16 retrospective block, FR-99 circuit-breaker counters). Defined
+# once so the literal lives in exactly one place per branch.
+_BLOCK_REASON_INJECTION = "injection"
+_BLOCK_REASON_CRITICAL_RISK = "critical_risk"
+
 
 class PALADINPipeline:
     """[FR-15] PALADIN routing orchestrator.
@@ -844,6 +848,59 @@ class PALADINPipeline:
     ) -> None:
         self._classifier = classifier or SemanticInjectionClassifier()
         self._tier3_call = tier3_call
+
+    async def _run_l4(
+        self,
+        text: str,
+        *,
+        risk_level: str,
+        timeout_ms: float,
+    ) -> ClassificationResult:
+        """[FR-15] Single L4 classifier hook — shared by all risk branches."""
+        return await self._classifier.classify_async(
+            text, risk_level=risk_level, timeout_ms=timeout_ms
+        )
+
+    async def _call_l3(self, text: str) -> str:
+        """[FR-15] Single Tier-3 call hook — shared by all risk branches."""
+        return await self._tier3_call(text)
+
+    @staticmethod
+    def _blocked_result(
+        *,
+        block_reason: str,
+        tier3_called: bool,
+        l4_called: bool,
+        verdict: ClassificationResult | None = None,
+    ) -> ProcessResult:
+        """[FR-15] Factory for any short-circuit (blocked) ProcessResult."""
+        return ProcessResult(
+            is_blocked=True,
+            classification=verdict,
+            block_reason=block_reason,
+            tier3_called=tier3_called,
+            l4_called=l4_called,
+        )
+
+    @staticmethod
+    def _success_result(
+        *,
+        response: str,
+        verdict: ClassificationResult | None,
+        l4_called: bool,
+    ) -> ProcessResult:
+        """[FR-15] Factory for any non-blocked (clean) ProcessResult.
+
+        ``tier3_called`` is always True on the clean path — the L3 LLM
+        has already produced ``response`` by the time we get here.
+        """
+        return ProcessResult(
+            is_blocked=False,
+            response=response,
+            classification=verdict,
+            tier3_called=True,
+            l4_called=l4_called,
+        )
 
     async def process(
         self,
@@ -883,66 +940,48 @@ class PALADINPipeline:
 
         # ---- critical: immediate block (no L4, no L3) ----
         if risk_level == "critical":
-            return ProcessResult(
-                is_blocked=True,
-                block_reason="critical_risk",
+            return self._blocked_result(
+                block_reason=_BLOCK_REASON_CRITICAL_RISK,
                 tier3_called=False,
                 l4_called=False,
             )
 
         # ---- low: skip L4, go straight to L3 ----
         if risk_level == "low":
-            response = await self._tier3_call(text)
-            return ProcessResult(
-                is_blocked=False,
-                response=response,
-                tier3_called=True,
-                l4_called=False,
+            response = await self._call_l3(text)
+            return self._success_result(
+                response=response, verdict=None, l4_called=False
             )
 
         # ---- high: synchronous L4, then L3 only if clean ----
         if risk_level == "high":
-            verdict = await self._classifier.classify_async(
+            verdict = await self._run_l4(
                 text, risk_level=risk_level, timeout_ms=timeout_ms
             )
             if verdict.is_injection or verdict.is_unverified:
-                return ProcessResult(
-                    is_blocked=True,
-                    classification=verdict,
-                    block_reason="injection",
+                return self._blocked_result(
+                    block_reason=_BLOCK_REASON_INJECTION,
                     tier3_called=False,
                     l4_called=True,
+                    verdict=verdict,
                 )
-            response = await self._tier3_call(text)
-            return ProcessResult(
-                is_blocked=False,
-                response=response,
-                classification=verdict,
-                tier3_called=True,
-                l4_called=True,
+            response = await self._call_l3(text)
+            return self._success_result(
+                response=response, verdict=verdict, l4_called=True
             )
 
         # ---- medium: parallel L4 + L3 ----
-        async def _l4() -> ClassificationResult:
-            return await self._classifier.classify_async(
-                text, risk_level=risk_level, timeout_ms=timeout_ms
-            )
-        async def _l3() -> str:
-            return await self._tier3_call(text)
-
-        verdict, response = await asyncio.gather(_l4(), _l3())
+        verdict, response = await asyncio.gather(
+            self._run_l4(text, risk_level=risk_level, timeout_ms=timeout_ms),
+            self._call_l3(text),
+        )
         if verdict.is_injection:
-            return ProcessResult(
-                is_blocked=True,
-                classification=verdict,
-                block_reason="injection",
+            return self._blocked_result(
+                block_reason=_BLOCK_REASON_INJECTION,
                 tier3_called=True,
                 l4_called=True,
+                verdict=verdict,
             )
-        return ProcessResult(
-            is_blocked=False,
-            response=response,
-            classification=verdict,
-            tier3_called=True,
-            l4_called=True,
+        return self._success_result(
+            response=response, verdict=verdict, l4_called=True
         )
