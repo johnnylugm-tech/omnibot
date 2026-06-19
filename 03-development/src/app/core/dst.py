@@ -254,23 +254,33 @@ class DialogueState:
           ``transition()``.
         """
         with self._lock:
-            # Confidence trigger — fires regardless of state. A value
-            # exactly equal to the threshold is NOT a trigger (strict
-            # less-than per SRS FR-36 "< 0.65").
-            if confidence < INTENT_CONFIDENCE_THRESHOLD:
-                self.state = "ESCALATED"
-                self.turn_count += 1
-                return "ESCALATED"
-            # Round trigger — only applies while the FSM is in
-            # SLOT_FILLING (other states do not consume slot-filling
-            # rounds). ``>=`` so that exactly 3 rounds triggers
-            # escalation, matching the spec-pinned
-            # ``MAX_SLOT_FILLING_ROUNDS == 3`` semantics.
-            if (
-                self.state == "SLOT_FILLING"
-                and slot_filling_rounds >= MAX_SLOT_FILLING_ROUNDS
-            ):
+            if self._escalation_triggered(slot_filling_rounds, confidence):
                 self.state = "ESCALATED"
                 self.turn_count += 1
                 return "ESCALATED"
             return self.state
+
+    def _escalation_triggered(
+        self, slot_filling_rounds: int, confidence: float
+    ) -> bool:
+        """Pure predicate: should this FSM auto-escalate now?
+
+        [FR-36] Pulled out of ``auto_escalate`` so the two triggers
+        (confidence, round limit) live next to each other and the
+        side effects (state mutation + ``turn_count`` increment) are
+        not repeated. A value exactly equal to the confidence
+        threshold is NOT a trigger (strict less-than per SRS FR-36
+        "< 0.65"); a value exactly equal to
+        ``MAX_SLOT_FILLING_ROUNDS`` IS a trigger (>=, so 3 rounds
+        fires per the spec-pinned limit).
+        """
+        # Confidence trigger — fires regardless of FSM state.
+        if confidence < INTENT_CONFIDENCE_THRESHOLD:
+            return True
+        # Round trigger — only applies while the FSM is in
+        # SLOT_FILLING (other states do not consume slot-filling
+        # rounds).
+        return (
+            self.state == "SLOT_FILLING"
+            and slot_filling_rounds >= MAX_SLOT_FILLING_ROUNDS
+        )
