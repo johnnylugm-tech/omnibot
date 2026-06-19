@@ -19,6 +19,13 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
+# [FR-44] A2A RPC method names pinned by FR-06 — single source of truth
+# used by both ``capabilities`` and ``methods`` so the two stay in sync.
+_A2A_METHODS: list[str] = [
+    "ask_customer_service",
+    "escalate_to_human",
+]
+
 # [FR-44] Static Agent Card payload — fields per SRS FR-44 / A2A spec.
 # methods is order-insensitive; the test inspects set membership.
 AGENT_CARD: dict[str, object] = {
@@ -26,21 +33,22 @@ AGENT_CARD: dict[str, object] = {
     "description": "OmniBot — unified multi-platform customer service agent.",
     "url": "https://omnibot.local/",
     "version": "0.1.0",
-    "capabilities": [
-        "ask_customer_service",
-        "escalate_to_human",
-    ],
-    "methods": [
-        "ask_customer_service",
-        "escalate_to_human",
-    ],
+    "capabilities": _A2A_METHODS,
+    "methods": _A2A_METHODS,
     "auth_schemes": [
         {"type": "bearer", "scheme": "Bearer"},
     ],
 }
 
 
-def _agent_card_handler() -> dict[str, object]:
+# [FR-44] FastAPI app instance — named ``app`` so TestClient(app) works.
+# The route exposes OmniBot's Agent Card at the well-known discovery
+# path so A2A callers (FR-06) can discover OmniBot's RPC surface.
+app = FastAPI(title="OmniBot Agent Card", version="0.1.0")
+
+
+@app.get("/.well-known/agent.json")
+def agent_card() -> dict[str, object]:
     """Return the static OmniBot Agent Card payload.
 
     Citations:
@@ -49,14 +57,3 @@ def _agent_card_handler() -> dict[str, object]:
     - SRS.md:786 — FR-44 registry description
     """
     return AGENT_CARD
-
-
-# [FR-44] FastAPI app instance — named ``app`` so TestClient(app) works.
-# The route exposes OmniBot's Agent Card at the well-known discovery
-# path so A2A callers (FR-06) can discover OmniBot's RPC surface.
-app = FastAPI(title="OmniBot Agent Card", version="0.1.0")
-app.add_api_route(
-    "/.well-known/agent.json",
-    _agent_card_handler,
-    methods=["GET"],
-)
