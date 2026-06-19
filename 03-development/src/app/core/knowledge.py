@@ -266,10 +266,8 @@ class HybridKnowledge:
             - SRS.md FR-27 — Child Chunk 向量搜尋；Recall@3 ≥ 92%.
         """
         del query
-        # Bound the response so a malformed caller cannot exceed the
-        # declared top_k (the metric contract is Recall@3, not
-        # Recall@arbitrary).
-        return [] if top_k <= 0 else []
+        del top_k  # real impl slices the HNSW result to top_k entries
+        return []
 
     def _rag_search_with_fallback(
         self,
