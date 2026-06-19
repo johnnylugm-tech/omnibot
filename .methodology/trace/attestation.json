@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "bd10bae1d68ce56c23261f3b0e371e60211fc7fd",
-  "content_sha256": "b75ec9414e17ef0be50d81e31d954750fcc89d4379aeccaf16bb5eb1f4a4c0c8",
+  "git_sha": "66cbb2c1d94a3364edcbb24c01b2f7e08de15e73",
+  "content_sha256": "92b59396cebdef5234ba47f834eea0b168469a85d4ff54c6a0b2d193ba9add7f",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,10 +11,10 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "14.8%",
-      "test_coverage": "15.7%",
-      "verification_rate": "14.8%",
-      "total_links": 141,
+      "code_coverage": "15.7%",
+      "test_coverage": "16.7%",
+      "verification_rate": "15.7%",
+      "total_links": 143,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -100,7 +100,6 @@
           "FR-86",
           "FR-87",
           "FR-88",
-          "FR-90",
           "FR-91",
           "FR-92",
           "FR-93",
@@ -194,7 +193,6 @@
           "FR-86",
           "FR-87",
           "FR-88",
-          "FR-91",
           "FR-92",
           "FR-93",
           "FR-94",
@@ -291,7 +289,6 @@
         "FR-86",
         "FR-87",
         "FR-88",
-        "FR-90",
         "FR-91",
         "FR-92",
         "FR-93",
@@ -385,7 +382,6 @@
         "FR-86",
         "FR-87",
         "FR-88",
-        "FR-91",
         "FR-92",
         "FR-93",
         "FR-94",
@@ -1345,9 +1341,11 @@
       },
       "FR-90": {
         "fr_id": "FR-90",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
+        "code_files": [
+          "03-development/src/app/infra/redis_security.py"
+        ],
         "test_files": [
           "tests/test_fr90.py"
         ],
@@ -1359,7 +1357,9 @@
         "status": "pending",
         "srs_section": "SAD.md",
         "code_files": [],
-        "test_files": [],
+        "test_files": [
+          "tests/test_fr91.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
