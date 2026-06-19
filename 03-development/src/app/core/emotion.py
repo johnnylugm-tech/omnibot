@@ -53,6 +53,7 @@ from dataclasses import dataclass
 # the call site).
 # ---------------------------------------------------------------------------
 VALID_CATEGORIES: frozenset[str] = frozenset({"positive", "neutral", "negative"})
+NEGATIVE_CATEGORY: str = "negative"  # member of VALID_CATEGORIES; pinned here so the FR-48 comparison predicate below has a single source of truth
 INTENSITY_MIN: float = 0.0
 INTENSITY_MAX: float = 1.0
 
@@ -296,7 +297,7 @@ def emotion_should_escalate(emotions) -> bool:
     """
     count = 0
     for category in reversed(list(emotions)):
-        if category == "negative":
+        if category == NEGATIVE_CATEGORY:
             count += 1
         else:
             break
@@ -311,6 +312,7 @@ __all__ = [
     "emotion_current_weighted_score",
     "emotion_should_escalate",
     "VALID_CATEGORIES",
+    "NEGATIVE_CATEGORY",
     "INTENSITY_MIN",
     "INTENSITY_MAX",
     "HALF_LIFE_HOURS",
