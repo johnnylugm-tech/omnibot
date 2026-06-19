@@ -48,6 +48,16 @@ class ToolExecutionResult:
     error_message: Optional[str]
 
 
+def ok(output: Any) -> ToolExecutionResult:
+    """成功路徑的 ``ToolExecutionResult`` factory（[FR-39]）。"""
+    return ToolExecutionResult(success=True, output=output, error_message=None)
+
+
+def fail(error_message: str) -> ToolExecutionResult:
+    """失敗路徑的 ``ToolExecutionResult`` factory（[FR-39]）。"""
+    return ToolExecutionResult(success=False, output=None, error_message=error_message)
+
+
 class ActionAdapter(ABC):
     """[FR-39] Action Execution Engine 的 adapter 抽象介面。
 
@@ -60,9 +70,18 @@ class ActionAdapter(ABC):
     @abstractmethod
     def list_tools(self) -> list[ToolDefinition]:
         """回傳此 adapter 暴露的工具清單（[FR-39]）。"""
-        raise NotImplementedError
 
     @abstractmethod
     def execute(self, tool_name: str, arguments: dict) -> ToolExecutionResult:
         """執行指定工具並回傳結果（[FR-39]）。"""
-        raise NotImplementedError
+
+    def _resolve_tool(self, tool_name: str) -> Optional[ToolDefinition]:
+        """以名稱查找已註冊的工具；找不到回傳 ``None``。
+
+        共用於所有 adapter 子類 — 由子類 ``execute`` 在呼叫實際
+        handler 之前先用此方法驗證 ``tool_name``。
+        """
+        for tool in self.list_tools():
+            if tool.name == tool_name:
+                return tool
+        return None

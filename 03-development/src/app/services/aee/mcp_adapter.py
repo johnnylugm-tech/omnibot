@@ -8,12 +8,12 @@ Citations:
 
 from __future__ import annotations
 
-from typing import Any
-
 from app.services.aee.adapter import (
     ActionAdapter,
     ToolDefinition,
     ToolExecutionResult,
+    fail,
+    ok,
 )
 
 
@@ -39,18 +39,8 @@ class MCPAdapter(ActionAdapter):
     def execute(self, tool_name: str, arguments: dict) -> ToolExecutionResult:
         """呼叫 MCP 工具並回傳結果。"""
         try:
-            tools = {t.name: t for t in self.list_tools()}
-            if tool_name not in tools:
-                return ToolExecutionResult(
-                    success=False,
-                    output=None,
-                    error_message=f"unknown tool: {tool_name}",
-                )
-            payload: Any = {"echo": arguments.get("text", "")}
-            return ToolExecutionResult(
-                success=True, output=payload, error_message=None
-            )
+            if self._resolve_tool(tool_name) is None:
+                return fail(f"unknown tool: {tool_name}")
+            return ok({"echo": arguments.get("text", "")})
         except Exception as exc:  # noqa: BLE001 — surface as structured error
-            return ToolExecutionResult(
-                success=False, output=None, error_message=str(exc)
-            )
+            return fail(str(exc))
