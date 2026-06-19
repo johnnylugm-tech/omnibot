@@ -835,6 +835,11 @@ _RISK_LEVELS = frozenset({"low", "medium", "high", "critical"})
 _BLOCK_REASON_INJECTION = "injection"
 _BLOCK_REASON_CRITICAL_RISK = "critical_risk"
 
+# [FR-16] Canonical audit-log event name written when a medium-risk
+# request's late L4 verdict revokes a completed L3 response. The
+# downstream SOC2 dashboard keys on this exact token.
+_RETROSPECTIVE_BLOCK_EVENT = "injection_retrospective_block"
+
 
 def _noop_security_log_writer(**payload) -> None:  # noqa: ARG001
     """[FR-16] Default no-op for ``PALADINPipeline.security_log_writer``.
@@ -944,6 +949,40 @@ class PALADINPipeline:
             l4_called=l4_called,
         )
 
+    def _handle_retrospective_block(
+        self,
+        text: str,
+        verdict: ClassificationResult,
+        risk_level: str,
+    ) -> ProcessResult:
+        """[FR-16] Revoke the completed L3 response + write audit event.
+
+        On the medium-risk parallel branch, L4 may report injection AFTER
+        the L3 coroutine has already completed (the typical race: L3 is
+        fast, L4 has a 200ms LLM budget). The L3 result is revoked
+        before ``ProcessResult`` is constructed so a poisoned response
+        never escapes the pipeline, and an
+        ``injection_retrospective_block`` event is written to the audit
+        log with the conversation context.
+
+        Kept as a private helper so ``process`` stays a flat routing
+        function and the audit-log schema lives in exactly one place.
+        """
+        self._security_log_writer(
+            event=_RETROSPECTIVE_BLOCK_EVENT,
+            risk_level=risk_level,
+            injection_type=verdict.injection_type.value,
+            confidence=verdict.confidence,
+            text=text,
+        )
+        return self._blocked_result(
+            block_reason=_BLOCK_REASON_INJECTION,
+            tier3_called=True,
+            l4_called=True,
+            verdict=verdict,
+            late_injection_detected=True,
+        )
+
     async def process(
         self,
         text: str,
@@ -1018,32 +1057,7 @@ class PALADINPipeline:
             self._call_l3(text),
         )
         if verdict.is_injection:
-            # [FR-16] Retrospective block — the L4 verdict reported
-            # injection AFTER the L3 coroutine had already completed
-            # (the typical medium-risk race: L3 is fast, L4 has a
-            # 200ms LLM budget). The L3 result is revoked before the
-            # ProcessResult is constructed so a poisoned response
-            # never escapes the pipeline, and an
-            # ``injection_retrospective_block`` event is written to
-            # the audit log with the conversation context.
-            self._security_log_writer(
-                event="injection_retrospective_block",
-                risk_level=risk_level,
-                injection_type=(
-                    verdict.injection_type.value
-                    if hasattr(verdict.injection_type, "value")
-                    else str(verdict.injection_type)
-                ),
-                confidence=verdict.confidence,
-                text=text,
-            )
-            return self._blocked_result(
-                block_reason=_BLOCK_REASON_INJECTION,
-                tier3_called=True,
-                l4_called=True,
-                verdict=verdict,
-                late_injection_detected=True,
-            )
+            return self._handle_retrospective_block(text, verdict, risk_level)
         return self._success_result(
             response=response, verdict=verdict, l4_called=True
         )
