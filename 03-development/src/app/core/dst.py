@@ -48,6 +48,17 @@ ALLOWED_TRANSITIONS: dict[str, frozenset[str]] = {
 }
 
 
+def _is_legal_transition(from_state: str, to_state: str) -> bool:
+    """Pure predicate: is the edge ``from_state -> to_state`` legal?
+
+    Pulled out of ``DialogueState.transition`` so the legality rule
+    lives in one named, testable place — ``transition`` then only
+    needs to wrap it in the NP-13 atomicity lock.
+    """
+    allowed = ALLOWED_TRANSITIONS.get(from_state)
+    return allowed is not None and to_state in allowed
+
+
 class DialogueState:
     """Mutable 8-state FSM tracker for a single conversation.
 
@@ -83,12 +94,8 @@ class DialogueState:
         """
         with self._lock:
             current = self.state
-            allowed = ALLOWED_TRANSITIONS.get(current)
-            # Unknown current state OR target not in allowed set →
-            # illegal transition. We raise ``ValueError`` with a
-            # message that names both endpoints so misconfigurations
-            # are easy to diagnose.
-            if allowed is None or to_state not in allowed:
+            if not _is_legal_transition(current, to_state):
+                allowed = ALLOWED_TRANSITIONS.get(current)
                 raise ValueError(
                     f"FR-34: illegal transition {current!r} -> "
                     f"{to_state!r}; allowed successors="
