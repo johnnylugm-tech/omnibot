@@ -127,27 +127,28 @@ class PIIMasking:
 
     # -- public API --------------------------------------------------------
 
+    # Detection order is fixed: credit_card runs FIRST so a Luhn-valid
+    # PAN is masked as credit_card and never demoted to phone (the phone
+    # regex's word boundary keeps a 16-digit run from being sliced into
+    # an 11-digit phone match anyway, but running credit_card first makes
+    # the ordering intentional rather than incidental).
+    _PATTERN_PASSES: tuple[tuple[str, re.Pattern[str]], ...] = (
+        ("phone", _PHONE_RE),
+        ("email", _EMAIL_RE),
+        ("address", _ADDRESS_RE),
+    )
+
     def mask(self, text: str) -> MaskResult:
         """[FR-18] Detect and mask every PII substring in ``text``.
-
-        Detection runs in a fixed order (credit_card → phone → email →
-        address) so a Luhn-valid PAN is always masked as credit_card and
-        never demoted to phone. Luhn-invalid 16-digit runs are left
-        untouched by the credit_card pass, and the phone regex's word
-        boundaries prevent them from being misclassified as phones
-        either.
 
         Returns:
             MaskResult with the rewritten text, total mask count, and
             the ordered tuple of pii_types that were actually masked.
         """
         masked, types = self._mask_credit_card(text)
-        masked, phone_types = self._mask_substring(masked, _PHONE_RE, "phone")
-        types = types + phone_types
-        masked, email_types = self._mask_substring(masked, _EMAIL_RE, "email")
-        types = types + email_types
-        masked, addr_types = self._mask_substring(masked, _ADDRESS_RE, "address")
-        types = types + addr_types
+        for pii_type, pattern in self._PATTERN_PASSES:
+            masked, found = self._apply_pattern(masked, pattern, pii_type)
+            types.extend(found)
 
         return MaskResult(
             masked_text=masked,
@@ -214,23 +215,28 @@ class PIIMasking:
         return masked, types
 
     @staticmethod
-    def _mask_substring(
+    def _apply_pattern(
         text: str, pattern: re.Pattern[str], pii_type: str
     ) -> tuple[str, list[str]]:
         """Replace every match of ``pattern`` with the canonical placeholder.
 
-        Returns the rewritten text and the list of masked pii_types in
-        detection order (one entry per match). Length of the returned
-        list is the per-type contribution to ``MaskResult.mask_count``.
+        A single ``sub`` pass records each match via its callback so the
+        replacement and the per-type count come from one scan rather
+        than from a separate ``findall`` after ``sub``.
+
+        Returns:
+            (masked_text, masked_types) where ``masked_types`` has one
+            ``pii_type`` entry per match, in detection order. Its length
+            is the per-type contribution to ``MaskResult.mask_count``.
         """
-        types: list[str] = []
         placeholder = PIIMasking.get_mask_format(pii_type)
-        masked = pattern.sub(placeholder, text)
-        # ``pattern.sub`` already performs non-overlapping replacement;
-        # counting ``finditer`` on the *original* text gives the same
-        # count without re-scanning the rewritten string.
-        types.extend([pii_type] * len(pattern.findall(text)))
-        return masked, types
+        types: list[str] = []
+
+        def _replace(match: re.Match[str]) -> str:
+            types.append(pii_type)
+            return placeholder
+
+        return pattern.sub(_replace, text), types
 
     @staticmethod
     def _luhn_valid(number: str) -> bool:
