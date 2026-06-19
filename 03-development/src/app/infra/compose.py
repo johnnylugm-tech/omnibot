@@ -42,18 +42,32 @@ REQUIRED_SERVICES = (
     "worker",
 )
 
+# Per-service health markers. A service is either HEALTHY or UNHEALTHY;
+# the stack-level aggregate is HEALTHY iff every service is HEALTHY,
+# otherwise DEGRADED.
+HEALTHY = "healthy"
+UNHEALTHY = "unhealthy"
+DEGRADED = "degraded"
+
+# HTTP status codes surfaced by ``/api/v1/health``. 200 when the stack
+# is fully healthy; 503 (Service Unavailable) when any service has
+# degraded the aggregate — the canonical signal for operators and
+# external uptime monitors.
+HTTP_OK = 200
+HTTP_SERVICE_UNAVAILABLE = 503
+
 
 class ComposeHealth:
     """Tracks the live health of every service in ``REQUIRED_SERVICES``.
 
     Constructing with no arguments seeds every required service to
-    ``"healthy"`` — the post-``docker compose up`` steady state.
+    ``HEALTHY`` — the post-``docker compose up`` steady state.
     """
 
     def __init__(self, services: Iterable[str] | None = None) -> None:
         if services is None:
             services = REQUIRED_SERVICES
-        self._status: dict[str, str] = {name: "healthy" for name in services}
+        self._status: dict[str, str] = {name: HEALTHY for name in services}
 
     def mark(self, service: str, status: str) -> None:
         """Record ``status`` for ``service``."""
@@ -64,19 +78,17 @@ class ComposeHealth:
         return self._status[service]
 
     def overall_status(self) -> str:
-        """Return ``"healthy"`` iff every service is healthy; else
-        ``"degraded"``."""
-        if all(s == "healthy" for s in self._status.values()):
-            return "healthy"
-        return "degraded"
+        """Return ``HEALTHY`` iff every service is healthy; else ``DEGRADED``."""
+        if all(s == HEALTHY for s in self._status.values()):
+            return HEALTHY
+        return DEGRADED
 
     def health_endpoint(self) -> tuple[int, dict]:
         """Return ``(http_status, body)`` for ``/api/v1/health``."""
-        overall = self.overall_status()
-        if overall == "healthy":
-            return 200, {"status": "healthy"}
-        unhealthy = [s for s, v in self._status.items() if v != "healthy"]
-        # Use HTTP 503 (canonical signal for degraded) and include the
-        # unhealthy service list so operators can find the broken
-        # component without grepping compose logs.
-        return 503, {"status": "degraded", "unhealthy": unhealthy}
+        if self.overall_status() == HEALTHY:
+            return HTTP_OK, {"status": HEALTHY}
+        unhealthy = [s for s, v in self._status.items() if v != HEALTHY]
+        # Surface DEGRADED with HTTP 503 and the failing service list so
+        # operators can locate the broken component without grepping
+        # compose logs.
+        return HTTP_SERVICE_UNAVAILABLE, {"status": DEGRADED, "unhealthy": unhealthy}
