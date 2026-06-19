@@ -172,11 +172,13 @@ class PIIMasking:
 
     # -- public API --------------------------------------------------------
 
-    # Detection order is fixed: credit_card runs FIRST so a Luhn-valid
-    # PAN is masked as credit_card and never demoted to phone (the phone
-    # regex's word boundary keeps a 16-digit run from being sliced into
-    # an 11-digit phone match anyway, but running credit_card first makes
-    # the ordering intentional rather than incidental).
+    # Order matters: phone / email / address are independent regex passes
+    # applied AFTER the credit_card pass (see ``mask()``). The credit_card
+    # rule MUST run first so a Luhn-valid 16-digit PAN is masked as
+    # ``credit_card`` rather than as ``phone`` — the phone regex's word
+    # boundary already prevents a 16-digit run from being sliced into an
+    # 11-digit phone match, but running credit_card first makes the
+    # ordering intentional rather than incidental.
     _PATTERN_PASSES: tuple[tuple[str, re.Pattern[str]], ...] = (
         ("phone", _PHONE_RE),
         ("email", _EMAIL_RE),
@@ -233,9 +235,24 @@ class PIIMasking:
             masked_types=tuple(types),
         )
 
-        # [FR-20] Fire the audit write from inside mask() so any future
-        # caller path automatically participates. The fields mirror
-        # SRS FR-20 verbatim; no remap is needed for downstream queries.
+        # [FR-20] Audit write fires from inside mask() so every future
+        # caller path participates automatically. Field names mirror SRS
+        # FR-20 verbatim — no remap needed for downstream privacy queries.
+        self._record_audit(result, conversation_id, performed_by)
+        return result
+
+    def _record_audit(
+        self,
+        result: MaskResult,
+        conversation_id: str,
+        performed_by: str,
+    ) -> None:
+        """[FR-20] Append one ``pii_audit_log`` row for a successful mask.
+
+        ``action`` is reserved as ``"mask"`` today; future audit actions
+        (``"unmask_admin"`` etc.) can be threaded through this method
+        without touching ``mask()``.
+        """
         PIIMasking._audit_log.append(
             AuditEntry(
                 conversation_id=conversation_id,
@@ -245,8 +262,6 @@ class PIIMasking:
                 performed_by=performed_by,
             )
         )
-
-        return result
 
     @classmethod
     def read_audit_log(cls) -> list[AuditEntry]:

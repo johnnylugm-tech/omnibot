@@ -179,4 +179,4 @@ RETENTION_POLICIES: list[RetentionPolicy] = [
         action="anonymize",
         scheduled=True,
     ),
-]  # type: ignore[assignment]  (annotated after the class definition)
+]
