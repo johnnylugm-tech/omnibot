@@ -27,13 +27,19 @@ Citations:
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
-from typing import Any, Callable, Optional
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 # Platform-specific retraction windows (SRS FR-17).
 TELEGRAM_RETRACTION_WINDOW: timedelta = timedelta(hours=48)
 MESSENGER_RETRACTION_WINDOW: timedelta = timedelta(minutes=10)
+
+# Replacement frame pushed to the open WebSocket on a web retraction
+# (SRS FR-17: "Web WebSocket 直接替換"). Kept as a module constant so
+# the wording is reviewable in one place.
+WS_REPLACEMENT_TEXT: str = "[retracted] 此回應已由系統撤回並更正。"
 
 
 @dataclass(frozen=True)
@@ -49,14 +55,25 @@ class RetractionResult:
     platform: str
     success: bool
     method: str  # "delete" | "apology" | "correction" | "ws_replace" | "revoked"
-    message_id: Optional[str]
+    message_id: str | None
     apology_sent: bool = False
     correction_sent: bool = False
     revoked: bool = False
 
 
+def _apology_result(platform: str, message_id: str) -> RetractionResult:
+    """[FR-17] Build the fail-secure ``method="apology"`` outcome."""
+    return RetractionResult(
+        platform=platform,
+        success=False,
+        method="apology",
+        message_id=message_id,
+        apology_sent=True,
+    )
+
+
 def _log_retraction_failed(
-    security_log_writer: Optional[Callable[..., None]],
+    security_log_writer: Callable[..., None] | None,
     *,
     platform: str,
     message_id: str,
@@ -77,11 +94,58 @@ def _log_retraction_failed(
     )
 
 
+def _attempt_windowed_delete(
+    *,
+    platform: str,
+    client: Any,
+    message_id: str,
+    sent_at: datetime,
+    window: timedelta,
+    security_log_writer: Callable[..., None] | None,
+) -> RetractionResult:
+    """[FR-17] Run the shared "delete inside window, else fail-secure" flow.
+
+    Both the Telegram (48h) and Messenger (10min) paths share the same
+    shape: pre-check the window so we never make a guaranteed-failure
+    HTTP round-trip, attempt the platform delete, and on either a
+    window-expired send or a raised API exception fall through to the
+    fail-secure apology + audit-log event.
+    """
+    now = datetime.now(UTC)
+    if client is None or (now - sent_at) > window:
+        reason = "no_client" if client is None else "window_expired"
+        _log_retraction_failed(
+            security_log_writer,
+            platform=platform,
+            message_id=message_id,
+            reason=reason,
+        )
+        return _apology_result(platform, message_id)
+
+    try:
+        client.delete_message(message_id)
+    except Exception:
+        _log_retraction_failed(
+            security_log_writer,
+            platform=platform,
+            message_id=message_id,
+            reason="api_error",
+        )
+        return _apology_result(platform, message_id)
+
+    return RetractionResult(
+        platform=platform,
+        success=True,
+        method="delete",
+        message_id=message_id,
+    )
+
+
 def _retract_telegram(
     message_id: str,
     sent_at: datetime,
     telegram_client: Any,
-    security_log_writer: Optional[Callable[..., None]],
+    security_log_writer: Callable[..., None] | None,
 ) -> RetractionResult:
     """[FR-17] Telegram path: deleteMessage within 48h, else fail-secure.
 
@@ -89,45 +153,13 @@ def _retract_telegram(
     than 48 hours with HTTP 400; we treat both branches (window
     expired, client raised) as a fail-secure apology + audit log.
     """
-    now = datetime.now(timezone.utc)
-    if telegram_client is None or (now - sent_at) > TELEGRAM_RETRACTION_WINDOW:
-        reason = "window_expired" if telegram_client is not None else "no_client"
-        _log_retraction_failed(
-            security_log_writer,
-            platform="telegram",
-            message_id=message_id,
-            reason=reason,
-        )
-        return RetractionResult(
-            platform="telegram",
-            success=False,
-            method="apology",
-            message_id=message_id,
-            apology_sent=True,
-        )
-
-    try:
-        telegram_client.delete_message(message_id)
-    except Exception:
-        _log_retraction_failed(
-            security_log_writer,
-            platform="telegram",
-            message_id=message_id,
-            reason="api_error",
-        )
-        return RetractionResult(
-            platform="telegram",
-            success=False,
-            method="apology",
-            message_id=message_id,
-            apology_sent=True,
-        )
-
-    return RetractionResult(
+    return _attempt_windowed_delete(
         platform="telegram",
-        success=True,
-        method="delete",
+        client=telegram_client,
         message_id=message_id,
+        sent_at=sent_at,
+        window=TELEGRAM_RETRACTION_WINDOW,
+        security_log_writer=security_log_writer,
     )
 
 
@@ -135,7 +167,7 @@ def _retract_messenger(
     message_id: str,
     sent_at: datetime,
     messenger_client: Any,
-    security_log_writer: Optional[Callable[..., None]],
+    security_log_writer: Callable[..., None] | None,
 ) -> RetractionResult:
     """[FR-17] Messenger path: DELETE within 10min, else fail-secure.
 
@@ -144,45 +176,13 @@ def _retract_messenger(
     call returns an error. We pre-check the window so we never make
     a guaranteed-failure HTTP round-trip.
     """
-    now = datetime.now(timezone.utc)
-    if messenger_client is None or (now - sent_at) > MESSENGER_RETRACTION_WINDOW:
-        reason = "window_expired" if messenger_client is not None else "no_client"
-        _log_retraction_failed(
-            security_log_writer,
-            platform="messenger",
-            message_id=message_id,
-            reason=reason,
-        )
-        return RetractionResult(
-            platform="messenger",
-            success=False,
-            method="apology",
-            message_id=message_id,
-            apology_sent=True,
-        )
-
-    try:
-        messenger_client.delete_message(message_id)
-    except Exception:
-        _log_retraction_failed(
-            security_log_writer,
-            platform="messenger",
-            message_id=message_id,
-            reason="api_error",
-        )
-        return RetractionResult(
-            platform="messenger",
-            success=False,
-            method="apology",
-            message_id=message_id,
-            apology_sent=True,
-        )
-
-    return RetractionResult(
+    return _attempt_windowed_delete(
         platform="messenger",
-        success=True,
-        method="delete",
+        client=messenger_client,
         message_id=message_id,
+        sent_at=sent_at,
+        window=MESSENGER_RETRACTION_WINDOW,
+        security_log_writer=security_log_writer,
     )
 
 
@@ -193,13 +193,7 @@ def _retract_line(message_id: str) -> RetractionResult:
     this is the platform contract, not a fault of our pipeline, so
     we do NOT emit a ``retraction_failed`` audit event.
     """
-    return RetractionResult(
-        platform="line",
-        success=False,
-        method="apology",
-        message_id=message_id,
-        apology_sent=True,
-    )
+    return _apology_result("line", message_id)
 
 
 def _retract_whatsapp(message_id: str) -> RetractionResult:
@@ -229,7 +223,7 @@ def _retract_web(
     """
     web_ws_pusher.replace_response(
         message_id,
-        replacement="[retracted] 此回應已由系統撤回並更正。",
+        replacement=WS_REPLACEMENT_TEXT,
     )
     return RetractionResult(
         platform="web",
@@ -271,7 +265,7 @@ def retract(
     whatsapp_client: Any = None,
     web_ws_pusher: Any = None,
     a2a_client: Any = None,
-    security_log_writer: Optional[Callable[..., None]] = None,
+    security_log_writer: Callable[..., None] | None = None,
 ) -> RetractionResult:
     """[FR-17] Route a retraction to the correct platform handler.
 
