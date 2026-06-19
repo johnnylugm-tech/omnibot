@@ -3,6 +3,9 @@
 [FR-34] 8-state FSM with strict ALLOWED_TRANSITIONS enforcement.
 [FR-35] Slot-filling surface: DialogueSlot enum, INTENT_TO_SLOTS
         mapping, and DialogueState.missing_slots().
+[FR-36] Auto-escalation triggers: 3-round slot filling /
+        confidence < 0.65. Adds INTENT_CONFIDENCE_THRESHOLD,
+        MAX_SLOT_FILLING_ROUNDS, and DialogueState.auto_escalate().
 
 Citations:
 - SRS.md FR-34 (8-state FSM + ALLOWED_TRANSITIONS contract)
@@ -10,8 +13,12 @@ Citations:
   return_request needs order_id + reason; missing_slots() returns
   the list of unfilled required slots; once filled the DST may
   advance to AWAITING_CONFIRMATION)
+- SRS.md FR-36 (auto-escalation: SLOT_FILLING > 3 rounds →
+  ESCALATED; intent confidence < INTENT_CONFIDENCE_THRESHOLD (0.65)
+  → ESCALATED; PROCESSING confidence < 0.65 → ESCALATED)
 - 02-architecture/TEST_SPEC.md FR-34 (test cases 1-5)
 - 02-architecture/TEST_SPEC.md FR-35 (test cases 1-4)
+- 02-architecture/TEST_SPEC.md FR-36 (test cases 1-3)
 - 02-architecture/SAD.md Module: dst.py (NP-13 atomicity under
   concurrent async sessions → ``threading.Lock``)
 
@@ -96,7 +103,7 @@ class DialogueSlot(enum.Enum):
 # INTENT_TO_SLOTS — frozen mapping from intent name to the required
 # slot tuple.
 #
-# SRS FR-35: order_status 需要 order_id；return_request 需要
+# SRS FR-35: order_status 需要 order_id; return_request 需要
 # order_id + reason. The keys MUST be the literal intent names from
 # FR-32 (intent detection) so the DST can look up the required slots
 # after intent detection. Values are tuples to preserve ordering
@@ -106,6 +113,18 @@ INTENT_TO_SLOTS: dict[str, tuple[str, ...]] = {
     "order_status": ("order_id",),
     "return_request": ("order_id", "reason"),
 }
+
+
+# ---------------------------------------------------------------------------
+# FR-36 — auto-escalation thresholds (spec-pinned).
+#
+# SRS FR-36: "意圖置信度 < INTENT_CONFIDENCE_THRESHOLD (0.65) →
+# ESCALATED" and "SLOT_FILLING 超過 3 輪未完成 → ESCALATED". These
+# two constants are the single source of truth for the threshold
+# values; the spec-coverage tests pin them at exactly 0.65 and 3.
+# ---------------------------------------------------------------------------
+INTENT_CONFIDENCE_THRESHOLD: float = 0.65
+MAX_SLOT_FILLING_ROUNDS: int = 3
 
 
 class DialogueState:
@@ -129,6 +148,12 @@ class DialogueState:
     - Once every required slot is filled, ``missing_slots()``
       returns ``[]`` — the precondition for the DST to advance
       from ``SLOT_FILLING`` to ``AWAITING_CONFIRMATION``.
+
+    [FR-36] SRS FR-36 acceptance criteria:
+    - ``auto_escalate(slot_filling_rounds, confidence)`` evaluates
+      the two spec-pinned triggers (round limit, confidence
+      threshold) and either transitions to ``"ESCALATED"`` (with a
+      ``turn_count`` increment) or leaves the FSM untouched.
     """
 
     __slots__ = ("state", "turn_count", "_lock", "intent", "slots")
@@ -200,3 +225,52 @@ class DialogueState:
             if not str(value).strip():
                 missing.append(slot_name)
         return missing
+
+    def auto_escalate(
+        self, slot_filling_rounds: int = 0, confidence: float = 1.0
+    ) -> str:
+        """Auto-escalate to ``ESCALATED`` when a trigger fires.
+
+        [FR-36] SRS FR-36 acceptance criteria:
+        - Confidence trigger: ``confidence < INTENT_CONFIDENCE_THRESHOLD``
+          (0.65) fires regardless of the current FSM state — covers
+          both the "意圖置信度" (INTENT_DETECTED) leg and the
+          "PROCESSING 置信度" leg.
+        - Round trigger: ``state == "SLOT_FILLING"`` AND
+          ``slot_filling_rounds >= MAX_SLOT_FILLING_ROUNDS`` (3) fires
+          the round-limit escalation.
+        - On trigger: ``self.state`` transitions to ``"ESCALATED"``,
+          ``self.turn_count`` increments by 1, and the method returns
+          ``"ESCALATED"``.
+        - On no trigger: ``self.state`` / ``self.turn_count`` are
+          unchanged and the method returns ``self.state``.
+        - Atomic w.r.t. concurrent callers (NP-13) — mirrors the
+          ``transition`` lock discipline.
+        - Auto-escalation bypasses ``ALLOWED_TRANSITIONS``: a
+          SLOT_FILLING / PROCESSING / IDLE → ESCALATED edge is NOT a
+          legal normal-FSM transition (only TOOL_CALLING may go to
+          ESCALATED per FR-34). Escalation is a side-channel out of
+          the FSM, not a legal transition, so it MUST NOT reuse
+          ``transition()``.
+        """
+        with self._lock:
+            # Confidence trigger — fires regardless of state. A value
+            # exactly equal to the threshold is NOT a trigger (strict
+            # less-than per SRS FR-36 "< 0.65").
+            if confidence < INTENT_CONFIDENCE_THRESHOLD:
+                self.state = "ESCALATED"
+                self.turn_count += 1
+                return "ESCALATED"
+            # Round trigger — only applies while the FSM is in
+            # SLOT_FILLING (other states do not consume slot-filling
+            # rounds). ``>=`` so that exactly 3 rounds triggers
+            # escalation, matching the spec-pinned
+            # ``MAX_SLOT_FILLING_ROUNDS == 3`` semantics.
+            if (
+                self.state == "SLOT_FILLING"
+                and slot_filling_rounds >= MAX_SLOT_FILLING_ROUNDS
+            ):
+                self.state = "ESCALATED"
+                self.turn_count += 1
+                return "ESCALATED"
+            return self.state
