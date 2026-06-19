@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """[FR-18] PIIMasking — detect and mask Taiwan phone / email / address / credit-card.
 
 SRS FR-18: "PIIMasking: 偵測並遮蔽電話 (台灣格式 \\d{10,11}), Email,
@@ -24,9 +26,13 @@ Detection order matters:
 Citations:
     - SRS.md FR-18 (PIIMasking acceptance criteria — four PII types,
       Luhn validation, mask_count accuracy, placeholder convention)
+    - SRS.md FR-20 (pii_audit_log write per mask event; 90-day
+      anonymization via FR-91 retention policy)
     - 02-architecture/TEST_SPEC.md FR-18 (cases 1-7: phone, email,
       address, Luhn-valid CC, Luhn-invalid CC, multi-PII mask_count,
       mask_format placeholder)
+    - 02-architecture/TEST_SPEC.md FR-20 (cases 1-3: audit log write,
+      conversation_id field, 90-day anonymize schedule)
     - 03-development/tests/test_fr18.py:101-148 (phone TW-format case)
     - 03-development/tests/test_fr18.py:154-194 (email case)
     - 03-development/tests/test_fr18.py:200-242 (Taiwan address case)
@@ -34,9 +40,10 @@ Citations:
     - 03-development/tests/test_fr18.py:302-352 (Luhn-invalid credit card)
     - 03-development/tests/test_fr18.py:358-413 (multi-PII mask_count)
     - 03-development/tests/test_fr18.py:419-489 (mask_format placeholder)
+    - 03-development/tests/test_fr20.py:101-159 (mask_event_writes_audit_log)
+    - 03-development/tests/test_fr20.py:163-217 (audit_log_has_conversation_id)
+    - 03-development/tests/test_fr20.py:245-288 (90day_anonymize_scheduled)
 """
-
-from __future__ import annotations
 
 import re
 from dataclasses import dataclass
@@ -104,6 +111,37 @@ class MaskResult:
 
 
 # ---------------------------------------------------------------------------
+# [FR-20] Audit log record — one row per successful mask() call.
+#
+# Field names mirror SRS FR-20 verbatim so a downstream privacy-officer
+# query (FR-60) does not have to remap columns: ``conversation_id``,
+# ``mask_count``, ``pii_types``, ``action``, ``performed_by``.
+# ---------------------------------------------------------------------------
+@dataclass(frozen=True)
+class AuditEntry:
+    """[FR-20] One row in the ``pii_audit_log``.
+
+    Attributes:
+        conversation_id: ID of the originating conversation — lets a
+            privacy officer correlate the scrub to its session.
+        mask_count:      number of PII substrings masked in this event.
+        pii_types:       ordered tuple of pii_type strings actually
+            masked (e.g. ``("phone", "email")``). Preserves detection
+            order for forensic replay.
+        action:          action token (always ``"mask"`` here; reserved
+            for future audit actions such as ``"unmask_admin"``).
+        performed_by:    role / service identifier that invoked
+            ``mask()`` (default ``"system"``).
+    """
+
+    conversation_id: str
+    mask_count: int
+    pii_types: tuple[str, ...]
+    action: str
+    performed_by: str
+
+
+# ---------------------------------------------------------------------------
 # Masker
 # ---------------------------------------------------------------------------
 class PIIMasking:
@@ -124,6 +162,13 @@ class PIIMasking:
         "address": "[address_masked]",
         "credit_card": "[credit_card_masked]",
     }
+
+    # [FR-20] In-memory pii_audit_log. Every successful ``mask()`` call
+    # appends one ``AuditEntry``. Class-level (not instance-level) so the
+    # log survives instance churn and the scheduler (FR-91) can read it
+    # via the class accessor without holding a masker instance. A real
+    # deployment writes to a DB; this list is the test-visible surrogate.
+    _audit_log: list[AuditEntry] = []  # type: ignore[assignment]
 
     # -- public API --------------------------------------------------------
 
@@ -152,8 +197,26 @@ class PIIMasking:
         "提款卡",
     )
 
-    def mask(self, text: str) -> MaskResult:
-        """[FR-18] Detect and mask every PII substring in ``text``.
+    def mask(
+        self,
+        text: str,
+        *,
+        conversation_id: str = "unknown",
+        performed_by: str = "system",
+    ) -> MaskResult:
+        """[FR-18, FR-20] Detect + mask every PII substring AND emit one
+        ``pii_audit_log`` row per call.
+
+        Args:
+            text: free-form input that may contain phone / email /
+                address / credit-card substrings.
+            conversation_id: ID of the originating conversation. Defaults
+                to ``"unknown"`` so callers that pre-date the FR-20 audit
+                hook (FR-18 happy-path tests) keep working; production
+                callers MUST pass the real conversation_id so the row
+                is correlatable for §30 GDPR / §17 個資法 reporting.
+            performed_by: role or service identifier that invoked
+                ``mask()`` (default ``"system"``).
 
         Returns:
             MaskResult with the rewritten text, total mask count, and
@@ -164,11 +227,48 @@ class PIIMasking:
             masked, found = self._apply_pattern(masked, pattern, pii_type)
             types.extend(found)
 
-        return MaskResult(
+        result = MaskResult(
             masked_text=masked,
             mask_count=len(types),
             masked_types=tuple(types),
         )
+
+        # [FR-20] Fire the audit write from inside mask() so any future
+        # caller path automatically participates. The fields mirror
+        # SRS FR-20 verbatim; no remap is needed for downstream queries.
+        PIIMasking._audit_log.append(
+            AuditEntry(
+                conversation_id=conversation_id,
+                mask_count=result.mask_count,
+                pii_types=result.masked_types,
+                action="mask",
+                performed_by=performed_by,
+            )
+        )
+
+        return result
+
+    @classmethod
+    def read_audit_log(cls) -> list[AuditEntry]:
+        """[FR-20] Return a snapshot of the in-memory ``pii_audit_log``.
+
+        Returns:
+            List of ``AuditEntry`` in write order (oldest first). The
+            list is a snapshot — the caller cannot mutate the live
+            buffer via the returned reference because we hand back a
+            shallow copy.
+        """
+        return list(cls._audit_log)
+
+    @classmethod
+    def clear_audit_log(cls) -> None:
+        """[FR-20] Reset the in-memory ``pii_audit_log``.
+
+        Provided for test isolation only. A real deployment persists to
+        a DB; the reset is safe here because the audit-log buffer is
+        purely the test-visible surrogate.
+        """
+        cls._audit_log.clear()
 
     def should_escalate(self, text: str) -> bool:
         """[FR-19] Return True iff ``text`` carries a PII-escalation keyword.

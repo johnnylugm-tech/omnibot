@@ -841,7 +841,7 @@ _BLOCK_REASON_CRITICAL_RISK = "critical_risk"
 _RETROSPECTIVE_BLOCK_EVENT = "injection_retrospective_block"
 
 
-def _noop_security_log_writer(**payload) -> None:  # noqa: ARG001
+def _noop_security_log_writer(**payload) -> None:
     """[FR-16] Default no-op for ``PALADINPipeline.security_log_writer``.
 
     Lets the pipeline accept the writer as an optional dependency so

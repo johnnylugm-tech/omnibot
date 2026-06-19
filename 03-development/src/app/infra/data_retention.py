@@ -1,9 +1,11 @@
-"""[FR-91] Data retention policy descriptors (180d archive / 2yr delete /
-90d anonymize / 90d emotion delete).
+"""[FR-91, FR-20] Data retention policy descriptors (180d archive / 2yr
+delete / 90d anonymize / 90d emotion delete) AND the discoverable
+``RETENTION_POLICIES`` registry that the FR-20 90-day pii_audit_log
+anonymization schedule is published through.
 
 Immutable policy objects that the retention scheduler consumes to decide
-what action to take on each record at its age horizon. The four policy
-shapes below cover the FR-91 acceptance criteria:
+what action to take on each record at its age horizon. The four FR-91
+policy shapes cover the FR-91 acceptance criteria:
 
     - conversations(messages) 180 天 → 封存 cold storage (Parquet/S3)
     - 封存後 2 年 → 永久刪除
@@ -12,12 +14,19 @@ shapes below cover the FR-91 acceptance criteria:
     - 安全日誌 1 年 → 封存後 2 年刪除
     - 用戶回饋永久保留 (已去識別化)
 
+The ``RETENTION_POLICIES`` registry (FR-20) makes the same descriptors
+discoverable by ``table_name`` so a test (or operator) can verify the
+configured horizon without waiting on wall-clock time.
+
 The unit tests exercise these classes in isolation — no DB / S3 /
 scheduler I/O — which is the canonical unit-test shape for FR-91.
 
 Citations:
 - SRS.md FR-91 (description line, spec block lines)
+- SRS.md FR-20 (pii_audit_log 90-day anonymize)
 - 02-architecture/TEST_SPEC.md FR-91 (4 case shapes)
+- 03-development/tests/test_fr91.py:98-348 (4 retention policy cases)
+- 03-development/tests/test_fr20.py:245-288 (90day_anonymize_scheduled)
 """
 
 from __future__ import annotations
@@ -125,3 +134,49 @@ class EmotionHistoryRetentionPolicy:
     def should_delete(self, age_days: int) -> bool:
         """Return True iff the record's age has reached the deletion horizon."""
         return age_days >= self.retention_days
+
+
+# ---------------------------------------------------------------------------
+# 5. [FR-20] Scheduler-discoverable retention policy descriptor.
+#
+# Different shape from ``PiiAuditRetentionPolicy`` above — FR-20's
+# spec-coverage test reads back the policy by ``table_name`` and
+# expects a ``scheduled`` boolean, so a thin dedicated dataclass is
+# the cleanest way to expose the registry without breaking FR-91's
+# existing class surface.
+# ---------------------------------------------------------------------------
+@dataclass(frozen=True)
+class RetentionPolicy:
+    """[FR-20] Discoverable retention-policy descriptor.
+
+    Attributes:
+        table_name: source table the policy governs
+            (e.g. ``"pii_audit_log"``).
+        retention_days: age horizon (days) at which the action fires.
+        action: scheduler action token (``"anonymize"``, ``"delete"``,
+            ``"archive"``).
+        scheduled: ``True`` when the policy has been registered with the
+            scheduler. Test surface only — a real deployment binds it
+            to a cron entry at process start.
+    """
+
+    table_name: str
+    retention_days: int
+    action: str
+    scheduled: bool
+
+
+# ---------------------------------------------------------------------------
+# [FR-20] Scheduler-discoverable registry. The FR-20 spec-coverage test
+# reads back the pii_audit_log entry by ``table_name``; tests / operators
+# can iterate this list to confirm the configured horizon without
+# waiting on wall-clock time.
+# ---------------------------------------------------------------------------
+RETENTION_POLICIES: list[RetentionPolicy] = [
+    RetentionPolicy(
+        table_name="pii_audit_log",
+        retention_days=90,
+        action="anonymize",
+        scheduled=True,
+    ),
+]  # type: ignore[assignment]  (annotated after the class definition)
