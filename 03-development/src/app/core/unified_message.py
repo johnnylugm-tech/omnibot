@@ -12,8 +12,8 @@ expressed as a new instance via ``dataclasses.replace`` rather than by mutating
 the original.
 
 Citations:
-    - SRS.md:30 — FR-07 acceptance criteria: "UnifiedMessage 資料結構：
-      immutable dataclass，欄位含 platform(Platform enum), platform_user_id,
+    - SRS.md:30 — FR-07 acceptance criteria: "UnifiedMessage 資料結構:
+      immutable dataclass, 欄位含 platform(Platform enum), platform_user_id,
       unified_user_id(Optional), message_type(MessageType enum), content,
       raw_payload, received_at, reply_token(LINE 特有)。所有平台訊息皆可
       建立合法 UnifiedMessage 實例；frozen=True 確保不可變"

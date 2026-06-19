@@ -10,7 +10,7 @@ shapes below cover the FR-91 acceptance criteria:
     - PII 稽核日誌 90 天 → 自動匿名化
     - 情緒歷史 90 天 → 刪除
     - 安全日誌 1 年 → 封存後 2 年刪除
-    - 用戶回饋永久保留（已去識別化）
+    - 用戶回饋永久保留 (已去識別化)
 
 The unit tests exercise these classes in isolation — no DB / S3 /
 scheduler I/O — which is the canonical unit-test shape for FR-91.

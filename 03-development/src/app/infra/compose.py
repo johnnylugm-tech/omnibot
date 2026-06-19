@@ -2,7 +2,7 @@
 ``/api/v1/health`` 端點契約。
 
 This module is the **stateless descriptor** for the FR-95 dev stack
-(``docker compose up`` 後所有 services healthy；health 端點回 200).
+(``docker compose up`` 後所有 services healthy; health 端點回 200).
 ``ComposeHealth`` is the in-memory abstraction exercised by unit tests
 and by the FastAPI route handler that exposes ``/api/v1/health``;
 nothing here performs real Docker / docker-compose / HTTP I/O — those
@@ -25,7 +25,6 @@ Citations:
 """
 
 from __future__ import annotations
-
 from typing import Iterable
 
 
