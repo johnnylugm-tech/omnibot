@@ -48,6 +48,29 @@ def _detect_language(script: str) -> str:
     return "bash"
 
 
+# Grace period between Popen and the watchdog's signal dispatch. Small enough
+# that the interpreter has barely started (so ``kill_signal`` reliably lands
+# mid-flight) and large enough that ``Popen`` has actually launched a PID.
+_KILL_SIGNAL_GRACE_SECONDS = 0.05
+
+
+def _fail_with_output(
+    output: Optional[str],
+    error_message: str,
+) -> ToolExecutionResult:
+    """Failure envelope that preserves ``output`` (e.g. captured stdout).
+
+    Distinct from the FR-39 ``fail()`` factory, which forces ``output=None``;
+    on subprocess failure we want to surface whatever the process did emit
+    before exiting non-zero, for diagnostics.
+    """
+    return ToolExecutionResult(
+        success=False,
+        output=output,
+        error_message=error_message,
+    )
+
+
 class CLIAdapter(ActionAdapter):
     """[FR-39] [FR-42] CLI 協定 adapter — ``list_tools`` / ``execute`` + ``run_script``.
 
@@ -151,42 +174,23 @@ class CLIAdapter(ActionAdapter):
                 check=False,
             )
         except subprocess.TimeoutExpired:
-            return ToolExecutionResult(
-                success=False,
-                output=None,
-                error_message=(
-                    f"timeout: process exceeded {timeout_seconds}s "
-                    f"and was terminated"
-                ),
+            return fail(
+                f"timeout: process exceeded {timeout_seconds}s and was terminated"
             )
         except FileNotFoundError as exc:
-            return ToolExecutionResult(
-                success=False,
-                output=None,
-                error_message=f"interpreter not found: {exc}",
-            )
+            return fail(f"interpreter not found: {exc}")
         except Exception as exc:  # noqa: BLE001 — surface as structured error
-            return ToolExecutionResult(
-                success=False,
-                output=None,
-                error_message=f"subprocess error: {exc}",
-            )
+            return fail(f"subprocess error: {exc}")
 
         if completed.returncode == 0:
-            return ToolExecutionResult(
-                success=True,
-                output=completed.stdout,
-                error_message=None,
-            )
+            return ok(completed.stdout)
 
         # Non-zero exit → failure path. Prefer stderr; fall back to exit code
         # label so the envelope always carries a non-empty error_message.
         stderr_text = (completed.stderr or "").strip()
-        error_message = stderr_text or f"exit code {completed.returncode}"
-        return ToolExecutionResult(
-            success=False,
-            output=completed.stdout,
-            error_message=error_message,
+        return _fail_with_output(
+            completed.stdout,
+            stderr_text or f"exit code {completed.returncode}",
         )
 
     def _run_with_external_kill(
@@ -198,11 +202,7 @@ class CLIAdapter(ActionAdapter):
         """[FR-42] NP-07 fault-injection path: send ``kill_signal`` mid-flight."""
         sig = getattr(signal, kill_signal_name, None)
         if sig is None:
-            return ToolExecutionResult(
-                success=False,
-                output=None,
-                error_message=f"unknown signal: {kill_signal_name}",
-            )
+            return fail(f"unknown signal: {kill_signal_name}")
 
         try:
             proc = subprocess.Popen(  # noqa: S603 — argv list, no shell
@@ -212,27 +212,17 @@ class CLIAdapter(ActionAdapter):
                 text=True,
             )
         except FileNotFoundError as exc:
-            return ToolExecutionResult(
-                success=False,
-                output=None,
-                error_message=f"interpreter not found: {exc}",
-            )
+            return fail(f"interpreter not found: {exc}")
         except Exception as exc:  # noqa: BLE001
-            return ToolExecutionResult(
-                success=False,
-                output=None,
-                error_message=f"subprocess error: {exc}",
-            )
+            return fail(f"subprocess error: {exc}")
 
-        # Watchdog: send the requested signal ~50 ms after start so the
-        # interpreter is actually running before we kill it. Daemon thread
-        # so it never blocks process exit.
-        proc_ref = proc
-
+        # Watchdog: send the requested signal after a short grace period so
+        # the interpreter is actually running before we kill it. Daemon
+        # thread so it never blocks process exit.
         def _send_signal() -> None:
-            time.sleep(0.05)
+            time.sleep(_KILL_SIGNAL_GRACE_SECONDS)
             try:
-                proc_ref.send_signal(sig)
+                proc.send_signal(sig)
             except (ProcessLookupError, OSError):
                 # Process may have already exited; nothing to do.
                 pass
@@ -249,14 +239,9 @@ class CLIAdapter(ActionAdapter):
                 proc.kill()
             except (ProcessLookupError, OSError):
                 pass
-            stdout, stderr = proc.communicate()
-            return ToolExecutionResult(
-                success=False,
-                output=None,
-                error_message=(
-                    f"timeout: process exceeded {timeout_seconds}s "
-                    f"and was terminated"
-                ),
+            proc.communicate()
+            return fail(
+                f"timeout: process exceeded {timeout_seconds}s and was terminated"
             )
 
         returncode = proc.returncode
@@ -268,26 +253,16 @@ class CLIAdapter(ActionAdapter):
                 actual_name = signal.Signals(sig_num).name
             except ValueError:
                 actual_name = kill_signal_name
-            return ToolExecutionResult(
-                success=False,
-                output=stdout,
-                error_message=(
-                    f"process killed by signal {actual_name} "
-                    f"(signal number {sig_num})"
-                ),
+            return _fail_with_output(
+                stdout,
+                f"process killed by signal {actual_name} (signal number {sig_num})",
             )
 
         if returncode == 0:
-            return ToolExecutionResult(
-                success=True,
-                output=stdout,
-                error_message=None,
-            )
+            return ok(stdout)
 
         stderr_text = (stderr or "").strip()
-        error_message = stderr_text or f"exit code {returncode}"
-        return ToolExecutionResult(
-            success=False,
-            output=stdout,
-            error_message=error_message,
+        return _fail_with_output(
+            stdout,
+            stderr_text or f"exit code {returncode}",
         )
