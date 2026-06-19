@@ -282,9 +282,7 @@ class DialogueState:
         """
         with self._lock:
             if self._escalation_triggered(slot_filling_rounds, confidence):
-                self.state = "ESCALATED"
-                self.turn_count += 1
-                return "ESCALATED"
+                return self._apply_transition("ESCALATED")
             return self.state
 
     def _escalation_triggered(
@@ -311,6 +309,25 @@ class DialogueState:
             self.state == "SLOT_FILLING"
             and slot_filling_rounds >= MAX_SLOT_FILLING_ROUNDS
         )
+
+    def _apply_transition(self, new_state: str) -> str:
+        """Apply a side-channel state mutation (caller MUST hold ``_lock``).
+
+        [NP-13] Every side-channel transition in this class performs
+        the same triple: set ``self.state``, increment
+        ``self.turn_count``, return the new state. Pulled out so the
+        side-channel contract is defined once and the helper can be
+        audited independently of the trigger logic that calls it.
+
+        Distinct from ``transition()``: ``transition()`` validates
+        against ``ALLOWED_TRANSITIONS`` first; side-channel
+        transitions (escalation, confirm, deny) bypass that check
+        intentionally because their target states are not legal
+        normal-FSM successors.
+        """
+        self.state = new_state
+        self.turn_count += 1
+        return new_state
 
     def handle_confirmation(
         self, user_response: str, awaiting_rounds: int = 0
@@ -342,32 +359,42 @@ class DialogueState:
           ``transition`` / ``auto_escalate`` lock discipline.
         """
         with self._lock:
-            # Timeout trigger — state guard prevents spurious
-            # escalation when the FSM has already moved past
-            # AWAITING_CONFIRMATION (e.g. concurrent advance to
-            # PROCESSING between round count and handler call).
-            if (
-                self.state == "AWAITING_CONFIRMATION"
-                and awaiting_rounds >= MAX_AWAITING_CONFIRMATION_ROUNDS
-            ):
-                self.state = "ESCALATED"
-                self.turn_count += 1
-                return "ESCALATED"
-            # Confirm trigger — bypasses ``transition()`` to keep all
-            # three branches in one atomic block; PROCESSING is a
-            # legal successor so this is purely a style choice (the
-            # legal-edge semantics are unchanged).
-            if user_response == "confirm":
-                self.state = "PROCESSING"
-                self.turn_count += 1
-                return "PROCESSING"
-            # Deny trigger — MUST bypass ``transition()`` because
-            # AWAITING_CONFIRMATION → SLOT_FILLING is NOT in
-            # ``ALLOWED_TRANSITIONS`` (only AWAITING_CONFIRMATION →
-            # PROCESSING is). Same side-channel pattern as
-            # ``auto_escalate``.
-            if user_response == "deny":
-                self.state = "SLOT_FILLING"
-                self.turn_count += 1
-                return "SLOT_FILLING"
-            return self.state
+            target = self._confirmation_target(user_response, awaiting_rounds)
+            if target is None:
+                return self.state
+            return self._apply_transition(target)
+
+    def _confirmation_target(
+        self, user_response: str, awaiting_rounds: int
+    ) -> str | None:
+        """Pure predicate: which target state should ``handle_confirmation``
+        move the FSM to (or ``None`` if no trigger fires)?
+
+        [FR-37] Pulled out of ``handle_confirmation`` so the three
+        triggers (timeout, confirm, deny) live next to each other in
+        the spec-mandated precedence order, and the side effects
+        (state mutation + ``turn_count`` increment via
+        ``_apply_transition``) are not repeated.
+
+        Precedence is spec-mandated:
+          - Timeout fires BEFORE confirm/deny because SRS FR-37
+            "超過 2 輪未確認 → ESCALATED" applies regardless of what
+            the user said in this round.
+          - Confirm fires before deny; they are mutually exclusive
+            on a single ``user_response`` string, so the order is
+            documentation rather than behavioural.
+        """
+        # Timeout trigger — state guard prevents spurious escalation
+        # when the FSM has already moved past AWAITING_CONFIRMATION
+        # (e.g. concurrent advance to PROCESSING between round count
+        # and handler call).
+        if (
+            self.state == "AWAITING_CONFIRMATION"
+            and awaiting_rounds >= MAX_AWAITING_CONFIRMATION_ROUNDS
+        ):
+            return "ESCALATED"
+        if user_response == "confirm":
+            return "PROCESSING"
+        if user_response == "deny":
+            return "SLOT_FILLING"
+        return None
