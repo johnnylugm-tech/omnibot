@@ -419,6 +419,30 @@ class HybridKnowledge:
         del query
         return None
 
+    @staticmethod
+    def _record_tier_hit(
+        sequence: list[str],
+        tier_tag: str,
+        result: KnowledgeResult | None,
+        threshold: float,
+    ) -> KnowledgeResult | None:
+        """[FR-33] Tag the sequence and gate ``result`` against ``threshold``.
+
+        Records ``tier_tag`` in ``sequence`` so the consultation order is
+        visible on the winning result, then returns ``result`` only when
+        it is non-None AND clears ``threshold``; otherwise returns
+        ``None`` so the orchestrator can fall through to the next tier.
+
+        On a hit, ``tier_sequence`` is attached via ``object.__setattr__``
+        to bypass the FR-32 frozen-dataclass guard — the attribute is
+        written exactly once per result and is read-only thereafter.
+        """
+        sequence.append(tier_tag)
+        if result is not None and result.confidence >= threshold:
+            object.__setattr__(result, "tier_sequence", list(sequence))
+            return result
+        return None
+
     def query(self, query: str) -> KnowledgeResult:
         """[FR-33] Tier 1 → Tier 4 sequential orchestrator.
 
@@ -451,28 +475,31 @@ class HybridKnowledge:
         sequence: list[str] = []
 
         # --- Tier 1: ILIKE rule match ---
-        sequence.append("t1")
         tier1 = self._rule_match(query)
-        if tier1 is not None and tier1.confidence >= self.CONFIDENCE_THRESHOLD:
-            object.__setattr__(tier1, "tier_sequence", list(sequence))
-            return tier1
+        hit = self._record_tier_hit(
+            sequence, "t1", tier1, self.CONFIDENCE_THRESHOLD
+        )
+        if hit is not None:
+            return hit
 
         # --- Tier 2: RAG short-circuit ---
         # Confidence is 0.0 here so the gate at ``RAG_CONFIDENCE_THRESHOLD``
         # (0.85) trips and Tier-2 returns ``None`` in the no-context
         # case. A wiring layer that pre-computes confidence feeds it in.
-        sequence.append("t2")
         tier2 = self._rag_search(query, confidence=0.0)
-        if tier2 is not None and tier2.confidence >= self.RAG_CONFIDENCE_THRESHOLD:
-            object.__setattr__(tier2, "tier_sequence", list(sequence))
-            return tier2
+        hit = self._record_tier_hit(
+            sequence, "t2", tier2, self.RAG_CONFIDENCE_THRESHOLD
+        )
+        if hit is not None:
+            return hit
 
         # --- Tier 3: LLM generation with grounding gate ---
-        sequence.append("t3")
         tier3 = self._llm_call(query)
-        if tier3 is not None and tier3.confidence >= self.LLM_CONFIDENCE_THRESHOLD:
-            object.__setattr__(tier3, "tier_sequence", list(sequence))
-            return tier3
+        hit = self._record_tier_hit(
+            sequence, "t3", tier3, self.LLM_CONFIDENCE_THRESHOLD
+        )
+        if hit is not None:
+            return hit
 
         # --- Tier 4: human escalation sentinel (terminal) ---
         sequence.append("t4")
