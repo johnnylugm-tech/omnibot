@@ -1,12 +1,18 @@
 """[FR-46] EmotionAnalyzer — positive / neutral / negative + intensity [0.0, 1.0].
+[FR-47] EmotionTracker — 24hr half-life exponential decay.
 
-Spec source: 02-architecture/TEST_SPEC.md (FR-46)
-SRS source : SRS.md FR-46 (Module 8: Emotion Analyzer)
+Spec source: 02-architecture/TEST_SPEC.md (FR-46, FR-47)
+SRS source : SRS.md FR-46, FR-47 (Module 8: Emotion Analyzer)
 
 FR-46 -- EmotionAnalyzer:
     Classify emotion into ``positive`` / ``neutral`` / ``negative``; the
     intensity MUST lie in the closed interval ``[0.0, 1.0]``; every
     classification produces an ``EmotionScore`` record.
+
+FR-47 -- EmotionTracker:
+    Apply 24hr half-life exponential decay
+    (``decay = exp(-0.693 * hours_ago / 24.0)``) via
+    ``current_weighted_score()``; recent emotion carries higher weight.
 
 The classifier is a deliberately small keyword-driven heuristic — the
 FR-46 contract only requires (a) a non-None ``EmotionScore`` for any
@@ -20,10 +26,15 @@ Citations:
     - SRS.md FR-46 -- "分類情緒為 positive/neutral/negative" (line 104).
     - SRS.md FR-46 -- "intensity 範圍 0.0–1.0" (line 104).
     - SRS.md FR-46 -- "每次分析建立 EmotionScore 記錄" (line 104).
+    - SRS.md FR-47 -- "EmotionTracker 以 24hr half-life 指數衰減" (line 105).
+    - SRS.md FR-47 -- "decay = exp(-0.693 * hours_ago / 24.0)" (line 105).
+    - SRS.md FR-47 -- "24hr 後權重降至 50%" (line 105).
+    - SRS.md FR-47 -- "近期情緒權重更高" (line 105).
 """
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 # ---------------------------------------------------------------------------
@@ -35,6 +46,17 @@ from dataclasses import dataclass
 VALID_CATEGORIES: frozenset[str] = frozenset({"positive", "neutral", "negative"})
 INTENSITY_MIN: float = 0.0
 INTENSITY_MAX: float = 1.0
+
+# ---------------------------------------------------------------------------
+# SRS FR-47 -- 24hr half-life exponential decay. ``0.693`` in the SRS is a
+# rounded shorthand for ``ln(2)``; using the exact constant collapses the
+# formula ``exp(-ln(2) * hours_ago / 24.0)`` to exactly ``0.5`` when
+# ``hours_ago == 24`` (one half-life elapsed). Kept as a named module
+# constant so the decay rate is anchored to a single source of truth and
+# remains auditable in code review.
+# ---------------------------------------------------------------------------
+HALF_LIFE_HOURS: float = 24.0
+_DECAY_K: float = math.log(2.0)  # == 0.6931471805599453; SRS FR-47 writes 0.693 as shorthand
 
 # ---------------------------------------------------------------------------
 # Minimal lexicon. Production wiring would back this with a richer lexicon
@@ -113,6 +135,42 @@ class EmotionAnalyzer:
         return emotion_classify(text)
 
 
+class EmotionTracker:
+    """[FR-47] Temporal-decay tracker — applies 24hr half-life exponential decay.
+
+    Wraps :func:`emotion_current_weighted_score` with a class-level entry
+    point so callers that hold tracker state (e.g. a rolling emotion
+    history) can inject the tracker and call :meth:`current_weighted_score`
+    without re-deriving the half-life constant at every call site. The
+    constructor takes no arguments — the decay law is a fixed module
+    constant, so every :class:`EmotionTracker` instance is
+    interchangeable.
+
+    Citations:
+        - SRS.md FR-47 -- "EmotionTracker 以 24hr half-life 指數衰減" (line 105).
+        - SRS.md FR-47 -- "decay = exp(-0.693 * hours_ago / 24.0)" (line 105).
+        - SRS.md FR-47 -- "計算 current_weighted_score()" (line 105).
+    """
+
+    def current_weighted_score(self, score: float, hours_ago: float) -> float:
+        """Return ``score`` weighted by 24hr half-life exponential decay.
+
+        Implements ``score * exp(-0.693 * hours_ago / 24.0)``. Boundary
+        cases pinned by the SRS FR-47 acceptance criteria:
+
+        - ``hours_ago == 24`` ⇒ weight == 0.5 (one half-life elapsed).
+        - ``hours_ago == 0``  ⇒ weight == ``score`` (no time elapsed).
+        - ``hours_ago`` strictly increasing ⇒ weight strictly decreasing
+          (recent emotion carries more weight than older emotion with
+          the same raw score).
+
+        Citations:
+            - SRS.md FR-47 -- "24hr 後權重降至 50%" (line 105).
+            - SRS.md FR-47 -- "近期情緒權重更高" (line 105).
+        """
+        return emotion_current_weighted_score(score=score, hours_ago=hours_ago)
+
+
 def _has_any_keyword(haystack: str, keywords: frozenset[str]) -> bool:
     """True iff any keyword appears as a substring of ``haystack``."""
     return any(keyword in haystack for keyword in keywords)
@@ -156,11 +214,33 @@ def emotion_classify(text: str) -> EmotionScore:
     return EmotionScore(category="neutral", intensity=0.5)
 
 
+def emotion_current_weighted_score(score: float, hours_ago: float) -> float:
+    """[FR-47] Functional entry point — apply 24hr half-life decay.
+
+    Mirrors :meth:`EmotionTracker.current_weighted_score` so callers that
+    prefer a free function can use the same arithmetic without
+    instantiating a class. The decay formula is the literal SRS FR-47
+    expression::
+
+        decay = exp(-0.693 * hours_ago / 24.0)
+        weight = score * decay
+
+    Citations:
+        - SRS.md FR-47 -- implementation function ``emotion_current_weighted_score`` (line 808).
+        - SRS.md FR-47 -- "decay = exp(-0.693 * hours_ago / 24.0)" (line 105).
+    """
+    decay = math.exp(-_DECAY_K * float(hours_ago) / HALF_LIFE_HOURS)
+    return float(score) * decay
+
+
 __all__ = [
     "EmotionAnalyzer",
     "EmotionScore",
+    "EmotionTracker",
     "emotion_classify",
+    "emotion_current_weighted_score",
     "VALID_CATEGORIES",
     "INTENSITY_MIN",
     "INTENSITY_MAX",
+    "HALF_LIFE_HOURS",
 ]

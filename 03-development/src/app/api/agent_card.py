@@ -1,7 +1,7 @@
 """OmniBot Agent Card endpoint — FR-44.
 
 [FR-44] OmniBot Agent Card: GET /.well-known/agent.json 回傳 Agent Card JSON
-（name, description, url, version, capabilities, methods, auth_schemes）；
+(name, description, url, version, capabilities, methods, auth_schemes)；
 methods: [ask_customer_service, escalate_to_human].
 
 Citations:
