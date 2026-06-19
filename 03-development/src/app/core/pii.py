@@ -1,0 +1,255 @@
+"""[FR-18] PIIMasking — detect and mask Taiwan phone / email / address / credit-card.
+
+SRS FR-18: "PIIMasking：偵測並遮蔽電話（台灣格式 \\d{10,11}）、Email、
+台灣地址（市縣路街巷弄號樓正則）、信用卡（16 位 + Luhn 校驗）；遮蔽
+格式 `[{pii_type}_masked]`。所有四類 PII 正確遮蔽；信用卡 Luhn 校驗
+失敗者不遮蔽；mask_count 正確回傳。"
+
+The masker is pure-Python (regex + Luhn checksum). It performs no I/O so
+the call fits inside the request hot path without extra latency budget.
+
+Detection order matters:
+    1. credit_card — 16 consecutive digits that PASS Luhn. Word-bounded so
+       a 10/11-digit phone substring is not promoted to credit_card.
+       Checked first so a Luhn-valid PAN is masked as credit_card rather
+       than as phone. Luhn-invalid 16-digit runs are left untouched.
+    2. phone       — Taiwan mobile / landline ``\\b\\d{10,11}\\b``.
+       Word boundaries prevent a phone match from slicing out of a
+       longer digit run (e.g. a Luhn-invalid 16-digit tracking number).
+    3. email       — ``\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b``.
+    4. address     — Taiwan address ``[一-鿿]+市/縣 + …路/街 + …號/樓`` lazy
+       match; the lazy quantifiers keep the match tight enough to swallow
+       the entire address fragment that triggered the rule.
+
+Citations:
+    - SRS.md FR-18 (PIIMasking acceptance criteria — four PII types,
+      Luhn validation, mask_count accuracy, placeholder convention)
+    - 02-architecture/TEST_SPEC.md FR-18 (cases 1-7: phone, email,
+      address, Luhn-valid CC, Luhn-invalid CC, multi-PII mask_count,
+      mask_format placeholder)
+    - 03-development/tests/test_fr18.py:101-148 (phone TW-format case)
+    - 03-development/tests/test_fr18.py:154-194 (email case)
+    - 03-development/tests/test_fr18.py:200-242 (Taiwan address case)
+    - 03-development/tests/test_fr18.py:248-296 (Luhn-valid credit card)
+    - 03-development/tests/test_fr18.py:302-352 (Luhn-invalid credit card)
+    - 03-development/tests/test_fr18.py:358-413 (multi-PII mask_count)
+    - 03-development/tests/test_fr18.py:419-489 (mask_format placeholder)
+"""
+
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass
+
+
+# ---------------------------------------------------------------------------
+# Pattern catalogue
+# ---------------------------------------------------------------------------
+# Phone: word-bounded 10 or 11 consecutive digits. The word-boundary
+# anchors on BOTH sides are mandatory — without them, ``\\d{10,11}`` would
+# happily slice the first 11 digits out of a 16-digit credit-card
+# candidate, producing a false-positive phone match and a corrupted
+# ``mask_count``. With ``\\b``, the regex only fires when the digit run
+# is exactly 10 or 11 characters long (so a 16-digit tracking number
+# never matches as a phone).
+_PHONE_RE = re.compile(r"\b\d{10,11}\b")
+
+# Credit card: 16 consecutive digits, word-bounded. A Luhn check gates
+# the actual replacement so Luhn-invalid 16-digit strings (order IDs,
+# tracking numbers) survive verbatim. The gate lives in ``_mask_credit_card``
+# below, not in the regex.
+_CREDIT_CARD_RE = re.compile(r"\b\d{16}\b")
+
+# Email: pragmatic RFC-ish pattern. Avoids whitespace / angle brackets so
+# the match is safe to splice back into a log line.
+_EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
+
+# Taiwan address: ``<chinese>+市/縣 + <mixed>* + 路/街 + <mixed>* + 號/樓``.
+# Lazy quantifiers on every internal step keep the match from running
+# past the address fragment into unrelated Chinese text that happens to
+# follow on the same line. ``<mixed>`` includes digits so the trailing
+# ``7號`` in ``信義路五段7號`` is swallowed by the rule — without digits
+# in the char class, the regex stops at the boundary between Chinese
+# (``五段``) and the Arabic numeral (``7``) and leaves the address
+# fragment unmasked.
+_ADDRESS_RE = re.compile(
+    r"[一-鿿]+?[市縣]"
+    r"[0-9一-鿿]*?"
+    r"[路街巷]"
+    r"[0-9一-鿿]*?"
+    r"[號樓]"
+)
+
+
+# ---------------------------------------------------------------------------
+# Public result type
+# ---------------------------------------------------------------------------
+@dataclass(frozen=True)
+class MaskResult:
+    """[FR-18] Outcome of a single ``PIIMasking.mask()`` call.
+
+    Attributes:
+        masked_text:  text with every detected PII substring replaced by
+                      its canonical ``[<pii_type>_masked]`` placeholder.
+        mask_count:   total number of PII substrings masked (across all
+                      four types).
+        masked_types: tuple of pii_type strings, in detection order, so
+                      callers can render a per-type breakdown without
+                      re-scanning ``masked_text``.
+    """
+
+    masked_text: str
+    mask_count: int
+    masked_types: tuple[str, ...] = ()
+
+
+# ---------------------------------------------------------------------------
+# Masker
+# ---------------------------------------------------------------------------
+class PIIMasking:
+    """[FR-18] Detect and mask PII substrings inside free-form text.
+
+    The instance carries no state — every regex is a module-level compiled
+    pattern and Luhn validation is a pure function — so constructing an
+    instance is allocation-free and the object is safe to share across
+    threads.
+    """
+
+    # Canonical placeholder per PII type. Exposed as a class attribute so
+    # callers that prefer attribute access (``PIIMasking.MASK_FORMATS[...]``)
+    # resolve the same string ``get_mask_format(...)`` returns.
+    MASK_FORMATS: dict[str, str] = {
+        "phone": "[phone_masked]",
+        "email": "[email_masked]",
+        "address": "[address_masked]",
+        "credit_card": "[credit_card_masked]",
+    }
+
+    # -- public API --------------------------------------------------------
+
+    def mask(self, text: str) -> MaskResult:
+        """[FR-18] Detect and mask every PII substring in ``text``.
+
+        Detection runs in a fixed order (credit_card → phone → email →
+        address) so a Luhn-valid PAN is always masked as credit_card and
+        never demoted to phone. Luhn-invalid 16-digit runs are left
+        untouched by the credit_card pass, and the phone regex's word
+        boundaries prevent them from being misclassified as phones
+        either.
+
+        Returns:
+            MaskResult with the rewritten text, total mask count, and
+            the ordered tuple of pii_types that were actually masked.
+        """
+        masked, types = self._mask_credit_card(text)
+        masked, phone_types = self._mask_substring(masked, _PHONE_RE, "phone")
+        types = types + phone_types
+        masked, email_types = self._mask_substring(masked, _EMAIL_RE, "email")
+        types = types + email_types
+        masked, addr_types = self._mask_substring(masked, _ADDRESS_RE, "address")
+        types = types + addr_types
+
+        return MaskResult(
+            masked_text=masked,
+            mask_count=len(types),
+            masked_types=tuple(types),
+        )
+
+    def should_escalate(self, text: str) -> bool:
+        """[FR-19 hook] Reserved for the FR-19 escalation rule.
+
+        FR-18 does not exercise this method, but the SRS colocates
+        ``should_escalate`` on the same ``PIIMasking`` class. The default
+        implementation returns ``False`` so existing FR-18 callers are
+        unaffected when FR-19 lands.
+        """
+        del text  # silence linters; FR-19 will read the masked output
+        return False
+
+    @staticmethod
+    def get_mask_format(pii_type: str) -> str:
+        """[FR-18] Return the canonical placeholder for ``pii_type``.
+
+        Args:
+            pii_type: one of ``"phone"``, ``"email"``, ``"address"``,
+                ``"credit_card"``.
+
+        Returns:
+            The placeholder string ``f"[{pii_type}_masked]"``.
+
+        Raises:
+            ValueError: if ``pii_type`` is not one of the four supported
+                PII categories. Silently returning the raw key would let
+                a typo (``"phon"``) leak downstream renderers that
+                grep-parse the audit log for the canonical placeholder.
+        """
+        try:
+            return PIIMasking.MASK_FORMATS[pii_type]
+        except KeyError as exc:
+            raise ValueError(
+                f"unknown pii_type {pii_type!r}; expected one of "
+                f"{sorted(PIIMasking.MASK_FORMATS)!r}"
+            ) from exc
+
+    # -- internals ---------------------------------------------------------
+
+    def _mask_credit_card(self, text: str) -> tuple[str, list[str]]:
+        """Mask every 16-digit run whose Luhn checksum is valid.
+
+        Luhn-invalid runs are returned verbatim — they are almost
+        certainly tracking numbers / order IDs, not PANs, and masking
+        them would inflate the ``pii_masked_total`` audit counter.
+        """
+        types: list[str] = []
+        placeholder = self.get_mask_format("credit_card")
+
+        def _replace(match: re.Match[str]) -> str:
+            digits = match.group()
+            if self._luhn_valid(digits):
+                types.append("credit_card")
+                return placeholder
+            return digits
+
+        masked = _CREDIT_CARD_RE.sub(_replace, text)
+        return masked, types
+
+    @staticmethod
+    def _mask_substring(
+        text: str, pattern: re.Pattern[str], pii_type: str
+    ) -> tuple[str, list[str]]:
+        """Replace every match of ``pattern`` with the canonical placeholder.
+
+        Returns the rewritten text and the list of masked pii_types in
+        detection order (one entry per match). Length of the returned
+        list is the per-type contribution to ``MaskResult.mask_count``.
+        """
+        types: list[str] = []
+        placeholder = PIIMasking.get_mask_format(pii_type)
+        masked = pattern.sub(placeholder, text)
+        # ``pattern.sub`` already performs non-overlapping replacement;
+        # counting ``finditer`` on the *original* text gives the same
+        # count without re-scanning the rewritten string.
+        types.extend([pii_type] * len(pattern.findall(text)))
+        return masked, types
+
+    @staticmethod
+    def _luhn_valid(number: str) -> bool:
+        """Return True iff ``number`` (digits only) passes the Luhn checksum.
+
+        The check uses the standard right-to-left doubling pattern:
+        every second digit from the right is doubled, with the doubled
+        value reduced modulo 9 (subtract 9 when the doubled value
+        exceeds 9). The total modulo 10 must equal 0 for the number
+        to be considered a syntactically valid PAN.
+        """
+        if not number.isdigit() or len(number) != 16:
+            return False
+        total = 0
+        for i, ch in enumerate(reversed(number)):
+            digit = ord(ch) - 48  # ord('0') == 48; faster than int(ch)
+            if i & 1:
+                digit *= 2
+                if digit > 9:
+                    digit -= 9
+            total += digit
+        return total % 10 == 0
