@@ -76,28 +76,28 @@ class MCPAdapter(ActionAdapter):
                 tools = self._connect_stdio()
                 if not any(t.name == tool_name for t in tools):
                     return fail(f"unknown tool: {tool_name}")
-                return ok(
-                    {
-                        "tool": tool_name,
-                        "arguments": arguments,
-                        "status": "executed",
-                    }
-                )
+                return ok(self._execution_payload(tool_name, arguments))
             if self.transport == "sse":
                 try:
                     self._execute_sse_call(tool_name, arguments)
-                    return ok(
-                        {
-                            "tool": tool_name,
-                            "arguments": arguments,
-                            "status": "executed",
-                        }
-                    )
+                    return ok(self._execution_payload(tool_name, arguments))
                 except Exception:
                     return fail("timeout: SSE call failed or unreachable")
             return fail(f"unsupported transport: {self.transport}")
         except Exception as exc:  # noqa: BLE001 — surface as structured error
             return fail(str(exc))
+
+    @staticmethod
+    def _execution_payload(tool_name: str, arguments: dict) -> dict:
+        """[FR-40] 成功路徑上 ``execute`` 回傳的標準化負載。
+
+        stdio / SSE 兩條分支共用同一個結構，避免分歧。
+        """
+        return {
+            "tool": tool_name,
+            "arguments": arguments,
+            "status": "executed",
+        }
 
     def _connect_stdio(self) -> list[ToolDefinition]:
         """[FR-40] 透過 stdio 子進程連線並回傳 server 宣告的工具清單。
