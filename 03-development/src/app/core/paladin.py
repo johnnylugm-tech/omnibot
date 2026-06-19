@@ -28,6 +28,7 @@ Citations:
 from __future__ import annotations
 
 import asyncio
+import math
 import re
 import unicodedata
 from dataclasses import dataclass
@@ -629,7 +630,7 @@ class GroundingChecker:
             norm_b += y * y
         if norm_a == 0.0 or norm_b == 0.0:
             return 0.0
-        return dot / ((norm_a ** 0.5) * (norm_b ** 0.5))
+        return dot / (math.sqrt(norm_a) * math.sqrt(norm_b))
 
     def check(
         self,
@@ -671,24 +672,20 @@ class GroundingChecker:
                 "GroundingChecker.check requires iterable output_embedding"
             )
 
-        # Empty source_texts — by definition no grounding.
+        # No source_texts → no evidence to ground against; cosine
+        # defaults to 0.0 so ``0.0 >= threshold`` yields
+        # ``grounded=False`` and ``len(source_texts)`` reports 0.
         if not source_texts:
-            return GroundingResult(
-                grounded=False,
-                cosine_score=0.0,
-                threshold=float(threshold),
-                source_count=0,
+            cosine_score = 0.0
+        else:
+            cosine_score = max(
+                self._cosine_similarity(output_embedding, src)
+                for src in source_texts
             )
 
-        # Compute max cosine similarity over the sources.
-        max_score = max(
-            self._cosine_similarity(output_embedding, src)
-            for src in source_texts
-        )
-
         return GroundingResult(
-            grounded=max_score >= threshold,
-            cosine_score=float(max_score),
+            grounded=cosine_score >= threshold,
+            cosine_score=float(cosine_score),
             threshold=float(threshold),
             source_count=len(source_texts),
         )
