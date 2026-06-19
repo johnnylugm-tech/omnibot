@@ -37,6 +37,7 @@ Citations:
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import Any
 
@@ -519,7 +520,10 @@ def _escalate(
     with a Tier-3 escalation (e.g. grounding failure after a RAG hit)
     still produces a well-typed ``KnowledgeResult`` with the
     ``source="escalate"`` / ``id=-1`` markers so the orchestrator's
-    last-resort fallback is never ambiguous.
+    last-resort fallback is never ambiguous. The tier arguments are
+    accepted for API symmetry with the orchestrator's last-resort
+    call site but are intentionally not consumed — the sentinel is
+    reason-agnostic in its source/id fields per FR-31.
 
     Citations:
         - SRS.md FR-31 (line 74) — Knowledge Tier 4 — 人工轉接：
@@ -528,6 +532,7 @@ def _escalate(
           source="escalate"，id=-1.
         - SRS.md FR-32 (line 75) — KnowledgeResult.id=-1 代表非知識庫來源.
     """
+    del tier1_result, tier2_result, tier3_result
     if reason not in VALID_ESCALATE_REASONS:
         raise ValueError(
             f"FR-31: invalid escalate reason={reason!r}; "
@@ -539,11 +544,7 @@ def _escalate(
     # reason as a substring of ``content`` (so callers that grep for
     # it do not need a dedicated ``reason`` field) while remaining
     # machine-parseable.
-    del tier1_result, tier2_result, tier3_result  # tier inputs are
-    # consumed only by the orchestrator; the sentinel itself is
-    # reason-agnostic in its source/id fields per FR-31.
-
-    payload = '{"reason": "' + reason + '"}'
+    payload = json.dumps({"reason": reason})
     return KnowledgeResult(
         id=-1,
         content=payload,
