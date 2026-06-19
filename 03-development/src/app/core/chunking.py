@@ -3,10 +3,10 @@
 Spec source: 02-architecture/TEST_SPEC.md (FR-28)
 SRS source : SRS.md FR-28
 
-FR-28 — Parent-Child Chunking：
-    Parent = 500 tokens（100 token overlap），Child = 150 tokens；
-    僅 Child Chunks 建向量索引；向量命中 Child → 追索對應 Parent 送
-    LLM。
+FR-28 -- Parent-Child Chunking:
+    Parent = 500 tokens (100 token overlap), Child = 150 tokens;
+    Only Child Chunks build a vector index; vector hit on Child ->
+    trace back to the corresponding Parent for LLM input.
 
 This module exposes the SRS-mandated numeric constants plus three small
 classes — :class:`ChunkSpec`, :class:`Chunker`, :class:`ParentChildIndex`
@@ -16,16 +16,20 @@ dependency; a production wiring layer swaps in a real BPE/SentencePiece
 splitter behind the same interface.
 
 Citations:
-    - SRS.md FR-28 — Parent = 500 tokens（100 token overlap），Child = 150
-      tokens（line 107）.
-    - SRS.md FR-28 — 僅 Child Chunks 建向量索引（line 108）.
-    - SRS.md FR-28 — 向量命中 Child → 追索對應 Parent 送 LLM（line 109）.
+    - SRS.md FR-28 -- Parent = 500 tokens (100 token overlap), Child = 150
+      tokens (line 107).
+    - SRS.md FR-28 -- Only Child Chunks build a vector index (line 108).
+    - SRS.md FR-28 -- Vector hit on Child -> trace back to corresponding
+      Parent for LLM input (line 109).
 """
 
 from __future__ import annotations
-
 from collections.abc import Callable
 from dataclasses import dataclass
+
+
+
+
 
 
 # ---------------------------------------------------------------------------
@@ -48,7 +52,7 @@ class ChunkSpec:
     boundary.
 
     Citations:
-        - SRS.md FR-28 — Parent = 500 tokens（100 token overlap）.
+        - SRS.md FR-28 -- Parent = 500 tokens (100 token overlap).
     """
 
     parent_size: int = PARENT_TOKEN_SIZE
@@ -121,7 +125,7 @@ class Chunker:
     boundary so the child→parent walk works without an external DB.
 
     Citations:
-        - SRS.md FR-28 — Parent = 500 tokens；Child = 150 tokens.
+        - SRS.md FR-28 -- Parent = 500 tokens; Child = 150 tokens.
     """
 
     def __init__(self, spec: ChunkSpec | None = None) -> None:
@@ -155,7 +159,7 @@ class Chunker:
         on a child back to its parent context block.
 
         Citations:
-            - SRS.md FR-28 — Child = 150 tokens；追索 Parent 送 LLM.
+            - SRS.md FR-28 -- Child = 150 tokens; trace back Parent for LLM.
         """
         parent_size = self._spec.parent_size
 
@@ -181,7 +185,7 @@ class ParentChildIndex:
     the child hit's FK, never by similarity search.
 
     Citations:
-        - SRS.md FR-28 — 僅 Child Chunks 建向量索引；向量命中 Child 追索
+        - SRS.md FR-28 — 僅 Child Chunks 建向量索引;向量命中 Child 追索
           對應 Parent.
     """
 
