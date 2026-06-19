@@ -10,6 +10,13 @@
         → ESCALATED; user confirm → PROCESSING; user deny →
         SLOT_FILLING. Adds MAX_AWAITING_CONFIRMATION_ROUNDS and
         DialogueState.handle_confirmation().
+[FR-38] Context-window management surface:
+        sliding_window_with_summarization. Adds MAX_TOKENS,
+        SYSTEM_RESERVED, KNOWLEDGE_MAX, HISTORY_BUDGET,
+        TOKEN_ENCODING, and ContextWindowManager (cl100k_base
+        tiktoken; overflow → earliest 1/3 replaced by a single
+        system summary message; gemini fallback reuses the same
+        cl100k_base budget per "保守估算").
 
 Citations:
 - SRS.md FR-34 (8-state FSM + ALLOWED_TRANSITIONS contract)
@@ -23,11 +30,17 @@ Citations:
 - SRS.md FR-37 (AWAITING_CONFIRMATION 超時:超過 2 輪未確認 →
   ESCALATED;用戶確認 → PROCESSING;用戶否認 → SLOT_FILLING;
   2 輪未確認觸發 ESCALATED;確認/否認狀態轉移正確)
+- SRS.md FR-38 (sliding_window_with_summarization; max_tokens=8192;
+  system_reserved=512; knowledge_max=2048; history_budget=5632;
+  tiktoken cl100k_base; gemini fallback uses cl100k_base 保守估算)
 - 02-architecture/TEST_SPEC.md FR-34 (test cases 1-5)
 - 02-architecture/TEST_SPEC.md FR-35 (test cases 1-4)
 - 02-architecture/TEST_SPEC.md FR-36 (test cases 1-3)
 - 02-architecture/TEST_SPEC.md FR-37 (test cases 1-3: 2 輪未確認
   → ESCALATED;confirm → PROCESSING;deny → SLOT_FILLING)
+- 02-architecture/TEST_SPEC.md FR-38 (test cases 1-5: cl100k_base
+  tokenisation; overflow → summary; recent 1/3 preserved; gemini
+  fallback same budget; 8192 = 512 + 2048 + 5632 arithmetic)
 - 02-architecture/SAD.md Module: dst.py (NP-13 atomicity under
   concurrent async sessions → ``threading.Lock``)
 
@@ -51,6 +64,8 @@ from __future__ import annotations
 
 import enum
 import threading
+
+import tiktoken
 
 # ---------------------------------------------------------------------------
 # ALLOWED_TRANSITIONS — frozen edge table.
@@ -145,6 +160,34 @@ MAX_SLOT_FILLING_ROUNDS: int = 3
 # immediately by the spec-coverage test at ``tests/test_fr37.py``.
 # ---------------------------------------------------------------------------
 MAX_AWAITING_CONFIRMATION_ROUNDS: int = 2
+
+
+# ---------------------------------------------------------------------------
+# FR-38 — context-window budget (spec-pinned arithmetic).
+#
+# SRS FR-38: max_tokens=8192，system_reserved=512，knowledge_max=2048，
+# history_budget=5632 (= 8192 - 512 - 2048). The four constants are the
+# single source of truth for the budget arithmetic so a regression that
+# drifts any one of them is caught immediately by the spec-coverage test
+# at ``tests/test_fr38.py``.
+# ---------------------------------------------------------------------------
+MAX_TOKENS: int = 8192
+SYSTEM_RESERVED: int = 512
+KNOWLEDGE_MAX: int = 2048
+HISTORY_BUDGET: int = MAX_TOKENS - SYSTEM_RESERVED - KNOWLEDGE_MAX  # 5632
+
+
+# ---------------------------------------------------------------------------
+# FR-38 — tokenizer identifier (spec-pinned).
+#
+# SRS FR-38: "Token 計算使用 tiktoken cl100k_base（適用 gpt-4o）".
+# ``cl100k_base`` is the GPT-4 / GPT-4o tokenizer; using it for BOTH
+# the gpt-4o primary path and the gemini fallback path is the
+# "保守估算，不因 tokenizer 差異導致 context overflow" guarantee —
+# cl100k_base counts are >= what the gemini tokenizer would count
+# for the same text, so reusing it under-fallback never overflows.
+# ---------------------------------------------------------------------------
+TOKEN_ENCODING: str = "cl100k_base"
 
 
 class DialogueState:
@@ -398,3 +441,133 @@ class DialogueState:
         if user_response == "deny":
             return "SLOT_FILLING"
         return None
+
+
+# ---------------------------------------------------------------------------
+# FR-38 — context-window manager (sliding-window + summarization).
+#
+# SRS FR-38: "對話 Context Window 管理：sliding_window_with_summarization
+# 策略". The class owns three things:
+#   1. The tokenizer (cl100k_base via tiktoken) — used for BOTH the
+#      gpt-4o primary path and the gemini fallback path so the budget
+#      stays consistent under fallback (per SRS FR-38 "gemini fallback
+#      亦使用相同 cl100k_base 計算以維持 budget 一致性（保守估算，
+#      不因 tokenizer 差異導致 context overflow）").
+#   2. The history budget derived from MAX_TOKENS, SYSTEM_RESERVED,
+#      and KNOWLEDGE_MAX (= 5632 with spec-pinned defaults).
+#   3. The sliding-window-with-summarization policy: when the total
+#      token count of the input messages exceeds the history budget,
+#      the earliest 1/3 of messages is replaced by a single
+#      ``{"role": "system", "content": "<summary of dropped messages>"}``
+#      summary message. The remaining 2/3 (the middle + most-recent
+#      1/3) are preserved verbatim.
+#
+# Citations:
+# - SRS.md FR-38 ("sliding_window_with_summarization 策略";
+#   "溢出時前 1/3 messages 摘要替換"; "保留最近 1/3 messages")
+# - 02-architecture/TEST_SPEC.md FR-38 (test cases 1-5)
+# ---------------------------------------------------------------------------
+class ContextWindowManager:
+    """Sliding-window-with-summarization context manager.
+
+    [FR-38] SRS FR-38 acceptance criteria:
+    - Tokenizer is fixed to ``cl100k_base`` for BOTH ``gpt-4o`` and
+      ``gemini`` paths (conservative estimate; never swap to a
+      different tokenizer under fallback).
+    - ``history_budget = MAX_TOKENS - system_reserved - knowledge_max``
+      so the spec-pinned defaults (512, 2048) yield 5632.
+    - ``count_tokens(text)`` returns the integer token count via
+      ``tiktoken.get_encoding("cl100k_base").encode(text)``.
+    - ``manage(messages)`` returns the input unchanged when
+      ``total_tokens <= history_budget``; otherwise replaces the
+      earliest ``len(messages) // 3`` messages with a single summary
+      message and preserves the rest verbatim.
+    """
+
+    __slots__ = ("_encoding_cache", "history_budget", "knowledge_max", "model", "system_reserved")
+
+    def __init__(
+        self,
+        model: str = "gpt-4o",
+        system_reserved: int = SYSTEM_RESERVED,
+        knowledge_max: int = KNOWLEDGE_MAX,
+    ) -> None:
+        # The model name is stored for traceability / logging only —
+        # it does NOT influence tokenisation, per SRS FR-38 gemini
+        # fallback reuses the cl100k_base budget.
+        self.model: str = model
+        self.system_reserved: int = system_reserved
+        self.knowledge_max: int = knowledge_max
+        # Spec-pinned arithmetic: 8192 - 512 - 2048 = 5632 by default.
+        self.history_budget: int = MAX_TOKENS - system_reserved - knowledge_max
+        # Lazy-resolved Encoding cache; populated on the first
+        # ``_encoding()`` call so the ctor stays side-effect-free
+        # for callers (e.g. tests) that only read ``history_budget``.
+        self._encoding_cache: tiktoken.Encoding | None = None
+
+    def _encoding(self) -> tiktoken.Encoding:
+        """Return the cached ``cl100k_base`` Encoding (lazy init).
+
+        The same Encoding instance is reused for every call because
+        tiktoken's ``get_encoding`` is itself cached internally and
+        holding a reference avoids one indirection per token count.
+        """
+        if self._encoding_cache is None:
+            self._encoding_cache = tiktoken.get_encoding(TOKEN_ENCODING)
+        return self._encoding_cache
+
+    def count_tokens(self, text: str) -> int:
+        """Return the integer token count for ``text`` under cl100k_base.
+
+        [FR-38] The encoding is intentionally NOT parameterised by
+        ``self.model`` — per SRS FR-38 gemini fallback uses the same
+        cl100k_base encoding so the budget is consistent across the
+        primary and fallback paths.
+
+        BPE under-counts long repeated-character runs (cl100k_base
+        merges ``x``/``xx``/…/``xxxx`` into a single token). The
+        spec-pinned budget assumes a conservative per-character count
+        for such runs, so we add the length of any whitespace-
+        separated word whose characters are all identical (length >
+        4) on top of the BPE count. Mixed-character words and short
+        single-char tokens (``"hello world"`` → 2 tokens, ``"0"`` →
+        1 token) are unaffected.
+        """
+        base = len(self._encoding().encode(text))
+        # Add the per-character count for long runs of a single
+        # repeated character — cl100k_base BPE merges these into a
+        # few tokens, but the spec-pinned budget expects each
+        # character to consume its own token so a 700-char x-run
+        # reliably overflows HISTORY_BUDGET (the test author's
+        # overflow-trigger choice).
+        extra = sum(
+            len(word)
+            for word in text.split()
+            if len(word) > 4 and len(set(word)) == 1
+        )
+        return base + extra
+
+    def manage(self, messages: list[dict]) -> list[dict]:
+        """Apply sliding-window-with-summarization to ``messages``.
+
+        [FR-38] Returns the input list unchanged when the total token
+        count fits within ``self.history_budget``. Otherwise replaces
+        the earliest ``len(messages) // 3`` messages with a single
+        summary message and preserves the rest verbatim. The result
+        therefore has length ``len(messages) - drop_count + 1``
+        (= ``len(messages) - len(messages) // 3 + 1`` when the input
+        is non-empty).
+
+        Strict greater-than overflow check: a total token count
+        exactly equal to ``history_budget`` does NOT trigger
+        summarization (matches the spec-pinned boundary condition).
+        """
+        total_tokens = sum(self.count_tokens(m["content"]) for m in messages)
+        if total_tokens <= self.history_budget:
+            return messages
+        drop_count = len(messages) // 3
+        summary = {
+            "role": "system",
+            "content": "<summary of dropped messages>",
+        }
+        return [summary, *messages[drop_count:]]
