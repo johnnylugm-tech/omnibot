@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "de93d87d344cb657c176acc4d22d0144ae7e37e1",
-  "content_sha256": "eb8b3d118d7b792adddd592efcbdb551a67ea87451d8b1208b6bc431ef36d8b7",
+  "git_sha": "fe171f42488b958f200ac589522cd5c00fca40ed",
+  "content_sha256": "7cf2769a75b9fbbbd41c19f50e67c421d8a7e5e9347ca435651bdb8718548400",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,10 +11,10 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "19.4%",
-      "test_coverage": "19.4%",
-      "verification_rate": "19.4%",
-      "total_links": 150,
+      "code_coverage": "21.3%",
+      "test_coverage": "21.3%",
+      "verification_rate": "21.3%",
+      "total_links": 154,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -24,8 +24,6 @@
           "FR-04",
           "FR-05",
           "FR-06",
-          "FR-08",
-          "FR-09",
           "FR-10",
           "FR-100",
           "FR-101",
@@ -113,8 +111,6 @@
           "FR-04",
           "FR-05",
           "FR-06",
-          "FR-08",
-          "FR-09",
           "FR-10",
           "FR-100",
           "FR-101",
@@ -206,8 +202,6 @@
         "FR-04",
         "FR-05",
         "FR-06",
-        "FR-08",
-        "FR-09",
         "FR-10",
         "FR-100",
         "FR-101",
@@ -295,8 +289,6 @@
         "FR-04",
         "FR-05",
         "FR-06",
-        "FR-08",
-        "FR-09",
         "FR-10",
         "FR-100",
         "FR-101",
@@ -448,19 +440,27 @@
       },
       "FR-08": {
         "fr_id": "FR-08",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/core/unified_response.py"
+        ],
+        "test_files": [
+          "tests/test_fr08.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-09": {
         "fr_id": "FR-09",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/tests/test_fr09.py"
+        ],
+        "test_files": [
+          "tests/test_fr09.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
