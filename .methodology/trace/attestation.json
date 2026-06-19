@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "53f71dc69ff2b243d622e754c444300b74f38dfd",
-  "content_sha256": "b371ebac9a05d57004f86cb6252c00772924c69cfc48eac738a807df5036e2af",
+  "git_sha": "fe4094a3280a72534574d1e0ed93e019c5b3805a",
+  "content_sha256": "d8436c4e873d7425beef1d8e9062b052ab7e69ad528f32a4fc79668ca212326c",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,10 +11,10 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "31.5%",
-      "test_coverage": "33.3%",
-      "verification_rate": "31.5%",
-      "total_links": 188,
+      "code_coverage": "34.3%",
+      "test_coverage": "36.1%",
+      "verification_rate": "34.3%",
+      "total_links": 194,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -33,9 +33,6 @@
           "FR-106",
           "FR-107",
           "FR-108",
-          "FR-27",
-          "FR-28",
-          "FR-30",
           "FR-31",
           "FR-32",
           "FR-33",
@@ -109,9 +106,6 @@
           "FR-106",
           "FR-107",
           "FR-108",
-          "FR-28",
-          "FR-30",
-          "FR-31",
           "FR-32",
           "FR-33",
           "FR-34",
@@ -187,9 +181,6 @@
         "FR-106",
         "FR-107",
         "FR-108",
-        "FR-27",
-        "FR-28",
-        "FR-30",
         "FR-31",
         "FR-32",
         "FR-33",
@@ -263,9 +254,6 @@
         "FR-106",
         "FR-107",
         "FR-108",
-        "FR-28",
-        "FR-30",
-        "FR-31",
         "FR-32",
         "FR-33",
         "FR-34",
@@ -730,9 +718,11 @@
       },
       "FR-27": {
         "fr_id": "FR-27",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
+        "code_files": [
+          "03-development/src/app/core/knowledge.py"
+        ],
         "test_files": [
           "tests/test_fr27.py"
         ],
@@ -741,10 +731,14 @@
       },
       "FR-28": {
         "fr_id": "FR-28",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/core/chunking.py"
+        ],
+        "test_files": [
+          "tests/test_fr28.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
@@ -763,10 +757,14 @@
       },
       "FR-30": {
         "fr_id": "FR-30",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/core/knowledge.py"
+        ],
+        "test_files": [
+          "tests/test_fr30.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
@@ -775,7 +773,9 @@
         "status": "pending",
         "srs_section": "SAD.md",
         "code_files": [],
-        "test_files": [],
+        "test_files": [
+          "tests/test_fr31.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
