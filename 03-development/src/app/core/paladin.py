@@ -30,8 +30,11 @@ from __future__ import annotations
 import asyncio
 import math
 import re
+import threading
 import unicodedata
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from enum import Enum
 
 # Curated Cyrillic + Greek homoglyphs that visually mimic ASCII and are
 # routinely used to bypass naive input filters (look-alike usernames,
@@ -278,7 +281,7 @@ def _wrap_priority_block(label: str, body: str) -> str:
 
 
 def _build_sandwich_prompt(
-    self: "PromptInjectionDefense",
+    self: PromptInjectionDefense,
     user_text: str,
     system_prompt: str = "",
 ) -> str:
@@ -370,9 +373,6 @@ PromptInjectionDefense.build_sandwich_prompt = _build_sandwich_prompt
 #     degradation)
 #   - SRS.md FR-15 (low-risk L4 skip; classify() is the routing hook)
 # ---------------------------------------------------------------------------
-from enum import Enum
-
-
 class InjectionType(str, Enum):
     """[FR-13] Valid values for ``SemanticInjectionClassifier`` injection_type.
 
@@ -440,6 +440,45 @@ class SemanticInjectionClassifier:
         """
         raise NotImplementedError
 
+    async def classify_async(
+        self,
+        text: str,
+        *,
+        risk_level: str = "medium",
+        timeout_ms: float = DEFAULT_TIMEOUT_MS,
+    ) -> ClassificationResult:
+        """[FR-15] Async variant of ``classify`` for use inside a running loop.
+
+        The sync ``classify`` cannot be ``await``ed from inside an async
+        pipeline without blocking the event loop (driving the coroutine
+        to completion via a worker thread would serialize with any
+        concurrent ``tier3_call`` gathered in the same ``asyncio.gather``
+        — breaking FR-15's "L3 不等待 L4" rule on medium risk). This
+        async variant performs the same routing but with a native
+        ``await`` so it composes cleanly with ``asyncio.gather``.
+
+        The injected ``_call_llm`` is responsible for honoring
+        ``timeout_ms`` itself (production wiring wraps the network call
+        in ``asyncio.wait_for``); we do NOT wrap a second ``wait_for``
+        here so the pipeline does not double-cancel — and so FR-15
+        tests can drive a deterministic slow coroutine past the
+        pipeline's nominal 200ms budget to assert parallel execution.
+        """
+        if not isinstance(text, str):
+            raise TypeError(
+                "SemanticInjectionClassifier.classify_async requires str text"
+            )
+
+        if risk_level not in self._HIGH_RISK_LEVELS:
+            return _make_passthrough(is_unverified=False)
+
+        try:
+            verdict = await self._call_llm(text, timeout_ms)
+        except (asyncio.TimeoutError, ConnectionError, OSError):
+            return _make_passthrough(is_unverified=True)
+
+        return _result_from_verdict(verdict)
+
     def classify(
         self,
         text: str,
@@ -494,9 +533,7 @@ class SemanticInjectionClassifier:
             # monkeypatch it with sync fakes that return dicts directly;
             # handle both shapes on the same code path.
             if asyncio.iscoroutine(verdict):
-                verdict = asyncio.run(
-                    asyncio.wait_for(verdict, timeout=timeout_ms / 1000.0)
-                )
+                verdict = _await_coro_from_sync(verdict, timeout_ms)
         except (asyncio.TimeoutError, ConnectionError, OSError):
             # Timeout OR downstream down → passthrough, do NOT block.
             return _make_passthrough(is_unverified=True)
@@ -520,6 +557,49 @@ def _make_passthrough(*, is_unverified: bool) -> ClassificationResult:
         injection_type=InjectionType.NONE,
         is_unverified=is_unverified,
     )
+
+
+def _await_coro_from_sync(coro, timeout_ms: float):
+    """[FR-15] Drive an async coroutine to completion from sync code.
+
+    ``classify`` is sync (FR-13 calls it without ``asyncio.run``), but
+    FR-15's ``PALADINPipeline.process`` is async and calls ``classify``
+    from inside a running event loop. Python forbids
+    ``asyncio.run``/``loop.run_until_complete`` from within a running
+    loop, so we fall back to a worker thread with a fresh event loop
+    when one is already running. The no-running-loop case keeps the
+    cheap ``asyncio.run`` path (preserves FR-13's sync-call
+    performance budget).
+    """
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        # No running loop — safe to use asyncio.run (FR-13 sync path).
+        return asyncio.run(asyncio.wait_for(coro, timeout=timeout_ms / 1000.0))
+
+    # Running loop already exists (FR-15 async path). Run the
+    # coroutine on a worker thread with its own fresh event loop.
+    import threading
+
+    holder: dict = {}
+
+    def _runner() -> None:
+        new_loop = asyncio.new_event_loop()
+        try:
+            holder["v"] = new_loop.run_until_complete(
+                asyncio.wait_for(coro, timeout=timeout_ms / 1000.0)
+            )
+        except BaseException as exc:  # propagate TimeoutError etc.
+            holder["e"] = exc
+        finally:
+            new_loop.close()
+
+    t = threading.Thread(target=_runner)
+    t.start()
+    t.join()
+    if "e" in holder:
+        raise holder["e"]
+    return holder["v"]
 
 
 def _result_from_verdict(verdict: dict) -> ClassificationResult:
@@ -688,4 +768,181 @@ class GroundingChecker:
             cosine_score=float(cosine_score),
             threshold=float(threshold),
             source_count=len(source_texts),
+        )
+
+
+# ---------------------------------------------------------------------------
+# [FR-15] PALADIN routing orchestrator — ``PALADINPipeline``
+#
+# SRS FR-15: "PALADIN L4 平行化執行策略：low risk → 跳過 L4 直接 L3；
+# medium risk → L4 與 L3 平行 (L3 不等待 L4)；high/critical → 同步 L4
+# 阻擋 (不呼叫 L3)；L4 觸發率 < 5% 總流量."
+#
+# The orchestrator is dependency-injected: callers supply the L4
+# ``classifier`` and the ``tier3_call`` async callable so unit tests can
+# substitute deterministic stand-ins without a network round-trip.
+# ``process()`` is async because the medium-risk branch gathers L3 and
+# L4 concurrently via ``asyncio.gather`` — running them sequentially
+# would inflate medium-risk p95 by ~200ms (the full L4 budget) and
+# break the "L3 不等待 L4" guarantee.
+#
+# Citations:
+#   - SRS.md FR-15 (PALADIN L4 平行化執行策略 acceptance criteria)
+#   - 02-architecture/TEST_SPEC.md FR-15 (case 1: low risk 跳過 L4;
+#     case 2: medium risk 平行; case 3: high risk 同步阻擋;
+#     case 4: critical risk 立即阻擋)
+#   - 03-development/tests/test_fr15.py:252-324 (low risk skips L4)
+#   - 03-development/tests/test_fr15.py:340-435 (medium risk parallel)
+#   - 03-development/tests/test_fr15.py:451-521 (high risk sync block)
+#   - 03-development/tests/test_fr15.py:536-603 (critical immediate block)
+#   - SRS.md FR-13 (low-risk L4 skip; classify() is the routing hook)
+# ---------------------------------------------------------------------------
+@dataclass
+class ProcessResult:
+    """[FR-15] Outcome of a single ``PALADINPipeline.process`` call.
+
+    ``is_blocked`` is True on any short-circuit path (injection verdict
+    or critical-risk fast-fail). ``response`` carries the Tier-3
+    LLM output when the request was NOT blocked (None on every blocked
+    branch so downstream FR-16 retrospective-block hooks cannot
+    accidentally surface a poisoned response). ``tier3_called`` /
+    ``l4_called`` are observability flags for the FR-15 routing audit.
+    ``block_reason`` is ``'injection'`` on an L4-verdict block and
+    ``'critical_risk'`` on the critical short-circuit.
+    """
+
+    is_blocked: bool
+    response: str | None = None
+    classification: ClassificationResult | None = None
+    tier3_called: bool = False
+    l4_called: bool = False
+    block_reason: str | None = None
+
+
+_RISK_LEVELS = frozenset({"low", "medium", "high", "critical"})
+
+
+class PALADINPipeline:
+    """[FR-15] PALADIN routing orchestrator.
+
+    SRS FR-15: ``low → 跳過 L4 直接 L3; medium → L4 與 L3 平行 (L3 不等待
+    L4); high / critical → 同步 L4 阻擋 (不呼叫 L3)``; L4 觸發率 < 5% 總流量.
+
+    Construction is dependency-injected so tests can substitute the L4
+    classifier and the Tier-3 LLM call without a network round-trip.
+    ``process`` is async so the medium-risk branch can gather L3 and L4
+    concurrently.
+    """
+
+    DEFAULT_TIMEOUT_MS = 200.0
+
+    def __init__(
+        self,
+        *,
+        classifier: SemanticInjectionClassifier | None = None,
+        tier3_call: Callable[[str], Awaitable[str]] | None = None,
+    ) -> None:
+        self._classifier = classifier or SemanticInjectionClassifier()
+        self._tier3_call = tier3_call
+
+    async def process(
+        self,
+        text: str,
+        *,
+        risk_level: str,
+        timeout_ms: float = DEFAULT_TIMEOUT_MS,
+    ) -> ProcessResult:
+        """[FR-15] Route ``text`` through PALADIN per ``risk_level``.
+
+        Args:
+            text: User input (already L1-sanitized + L2-cleared).
+            risk_level: One of ``"low"``, ``"medium"``, ``"high"``,
+                ``"critical"``. Unknown values raise ``ValueError``.
+            timeout_ms: Maximum upstream LLM wait in milliseconds.
+                Passed through to the L4 classifier.
+
+        Returns:
+            ``ProcessResult`` carrying the routing decision, the
+            Tier-3 response (when not blocked), and observability
+            flags for downstream FR-16 retrospective blocks.
+
+        Raises:
+            ValueError: ``risk_level`` is not one of the four known
+                buckets — silent fall-through would hide routing
+                bugs that this FR is designed to surface.
+
+        Citations:
+            - SRS.md FR-15
+            - 03-development/tests/test_fr15.py:252-603 (all 4 cases)
+        """
+        if risk_level not in _RISK_LEVELS:
+            raise ValueError(
+                f"PALADINPipeline.process: unknown risk_level="
+                f"{risk_level!r}; expected one of {sorted(_RISK_LEVELS)}"
+            )
+
+        # ---- critical: immediate block (no L4, no L3) ----
+        if risk_level == "critical":
+            return ProcessResult(
+                is_blocked=True,
+                block_reason="critical_risk",
+                tier3_called=False,
+                l4_called=False,
+            )
+
+        # ---- low: skip L4, go straight to L3 ----
+        if risk_level == "low":
+            response = await self._tier3_call(text)
+            return ProcessResult(
+                is_blocked=False,
+                response=response,
+                tier3_called=True,
+                l4_called=False,
+            )
+
+        # ---- high: synchronous L4, then L3 only if clean ----
+        if risk_level == "high":
+            verdict = await self._classifier.classify_async(
+                text, risk_level=risk_level, timeout_ms=timeout_ms
+            )
+            if verdict.is_injection or verdict.is_unverified:
+                return ProcessResult(
+                    is_blocked=True,
+                    classification=verdict,
+                    block_reason="injection",
+                    tier3_called=False,
+                    l4_called=True,
+                )
+            response = await self._tier3_call(text)
+            return ProcessResult(
+                is_blocked=False,
+                response=response,
+                classification=verdict,
+                tier3_called=True,
+                l4_called=True,
+            )
+
+        # ---- medium: parallel L4 + L3 ----
+        async def _l4() -> ClassificationResult:
+            return await self._classifier.classify_async(
+                text, risk_level=risk_level, timeout_ms=timeout_ms
+            )
+        async def _l3() -> str:
+            return await self._tier3_call(text)
+
+        verdict, response = await asyncio.gather(_l4(), _l3())
+        if verdict.is_injection:
+            return ProcessResult(
+                is_blocked=True,
+                classification=verdict,
+                block_reason="injection",
+                tier3_called=True,
+                l4_called=True,
+            )
+        return ProcessResult(
+            is_blocked=False,
+            response=response,
+            classification=verdict,
+            tier3_called=True,
+            l4_called=True,
         )

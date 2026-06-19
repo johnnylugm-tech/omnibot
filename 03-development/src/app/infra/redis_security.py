@@ -1,5 +1,5 @@
-"""[FR-90] Redis 安全設定 — TLS 6380、requirepass 環境變數注入、
-ACL default_user 停用、RDB/AOF 雙備份。
+"""[FR-90] Redis 安全設定 — TLS 6380, requirepass 環境變數注入,
+ACL default_user 停用, RDB/AOF 雙備份.
 
 The three descriptors below are the policy surface of FR-90. They are
 intentionally **stateless descriptors**, not runtime Redis clients —

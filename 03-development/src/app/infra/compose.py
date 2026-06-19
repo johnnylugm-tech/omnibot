@@ -1,5 +1,5 @@
 """[FR-95] Docker Compose 開發環境 — 七大 service 健康狀態追蹤與
-``/api/v1/health`` 端點契約。
+``/api/v1/health`` 端點契約.
 
 This module is the **stateless descriptor** for the FR-95 dev stack
 (``docker compose up`` 後所有 services healthy; health 端點回 200).
