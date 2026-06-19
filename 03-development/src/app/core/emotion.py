@@ -59,6 +59,12 @@ _NEGATIVE_KEYWORDS: frozenset[str] = frozenset(
     }
 )
 
+# Intensifier marker that pushes a keyword hit toward the upper bound so
+# downstream consumers (e.g. escalation logic) can rely on the signal
+# strength. Kept as a single constant so the boost logic stays in one
+# place if the lexicon grows.
+_INTENSIFIER: str = "非常"
+
 
 @dataclass(frozen=True)
 class EmotionScore:
@@ -107,6 +113,16 @@ class EmotionAnalyzer:
         return emotion_classify(text)
 
 
+def _has_any_keyword(haystack: str, keywords: frozenset[str]) -> bool:
+    """True iff any keyword appears as a substring of ``haystack``."""
+    return any(keyword in haystack for keyword in keywords)
+
+
+def _intensity(base: float, boosted: float, haystack: str) -> float:
+    """Return ``boosted`` when ``_INTENSIFIER`` appears, else ``base``."""
+    return boosted if _INTENSIFIER in haystack else base
+
+
 def emotion_classify(text: str) -> EmotionScore:
     """[FR-46] Functional entry point for emotion classification.
 
@@ -121,20 +137,21 @@ def emotion_classify(text: str) -> EmotionScore:
         - SRS.md FR-46 -- "每次分析建立 EmotionScore 記錄" (line 104).
     """
     if not text or not text.strip():
-        return EmotionScore(category="neutral", intensity=0.0)
+        return EmotionScore(category="neutral", intensity=INTENSITY_MIN)
 
     haystack = text.lower()
 
-    if any(keyword in haystack for keyword in _NEGATIVE_KEYWORDS):
-        # Intensifiers ("非常", "超", "超級") push intensity toward the
-        # upper bound so downstream consumers (e.g. escalation logic)
-        # can rely on the signal strength.
-        intensity = 0.9 if "非常" in haystack else 0.7
-        return EmotionScore(category="negative", intensity=float(intensity))
+    if _has_any_keyword(haystack, _NEGATIVE_KEYWORDS):
+        return EmotionScore(
+            category="negative",
+            intensity=_intensity(base=0.7, boosted=0.9, haystack=haystack),
+        )
 
-    if any(keyword in haystack for keyword in _POSITIVE_KEYWORDS):
-        intensity = 0.8 if "非常" in haystack else 0.6
-        return EmotionScore(category="positive", intensity=float(intensity))
+    if _has_any_keyword(haystack, _POSITIVE_KEYWORDS):
+        return EmotionScore(
+            category="positive",
+            intensity=_intensity(base=0.6, boosted=0.8, haystack=haystack),
+        )
 
     return EmotionScore(category="neutral", intensity=0.5)
 
