@@ -25,7 +25,7 @@ T = TypeVar("T")
 class ApiResponse(Generic[T]):
     """[FR-09] Outer envelope for every management API response.
 
-    SRS FR-09: "ApiResponse[T]（success, data, error, error_code）;
+    SRS FR-09: "ApiResponse[T] (success, data, error, error_code);
     所有管理 API 端點回應包裝於 ApiResponse 外層".
 
     Wire-shape:
@@ -60,7 +60,7 @@ class ApiResponse(Generic[T]):
 class PaginatedResponse(Generic[T]):
     """[FR-09] Pagination envelope.
 
-    SRS FR-09: "PaginatedResponse[T]（total, page, limit, has_next）".
+    SRS FR-09: "PaginatedResponse[T] (total, page, limit, has_next)".
     ``has_next`` is derived from (total, page, limit) — never set
     independently — so the flag stays in lock-step with the totals.
 

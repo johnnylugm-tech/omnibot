@@ -16,7 +16,7 @@ Citations:
       immutable dataclass, 欄位含 platform(Platform enum), platform_user_id,
       unified_user_id(Optional), message_type(MessageType enum), content,
       raw_payload, received_at, reply_token(LINE 特有)。所有平台訊息皆可
-      建立合法 UnifiedMessage 實例；frozen=True 確保不可變"
+      建立合法 UnifiedMessage 實例; frozen=True 確保不可變"
 """
 
 from __future__ import annotations
@@ -27,11 +27,12 @@ from enum import Enum
 from typing import Any
 
 
-class Platform(str, Enum):
+class Platform(Enum):
     """[FR-07] The originating channel of a ``UnifiedMessage``.
 
-    Values are lower-case strings so they round-trip cleanly through JSON
-    without an explicit ``.value`` access in adapters / logs.
+    Values are lower-case strings stored on ``.value`` so adapters / logs
+    reach the wire-format string with an explicit ``Platform.X.value``
+    access rather than relying on implicit ``str`` mixing.
 
     Citations:
         - SRS.md:30 — FR-07 lists ``platform(Platform enum)`` as one of the
@@ -47,7 +48,7 @@ class Platform(str, Enum):
     A2A = "a2a"
 
 
-class MessageType(str, Enum):
+class MessageType(Enum):
     """[FR-07] Payload classification inside a ``UnifiedMessage``.
 
     Citations:
@@ -79,7 +80,7 @@ class UnifiedMessage:
 
     Citations:
         - SRS.md:30 — FR-07 acceptance criteria: "所有平台訊息皆可建立合法
-          UnifiedMessage 實例；frozen=True 確保不可變". The field set below
+          UnifiedMessage 實例; frozen=True 確保不可變". The field set below
           (platform / platform_user_id / unified_user_id / message_type /
           content / raw_payload / received_at / reply_token) is the literal
           list from that row; ``reply_token`` is None for every platform

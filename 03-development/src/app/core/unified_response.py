@@ -16,9 +16,9 @@ This module is the outbound counterpart to ``unified_message.UnifiedMessage``
 
 Citations:
     - SRS.md:31 — FR-08 acceptance criteria: "UnifiedResponse 資料結構:
-      immutable dataclass，欄位含 content, source(rule|rag|wiki|escalate),
+      immutable dataclass, 欄位含 content, source(rule|rag|wiki|escalate),
       confidence, knowledge_id(Optional), emotion_adjustment(Optional),
-      quick_replies. 所有知識層輸出皆可轉換為 UnifiedResponse；source
+      quick_replies. 所有知識層輸出皆可轉換為 UnifiedResponse; source
       欄位限定四個合法值"
 """
 
@@ -29,11 +29,12 @@ from enum import Enum
 from typing import Any
 
 
-class ResponseSource(str, Enum):
+class ResponseSource(Enum):
     """[FR-08] Which knowledge tier produced the ``UnifiedResponse``.
 
-    Values are lower-case strings so they round-trip cleanly through JSON
-    without an explicit ``.value`` access in adapters / logs.
+    Values are lower-case strings stored on ``.value`` so adapters / logs
+    reach the wire-format string with an explicit ``ResponseSource.X.value``
+    access rather than relying on implicit ``str`` mixing.
 
     Restricted to exactly four values per SRS FR-08 ("source 欄位限定四個
     合法值"):

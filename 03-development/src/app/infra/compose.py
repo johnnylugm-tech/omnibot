@@ -25,7 +25,7 @@ Citations:
 """
 
 from __future__ import annotations
-from typing import Iterable
+from collections.abc import Iterable
 
 
 # Canonical seven service names mandated by FR-95. Order is not part of
@@ -66,7 +66,7 @@ class ComposeHealth:
     def __init__(self, services: Iterable[str] | None = None) -> None:
         if services is None:
             services = REQUIRED_SERVICES
-        self._status: dict[str, str] = {name: HEALTHY for name in services}
+        self._status: dict[str, str] = dict.fromkeys(services, HEALTHY)
 
     def mark(self, service: str, status: str) -> None:
         """Record ``status`` for ``service``."""
