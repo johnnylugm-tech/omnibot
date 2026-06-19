@@ -24,6 +24,7 @@ Citations:
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 
@@ -80,6 +81,37 @@ def _tokenize(text: str) -> list[str]:
     return text.split()
 
 
+def _slice_tokens(
+    tokens: list[str],
+    size: int,
+    *,
+    prefix: str,
+    chunk_type: str,
+    parent_id_for: Callable[[int, int], str | None],
+) -> list[Chunk]:
+    """Slice ``tokens`` into fixed-size windows and wrap each as a :class:`Chunk`.
+
+    ``parent_id_for(idx, start)`` resolves the parent FK for the chunk at
+    position ``idx`` whose first token sits at ``start``; parents pass a
+    callable that returns ``None``.
+    """
+    chunks: list[Chunk] = []
+    for idx, start in enumerate(range(0, len(tokens), size)):
+        piece = tokens[start : start + size]
+        if not piece:
+            continue
+        chunks.append(
+            Chunk(
+                chunk_id=f"{prefix}-{idx}",
+                content=" ".join(piece),
+                chunk_type=chunk_type,
+                parent_id=parent_id_for(idx, start),
+                token_count=len(piece),
+            )
+        )
+    return chunks
+
+
 class Chunker:
     """[FR-28] Slices text into 500-token parents and 150-token children.
 
@@ -106,23 +138,13 @@ class Chunker:
         Citations:
             - SRS.md FR-28 — Parent = 500 tokens.
         """
-        tokens = _tokenize(text)
-        size = self._spec.parent_size
-        chunks: list[Chunk] = []
-        for idx, start in enumerate(range(0, len(tokens), size)):
-            piece = tokens[start : start + size]
-            if not piece:
-                continue
-            chunks.append(
-                Chunk(
-                    chunk_id=f"parent-{idx}",
-                    content=" ".join(piece),
-                    chunk_type="parent",
-                    parent_id=None,
-                    token_count=len(piece),
-                )
-            )
-        return chunks
+        return _slice_tokens(
+            _tokenize(text),
+            self._spec.parent_size,
+            prefix="parent",
+            chunk_type="parent",
+            parent_id_for=lambda _idx, _start: None,
+        )
 
     def split_children(self, text: str) -> list[Chunk]:
         """[FR-28] Slice ``text`` into 150-token child chunks.
@@ -135,25 +157,18 @@ class Chunker:
         Citations:
             - SRS.md FR-28 — Child = 150 tokens；追索 Parent 送 LLM.
         """
-        tokens = _tokenize(text)
-        size = self._spec.child_size
         parent_size = self._spec.parent_size
-        chunks: list[Chunk] = []
-        for idx, start in enumerate(range(0, len(tokens), size)):
-            piece = tokens[start : start + size]
-            if not piece:
-                continue
-            parent_idx = (start // parent_size) if parent_size > 0 else 0
-            chunks.append(
-                Chunk(
-                    chunk_id=f"child-{idx}",
-                    content=" ".join(piece),
-                    chunk_type="child",
-                    parent_id=f"parent-{parent_idx}",
-                    token_count=len(piece),
-                )
-            )
-        return chunks
+
+        def parent_id(_idx: int, start: int) -> str:
+            return f"parent-{start // parent_size}" if parent_size > 0 else "parent-0"
+
+        return _slice_tokens(
+            _tokenize(text),
+            self._spec.child_size,
+            prefix="child",
+            chunk_type="child",
+            parent_id_for=parent_id,
+        )
 
 
 class ParentChildIndex:
