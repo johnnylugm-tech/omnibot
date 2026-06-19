@@ -412,6 +412,25 @@ def _build_sandwich_prompt(query: str, retrieved_context: str) -> str:
     )
 
 
+def _call_llm_with_fallback(
+    prompt: str, primary_llm: str, fallback_llm: str
+) -> str:
+    """[FR-30] Call the primary LLM, fall through to the secondary on exception.
+
+    Primary first; any exception (timeout, 5xx, "down" fault injection)
+    falls through to ``fallback_llm``. If BOTH models raise the exception
+    propagates so the orchestrator can surface a 503 rather than
+    returning a fabricated answer.
+
+    Citations:
+        - SRS.md FR-30 — gpt-4o 主要 → gemini-1.5-flash fallback.
+    """
+    try:
+        return _call_llm_api(primary_llm, prompt)
+    except Exception:
+        return _call_llm_api(fallback_llm, prompt)
+
+
 def _llm_generate(
     query: str,
     retrieved_context: str,
@@ -439,16 +458,7 @@ def _llm_generate(
           LLM fallback 切換 < 500ms.
     """
     prompt = _build_sandwich_prompt(query, retrieved_context)
-
-    # Primary first; any exception (timeout, 5xx, "down" fault
-    # injection) falls through to the secondary model. The fallback
-    # path is unguarded — if BOTH models are unavailable we let the
-    # exception propagate so the orchestrator can surface a 503 rather
-    # than returning a fabricated answer.
-    try:
-        answer = _call_llm_api(primary_llm, prompt)
-    except Exception:
-        answer = _call_llm_api(fallback_llm, prompt)
+    answer = _call_llm_with_fallback(prompt, primary_llm, fallback_llm)
 
     # Grounding check happens AFTER the model call returns a candidate
     # answer (per the FR-30 contract). Below the threshold we return
@@ -457,10 +467,11 @@ def _llm_generate(
     if grounding_score is not None and grounding_score < grounding_threshold:
         return None
 
+    confidence = float(grounding_score) if grounding_score is not None else 0.0
     return KnowledgeResult(
         id=0,
         content=answer,
-        confidence=float(grounding_score) if grounding_score is not None else 0.0,
+        confidence=confidence,
         source="wiki",
         knowledge_id=0,
     )
