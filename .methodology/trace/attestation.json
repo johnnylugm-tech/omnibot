@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "fe4094a3280a72534574d1e0ed93e019c5b3805a",
-  "content_sha256": "d8436c4e873d7425beef1d8e9062b052ab7e69ad528f32a4fc79668ca212326c",
+  "git_sha": "f813b5570fa7fe7cdd9a91f030f90438fb94babe",
+  "content_sha256": "9ea819fc265de72219b94d4c6994bca9f75ca51cf2e08ebee03498a1efcf85a9",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,10 +11,10 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "34.3%",
-      "test_coverage": "36.1%",
-      "verification_rate": "34.3%",
-      "total_links": 194,
+      "code_coverage": "36.1%",
+      "test_coverage": "37.0%",
+      "verification_rate": "36.1%",
+      "total_links": 197,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -33,8 +33,6 @@
           "FR-106",
           "FR-107",
           "FR-108",
-          "FR-31",
-          "FR-32",
           "FR-33",
           "FR-34",
           "FR-35",
@@ -106,7 +104,6 @@
           "FR-106",
           "FR-107",
           "FR-108",
-          "FR-32",
           "FR-33",
           "FR-34",
           "FR-35",
@@ -181,8 +178,6 @@
         "FR-106",
         "FR-107",
         "FR-108",
-        "FR-31",
-        "FR-32",
         "FR-33",
         "FR-34",
         "FR-35",
@@ -254,7 +249,6 @@
         "FR-106",
         "FR-107",
         "FR-108",
-        "FR-32",
         "FR-33",
         "FR-34",
         "FR-35",
@@ -770,9 +764,11 @@
       },
       "FR-31": {
         "fr_id": "FR-31",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
+        "code_files": [
+          "03-development/src/app/core/knowledge.py"
+        ],
         "test_files": [
           "tests/test_fr31.py"
         ],
@@ -781,10 +777,14 @@
       },
       "FR-32": {
         "fr_id": "FR-32",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/tests/test_fr32.py"
+        ],
+        "test_files": [
+          "tests/test_fr32.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
