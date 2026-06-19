@@ -1,7 +1,7 @@
 """[FR-10] PALADIN L1 — InputSanitizer (NFKC + homoglyph + control-char).
 
-SRS FR-10: "PALADIN L1 — InputSanitizer：NFKC 正規化 + homoglyph 替換
-(Cyrillic/Greek → ASCII) + 控制字元移除；延遲 < 2ms p95."
+SRS FR-10: "PALADIN L1 — InputSanitizer: NFKC 正規化 + homoglyph 替換
+(Cyrillic/Greek → ASCII) + 控制字元移除; 延遲 < 2ms p95."
 
 Pipeline:
     1. ``unicodedata.normalize('NFKC', text)`` — folds fullwidth and
@@ -27,7 +27,9 @@ Citations:
 
 from __future__ import annotations
 
+import re
 import unicodedata
+from dataclasses import dataclass
 
 # Curated Cyrillic + Greek homoglyphs that visually mimic ASCII and are
 # routinely used to bypass naive input filters (look-alike usernames,
@@ -98,3 +100,106 @@ class InputSanitizer:
         if not isinstance(text, str):
             raise TypeError("InputSanitizer.sanitize requires str input")
         return unicodedata.normalize("NFKC", text).translate(_TRANSLATE_TABLE)
+
+
+# ---------------------------------------------------------------------------
+# [FR-11] PALADIN L2 — PromptInjectionDefense
+#
+# SRS FR-11: "PALADIN L2 — Pattern Detection：13 個 SUSPICIOUS_PATTERNS
+# regex (ignore previous instructions, system:, pretend you, act as,
+# forget everything 等) + Unicode 變體偵測；延遲 < 3ms p95。"
+#
+# Pipeline: a single regex walk over the (already NFKC-normalized) input.
+# Case folding is delegated to ``re.IGNORECASE`` on each compiled pattern;
+# the L1 InputSanitizer has already collapsed fullwidth / zero-width
+# codepoints, so this layer does not re-normalize (avoiding double-billing
+# the per-call cost). Patterns are pre-compiled at import time so the
+# hot path is a tight loop of ``Pattern.search`` calls.
+#
+# Citations:
+#   - SRS.md FR-11 (PALADIN L2 Pattern Detection acceptance criteria)
+#   - 02-architecture/TEST_SPEC.md FR-11 (cases 1-6: pattern hits;
+#     case 7: p95 latency < 3ms)
+#   - 03-development/tests/test_fr11.py:108-113 (zero-arg fixture)
+#   - 03-development/tests/test_fr11.py:122-145 (ignore previous
+#     instructions case)
+#   - 03-development/tests/test_fr11.py:157-173 (system: prefix case)
+#   - 03-development/tests/test_fr11.py:185-201 (pretend you case)
+#   - 03-development/tests/test_fr11.py:211-227 (act as case)
+#   - 03-development/tests/test_fr11.py:239-255 (forget everything case)
+#   - 03-development/tests/test_fr11.py:268-287 (zh-TW false-positive
+#     guard)
+#   - 03-development/tests/test_fr11.py:300-334 (p95 < 3ms latency case)
+# ---------------------------------------------------------------------------
+_SUSPICIOUS_PATTERNS: list[re.Pattern[str]] = [
+    re.compile(r"ignore\s+(?:all\s+)?(?:previous|prior|above)\s+instructions?", re.IGNORECASE),
+    re.compile(r"system\s*:\s*you\s+are\s+now", re.IGNORECASE),
+    re.compile(r"pretend\s+you\s+(?:are|were)\s+", re.IGNORECASE),
+    re.compile(r"act\s+as\s+(?:an?\s+)?", re.IGNORECASE),
+    re.compile(r"forget\s+everything(?:\s+you\s+know)?", re.IGNORECASE),
+    re.compile(r"disregard\s+(?:all|any|the)\s+", re.IGNORECASE),
+    re.compile(r"override\s+(?:all|any|the|system)\s+", re.IGNORECASE),
+    re.compile(r"reveal\s+(?:the\s+)?(?:system|hidden|secret)\s+prompt", re.IGNORECASE),
+    re.compile(r"developer\s+mode", re.IGNORECASE),
+    re.compile(r"jailbreak", re.IGNORECASE),
+    re.compile(r"DAN\b", re.IGNORECASE),
+    re.compile(r"<\s*\|.*?\|", re.DOTALL),                      # <|...|> markers
+    re.compile(r"###\s*(?:system|assistant|instruction)\s*:", re.IGNORECASE),
+]
+
+
+@dataclass
+class _DetectionResult:
+    """Outcome of a single ``PromptInjectionDefense.check_input`` call.
+
+    ``__bool__`` is overridden so callers can use ``if defense.check_input(t):``
+    directly while still keeping the matched pattern available for logging.
+    """
+
+    is_suspicious: bool
+    matched_pattern: str | None = None
+
+    def __bool__(self) -> bool:
+        return self.is_suspicious
+
+
+class PromptInjectionDefense:
+    """[FR-11] PALADIN L2 — SUSPICIOUS_PATTERNS regex pass.
+
+    SRS FR-11: ``PromptInjectionDefense.check_input()`` < 3ms p95.
+
+    The constructor is zero-arg and side-effect-free; ``check_input`` is
+    pure-Python regex work so the per-call cost stays well under the
+    3ms p95 budget. Callers upstream are expected to have already run
+    the L1 InputSanitizer (NFKC + homoglyph + control-char strip) so
+    NFKC re-normalization is intentionally not performed here.
+
+    Citations:
+        - SRS.md FR-11
+        - 03-development/tests/test_fr11.py (all 7 cases)
+    """
+
+    def check_input(self, text: str) -> _DetectionResult:
+        """Flag ``text`` if it matches any of the 13 SUSPICIOUS_PATTERNS.
+
+        Args:
+            text: Already NFKC-normalized user input.
+
+        Returns:
+            ``_DetectionResult`` whose ``bool()`` is True iff at least
+            one pattern matched; ``matched_pattern`` records the regex
+            source of the first hit (None on the negative path).
+
+        Raises:
+            TypeError: ``text`` is not a ``str``.
+
+        Citations:
+            - SRS.md FR-11
+            - 03-development/tests/test_fr11.py:122-334 (cases 1-7)
+        """
+        if not isinstance(text, str):
+            raise TypeError("PromptInjectionDefense.check_input requires str input")
+        for pattern in _SUSPICIOUS_PATTERNS:
+            if pattern.search(text):
+                return _DetectionResult(is_suspicious=True, matched_pattern=pattern.pattern)
+        return _DetectionResult(is_suspicious=False, matched_pattern=None)
