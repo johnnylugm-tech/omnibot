@@ -34,7 +34,7 @@ import threading
 import unicodedata
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 # Curated Cyrillic + Greek homoglyphs that visually mimic ASCII and are
 # routinely used to bypass naive input filters (look-alike usernames,
@@ -373,7 +373,7 @@ PromptInjectionDefense.build_sandwich_prompt = _build_sandwich_prompt
 #     degradation)
 #   - SRS.md FR-15 (low-risk L4 skip; classify() is the routing hook)
 # ---------------------------------------------------------------------------
-class InjectionType(str, Enum):
+class InjectionType(StrEnum):
     """[FR-13] Valid values for ``SemanticInjectionClassifier`` injection_type.
 
     Exactly four members per SRS FR-13 (the downstream FR-16 retrospective
@@ -474,7 +474,7 @@ class SemanticInjectionClassifier:
 
         try:
             verdict = await self._call_llm(text, timeout_ms)
-        except (asyncio.TimeoutError, ConnectionError, OSError):
+        except (TimeoutError, ConnectionError, OSError):
             return _make_passthrough(is_unverified=True)
 
         return _result_from_verdict(verdict)
@@ -534,7 +534,7 @@ class SemanticInjectionClassifier:
             # handle both shapes on the same code path.
             if asyncio.iscoroutine(verdict):
                 verdict = _await_coro_from_sync(verdict, timeout_ms)
-        except (asyncio.TimeoutError, ConnectionError, OSError):
+        except (TimeoutError, ConnectionError, OSError):
             # Timeout OR downstream down → passthrough, do NOT block.
             return _make_passthrough(is_unverified=True)
 
@@ -797,7 +797,7 @@ class GroundingChecker:
 # ---------------------------------------------------------------------------
 @dataclass
 class ProcessResult:
-    """[FR-15] Outcome of a single ``PALADINPipeline.process`` call.
+    """[FR-15/FR-16] Outcome of a single ``PALADINPipeline.process`` call.
 
     ``is_blocked`` is True on any short-circuit path (injection verdict
     or critical-risk fast-fail). ``response`` carries the Tier-3
@@ -807,6 +807,15 @@ class ProcessResult:
     ``l4_called`` are observability flags for the FR-15 routing audit.
     ``block_reason`` is ``'injection'`` on an L4-verdict block and
     ``'critical_risk'`` on the critical short-circuit.
+    ``late_injection_detected`` (FR-16) is True ONLY on the medium-risk
+    retrospective-block path — L4 verdict arrived after L3 had already
+    completed and the L3 result was revoked. Synchronous L4 blocks
+    (high risk, critical) leave this flag at its default ``False`` so
+    FR-17 retraction handlers can branch on it.
+
+    Citations:
+        - SRS.md FR-15 (PALADIN routing orchestrator)
+        - SRS.md FR-16 (PALADIN L4 事後攔截)
     """
 
     is_blocked: bool
@@ -815,6 +824,7 @@ class ProcessResult:
     tier3_called: bool = False
     l4_called: bool = False
     block_reason: str | None = None
+    late_injection_detected: bool = False  # [FR-16]
 
 
 _RISK_LEVELS = frozenset({"low", "medium", "high", "critical"})
@@ -826,16 +836,32 @@ _BLOCK_REASON_INJECTION = "injection"
 _BLOCK_REASON_CRITICAL_RISK = "critical_risk"
 
 
+def _noop_security_log_writer(**payload) -> None:  # noqa: ARG001
+    """[FR-16] Default no-op for ``PALADINPipeline.security_log_writer``.
+
+    Lets the pipeline accept the writer as an optional dependency so
+    production wiring can plug in a real database sink later without
+    changing call sites or adding ``if writer is not None`` branches
+    on the hot path.
+
+    Citations:
+        - SRS.md FR-16 (記錄 injection_retrospective_block 至 security_logs)
+    """
+    return None
+
+
 class PALADINPipeline:
-    """[FR-15] PALADIN routing orchestrator.
+    """[FR-15/FR-16] PALADIN routing orchestrator.
 
     SRS FR-15: ``low → 跳過 L4 直接 L3; medium → L4 與 L3 平行 (L3 不等待
     L4); high / critical → 同步 L4 阻擋 (不呼叫 L3)``; L4 觸發率 < 5% 總流量.
+    SRS FR-16: medium-risk 後 L4 判定 injection → 撤回 L3 結果 + 寫
+    ``injection_retrospective_block`` 至 security_logs.
 
     Construction is dependency-injected so tests can substitute the L4
-    classifier and the Tier-3 LLM call without a network round-trip.
-    ``process`` is async so the medium-risk branch can gather L3 and L4
-    concurrently.
+    classifier, the Tier-3 LLM call, and the audit-log writer without
+    a network round-trip or a real database. ``process`` is async so
+    the medium-risk branch can gather L3 and L4 concurrently.
     """
 
     DEFAULT_TIMEOUT_MS = 200.0
@@ -845,9 +871,17 @@ class PALADINPipeline:
         *,
         classifier: SemanticInjectionClassifier | None = None,
         tier3_call: Callable[[str], Awaitable[str]] | None = None,
+        security_log_writer: Callable[..., None] | None = None,
     ) -> None:
         self._classifier = classifier or SemanticInjectionClassifier()
         self._tier3_call = tier3_call
+        # [FR-16] Default to a no-op writer so production wiring can
+        # plug in a real database sink without changing call sites.
+        self._security_log_writer = (
+            security_log_writer
+            if security_log_writer is not None
+            else _noop_security_log_writer
+        )
 
     async def _run_l4(
         self,
@@ -872,14 +906,22 @@ class PALADINPipeline:
         tier3_called: bool,
         l4_called: bool,
         verdict: ClassificationResult | None = None,
+        late_injection_detected: bool = False,
     ) -> ProcessResult:
-        """[FR-15] Factory for any short-circuit (blocked) ProcessResult."""
+        """[FR-15/FR-16] Factory for any short-circuit (blocked) ProcessResult.
+
+        ``late_injection_detected`` defaults to ``False`` so the
+        synchronous-block branches (critical / high risk) keep their
+        existing behavior; only the medium-risk retrospective-block
+        branch sets it to ``True``.
+        """
         return ProcessResult(
             is_blocked=True,
             classification=verdict,
             block_reason=block_reason,
             tier3_called=tier3_called,
             l4_called=l4_called,
+            late_injection_detected=late_injection_detected,
         )
 
     @staticmethod
@@ -970,17 +1012,37 @@ class PALADINPipeline:
                 response=response, verdict=verdict, l4_called=True
             )
 
-        # ---- medium: parallel L4 + L3 ----
+        # ---- medium: parallel L4 + L3 (FR-16 retrospective block) ----
         verdict, response = await asyncio.gather(
             self._run_l4(text, risk_level=risk_level, timeout_ms=timeout_ms),
             self._call_l3(text),
         )
         if verdict.is_injection:
+            # [FR-16] Retrospective block — the L4 verdict reported
+            # injection AFTER the L3 coroutine had already completed
+            # (the typical medium-risk race: L3 is fast, L4 has a
+            # 200ms LLM budget). The L3 result is revoked before the
+            # ProcessResult is constructed so a poisoned response
+            # never escapes the pipeline, and an
+            # ``injection_retrospective_block`` event is written to
+            # the audit log with the conversation context.
+            self._security_log_writer(
+                event="injection_retrospective_block",
+                risk_level=risk_level,
+                injection_type=(
+                    verdict.injection_type.value
+                    if hasattr(verdict.injection_type, "value")
+                    else str(verdict.injection_type)
+                ),
+                confidence=verdict.confidence,
+                text=text,
+            )
             return self._blocked_result(
                 block_reason=_BLOCK_REASON_INJECTION,
                 tier3_called=True,
                 l4_called=True,
                 verdict=verdict,
+                late_injection_detected=True,
             )
         return self._success_result(
             response=response, verdict=verdict, l4_called=True
