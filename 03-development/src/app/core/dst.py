@@ -6,6 +6,10 @@
 [FR-36] Auto-escalation triggers: 3-round slot filling /
         confidence < 0.65. Adds INTENT_CONFIDENCE_THRESHOLD,
         MAX_SLOT_FILLING_ROUNDS, and DialogueState.auto_escalate().
+[FR-37] AWAITING_CONFIRMATION timeout surface: 2-round unconfirmed
+        → ESCALATED; user confirm → PROCESSING; user deny →
+        SLOT_FILLING. Adds MAX_AWAITING_CONFIRMATION_ROUNDS and
+        DialogueState.handle_confirmation().
 
 Citations:
 - SRS.md FR-34 (8-state FSM + ALLOWED_TRANSITIONS contract)
@@ -16,9 +20,14 @@ Citations:
 - SRS.md FR-36 (auto-escalation: SLOT_FILLING > 3 rounds →
   ESCALATED; intent confidence < INTENT_CONFIDENCE_THRESHOLD (0.65)
   → ESCALATED; PROCESSING confidence < 0.65 → ESCALATED)
+- SRS.md FR-37 (AWAITING_CONFIRMATION 超時:超過 2 輪未確認 →
+  ESCALATED;用戶確認 → PROCESSING;用戶否認 → SLOT_FILLING;
+  2 輪未確認觸發 ESCALATED;確認/否認狀態轉移正確)
 - 02-architecture/TEST_SPEC.md FR-34 (test cases 1-5)
 - 02-architecture/TEST_SPEC.md FR-35 (test cases 1-4)
 - 02-architecture/TEST_SPEC.md FR-36 (test cases 1-3)
+- 02-architecture/TEST_SPEC.md FR-37 (test cases 1-3: 2 輪未確認
+  → ESCALATED;confirm → PROCESSING;deny → SLOT_FILLING)
 - 02-architecture/SAD.md Module: dst.py (NP-13 atomicity under
   concurrent async sessions → ``threading.Lock``)
 
@@ -127,6 +136,17 @@ INTENT_CONFIDENCE_THRESHOLD: float = 0.65
 MAX_SLOT_FILLING_ROUNDS: int = 3
 
 
+# ---------------------------------------------------------------------------
+# FR-37 — AWAITING_CONFIRMATION round limit (spec-pinned).
+#
+# SRS FR-37: "AWAITING_CONFIRMATION 超時:超過 2 輪未確認 → ESCALATED".
+# The constant is the single source of truth for the round limit so
+# a regression that drifts it to 3 (or any other value) is caught
+# immediately by the spec-coverage test at ``tests/test_fr37.py``.
+# ---------------------------------------------------------------------------
+MAX_AWAITING_CONFIRMATION_ROUNDS: int = 2
+
+
 class DialogueState:
     """Mutable 8-state FSM tracker for a single conversation.
 
@@ -154,9 +174,16 @@ class DialogueState:
       the two spec-pinned triggers (round limit, confidence
       threshold) and either transitions to ``"ESCALATED"`` (with a
       ``turn_count`` increment) or leaves the FSM untouched.
+
+    [FR-37] SRS FR-37 acceptance criteria:
+    - ``handle_confirmation(user_response, awaiting_rounds)`` evaluates
+      three spec-pinned triggers (timeout, confirm, deny) from
+      ``AWAITING_CONFIRMATION`` and either transitions to
+      ``"ESCALATED"`` / ``"PROCESSING"`` / ``"SLOT_FILLING"`` (with
+      a ``turn_count`` increment) or leaves the FSM untouched.
     """
 
-    __slots__ = ("state", "turn_count", "_lock", "intent", "slots")
+    __slots__ = ("_lock", "intent", "slots", "state", "turn_count")
 
     def __init__(
         self,
@@ -284,3 +311,63 @@ class DialogueState:
             self.state == "SLOT_FILLING"
             and slot_filling_rounds >= MAX_SLOT_FILLING_ROUNDS
         )
+
+    def handle_confirmation(
+        self, user_response: str, awaiting_rounds: int = 0
+    ) -> str:
+        """Handle an AWAITING_CONFIRMATION response or timeout.
+
+        [FR-37] SRS FR-37 acceptance criteria:
+        - Timeout trigger: ``self.state == "AWAITING_CONFIRMATION"``
+          AND ``awaiting_rounds >= MAX_AWAITING_CONFIRMATION_ROUNDS``
+          (>=, so 2 rounds triggers escalation per the spec-pinned
+          ``MAX_AWAITING_CONFIRMATION_ROUNDS == 2`` semantics).
+          On timeout: ``self.state`` → ``"ESCALATED"``, increment
+          ``self.turn_count`` by 1, return ``"ESCALATED"``.
+        - Confirm trigger: ``user_response == "confirm"`` →
+          ``self.state`` → ``"PROCESSING"`` (the legal
+          AWAITING_CONFIRMATION → PROCESSING edge from
+          ``ALLOWED_TRANSITIONS``), increment ``self.turn_count``
+          by 1, return ``"PROCESSING"``.
+        - Deny trigger: ``user_response == "deny"`` →
+          ``self.state`` → ``"SLOT_FILLING"`` (AWAITING_CONFIRMATION
+          → SLOT_FILLING is NOT a legal edge in
+          ``ALLOWED_TRANSITIONS``, so this is a side-channel
+          transition — like ``auto_escalate`` it bypasses
+          ``transition()``), increment ``self.turn_count`` by 1,
+          return ``"SLOT_FILLING"``.
+        - No trigger: ``self.state`` / ``self.turn_count`` are
+          unchanged and the method returns ``self.state``.
+        - Atomic w.r.t. concurrent callers (NP-13) — mirrors the
+          ``transition`` / ``auto_escalate`` lock discipline.
+        """
+        with self._lock:
+            # Timeout trigger — state guard prevents spurious
+            # escalation when the FSM has already moved past
+            # AWAITING_CONFIRMATION (e.g. concurrent advance to
+            # PROCESSING between round count and handler call).
+            if (
+                self.state == "AWAITING_CONFIRMATION"
+                and awaiting_rounds >= MAX_AWAITING_CONFIRMATION_ROUNDS
+            ):
+                self.state = "ESCALATED"
+                self.turn_count += 1
+                return "ESCALATED"
+            # Confirm trigger — bypasses ``transition()`` to keep all
+            # three branches in one atomic block; PROCESSING is a
+            # legal successor so this is purely a style choice (the
+            # legal-edge semantics are unchanged).
+            if user_response == "confirm":
+                self.state = "PROCESSING"
+                self.turn_count += 1
+                return "PROCESSING"
+            # Deny trigger — MUST bypass ``transition()`` because
+            # AWAITING_CONFIRMATION → SLOT_FILLING is NOT in
+            # ``ALLOWED_TRANSITIONS`` (only AWAITING_CONFIRMATION →
+            # PROCESSING is). Same side-channel pattern as
+            # ``auto_escalate``.
+            if user_response == "deny":
+                self.state = "SLOT_FILLING"
+                self.turn_count += 1
+                return "SLOT_FILLING"
+            return self.state
