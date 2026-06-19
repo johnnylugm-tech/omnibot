@@ -37,16 +37,23 @@ from dataclasses import dataclass
 # its ASCII counterpart. The table is intentionally small — the FR-10
 # acceptance criterion is "Cyrillic/Greek homoglyphs replaced", not
 # full IDNA.
+#
+# Keys are written via ``chr(0xXXXX)`` (rather than as literal
+# Cyrillic / Greek characters) so the source compiles without
+# triggering RUF001 ambiguous-character warnings. At runtime each
+# ``chr(0x0410)`` evaluates to exactly the same single-codepoint
+# ``str`` as the literal Cyrillic ``А`` would — ``str.maketrans`` and
+# ``str.translate`` see identical translation pairs.
 _HOMOGLYPHS: dict[str, str] = {
     # Cyrillic
-    "А": "A", "В": "B", "С": "C", "Е": "E",
-    "Н": "H", "К": "K", "М": "M", "О": "O",
-    "Р": "P", "Т": "T", "Х": "X",
+    chr(0x0410): "A", chr(0x0412): "B", chr(0x0421): "C", chr(0x0415): "E",
+    chr(0x041D): "H", chr(0x041A): "K", chr(0x041C): "M", chr(0x041E): "O",
+    chr(0x0420): "P", chr(0x0422): "T", chr(0x0425): "X",
     # Greek
-    "Α": "A", "Β": "B", "Ε": "E", "Ζ": "Z",
-    "Η": "H", "Ι": "I", "Κ": "K", "Μ": "M",
-    "Ν": "N", "Ο": "O", "Ρ": "P", "Τ": "T",
-    "Υ": "Y", "Χ": "X",
+    chr(0x0391): "A", chr(0x0392): "B", chr(0x0395): "E", chr(0x0396): "Z",
+    chr(0x0397): "H", chr(0x0399): "I", chr(0x039A): "K", chr(0x039C): "M",
+    chr(0x039D): "N", chr(0x039F): "O", chr(0x03A1): "P", chr(0x03A4): "T",
+    chr(0x03A5): "Y", chr(0x03A7): "X",
 }
 
 # C0 (U+0000..U+001F) + DEL (U+007F) + C1 (U+0080..U+009F).
@@ -217,3 +224,105 @@ class PromptInjectionDefense:
             if pattern.search(text):
                 return _DetectionResult(is_suspicious=True, matched_pattern=source)
         return _DetectionResult(is_suspicious=False, matched_pattern=None)
+
+
+# ---------------------------------------------------------------------------
+# [FR-12] PALADIN L3 — Sandwich Prompt + Spotlighting (ICLR 2025)
+#
+# SRS FR-12: "PALADIN L3 — Instruction Hierarchy：Sandwich Prompt 建構，
+# 系統指令標記 PRIORITY: HIGHEST，用戶訊息標記 UNTRUSTED DATA BOUNDARY，
+# 使用 Spotlighting delimiters（ICLR 2025）；L1-L3 合計延遲 < 5ms p95."
+#
+# Construction is pure-Python string concatenation — no I/O, no LLM
+# calls, no regex — so the per-call cost stays well under the L1-L3
+# cumulative 5ms p95 budget when composed with FR-10
+# ``InputSanitizer.sanitize`` and FR-11 ``PromptInjectionDefense.check_input``.
+# The sandwich shape (SYSTEM → USER → SYSTEM REINFORCEMENT) protects the
+# system intent from attention-budget dilution by an injected
+# instruction inside the untrusted boundary.
+#
+# Citations:
+#   - SRS.md FR-12 (PALADIN L3 Sandwich Prompt + Spotlighting acceptance)
+#   - 02-architecture/TEST_SPEC.md FR-12 (case 1: PRIORITY: HIGHEST;
+#     case 2: UNTRUSTED DATA BOUNDARY; case 3: L1-L3 p95 < 5ms;
+#     case 4: Spotlighting delimiters ICLR 2025)
+#   - 03-development/tests/test_fr12.py:136-161 (PRIORITY: HIGHEST case)
+#   - 03-development/tests/test_fr12.py:173-201 (UNTRUSTED DATA BOUNDARY case)
+#   - 03-development/tests/test_fr12.py:215-252 (L1-L3 p95 < 5ms case)
+#   - 03-development/tests/test_fr12.py:267-337 (Spotlighting delimiters case)
+# ---------------------------------------------------------------------------
+# Spotlighting delimiters per the ICLR 2025 paper wrap the untrusted
+# tokens inside a distinctive pair so the downstream LLM can visually
+# isolate them from surrounding instruction text. Defined as
+# ``PromptInjectionDefense`` class attributes so ``self.<name>`` lookups
+# on the hot path cost nothing.
+PromptInjectionDefense._SPOTLIGHT_START = "<<<SPOTLIGHT_START>>>"
+PromptInjectionDefense._SPOTLIGHT_END = "<<<SPOTLIGHT_END>>>"
+
+
+def _build_sandwich_prompt(
+    self: "PromptInjectionDefense",
+    user_text: str,
+    system_prompt: str = "",
+) -> str:
+    """[FR-12] Assemble a sandwich prompt with priority + boundary.
+
+    The three blocks are emitted in order:
+
+      1. ``[SYSTEM | PRIORITY: HIGHEST]`` — carries the upstream
+         system intent marked with the literal token
+         ``PRIORITY: HIGHEST`` so the downstream LLM recognizes it as
+         the highest-priority instruction that may not be overridden
+         by anything inside the untrusted boundary.
+      2. ``[USER | UNTRUSTED DATA BOUNDARY]`` — wraps ``user_text``
+         between the literal boundary markers
+         ``UNTRUSTED DATA BOUNDARY`` … ``END UNTRUSTED DATA BOUNDARY``
+         and the Spotlighting delimiter pair so the LLM knows the
+         segment is data, not instruction.
+      3. ``[SYSTEM REINFORCEMENT | PRIORITY: HIGHEST]`` — repeats the
+         system intent after the untrusted block (the "sandwich"
+         shape) so an injected instruction in the middle cannot push
+         the system intent off the attention budget.
+
+    Args:
+        user_text: User-supplied message (already L1-sanitized +
+            L2-cleared; this layer does not re-normalize).
+        system_prompt: Upstream system intent (may be empty).
+
+    Returns:
+        The assembled sandwich prompt as a single ``str``.
+
+    Raises:
+        TypeError: ``user_text`` is not a ``str``.
+
+    Citations:
+        - SRS.md FR-12
+        - 03-development/tests/test_fr12.py:136-337 (all 4 cases)
+    """
+    if not isinstance(user_text, str):
+        raise TypeError(
+            "build_sandwich_prompt requires str user_text"
+        )
+    system_block = (
+        f"[SYSTEM | PRIORITY: HIGHEST]\n"
+        f"{system_prompt}\n"
+        f"[/SYSTEM]"
+    )
+    user_block = (
+        f"[USER | UNTRUSTED DATA BOUNDARY]\n"
+        f"{self._SPOTLIGHT_START}{user_text}{self._SPOTLIGHT_END}\n"
+        f"[/USER | END UNTRUSTED DATA BOUNDARY]"
+    )
+    reinforcement_block = (
+        "[SYSTEM REINFORCEMENT | PRIORITY: HIGHEST]\n"
+        f"{system_prompt}\n"
+        "[/SYSTEM REINFORCEMENT]"
+    )
+    return (
+        f"{system_block}\n\n"
+        f"{user_block}\n\n"
+        f"{reinforcement_block}"
+    )
+
+
+PromptInjectionDefense.build_sandwich_prompt = _build_sandwich_prompt
