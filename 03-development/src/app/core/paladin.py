@@ -43,7 +43,7 @@ from dataclasses import dataclass
 # Cyrillic / Greek characters) so the source compiles without
 # triggering RUF001 ambiguous-character warnings. At runtime each
 # ``chr(0x0410)`` evaluates to exactly the same single-codepoint
-# ``str`` as the literal Cyrillic ``А`` would — ``str.maketrans`` and
+# ``str`` as the literal Cyrillic ``A`` would — ``str.maketrans`` and
 # ``str.translate`` see identical translation pairs.
 _HOMOGLYPHS: dict[str, str] = {
     # Cyrillic
@@ -113,9 +113,9 @@ class InputSanitizer:
 # ---------------------------------------------------------------------------
 # [FR-11] PALADIN L2 — PromptInjectionDefense
 #
-# SRS FR-11: "PALADIN L2 — Pattern Detection：13 個 SUSPICIOUS_PATTERNS
+# SRS FR-11: "PALADIN L2 — Pattern Detection: 13 個 SUSPICIOUS_PATTERNS
 # regex (ignore previous instructions, system:, pretend you, act as,
-# forget everything 等) + Unicode 變體偵測；延遲 < 3ms p95。"
+# forget everything 等) + Unicode 變體偵測; 延遲 < 3ms p95."
 #
 # Pipeline: a single regex walk over the (already NFKC-normalized) input.
 # Case folding is delegated to ``re.IGNORECASE`` on each compiled pattern;
@@ -230,9 +230,9 @@ class PromptInjectionDefense:
 # ---------------------------------------------------------------------------
 # [FR-12] PALADIN L3 — Sandwich Prompt + Spotlighting (ICLR 2025)
 #
-# SRS FR-12: "PALADIN L3 — Instruction Hierarchy：Sandwich Prompt 建構，
-# 系統指令標記 PRIORITY: HIGHEST，用戶訊息標記 UNTRUSTED DATA BOUNDARY，
-# 使用 Spotlighting delimiters（ICLR 2025）；L1-L3 合計延遲 < 5ms p95."
+# SRS FR-12: "PALADIN L3 — Instruction Hierarchy: Sandwich Prompt 建構,
+# 系統指令標記 PRIORITY: HIGHEST, 用戶訊息標記 UNTRUSTED DATA BOUNDARY,
+# 使用 Spotlighting delimiters (ICLR 2025); L1-L3 合計延遲 < 5ms p95."
 #
 # Construction is pure-Python string concatenation — no I/O, no LLM
 # calls, no regex — so the per-call cost stays well under the L1-L3
@@ -336,10 +336,10 @@ PromptInjectionDefense.build_sandwich_prompt = _build_sandwich_prompt
 # ---------------------------------------------------------------------------
 # [FR-13] PALADIN L4 — SemanticInjectionClassifier
 #
-# SRS FR-13: "PALADIN L4 — SemanticInjectionClassifier：LLM-based
-# (gpt-4o-mini 預設)，回傳 `{is_injection, confidence, injection_type:
-# direct_prompt_injection | indirect_injection | jailbreak | none}`；
-# p95 < 200ms；classifier 超時 → 放行並標記 'unverified'."
+# SRS FR-13: "PALADIN L4 — SemanticInjectionClassifier: LLM-based
+# (gpt-4o-mini 預設), 回傳 `{is_injection, confidence, injection_type:
+# direct_prompt_injection | indirect_injection | jailbreak | none}`;
+# p95 < 200ms; classifier 超時 → 放行並標記 'unverified'."
 #
 # Construction is zero-arg and side-effect-free; the only network hop is
 # ``_call_llm()``, exposed as an instance method so unit tests can
@@ -534,3 +534,161 @@ def _result_from_verdict(verdict: dict) -> ClassificationResult:
         injection_type=InjectionType(verdict.get("injection_type", "none")),
         is_unverified=False,
     )
+
+
+# ---------------------------------------------------------------------------
+# [FR-14] PALADIN L5 — GroundingChecker
+#
+# SRS FR-14: "PALADIN L5 — GroundingChecker: 計算 LLM 輸出與 source_texts
+# 之間 cosine similarity (text-embedding-3-small 1536維), 閾值 0.75;
+# 延遲 < 5ms (本地計算). cosine score < 0.75 → grounded=False;
+# cosine score ≥ 0.75 → grounded=True; 無 source_texts → grounded=False."
+#
+# Construction is zero-arg and side-effect-free; the cosine math runs
+# locally (no remote embedding API on the L5 hot path) so the per-call
+# cost stays well under the 5ms p95 budget. ``_cosine_similarity`` is
+# exposed as an instance method so unit tests can monkeypatch the
+# underlying math and inject deterministic scores without depending on
+# ``math.sqrt`` or numpy.
+#
+# Citations:
+#   - SRS.md FR-14 (PALADIN L5 GroundingChecker acceptance criteria)
+#   - 02-architecture/TEST_SPEC.md FR-14 (case 1: cosine 0.70 < 0.75 →
+#     grounded=False; case 2: cosine 0.80 ≥ 0.75 → grounded=True;
+#     case 3: empty source_texts → grounded=False; case 4: p95 < 5ms)
+#   - 03-development/tests/test_fr14.py:118-167 (case 1 — cosine below
+#     threshold yields grounded=False)
+#   - 03-development/tests/test_fr14.py:170-219 (case 2 — cosine at or
+#     above threshold yields grounded=True; threshold round-trip)
+#   - 03-development/tests/test_fr14.py:222-263 (case 3 — empty
+#     source_texts short-circuits to grounded=False with source_count=0)
+#   - 03-development/tests/test_fr14.py:266-318 (case 4 — p95 latency
+#     stays under 5ms with slack over 1000 iterations)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class GroundingResult:
+    """[FR-14] Outcome of a single ``GroundingChecker.check`` call.
+
+    ``grounded`` is the boolean the pipeline reads. ``cosine_score`` is
+    the *maximum* cosine similarity over the source_texts (0.0 when
+    source_texts is empty — by definition no grounding can be
+    demonstrated). ``threshold`` echoes the threshold the call used so
+    log lines can reproduce the decision offline. ``source_count`` is
+    the number of source texts the call considered (0 on the empty-input
+    short-circuit path so downstream observability can spot the "no
+    candidates" condition).
+    """
+
+    grounded: bool
+    cosine_score: float
+    threshold: float
+    source_count: int
+
+
+class GroundingChecker:
+    """[FR-14] PALADIN L5 — cosine-similarity grounding check.
+
+    SRS FR-14: ``GroundingChecker.check()`` < 5ms p95.
+
+    Construction is zero-arg and side-effect-free; the cosine math
+    runs locally (pure-Python dot / norm) so no network round-trip is
+    on the L5 hot path. ``_cosine_similarity`` is exposed as an
+    instance method so unit tests can monkeypatch it and inject
+    deterministic scores without depending on the underlying math
+    implementation.
+    """
+
+    DEFAULT_THRESHOLD = 0.75
+
+    def __init__(self) -> None:
+        # Zero-arg; no network I/O at init (so the < 5ms p95 budget
+        # holds even on the first call after process boot, and so a
+        # unit-test fixture can spin one up with no setup).
+        pass
+
+    def _cosine_similarity(
+        self,
+        a,
+        b,
+    ) -> float:
+        """[FR-14] Cosine similarity hook — tests monkeypatch this.
+
+        Default implementation: pure-Python ``dot(a, b) / (norm(a) *
+        norm(b))`` over equal-length float sequences. Returns 0.0 when
+        either vector has zero norm (avoids division-by-zero on a
+        degenerate zero-vector input).
+        """
+        dot = 0.0
+        norm_a = 0.0
+        norm_b = 0.0
+        for x, y in zip(a, b):
+            dot += x * y
+            norm_a += x * x
+            norm_b += y * y
+        if norm_a == 0.0 or norm_b == 0.0:
+            return 0.0
+        return dot / ((norm_a ** 0.5) * (norm_b ** 0.5))
+
+    def check(
+        self,
+        output_embedding,
+        source_texts,
+        *,
+        threshold: float = DEFAULT_THRESHOLD,
+    ) -> GroundingResult:
+        """[FR-14] Compare LLM output embedding against source_texts.
+
+        Computes the maximum cosine similarity between
+        ``output_embedding`` and each item in ``source_texts``, then
+        compares it against ``threshold`` to decide ``grounded``. When
+        ``source_texts`` is empty there is no evidence to ground
+        against and ``grounded=False`` is returned (with
+        ``cosine_score=0.0`` and ``source_count=0``).
+
+        Args:
+            output_embedding: 1536-dim embedding of the LLM output.
+            source_texts: List of 1536-dim source embeddings.
+            threshold: Cosine similarity cutoff. Defaults to
+                ``DEFAULT_THRESHOLD`` (0.75).
+
+        Returns:
+            ``GroundingResult`` carrying the boolean decision, the
+            observed max cosine score, the threshold used, and the
+            number of source texts considered.
+
+        Raises:
+            TypeError: ``output_embedding`` is not iterable, or any
+                element of ``source_texts`` is not iterable.
+
+        Citations:
+            - SRS.md FR-14
+            - 03-development/tests/test_fr14.py:118-318 (all 4 cases)
+        """
+        if not hasattr(output_embedding, "__iter__"):
+            raise TypeError(
+                "GroundingChecker.check requires iterable output_embedding"
+            )
+
+        # Empty source_texts — by definition no grounding.
+        if not source_texts:
+            return GroundingResult(
+                grounded=False,
+                cosine_score=0.0,
+                threshold=float(threshold),
+                source_count=0,
+            )
+
+        # Compute max cosine similarity over the sources.
+        max_score = max(
+            self._cosine_similarity(output_embedding, src)
+            for src in source_texts
+        )
+
+        return GroundingResult(
+            grounded=max_score >= threshold,
+            cosine_score=float(max_score),
+            threshold=float(threshold),
+            source_count=len(source_texts),
+        )
