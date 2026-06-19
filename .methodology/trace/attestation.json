@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "66cbb2c1d94a3364edcbb24c01b2f7e08de15e73",
-  "content_sha256": "92b59396cebdef5234ba47f834eea0b168469a85d4ff54c6a0b2d193ba9add7f",
+  "git_sha": "efb7608cfa5e54686fd760ffab275f20b4017391",
+  "content_sha256": "c37bf0b6b2e7eea973be6853615f80c089a0573a729f95878d49958de6e60005",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,10 +11,10 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "15.7%",
-      "test_coverage": "16.7%",
-      "verification_rate": "15.7%",
-      "total_links": 143,
+      "code_coverage": "17.6%",
+      "test_coverage": "18.5%",
+      "verification_rate": "17.6%",
+      "total_links": 147,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -100,11 +100,9 @@
           "FR-86",
           "FR-87",
           "FR-88",
-          "FR-91",
           "FR-92",
           "FR-93",
           "FR-94",
-          "FR-95",
           "FR-96",
           "FR-97",
           "FR-98",
@@ -196,8 +194,6 @@
           "FR-92",
           "FR-93",
           "FR-94",
-          "FR-95",
-          "FR-96",
           "FR-97",
           "FR-98",
           "FR-99"
@@ -289,11 +285,9 @@
         "FR-86",
         "FR-87",
         "FR-88",
-        "FR-91",
         "FR-92",
         "FR-93",
         "FR-94",
-        "FR-95",
         "FR-96",
         "FR-97",
         "FR-98",
@@ -385,8 +379,6 @@
         "FR-92",
         "FR-93",
         "FR-94",
-        "FR-95",
-        "FR-96",
         "FR-97",
         "FR-98",
         "FR-99"
@@ -1354,9 +1346,11 @@
       },
       "FR-91": {
         "fr_id": "FR-91",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
+        "code_files": [
+          "03-development/src/app/infra/data_retention.py"
+        ],
         "test_files": [
           "tests/test_fr91.py"
         ],
@@ -1392,10 +1386,14 @@
       },
       "FR-95": {
         "fr_id": "FR-95",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/infra/compose.py"
+        ],
+        "test_files": [
+          "tests/test_fr95.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
@@ -1404,7 +1402,9 @@
         "status": "pending",
         "srs_section": "SAD.md",
         "code_files": [],
-        "test_files": [],
+        "test_files": [
+          "tests/test_fr96.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
