@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "f813b5570fa7fe7cdd9a91f030f90438fb94babe",
-  "content_sha256": "9ea819fc265de72219b94d4c6994bca9f75ca51cf2e08ebee03498a1efcf85a9",
+  "git_sha": "add9693fbaf41775c6b7e1bf3f4cf52dec126f5a",
+  "content_sha256": "ac845e0d79815990187f41bce1e8a0fcf2aad5928043ab7a971e89df01394816",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,10 +11,10 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "36.1%",
-      "test_coverage": "37.0%",
-      "verification_rate": "36.1%",
-      "total_links": 197,
+      "code_coverage": "37.0%",
+      "test_coverage": "38.0%",
+      "verification_rate": "37.0%",
+      "total_links": 200,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -33,7 +33,6 @@
           "FR-106",
           "FR-107",
           "FR-108",
-          "FR-33",
           "FR-34",
           "FR-35",
           "FR-36",
@@ -104,7 +103,6 @@
           "FR-106",
           "FR-107",
           "FR-108",
-          "FR-33",
           "FR-34",
           "FR-35",
           "FR-36",
@@ -178,7 +176,6 @@
         "FR-106",
         "FR-107",
         "FR-108",
-        "FR-33",
         "FR-34",
         "FR-35",
         "FR-36",
@@ -249,7 +246,6 @@
         "FR-106",
         "FR-107",
         "FR-108",
-        "FR-33",
         "FR-34",
         "FR-35",
         "FR-36",
@@ -780,6 +776,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/src/app/core/knowledge.py",
           "03-development/tests/test_fr32.py"
         ],
         "test_files": [
@@ -790,10 +787,14 @@
       },
       "FR-33": {
         "fr_id": "FR-33",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/tests/test_fr33.py"
+        ],
+        "test_files": [
+          "tests/test_fr33.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
