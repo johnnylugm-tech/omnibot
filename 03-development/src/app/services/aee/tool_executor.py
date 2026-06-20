@@ -16,7 +16,8 @@ Citations:
 from __future__ import annotations
 
 import json
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from app.services.aee.adapter import (
     ToolDefinition,
@@ -24,7 +25,6 @@ from app.services.aee.adapter import (
     fail,
     ok,
 )
-
 
 # Order statuses that BLOCK address updates per SRS FR-43: "出貨前才允許".
 _BLOCKED_ADDRESS_STATUSES: frozenset[str] = frozenset({"shipped", "delivered"})
@@ -224,7 +224,7 @@ class ToolExecutor:
             result = handler(**arguments)
         except (MemoryError, RecursionError):
             raise
-        except Exception as exc:  # noqa: BLE001 — surface as structured error
+        except Exception as exc:
             return fail(f"Tool '{tool_name}' raised an exception: {exc}")
 
         # Handlers may return a plain value (wrapped via ok()) or a fully

@@ -23,7 +23,6 @@ Citations:
 from __future__ import annotations
 
 import subprocess
-from typing import Optional
 
 from app.services.aee.adapter import (
     ActionAdapter,
@@ -40,8 +39,8 @@ class MCPAdapter(ActionAdapter):
     def __init__(
         self,
         transport: str = "stdio",
-        command: Optional[str] = None,
-        url: Optional[str] = None,
+        command: str | None = None,
+        url: str | None = None,
         connect_timeout_ms: int = 2000,
     ) -> None:
         self.transport = transport
@@ -84,7 +83,7 @@ class MCPAdapter(ActionAdapter):
                 except Exception:
                     return fail("timeout: SSE call failed or unreachable")
             return fail(f"unsupported transport: {self.transport}")
-        except Exception as exc:  # noqa: BLE001 — surface as structured error
+        except Exception as exc:
             return fail(str(exc))
 
     @staticmethod
@@ -171,9 +170,8 @@ class MCPAdapter(ActionAdapter):
         sentinel 判斷 server-down 情境（正式實作會替換為真實的
         ``subprocess.Popen`` exit code 檢查 / ``httpx`` 連線探測）。
         """
-        if self.transport == "stdio" and self.command:
-            if "down" in self.command.lower():
-                return True
+        if self.transport == "stdio" and self.command and "down" in self.command.lower():
+            return True
         if self.transport == "sse" and self.url:
             if "down" in self.url.lower() or "65535" in self.url:
                 return True

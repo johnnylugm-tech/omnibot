@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import ClassVar
 
 """[FR-18] PIIMasking — detect and mask Taiwan phone / email / address / credit-card.
 
@@ -156,7 +157,7 @@ class PIIMasking:
     # Canonical placeholder per PII type. Exposed as a class attribute so
     # callers that prefer attribute access (``PIIMasking.MASK_FORMATS[...]``)
     # resolve the same string ``get_mask_format(...)`` returns.
-    MASK_FORMATS: dict[str, str] = {
+    MASK_FORMATS: ClassVar[dict[str, str]] = {
         "phone": "[phone_masked]",
         "email": "[email_masked]",
         "address": "[address_masked]",

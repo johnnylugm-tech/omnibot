@@ -32,7 +32,6 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-
 # FR-90 mandated values; not configurable because the FR is a hard
 # security requirement.
 DEFAULT_TLS_PORT = 6380

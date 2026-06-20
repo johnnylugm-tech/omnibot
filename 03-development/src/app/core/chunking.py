@@ -23,9 +23,8 @@ Citations:
       Parent for LLM input (line 109).
 """
 
-from dataclasses import dataclass
 from collections.abc import Callable
-
+from dataclasses import dataclass
 
 # ---------------------------------------------------------------------------
 # SRS-mandated numeric constants. The wiring layer reads these directly so

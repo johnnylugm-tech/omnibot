@@ -22,7 +22,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-
 # ---------------------------------------------------------------------------
 # Canonical FR-97 configuration constants. Exposed at module scope so the
 # test surface can assert against the same identifiers the production
@@ -121,11 +120,11 @@ class BackupStrategy:
 __all__ = [
     "BACKUP_TYPE_PG_BASEBACKUP",
     "BACKUP_TYPE_REDIS_RDB",
-    "BackupResult",
-    "BackupStrategy",
     "DR_RESTORE_TARGET_MINUTES",
     "PG_RETENTION_DAYS",
     "REDIS_RETENTION_DAYS",
     "SCHEDULED_BACKUP_TYPES",
     "SIMULATED_RESTORE_MINUTES",
+    "BackupResult",
+    "BackupStrategy",
 ]

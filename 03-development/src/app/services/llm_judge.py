@@ -240,7 +240,7 @@ class LLMJudge:
                 judge(message=message, response=response),
                 timeout=self.timeout_s,
             )
-        except Exception:  # noqa: BLE001  -- intentional: NP-07 + NP-15
+        except Exception:
             # Swallow per-judge failure (NP-07 ConnectionError, NP-15
             # TimeoutError, or anything else raised by the judge).
             # The aggregate decides whether to fall back to the
@@ -540,7 +540,7 @@ class CalibrationPipeline:
                 action="pass",
                 fallback=None,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             # NP-15 timeout — the wall-clock budget was breached.
             # The cycle is abandoned gracefully and the operator
             # retries next month (action == "skip_cycle"). The
@@ -550,7 +550,7 @@ class CalibrationPipeline:
                 action="skip_cycle",
                 fallback=None,
             )
-        except Exception:  # noqa: BLE001  -- intentional: NP-07 dependency fault
+        except Exception:
             # NP-07 dependency fault — the calibration LLM is
             # DOWN. Consult the injected cache for the last good
             # Kappa and surface it as fallback == "cached_kappa".
@@ -606,7 +606,7 @@ class CalibrationPipeline:
             return None
         try:
             return self.kappa_cache.get(self.CACHE_KEY_LAST_KAPPA)
-        except Exception:  # noqa: BLE001  -- defensive: cache miss is non-fatal
+        except Exception:
             return None
 
 

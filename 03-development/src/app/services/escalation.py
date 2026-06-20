@@ -89,7 +89,7 @@ Citations:
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 
@@ -124,7 +124,7 @@ class EscalationManager:
 
     def _utcnow(self) -> datetime:
         """Current UTC time — single source for timestamps."""
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
 
     def _make_row(
         self,

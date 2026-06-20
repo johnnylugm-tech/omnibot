@@ -28,6 +28,7 @@ Citations:
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import math
 import re
 import threading
@@ -972,7 +973,7 @@ class PALADINPipeline:
         Kept as a private helper so ``process`` stays a flat routing
         function and the audit-log schema lives in exactly one place.
         """
-        try:
+        with contextlib.suppress(Exception):
             self._security_log_writer(
                 event=_RETROSPECTIVE_BLOCK_EVENT,
                 risk_level=risk_level,
@@ -980,8 +981,6 @@ class PALADINPipeline:
                 confidence=verdict.confidence,
                 text=text,
             )
-        except Exception:
-            pass
         return self._blocked_result(
             block_reason=_BLOCK_REASON_INJECTION,
             tier3_called=True,
@@ -1069,7 +1068,7 @@ class PALADINPipeline:
             raise verdict
         if isinstance(response, Exception):
             raise response
-        
+
         if verdict.is_injection or verdict.is_unverified:
             return self._handle_retrospective_block(text, verdict, risk_level)
         return self._success_result(

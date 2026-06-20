@@ -115,9 +115,9 @@ def get_panel(name: str) -> GrafanaPanel | None:
 
 
 __all__ = [
-    "get_panel",
     "GRAFANA_DASHBOARD",
+    "SUPPORTED_TIME_RANGES",
     "GrafanaPanel",
     "PanelKind",
-    "SUPPORTED_TIME_RANGES",
+    "get_panel",
 ]

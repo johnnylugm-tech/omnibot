@@ -74,8 +74,9 @@ from __future__ import annotations
 import subprocess
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Optional
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Configuration constants — FR-100 canonical values.
@@ -137,7 +138,7 @@ class ClamAVScanner:
 
     def __init__(
         self,
-        subprocess_runner: Optional[Callable[..., Any]] = None,
+        subprocess_runner: Callable[..., Any] | None = None,
         timeout_ms: int = CLAMAV_SCAN_TIMEOUT_MS,
         p95_limit_ms: int = CLAMAV_SCAN_P95_LIMIT_MS,
     ) -> None:
@@ -149,7 +150,7 @@ class ClamAVScanner:
         # None = default healthy state. ``force_status("down")`` /
         # ``force_status("unavailable")`` flips this to a fault state;
         # ``force_status("ok")`` clears it back to healthy.
-        self._forced_status: Optional[str] = None
+        self._forced_status: str | None = None
 
     def force_status(self, status: str) -> None:
         """Drive the scanner into a fault-injection state.
@@ -164,9 +165,7 @@ class ClamAVScanner:
 
     def is_available(self) -> bool:
         """True iff the scanner can talk to clamd right now."""
-        if self._forced_status in (CLAMAV_STATUS_DOWN, CLAMAV_STATUS_UNAVAILABLE):
-            return False
-        return True
+        return self._forced_status not in (CLAMAV_STATUS_DOWN, CLAMAV_STATUS_UNAVAILABLE)
 
     def scan(self, file_bytes: bytes, file_type: str) -> ClamAVScanResult:
         """Run a single scan with timeout enforcement.
@@ -247,7 +246,7 @@ class ClamAVScanner:
         durations.sort()
         # Standard nearest-rank definition: ceil(0.95 * N) - 1,
         # clamped to [0, N-1].
-        idx = max(0, min(len(durations) - 1, int(round(0.95 * len(durations))) - 1))
+        idx = max(0, min(len(durations) - 1, round(0.95 * len(durations)) - 1))
         return float(durations[idx])
 
 
@@ -272,11 +271,11 @@ class MediaResult:
     """
 
     action: str
-    status: Optional[str] = None
-    error: Optional[str] = None
-    reply: Optional[str] = None
-    coordinates: Optional[dict] = None
-    is_allowed: Optional[bool] = None
+    status: str | None = None
+    error: str | None = None
+    reply: str | None = None
+    coordinates: dict | None = None
+    is_allowed: bool | None = None
 
 
 class MediaPipeline:
@@ -293,7 +292,7 @@ class MediaPipeline:
         4. ClamAV scan (timeout / error → fail-secure; clean → escalate).
     """
 
-    def __init__(self, clamav_scanner: Optional[ClamAVScanner] = None) -> None:
+    def __init__(self, clamav_scanner: ClamAVScanner | None = None) -> None:
         self.scanner = clamav_scanner if clamav_scanner is not None else ClamAVScanner()
 
     # ---- Image -------------------------------------------------------------
@@ -333,9 +332,7 @@ class MediaPipeline:
             return False
         if file_type not in ALLOWED_FILE_TYPES:
             return False
-        if not self.scanner.is_available():
-            return False
-        return True
+        return self.scanner.is_available()
 
     def process_file(
         self,
@@ -367,7 +364,7 @@ class MediaPipeline:
         return MediaResult(action=MEDIA_ACTION_AUTO_ESCALATE)
 
     def _reject_file(
-        self, status: str, error: Optional[str] = None
+        self, status: str, error: str | None = None
     ) -> MediaResult:
         """Build a file-rejected MediaResult with the given status / error."""
         return MediaResult(

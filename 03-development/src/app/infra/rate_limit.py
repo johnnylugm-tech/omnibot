@@ -32,8 +32,12 @@ from typing import ClassVar
 try:
     from redis.exceptions import (  # type: ignore[reportAssignmentType]
         ConnectionError as RedisConnectionError,
-        TimeoutError as RedisTimeoutError,
+    )
+    from redis.exceptions import (
         ResponseError,
+    )
+    from redis.exceptions import (
+        TimeoutError as RedisTimeoutError,
     )
 except ImportError:  # pragma: no cover -- redis lib is in pyproject dependencies
     class RedisConnectionError(Exception):  # type: ignore[no-redef]
@@ -41,7 +45,7 @@ except ImportError:  # pragma: no cover -- redis lib is in pyproject dependencie
 
     class RedisTimeoutError(Exception):  # type: ignore[no-redef]
         pass
-        
+
     class ResponseError(Exception):  # type: ignore[no-redef]
         pass
 

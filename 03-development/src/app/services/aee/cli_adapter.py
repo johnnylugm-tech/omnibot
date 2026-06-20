@@ -14,11 +14,11 @@ Citations:
 
 from __future__ import annotations
 
+import contextlib
 import signal
 import subprocess
 import threading
 import time
-from typing import Any, Optional
 
 from app.services.aee.adapter import (
     ActionAdapter,
@@ -27,7 +27,6 @@ from app.services.aee.adapter import (
     fail,
     ok,
 )
-
 
 # ---------------------------------------------------------------------------
 # Language auto-detection heuristic.
@@ -55,7 +54,7 @@ _KILL_SIGNAL_GRACE_SECONDS = 0.05
 
 
 def _fail_with_output(
-    output: Optional[str],
+    output: str | None,
     error_message: str,
 ) -> ToolExecutionResult:
     """Failure envelope that preserves ``output`` (e.g. captured stdout).
@@ -108,18 +107,18 @@ class CLIAdapter(ActionAdapter):
                     "status": "in_transit",
                 }
             )
-        except Exception as exc:  # noqa: BLE001 — surface as structured error
+        except Exception as exc:
             return fail(str(exc))
 
     # ------------------------------------------------------------------ FR-42
 
-    def run_script(  # noqa: C901, PLR0912 — multi-branch dispatch is intentional
+    def run_script(
         self,
         script: str,
         *,
-        timeout_seconds: Optional[float] = None,
-        kill_signal: Optional[str] = None,
-        language: Optional[str] = None,
+        timeout_seconds: float | None = None,
+        kill_signal: str | None = None,
+        language: str | None = None,
     ) -> ToolExecutionResult:
         """[FR-42] 在 sandboxed 子進程內執行本地 Python / Bash 腳本。
 
@@ -162,11 +161,11 @@ class CLIAdapter(ActionAdapter):
     def _run_with_timeout(
         self,
         cmd: list[str],
-        timeout_seconds: Optional[float],
+        timeout_seconds: float | None,
     ) -> ToolExecutionResult:
         """[FR-42] Standard timeout-enforced subprocess path."""
         try:
-            completed = subprocess.run(  # noqa: S603 — argv list, no shell
+            completed = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
@@ -179,7 +178,7 @@ class CLIAdapter(ActionAdapter):
             )
         except FileNotFoundError as exc:
             return fail(f"interpreter not found: {exc}")
-        except Exception as exc:  # noqa: BLE001 — surface as structured error
+        except Exception as exc:
             return fail(f"subprocess error: {exc}")
 
         if completed.returncode == 0:
@@ -197,7 +196,7 @@ class CLIAdapter(ActionAdapter):
         self,
         cmd: list[str],
         kill_signal_name: str,
-        timeout_seconds: Optional[float],
+        timeout_seconds: float | None,
     ) -> ToolExecutionResult:
         """[FR-42] NP-07 fault-injection path: send ``kill_signal`` mid-flight."""
         sig = getattr(signal, kill_signal_name, None)
@@ -205,7 +204,7 @@ class CLIAdapter(ActionAdapter):
             return fail(f"unknown signal: {kill_signal_name}")
 
         try:
-            proc = subprocess.Popen(  # noqa: S603 — argv list, no shell
+            proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -213,7 +212,7 @@ class CLIAdapter(ActionAdapter):
             )
         except FileNotFoundError as exc:
             return fail(f"interpreter not found: {exc}")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             return fail(f"subprocess error: {exc}")
 
         # Watchdog: send the requested signal after a short grace period so
@@ -235,10 +234,8 @@ class CLIAdapter(ActionAdapter):
         except subprocess.TimeoutExpired:
             # kill_signal didn't fire fast enough — fall back to hard kill
             # and report the timeout.
-            try:
+            with contextlib.suppress(ProcessLookupError, OSError):
                 proc.kill()
-            except (ProcessLookupError, OSError):
-                pass
             proc.communicate()
             return fail(
                 f"timeout: process exceeded {timeout_seconds}s and was terminated"

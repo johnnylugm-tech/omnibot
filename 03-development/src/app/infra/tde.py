@@ -29,7 +29,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-
 # Roles that explicitly hold the ``pii:decrypt`` permission. Any role
 # outside this set is denied direct read of the ``pii_vault`` table —
 # including the ``dba`` role, which is the whole point of the FR.

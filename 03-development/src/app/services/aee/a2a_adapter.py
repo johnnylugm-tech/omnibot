@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 
@@ -53,7 +53,7 @@ class A2AAdapter(ActionAdapter):
     def __init__(
         self,
         agent_url: str,
-        bearer_token: Optional[str] = None,
+        bearer_token: str | None = None,
         timeout: float = 2.0,
         agent_card_ttl_seconds: int = 300,
     ) -> None:
@@ -68,7 +68,7 @@ class A2AAdapter(ActionAdapter):
         # ``fetched_at`` is real ``time.time()`` (no offset); the test
         # hook ``_force_cache_age`` advances ``_time_offset`` so the
         # cache appears expired at lookup time.
-        self._card_cache: dict[str, tuple[Optional[dict], float]] = {}
+        self._card_cache: dict[str, tuple[dict | None, float]] = {}
 
         # ``discovery_count`` increments on every attempted discovery
         # (cache miss OR TTL-expired). The FR-41 TTL-boundary test
@@ -98,7 +98,7 @@ class A2AAdapter(ActionAdapter):
     # ------------------------------------------------------------------
     # Agent Card discovery (NFR-07: 300s TTL cache).
     # ------------------------------------------------------------------
-    def _discover_agent_card(self) -> Optional[dict]:
+    def _discover_agent_card(self) -> dict | None:
         """[FR-41] GET ``<agent_url>/.well-known/agent.json`` 並快取 300s。
 
         快取以 ``agent_url`` 為鍵。在 TTL 內 → 回傳快取；TTL 過期
@@ -198,7 +198,7 @@ class A2AAdapter(ActionAdapter):
                 timeout=self.timeout,
             )
             response.raise_for_status()
-        except Exception as exc:  # noqa: BLE001 — NP-15 surface as timeout
+        except Exception as exc:
             # All execute() failures (connect / DNS / HTTP 4xx/5xx) surface
             # through the NP-15 channel so callers see a uniform
             # ``error_message`` containing ``"timeout"``.
@@ -208,7 +208,7 @@ class A2AAdapter(ActionAdapter):
 
         try:
             body: Any = response.json()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             return fail(f"{_TIMEOUT_FAILURE_PREFIX}invalid JSON-RPC response: {exc}")
 
         if isinstance(body, dict) and "error" in body and "result" not in body:

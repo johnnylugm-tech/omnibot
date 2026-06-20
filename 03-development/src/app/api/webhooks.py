@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import base64
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from app.core.unified_message import (
@@ -114,14 +114,11 @@ class A2AAdapter:
             - SRS.md FR-06 — M2M OAuth2/JWT token verification
         """
         token = self._extract_bearer_token(authorization_header)
-        if not token:
-            return False
-
         # TODO: fetch JWKS from self._jwks_url, find matching key, decode
         # JWT, validate signature + exp + aud + iss claims.  Current stub
         # returns True for any non-empty Bearer token so the adapter
         # structure is testable; real verification will replace this.
-        return True
+        return bool(token)
 
     def handle_jsonrpc_call(
         self,
@@ -166,7 +163,7 @@ class A2AAdapter:
             message_type=MessageType.TEXT,
             content=content,
             raw_payload=body,
-            received_at=datetime.now(timezone.utc),
+            received_at=datetime.now(UTC),
             reply_token=None,
         )
 

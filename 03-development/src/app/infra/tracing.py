@@ -35,9 +35,9 @@ from __future__ import annotations
 
 import secrets
 import threading
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Iterator
 
 # ---------------------------------------------------------------------------
 # Module-level constants — exposed names must match TEST_SPEC.md exactly.

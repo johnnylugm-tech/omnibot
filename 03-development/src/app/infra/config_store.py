@@ -36,8 +36,7 @@ Citations:
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
-
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # FR-102 canonical defaults — the platform_configs seed values.
@@ -58,8 +57,8 @@ class _DictConfigStore:
     needing a live database.
     """
 
-    def __init__(self, initial: Optional[Dict[str, Any]] = None) -> None:
-        self._data: Dict[str, Any] = dict(initial or {})
+    def __init__(self, initial: dict[str, Any] | None = None) -> None:
+        self._data: dict[str, Any] = dict(initial or {})
         # Seed the FR-102 canonical default so a fresh
         # ``get_config_store()`` always reports the spec's 0.75
         # threshold even when no production wiring has populated it.
@@ -72,12 +71,12 @@ class _DictConfigStore:
         self._data[key] = value
         return value
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self) -> dict[str, Any]:
         return dict(self._data)
 
 
 # Module-level singleton — the canonical seam the RAGDebugger reads.
-_default_store: Optional[_DictConfigStore] = None
+_default_store: _DictConfigStore | None = None
 
 
 def get_config_store() -> _DictConfigStore:

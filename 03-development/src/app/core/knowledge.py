@@ -41,7 +41,6 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
-
 # [FR-32] SRS-mandated source enum. The four values enumerate the
 # tier labels the hybrid pipeline emits: Tier-1 ILIKE rule hit
 # (``"rule"``), Tier-2 RAG short-circuit (``"rag"``), Tier-3 LLM

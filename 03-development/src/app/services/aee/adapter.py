@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -45,7 +45,7 @@ class ToolExecutionResult:
 
     success: bool
     output: Any
-    error_message: Optional[str]
+    error_message: str | None
 
 
 def ok(output: Any) -> ToolExecutionResult:
@@ -75,7 +75,7 @@ class ActionAdapter(ABC):
     def execute(self, tool_name: str, arguments: dict) -> ToolExecutionResult:
         """執行指定工具並回傳結果（[FR-39]）。"""
 
-    def _resolve_tool(self, tool_name: str) -> Optional[ToolDefinition]:
+    def _resolve_tool(self, tool_name: str) -> ToolDefinition | None:
         """以名稱查找已註冊的工具；找不到回傳 ``None``。
 
         共用於所有 adapter 子類 — 由子類 ``execute`` 在呼叫實際

@@ -25,8 +25,8 @@ Citations:
 """
 
 from __future__ import annotations
-from collections.abc import Iterable
 
+from collections.abc import Iterable
 
 # Canonical seven service names mandated by FR-95. Order is not part of
 # the contract (tests assert on membership), but it mirrors the docker

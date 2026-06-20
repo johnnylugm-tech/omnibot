@@ -171,12 +171,12 @@ class DatabaseSchema:
 
 
 __all__ = [
-    "DatabaseSchema",
     "EXPECTED_TABLES",
     "FK_CONSTRAINTS",
-    "FKConstraintSpec",
     "GIN_TSVECTOR_INDEX_SPEC",
-    "GINIndexSpec",
     "HNSW_INDEX_SPEC",
+    "DatabaseSchema",
+    "FKConstraintSpec",
+    "GINIndexSpec",
     "HNSWIndexSpec",
 ]

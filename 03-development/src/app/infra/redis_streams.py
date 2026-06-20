@@ -158,7 +158,7 @@ class AsyncMessageProcessor:
                 mkstream=True,
             )
             return True
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             if self._is_busygroup_error(exc):
                 return True
             raise
