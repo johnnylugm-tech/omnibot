@@ -1,7 +1,7 @@
-"""[FR-52] ABTestManager — SHA-256 deterministic A/B variant assignment.
+"""[FR-52, FR-63] ABTestManager — SHA-256 deterministic A/B variant assignment.
 
-Spec source: 02-architecture/TEST_SPEC.md (FR-52)
-SRS source : SRS.md FR-52 (Module 9: Response Generator)
+Spec source: 02-architecture/TEST_SPEC.md (FR-52, FR-63)
+SRS source : SRS.md FR-52 (Module 9: Response Generator); SRS.md FR-63 (Module 9: Response Generator / A/B Testing)
 
 FR-52 -- A/B Variant Injection：
     SHA-256 確定性分配（非 Python hash()）；
@@ -9,6 +9,13 @@ FR-52 -- A/B Variant Injection：
     variant_b → 結尾 "需要進一步說明嗎？"；
     control → 不注入.
     Acceptance: SHA-256 分配跨進程一致；variant 注入正確；control 無注入.
+
+FR-63 -- ABTestManager.get_variant：
+    SHA-256 確定性 variant 分配（hashlib.sha256，非 Python hash()）。
+    Same (user_id, experiment_id) MUST always resolve to the same
+    variant across processes / restarts.
+    Acceptance: 同 user_id + experiment_id 跨進程回傳相同 variant；
+    SHA-256 hash 計算正確.
 
 Public surface pinned by this module:
 
@@ -23,7 +30,8 @@ Public surface pinned by this module:
       % 100``) and routed through ``experiment["traffic_split"]``
       cumulative ranges. Same inputs always return the same label
       across processes (SRS FR-52 mandate: "SHA-256 確定性分配
-      （非 Python hash()）" / "SHA-256 分配跨進程一致").
+      （非 Python hash()）" / "SHA-256 分配跨進程一致"; SRS FR-63
+      mandate: "SHA-256 確定性 variant 分配"; "跨進程一致").
 
 Citations:
     - SRS.md FR-52 -- "SHA-256 確定性分配（非 Python hash()）" (line 115).
@@ -32,6 +40,9 @@ Citations:
     - SRS.md FR-52 -- "control → 不注入" (line 115).
     - SRS.md FR-52 -- acceptance "SHA-256 分配跨進程一致；variant 注入正確；control 無注入" (line 115).
     - SRS.md FR-52 -- implementation_functions: "ABTestManager.get_variant()" (line 115).
+    - SRS.md FR-63 -- "ABTestManager：get_variant(user_id, experiment_id) 使用 SHA-256（hashlib.sha256，非 Python hash()）確定性分配 variant" (line 146).
+    - SRS.md FR-63 -- acceptance "同 user_id + experiment_id 跨進程回傳相同 variant；SHA-256 hash 計算正確" (line 146).
+    - SRS.md FR-63 -- implementation_functions: "ABTestManager.get_variant()" (line 146).
 """
 
 from __future__ import annotations
@@ -41,13 +52,14 @@ from typing import Any
 
 
 class ABTestManager:
-    """[FR-52] Deterministic A/B variant assignment via SHA-256.
+    """[FR-52, FR-63] Deterministic A/B variant assignment via SHA-256.
 
     ``get_variant`` is a pure function over ``(user_id, experiment_id)``
     and the experiment's ``traffic_split`` config. Because the hash is
     SHA-256 (NOT Python's process-seeded ``hash()``), the same pair
     resolves to the same variant across separate Python processes —
-    a hard requirement of SRS FR-52 ("SHA-256 分配跨進程一致").
+    a hard requirement of SRS FR-52 ("SHA-256 分配跨進程一致") and
+    SRS FR-63 ("SHA-256 確定性 variant 分配"; "跨進程一致").
 
     The ``db`` argument only exposes a ``get_experiment(experiment_id)``
     method; the ``llm`` argument is accepted per the SRS-mandated
@@ -113,6 +125,10 @@ class ABTestManager:
             - SRS.md FR-52 -- acceptance "SHA-256 分配跨進程一致" (line 115).
             - SRS.md FR-52 -- implementation_functions:
               "ABTestManager.get_variant()" (line 115).
+            - SRS.md FR-63 -- "get_variant(user_id, experiment_id) 使用 SHA-256（hashlib.sha256，非 Python hash()）確定性分配 variant" (line 146).
+            - SRS.md FR-63 -- acceptance "同 user_id + experiment_id 跨進程回傳相同 variant；SHA-256 hash 計算正確" (line 146).
+            - SRS.md FR-63 -- implementation_functions:
+              "ABTestManager.get_variant()" (line 146).
         """
         # Hash contract pinned by SPEC.md: SHA-256 over the joined key,
         # truncated to the first 8 hex digits, mapped to [0, 99].
