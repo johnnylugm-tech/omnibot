@@ -548,20 +548,11 @@ class RAGDebugger:
 FCR_ALERT_THRESHOLD: float = 0.90   # SRS FR-103: FCR < 90% triggers yellow
 ALERT_COLOR_YELLOW: str = "yellow"
 ALERT_COLOR_GREEN: str = "green"
-VALID_TIME_RANGES: tuple = ("24hr", "7d", "30d")
+VALID_TIME_RANGES: tuple[str, ...] = ("24hr", "7d", "30d")
 
 
 class OperationsDashboard:
-    """[FR-103] Operations Dashboard — FCR/p95/知識來源/成本 KPI + 告警 + 時序切換.
-
-    Spec source: 02-architecture/TEST_SPEC.md (FR-103)
-    SRS source : SRS.md FR-103 (Module 25: 管理 WebUI)
-
-    Citations:
-        test_fr103.py L58-87  — _isolate_dashboard_io autouse fixture
-        test_fr103.py L113-166 — test_fr103_fcr_below_90_triggers_yellow_alert
-        test_fr103.py L189-242 — test_fr103_time_range_switching_works
-    """
+    """[FR-103] Operations Dashboard — FCR/p95/知識來源/成本 KPI + 告警 + 時序切換."""
 
     def get_fcr_alert_color(self, fcr: float) -> str:
         """Return alert colour for the FCR KPI.
