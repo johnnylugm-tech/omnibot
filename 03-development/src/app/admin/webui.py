@@ -411,3 +411,344 @@ class KnowledgeAdminAPI:
     ) -> Dict[str, Any]:
         """Delegate to the injected ``EmbeddingStatusProvider``."""
         return self._embedding_status_provider.get_status(entry_id=entry_id)
+
+
+# ===========================================================================
+# [FR-102] RAGDebugger — 管理 WebUI RAG Debugger (Tier 1 ILIKE + Tier 2
+# RAG/cosine + RRF k=60 Top-3 評分展示 + 相似度閾值滑桿沙盒).
+#
+# Spec source: 02-architecture/TEST_SPEC.md (FR-102)
+# SRS source : SRS.md FR-102 (Module 25: 管理 WebUI)
+#              "RAG Debugger：管理員輸入測試提問 → 展示 ILIKE 匹配結果+置信度、
+#               Child Chunk 餘弦相似度分數、Parent Chunk 內容、RRF k=60 Top-3
+#               評分；相似度閾值滑桿（預設 0.75，沙盒調整不寫入
+#               platform_configs）"
+# SAD source  : 02-architecture/SAD.md §2.4
+#              "Module: webui.py — Knowledge CRUD + Markdown editor +
+#               CSV/JSON import + embedding status + RAG Debugger
+#               → FR-101 / FR-102"
+#
+# Public surface pinned by ``03-development/tests/test_fr102.py``:
+#
+#   - Constants (test_fr102.py:181-194, 217-272):
+#       RAG_DEFAULT_THRESHOLD   = 0.75              # 滑桿預設值
+#       RAG_RRF_K               = 60                # FR-27 RRF k=60
+#       RAG_RRF_TOP_N           = 3                 # RRF Top-3 評分
+#       RAG_SECTION_ILIKE       = "ilike_results"   # Tier 1 區段
+#       RAG_SECTION_COSINE      = "cosine_scores"   # Tier 2 區段
+#       RAG_SECTION_RRF_TOP3    = "rrf_top3"        # RRF 區段
+#       RAG_REQUIRED_SECTIONS   = (the three names in display order)
+#
+#   - RAGDebugger (test_fr102.py:282-359):
+#       Top-level dispatcher. ``__init__(config_store=None,
+#       knowledge_provider=None)`` stores the injected seams. The
+#       sandbox slider threshold lives on the instance only; the
+#       persisted platform_configs row is NEVER touched by
+#       ``set_slider_threshold``. ``debug(query, threshold)`` returns a
+#       ``DebuggerResult`` whose ``sections`` is the canonical three
+#       names in display order.
+#
+#   - DebuggerResult (test_fr102.py:131-141, 302-393):
+#       ``query`` echoes the input; ``ilike_results``, ``cosine_scores``,
+#       ``rrf_top3`` are list-like; ``sections`` carries the three
+#       canonical section names.
+#
+#   - ILIKEMatch / CosineHit / RRFEntry (optional, but if present MUST
+#     carry the canonical fields shown in test_fr102.py L156-175).
+#
+# Citations:
+#     test_fr102.py L181-194 — canonical imports / public surface
+#     test_fr102.py L211-393 — FR-102 happy path: three sections + query
+#                              echo + list-shaped payloads
+#     test_fr102.py L406-487 — FR-102 sandbox slider MUST NOT persist
+#                              to platform_configs (multiple set +
+#                              debug() calls leave the saved threshold
+#                              at RAG_DEFAULT_THRESHOLD)
+# ===========================================================================
+
+
+# ---------------------------------------------------------------------------
+# FR-102 canonical configuration constants.
+# ---------------------------------------------------------------------------
+
+#: Default 相似度閾值 — SRS FR-102 "相似度閾值滑桿（預設 0.75）".
+RAG_DEFAULT_THRESHOLD: float = 0.75
+
+#: RRF k=60 融合係數 — FR-27 (Reciprocal Rank Fusion) / SRS FR-102.
+RAG_RRF_K: int = 60
+
+#: RRF Top-N 截斷 — SRS FR-102 "RRF k=60 Top-3 評分".
+RAG_RRF_TOP_N: int = 3
+
+#: Tier 1 區段名稱 — ILIKE 匹配 + 置信度.
+RAG_SECTION_ILIKE: str = "ilike_results"
+
+#: Tier 2 區段名稱 — Child Chunk 餘弦相似度分數.
+RAG_SECTION_COSINE: str = "cosine_scores"
+
+#: RRF 區段名稱 — k=60 Top-3 評分 + Parent Chunk 內容.
+RAG_SECTION_RRF_TOP3: str = "rrf_top3"
+
+#: WebUI section-renderer 必須按此順序迭代的三個區段名稱.
+RAG_REQUIRED_SECTIONS: tuple = (
+    RAG_SECTION_ILIKE,
+    RAG_SECTION_COSINE,
+    RAG_SECTION_RRF_TOP3,
+)
+
+
+# ---------------------------------------------------------------------------
+# FR-102 data containers — Tier 1 / Tier 2 / RRF payloads.
+# ---------------------------------------------------------------------------
+
+@dataclass
+class ILIKEMatch:
+    """Tier 1 ILIKE match row (PostgreSQL ``ILIKE`` on knowledge base).
+
+    Attributes:
+        row_id:     Row id in the knowledge base (synthetic for the
+                    in-memory seam).
+        content:    Matched content snippet (verbatim).
+        confidence: Confidence score in [0, 1] derived from the ILIKE
+                    match score (1.0 for exact substring hit).
+    """
+
+    row_id: int = 0
+    content: str = ""
+    confidence: float = 0.0
+
+
+@dataclass
+class CosineHit:
+    """Tier 2 Child Chunk cosine similarity hit.
+
+    Attributes:
+        chunk_id: Child chunk identifier (string for embedding-key
+                  compatibility; the production system uses UUIDs).
+        score:    Cosine similarity in [-1, 1]; the Tier 2 cut-off
+                  applies ``>= RAG_DEFAULT_THRESHOLD`` (or the sandbox
+                  slider value) to filter hits.
+    """
+
+    chunk_id: str = ""
+    score: float = 0.0
+
+
+@dataclass
+class RRFEntry:
+    """RRF Top-N entry — fused rank + Parent Chunk content.
+
+    Attributes:
+        rank:      1-based rank within the Top-N list (1 = best).
+        score:     RRF fused score using k=RAG_RRF_K.
+        parent_id: Parent chunk id in the knowledge base.
+        content:   Parent chunk content (verbatim Markdown).
+    """
+
+    rank: int = 0
+    score: float = 0.0
+    parent_id: int = 0
+    content: str = ""
+
+
+@dataclass
+class DebuggerResult:
+    """Result of a single RAG Debugger invocation.
+
+    Attributes:
+        query:         Echoes the input query so the WebUI can show
+                       the user "what did I just search for?".
+        ilike_results: Tier 1 ILIKE matches + confidence (list of
+                       ``ILIKEMatch`` or any list-like).
+        cosine_scores: Tier 2 child-chunk cosine scores (list of
+                       ``CosineHit`` or any list-like).
+        rrf_top3:      RRF k=RAG_RRF_K Top-N entries + Parent Chunk
+                       content (list of ``RRFEntry`` or any list-like).
+        sections:      The three canonical section names in display
+                       order (``RAG_REQUIRED_SECTIONS``).
+    """
+
+    query: str = ""
+    ilike_results: List[Any] = field(default_factory=list)
+    cosine_scores: List[Any] = field(default_factory=list)
+    rrf_top3: List[Any] = field(default_factory=list)
+    sections: List[str] = field(
+        default_factory=lambda: list(RAG_REQUIRED_SECTIONS)
+    )
+
+
+# ---------------------------------------------------------------------------
+# FR-102 default in-memory knowledge provider — Tier 1 + Tier 2 + RRF seam.
+# ---------------------------------------------------------------------------
+
+class _InMemoryKnowledgeProvider:
+    """Default seam for the Tier 1 ILIKE + Tier 2 cosine + RRF pipeline.
+
+    Mirrors the contract GREEN needs to expose so the debugger can run
+    without a live PostgreSQL / pgvector / Redis stack. Tests inject
+    their own provider; this default returns empty result lists so
+    ``debug()`` is observable end-to-end.
+    """
+
+    def ilike_search(self, query: str) -> List[ILIKEMatch]:
+        """Tier 1 ILIKE search (default: no rows)."""
+        return []
+
+    def cosine_search(
+        self, query: str, threshold: float
+    ) -> List[CosineHit]:
+        """Tier 2 cosine search (default: no rows)."""
+        return []
+
+    def rrf_fuse(
+        self, ilike: List[ILIKEMatch], cosine: List[CosineHit]
+    ) -> List[RRFEntry]:
+        """RRF k=RAG_RRF_K fusion (default: empty Top-N)."""
+        return []
+
+
+# ---------------------------------------------------------------------------
+# FR-102 RAGDebugger — top-level dispatcher.
+# ---------------------------------------------------------------------------
+
+class RAGDebugger:
+    """Top-level dispatcher for the RAG Debugger WebUI panel.
+
+    FR-102 contract:
+        * ``__init__(config_store=None, knowledge_provider=None)``
+          stores the injected seams (platform_configs reader/writer +
+          Tier 1 ILIKE / Tier 2 cosine provider). Both default to
+          ``None``; ``debug()`` falls back to the in-memory default
+          provider when nothing is wired so unit tests can construct
+          the debugger with no args.
+        * ``debug(query, threshold)`` runs the Tier 1+2 pipeline with
+          the sandbox threshold and returns a ``DebuggerResult`` whose
+          ``sections`` field carries the three canonical section names
+          in display order. The persisted platform_configs row is
+          NEVER mutated by this call.
+        * ``set_slider_threshold(threshold)`` is a sandbox-only
+          mutation — it adjusts an in-memory slider value used by
+          subsequent ``debug()`` calls but does NOT call the injected
+          ``config_store.set(...)`` (which would persist to
+          platform_configs). SRS FR-102: "沙盒調整不寫入
+          platform_configs".
+        * ``get_saved_threshold()`` reads the persisted threshold
+          (default ``RAG_DEFAULT_THRESHOLD``). After any number of
+          ``set_slider_threshold`` calls, this MUST still return
+          ``RAG_DEFAULT_THRESHOLD``.
+    """
+
+    def __init__(
+        self,
+        config_store: Optional[Any] = None,
+        knowledge_provider: Optional[Any] = None,
+    ) -> None:
+        self._config_store = config_store
+        self._knowledge_provider = (
+            knowledge_provider
+            if knowledge_provider is not None
+            else _InMemoryKnowledgeProvider()
+        )
+        # Sandbox-only slider value — never persisted. ``None`` means
+        # "no slider adjustment has been made yet; use the threshold
+        # passed to ``debug()``".
+        self._sandbox_threshold: Optional[float] = None
+
+    # ---- internal helpers ------------------------------------------------
+
+    def _saved_threshold(self) -> float:
+        """Read the persisted platform_configs threshold.
+
+        Resolution order:
+            1. Explicitly injected ``config_store`` (preferred for
+               production wiring).
+            2. The canonical ``app.infra.config_store.get_config_store``
+               seam (monkeypatched by ``test_fr102.py``'s autouse
+               fixture). Falls back silently when the seam is
+               unavailable — the FR-102 test fixture uses
+               ``raising=False`` precisely because the infra module is
+               not always present.
+            3. ``RAG_DEFAULT_THRESHOLD`` (the canonical default).
+        """
+        if self._config_store is not None:
+            try:
+                value = self._config_store.get(
+                    "rag_cosine_threshold", RAG_DEFAULT_THRESHOLD
+                )
+                if value is not None:
+                    return float(value)
+            except Exception:  # noqa: BLE001 — defensive read
+                pass
+        try:
+            from app.infra import config_store as _cs_mod  # type: ignore
+            store = _cs_mod.get_config_store()
+            value = store.get("rag_cosine_threshold", RAG_DEFAULT_THRESHOLD)
+            return float(value)
+        except Exception:  # noqa: BLE001 — seam unavailable
+            return RAG_DEFAULT_THRESHOLD
+
+    def _effective_threshold(self, requested: float) -> float:
+        """Return the sandbox slider value if set; else the requested one.
+
+        The sandbox value (set by ``set_slider_threshold``) shadows the
+        threshold passed to ``debug()`` so the WebUI can preview a new
+        cosine cut-off without persisting it.
+        """
+        if self._sandbox_threshold is not None:
+            return float(self._sandbox_threshold)
+        return float(requested)
+
+    # ---- public surface --------------------------------------------------
+
+    def debug(
+        self,
+        query: str,
+        threshold: float = RAG_DEFAULT_THRESHOLD,
+    ) -> DebuggerResult:
+        """Run the Tier 1+2 pipeline with the sandbox threshold.
+
+        Returns a ``DebuggerResult`` whose ``sections`` field carries
+        the three canonical section names in display order. The
+        persisted platform_configs row is NEVER mutated — only the
+        in-memory sandbox threshold (if previously set) is consulted.
+        """
+        effective_threshold = self._effective_threshold(threshold)
+
+        # Tier 1 — ILIKE match + confidence.
+        ilike = self._knowledge_provider.ilike_search(query)
+
+        # Tier 2 — child chunk cosine similarity at the sandbox cut-off.
+        cosine = self._knowledge_provider.cosine_search(
+            query, effective_threshold
+        )
+
+        # RRF fusion — k=RAG_RRF_K, Top-N=RAG_RRF_TOP_N.
+        rrf = self._knowledge_provider.rrf_fuse(ilike, cosine)
+
+        return DebuggerResult(
+            query=query,
+            ilike_results=list(ilike),
+            cosine_scores=list(cosine),
+            rrf_top3=list(rrf[:RAG_RRF_TOP_N]),
+            sections=list(RAG_REQUIRED_SECTIONS),
+        )
+
+    def set_slider_threshold(self, threshold: float) -> None:
+        """Sandbox-only slider adjustment — MUST NOT persist.
+
+        SRS FR-102: "沙盒調整不寫入 platform_configs". The slider value
+        is stored on the instance only and shadows the threshold passed
+        to subsequent ``debug()`` calls. The persisted
+        platform_configs row is left untouched, so production queries
+        are unaffected by debugger adjustments.
+        """
+        self._sandbox_threshold = float(threshold)
+
+    def get_saved_threshold(self) -> float:
+        """Return the persisted platform_configs threshold (default 0.75).
+
+        After any number of ``set_slider_threshold`` calls this MUST
+        still return ``RAG_DEFAULT_THRESHOLD`` — the sandbox slider is
+        in-memory only.
+        """
+        return self._saved_threshold()
