@@ -4,10 +4,10 @@ Spec source: 02-architecture/TEST_SPEC.md (FR-77)
 SRS source : SRS.md FR-77 (Module 16: Background Job System)
 
 Acceptance criteria (from SRS FR-77):
-    單筆知識新增時，第一個 chunk 同步生成 embedding
-    （asyncio.wait_for timeout=2.0s）；超時 → 記錄 warning，
+    單筆知識新增時, 第一個 chunk 同步生成 embedding
+    (asyncio.wait_for timeout=2.0s); 超時 -> 記錄 warning,
     fallback 全部走非同步. 單筆新增後 Tier 2 在 < 2.5s 內可搜尋到
-    首 chunk；超時不阻斷主流程.
+    首 chunk; 超時不阻斷主流程.
 
 The two TEST_SPEC cases (function names MUST match exactly):
     1. test_fr77_first_chunk_searchable_within_25s
@@ -121,8 +121,7 @@ def _isolate_kb_io(monkeypatch):
 # is not yet defined in ``app.infra.jobs``. That is the valid RED
 # signal — GREEN adds the coroutine.
 # ---------------------------------------------------------------------------
-from app.infra.jobs import create_knowledge_with_chunks  # noqa: E402,F401
-
+from app.infra.jobs import create_knowledge_with_chunks  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Spec-pinned trigger values — keep these in lock-step with TEST_SPEC.md.
@@ -248,7 +247,7 @@ def test_fr77_first_chunk_searchable_within_25s():
 #    ``asyncio.wait_for`` budget, ``create_knowledge_with_chunks`` MUST
 #    log a warning, enqueue the chunk for async processing, and return
 #    a result with ``fallback="async_queue"`` WITHOUT raising
-#    (SRS FR-77: "超時 → 記錄 warning，fallback 全部走非同步" +
+#    (SRS FR-77: "超時 -> 記錄 warning, fallback 全部走非同步" +
 #                "超時不阻斷主流程").
 #
 # Spec input: embedding_timeout_ms="2000"; expected_fallback="async_queue".
@@ -302,16 +301,14 @@ def test_fr77_timeout_does_not_block_main_flow(monkeypatch):
     # Patch the (yet-to-exist) module attribute. If the attribute
     # does not exist (RED state), AttributeError propagates — the
     # import above will have already raised Collection Error first.
-    try:
+    import contextlib
+
+    with contextlib.suppress(Exception):
         monkeypatch.setattr(
             "app.infra.jobs._embed_first_chunk",
             _slow_embed,
             raising=False,
         )
-    except Exception:
-        # RED: module not importable; let the test fail at the
-        # ``create_knowledge_with_chunks`` import above.
-        pass
 
     # GREEN TODO: the function must invoke the embedding coroutine
     # via ``asyncio.wait_for(..., timeout=2.0)`` (the SRS-pinned
@@ -332,7 +329,7 @@ def test_fr77_timeout_does_not_block_main_flow(monkeypatch):
         t0 = time.monotonic()
         result = asyncio.run(coro)
         wall_elapsed = time.monotonic() - t0
-    except asyncio.TimeoutError as exc:  # pragma: no cover - GREEN must avoid
+    except TimeoutError as exc:  # pragma: no cover - GREEN must avoid
         pytest.fail(
             f"FR-77: create_knowledge_with_chunks MUST NOT raise "
             f"asyncio.TimeoutError to the caller (got {exc!r})"

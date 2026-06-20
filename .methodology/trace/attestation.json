@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "2355cc776bea6a450b7f5856ba8fbde57dd327f3",
-  "content_sha256": "08be1032d528e8abde867ffe28c9319b099655d5bccfab0f5a4df16dd4c1b9b3",
+  "git_sha": "d6b97f15c792841b6648d8d4e7e350674e7289c0",
+  "content_sha256": "5396393276a0e83d46e4d99ab53283689b8d98e0ffb0914fd06cdae83d64a09d",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,17 +11,16 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "85.2%",
+      "code_coverage": "86.1%",
       "test_coverage": "88.9%",
-      "verification_rate": "85.2%",
-      "total_links": 317,
+      "verification_rate": "86.1%",
+      "total_links": 318,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
           "FR-108",
           "FR-54",
           "FR-63",
-          "FR-77",
           "FR-78",
           "FR-79",
           "FR-84",
@@ -57,7 +56,6 @@
         "FR-108",
         "FR-54",
         "FR-63",
-        "FR-77",
         "FR-78",
         "FR-79",
         "FR-84",
@@ -1207,9 +1205,11 @@
       },
       "FR-77": {
         "fr_id": "FR-77",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
+        "code_files": [
+          "03-development/src/app/infra/jobs.py"
+        ],
         "test_files": [
           "tests/test_fr77.py"
         ],
