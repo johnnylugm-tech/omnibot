@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "d00bc2835ce6a46bffc7257f584c9e3a3fb22956",
-  "content_sha256": "0cffe1d2aeaa02e808bbd247190bb1454d6bc326ec5eb7add1c4cf8fc4844c2e",
+  "git_sha": "0b46374970056406a926bed86f64fd31c7c8e695",
+  "content_sha256": "e9e67307d4daade77847d0b55cfe43e5a25d503534da2eff4e7e20e5da130099",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,15 +11,13 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "76.9%",
-      "test_coverage": "80.6%",
-      "verification_rate": "76.9%",
-      "total_links": 295,
+      "code_coverage": "78.7%",
+      "test_coverage": "81.5%",
+      "verification_rate": "78.7%",
+      "total_links": 300,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
-          "FR-03",
-          "FR-04",
           "FR-05",
           "FR-06",
           "FR-108",
@@ -45,7 +43,6 @@
           "FR-99"
         ],
         "fr_without_test": [
-          "FR-04",
           "FR-05",
           "FR-06",
           "FR-108",
@@ -72,8 +69,6 @@
     "missing": {
       "fr_without_srs": [],
       "fr_without_code": [
-        "FR-03",
-        "FR-04",
         "FR-05",
         "FR-06",
         "FR-108",
@@ -99,7 +94,6 @@
         "FR-99"
       ],
       "fr_without_test": [
-        "FR-04",
         "FR-05",
         "FR-06",
         "FR-108",
@@ -153,9 +147,12 @@
       },
       "FR-03": {
         "fr_id": "FR-03",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
+        "code_files": [
+          "03-development/src/app/services/messenger_adapter.py",
+          "03-development/src/app/services/messenger_verifier.py"
+        ],
         "test_files": [
           "tests/test_fr03.py"
         ],
@@ -164,10 +161,15 @@
       },
       "FR-04": {
         "fr_id": "FR-04",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/services/whatsapp_adapter.py",
+          "03-development/src/app/services/whatsapp_verifier.py"
+        ],
+        "test_files": [
+          "tests/test_fr04.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },

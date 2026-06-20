@@ -72,8 +72,30 @@ class WhatsAppWebhookAdapter:
     def parse_messages(self, payload: dict) -> list[UnifiedMessage]:
         """Parse WhatsApp webhook payload into UnifiedMessage instances.
 
-        Navigates ``payload["entry"][i]["changes"][j]["value"]["messages"]``
-        and returns one ``UnifiedMessage`` per WhatsApp message object.
+        Citations:
+            - TEST_SPEC.md FR-04:234-245 — parse_messages mapping spec
+            - SRS.md FR-04 — WhatsApp entry → UnifiedMessage mapping
+        """
+        return [self._build_unified_message(msg) for msg in self._iter_messages(payload)]
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _iter_messages(payload: dict):
+        """Yield each WhatsApp message dict from the nested payload structure.
+
+        Navigates ``payload["entry"][i]["changes"][j]["value"]["messages"]``.
+        """
+        for entry in payload.get("entry", []):
+            for change in entry.get("changes", []):
+                value = change.get("value", {})
+                yield from value.get("messages", [])
+
+    @staticmethod
+    def _build_unified_message(message: dict) -> UnifiedMessage:
+        """Build a UnifiedMessage from a single WhatsApp message dict.
 
         Mapping:
             - ``message["from"]`` → ``platform_user_id``
@@ -83,36 +105,21 @@ class WhatsAppWebhookAdapter:
             - ``raw_payload`` = the full message dict
             - ``received_at`` = message timestamp (epoch string → datetime UTC)
             - ``reply_token`` = ``None`` (WhatsApp has no reply_token concept)
-
-        Citations:
-            - TEST_SPEC.md FR-04:234-245 — parse_messages mapping spec
-            - SRS.md FR-04 — WhatsApp entry → UnifiedMessage mapping
         """
-        messages: list[UnifiedMessage] = []
-        for entry in payload.get("entry", []):
-            for change in entry.get("changes", []):
-                value = change.get("value", {})
-                for message in value.get("messages", []):
-                    platform_user_id = message["from"]
-                    content = message.get("text", {}).get("body", "")
-                    msg_type_str = message.get("type", "text")
-                    message_type = _WHATSAPP_TYPE_MAP.get(
-                        msg_type_str, MessageType.TEXT
-                    )
-                    timestamp_str = message.get("timestamp", "0")
-                    received_at = datetime.fromtimestamp(
-                        int(timestamp_str), tz=UTC
-                    )
-                    messages.append(
-                        UnifiedMessage(
-                            platform=Platform.WHATSAPP,
-                            platform_user_id=platform_user_id,
-                            unified_user_id=None,
-                            message_type=message_type,
-                            content=content,
-                            raw_payload=message,
-                            received_at=received_at,
-                            reply_token=None,
-                        )
-                    )
-        return messages
+        platform_user_id = message["from"]
+        content = message.get("text", {}).get("body", "")
+        msg_type_str = message.get("type", "text")
+        message_type = _WHATSAPP_TYPE_MAP.get(msg_type_str, MessageType.TEXT)
+        timestamp_str = message.get("timestamp", "0")
+        received_at = datetime.fromtimestamp(int(timestamp_str), tz=UTC)
+
+        return UnifiedMessage(
+            platform=Platform.WHATSAPP,
+            platform_user_id=platform_user_id,
+            unified_user_id=None,
+            message_type=message_type,
+            content=content,
+            raw_payload=message,
+            received_at=received_at,
+            reply_token=None,
+        )
