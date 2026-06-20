@@ -305,16 +305,16 @@ def emotion_should_escalate(emotions) -> bool:
 
 
 __all__ = [
+    "ESCALATION_THRESHOLD",
     "EmotionAnalyzer",
     "EmotionScore",
     "EmotionTracker",
+    "HALF_LIFE_HOURS",
+    "INTENSITY_MAX",
+    "INTENSITY_MIN",
+    "NEGATIVE_CATEGORY",
+    "VALID_CATEGORIES",
     "emotion_classify",
     "emotion_current_weighted_score",
     "emotion_should_escalate",
-    "VALID_CATEGORIES",
-    "NEGATIVE_CATEGORY",
-    "INTENSITY_MIN",
-    "INTENSITY_MAX",
-    "HALF_LIFE_HOURS",
-    "ESCALATION_THRESHOLD",
 ]
