@@ -458,6 +458,24 @@ async def create_knowledge_with_chunks(
     embedding_synced_at: datetime | None = None
     enqueued_job: EmbeddingJob | None = None
 
+    def _fallback_to_async(log_msg: str, *log_args: object) -> None:
+        """Enqueue the first chunk for async embedding and log a warning.
+
+        Shared by both the ``asyncio.TimeoutError`` and defensive
+        ``Exception`` branches — the only difference is the log message.
+        """
+        nonlocal fallback, enqueued_job
+        fallback = "async_queue"
+        enqueued_job = enqueue_embedding_job(
+            EmbeddingJob(
+                chunk_id=first_chunk_id,
+                knowledge_id=knowledge_id,
+                content=first_chunk_text,
+                model=model,
+            )
+        )
+        _logger.warning(log_msg, *log_args)
+
     try:
         await asyncio.wait_for(
             _embed_first_chunk(
@@ -469,20 +487,7 @@ async def create_knowledge_with_chunks(
         )
     except asyncio.TimeoutError:
         # SRS FR-77: "超時 → 記錄 warning，fallback 全部走非同步".
-        # The chunk is NOT synchronously embedded, so ``search_ready``
-        # is False and ``embedding_synced`` is False. The chunk is
-        # enqueued for async processing so the SAQ worker (FR-76)
-        # can pick it up.
-        fallback = "async_queue"
-        enqueued_job = enqueue_embedding_job(
-            EmbeddingJob(
-                chunk_id=first_chunk_id,
-                knowledge_id=knowledge_id,
-                content=first_chunk_text,
-                model=model,
-            )
-        )
-        _logger.warning(
+        _fallback_to_async(
             "FR-77 embedding timeout for knowledge_id=%s chunk_id=%s "
             "after %.2fs; falling back to async_queue",
             knowledge_id,
@@ -490,21 +495,9 @@ async def create_knowledge_with_chunks(
             EMBEDDING_TIMEOUT_S,
         )
     except Exception as exc:  # pragma: no cover - defensive
-        # Defensive: any unexpected embedding failure (network error,
-        # provider 5xx, etc.) MUST be treated as a transient failure
-        # per the FR-77 "超時不阻斷主流程" rule — the caller is the
-        # create-knowledge flow and must not be derailed by an
-        # embedding problem. We surface the fallback and log.
-        fallback = "async_queue"
-        enqueued_job = enqueue_embedding_job(
-            EmbeddingJob(
-                chunk_id=first_chunk_id,
-                knowledge_id=knowledge_id,
-                content=first_chunk_text,
-                model=model,
-            )
-        )
-        _logger.warning(
+        # Defensive: any unexpected embedding failure MUST be treated as
+        # transient per the FR-77 "超時不阻斷主流程" rule.
+        _fallback_to_async(
             "FR-77 embedding failure for knowledge_id=%s chunk_id=%s: %r; "
             "falling back to async_queue",
             knowledge_id,
