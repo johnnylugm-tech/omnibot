@@ -34,10 +34,14 @@ RESOURCES: tuple[str, ...] = (
     "pii",
 )
 
-# Shared empty-grants sentinel. frozensets are immutable so a single
-# instance is safe to reuse across roles and across resources. Reusing
-# it keeps every ``pii:none`` cell in the matrix identical, which is
-# the explicit-not-implicit contract demanded by FR-61.
+# Action-set sentinels. frozensets are immutable so a single instance
+# is safe to reuse across roles and across resources.
+_READ_ONLY: frozenset[str] = frozenset({"read"})
+_FULL_CRUD: frozenset[str] = frozenset({"read", "write", "delete"})
+
+# Shared empty-grants sentinel. Reusing it keeps every ``pii:none``
+# cell in the matrix identical, which is the explicit-not-implicit
+# contract demanded by FR-61.
 _NONE: frozenset[str] = frozenset()
 
 
@@ -57,20 +61,20 @@ def _role(grants: dict[str, frozenset[str]]) -> dict[str, frozenset[str]]:
 ROLE_PERMISSIONS: dict[str, dict[str, frozenset[str]]] = {
     # anonymous: knowledge:read only (SRS FR-61 "anonymous=knowledge:read").
     "anonymous": _role({
-        "knowledge": frozenset({"read"}),
+        "knowledge": _READ_ONLY,
     }),
 
     # customer: read public knowledge, raise escalations (their own).
     # SRS FR-61 "customer=knowledge:read + escalate:write".
     "customer": _role({
-        "knowledge": frozenset({"read"}),
+        "knowledge": _READ_ONLY,
         "escalate": frozenset({"write"}),
     }),
 
     # agent: handle customer conversations — read knowledge, raise
     # escalations. SRS FR-61 "agent=knowledge:read + escalate:write".
     "agent": _role({
-        "knowledge": frozenset({"read"}),
+        "knowledge": _READ_ONLY,
         "escalate": frozenset({"write"}),
     }),
 
@@ -79,8 +83,8 @@ ROLE_PERMISSIONS: dict[str, dict[str, frozenset[str]]] = {
     # "editor=knowledge:read+write + escalate:read + experiment:read".
     "editor": _role({
         "knowledge": frozenset({"read", "write"}),
-        "escalate": frozenset({"read"}),
-        "experiment": frozenset({"read"}),
+        "escalate": _READ_ONLY,
+        "experiment": _READ_ONLY,
     }),
 
     # admin: full operational control — read+write+delete on every
@@ -90,12 +94,12 @@ ROLE_PERMISSIONS: dict[str, dict[str, frozenset[str]]] = {
     # because FR-61 grants are the 3 canonical CRUD verbs and decrypt
     # is intentionally NOT one of them at the admin tier.
     "admin": _role({
-        "knowledge": frozenset({"read", "write", "delete"}),
-        "escalate": frozenset({"read", "write", "delete"}),
-        "audit": frozenset({"read", "write", "delete"}),
-        "experiment": frozenset({"read", "write", "delete"}),
-        "system": frozenset({"read", "write", "delete"}),
-        "pii": frozenset({"read", "write", "delete"}),
+        "knowledge": _FULL_CRUD,
+        "escalate": _FULL_CRUD,
+        "audit": _FULL_CRUD,
+        "experiment": _FULL_CRUD,
+        "system": _FULL_CRUD,
+        "pii": _FULL_CRUD,
     }),
 
     # auditor: read-only across knowledge/escalate/audit/experiment/system
@@ -104,22 +108,22 @@ ROLE_PERMISSIONS: dict[str, dict[str, frozenset[str]]] = {
     # The empty ``pii`` grant is what makes ``enforce('auditor', 'pii',
     # 'decrypt')`` return 403 — privacy boundary.
     "auditor": _role({
-        "knowledge": frozenset({"read"}),
-        "escalate": frozenset({"read"}),
-        "audit": frozenset({"read"}),
-        "experiment": frozenset({"read"}),
-        "system": frozenset({"read"}),
+        "knowledge": _READ_ONLY,
+        "escalate": _READ_ONLY,
+        "audit": _READ_ONLY,
+        "experiment": _READ_ONLY,
+        "system": _READ_ONLY,
     }),
 
     # dpo: same read surface as auditor PLUS the sole holder of
     # ``pii:decrypt`` (SRS FR-61 "dpo=同 auditor + pii:decrypt"; FR-60
     # acceptance: "dpo 獨有 pii:decrypt").
     "dpo": _role({
-        "knowledge": frozenset({"read"}),
-        "escalate": frozenset({"read"}),
-        "audit": frozenset({"read"}),
-        "experiment": frozenset({"read"}),
-        "system": frozenset({"read"}),
+        "knowledge": _READ_ONLY,
+        "escalate": _READ_ONLY,
+        "audit": _READ_ONLY,
+        "experiment": _READ_ONLY,
+        "system": _READ_ONLY,
         "pii": frozenset({"decrypt"}),
     }),
 }
