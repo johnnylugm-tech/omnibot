@@ -267,17 +267,16 @@ class LLMJudge:
         """
         if primary is None and secondary is None:
             return JudgeResult(politeness=0, accuracy=0, judge_name="degraded")
-        if primary is None:
+        # Exactly one survivor — single-source fallback for NP-07 / NP-15
+        # partial-result contract: pass the surviving judge's raw scores
+        # through verbatim, with a default ``judge_name`` if unset.
+        if primary is None or secondary is None:
+            survivor = secondary if primary is None else primary
+            default_name = "secondary" if primary is None else "primary"
             return JudgeResult(
-                politeness=secondary.politeness,
-                accuracy=secondary.accuracy,
-                judge_name=secondary.judge_name or "secondary",
-            )
-        if secondary is None:
-            return JudgeResult(
-                politeness=primary.politeness,
-                accuracy=primary.accuracy,
-                judge_name=primary.judge_name or "primary",
+                politeness=survivor.politeness,
+                accuracy=survivor.accuracy,
+                judge_name=survivor.judge_name or default_name,
             )
         # Both judges succeeded — FR-66 politeness = max, FR-67
         # accuracy = min.
