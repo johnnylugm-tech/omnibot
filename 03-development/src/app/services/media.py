@@ -344,30 +344,32 @@ class MediaPipeline:
         file_bytes: bytes = b"",
     ) -> MediaResult:
         """Process a file message with size / type / ClamAV gates."""
-        # 1. Size limit (boundary check — runs before any I/O).
-        if file_size_mb > FILE_SIZE_LIMIT_MB:
-            return MediaResult(
-                action=MEDIA_ACTION_FILE_REJECTED, status="rejected"
-            )
-        # 2. Type allow-list.
-        if file_type not in ALLOWED_FILE_TYPES:
-            return MediaResult(
-                action=MEDIA_ACTION_FILE_REJECTED, status="rejected"
-            )
+        # 1-2. Size limit + type allow-list (boundary checks, before any I/O).
+        if (
+            file_size_mb > FILE_SIZE_LIMIT_MB
+            or file_type not in ALLOWED_FILE_TYPES
+        ):
+            return self._reject_file(status="rejected")
         # 3. ClamAV availability (fail-secure).
         if not self.scanner.is_available():
-            return MediaResult(
-                action=MEDIA_ACTION_FILE_REJECTED,
+            return self._reject_file(
                 status=str(FILE_SCAN_HTTP_503),
                 error=FILE_SCAN_UNAVAILABLE_ERROR,
             )
         # 4. ClamAV scan (fail-secure on timeout / error).
         scan_result = self.scanner.scan(file_bytes=file_bytes, file_type=file_type)
         if scan_result.status != CLAMAV_STATUS_OK or scan_result.terminated:
-            return MediaResult(
-                action=MEDIA_ACTION_FILE_REJECTED,
+            return self._reject_file(
                 status=str(FILE_SCAN_HTTP_503),
                 error=FILE_SCAN_UNAVAILABLE_ERROR,
             )
         # All gates pass → route to human escalation per FR-100 file leg.
         return MediaResult(action=MEDIA_ACTION_AUTO_ESCALATE)
+
+    def _reject_file(
+        self, status: str, error: Optional[str] = None
+    ) -> MediaResult:
+        """Build a file-rejected MediaResult with the given status / error."""
+        return MediaResult(
+            action=MEDIA_ACTION_FILE_REJECTED, status=status, error=error
+        )
