@@ -246,6 +246,7 @@ class KnowledgeAdminAPI:
         embedding_status_provider: Optional[EmbeddingStatusProvider] = None,
     ) -> None:
         self._db_session = db_session
+        self._default_store = _InMemoryStore()
         self._embedding_status_provider = (
             embedding_status_provider
             if embedding_status_provider is not None
@@ -255,27 +256,18 @@ class KnowledgeAdminAPI:
     # ---- internal helpers ------------------------------------------------
 
     def _store(self) -> _InMemoryStore:
-        """Return the active store, falling back to the in-memory seam.
+        """Return the active store: injected session or in-memory default.
 
-        When ``db_session`` is injected the test owns the store; when
-        it is omitted we lazily create a fresh ``_InMemoryStore`` so
-        unit tests can construct ``KnowledgeAdminAPI()`` with no args.
+        The test-injected ``_FakeSession`` is a context manager whose
+        ``__enter__`` returns a store with ``add/get/delete/commit``;
+        honour that contract for compatibility.
         """
         if self._db_session is None:
             return self._default_store
-        # The test-injected ``_FakeSession`` is a context manager
-        # whose ``__enter__`` returns a store with ``add/get/delete/
-        # commit``; honour that contract for compatibility.
         session = self._db_session()
         if hasattr(session, "__enter__"):
             return session.__enter__()
         return session
-
-    @property
-    def _default_store(self) -> _InMemoryStore:
-        if not hasattr(self, "_default_store_cache"):
-            self._default_store_cache = _InMemoryStore()
-        return self._default_store_cache
 
     # ---- per-verb CRUD methods -------------------------------------------
 
@@ -312,6 +304,17 @@ class KnowledgeAdminAPI:
 
     # ---- dispatcher ------------------------------------------------------
 
+    @staticmethod
+    def _crud_response(
+        entry: Optional[KnowledgeEntry],
+    ) -> Dict[str, Any]:
+        """Build the canonical {status, entry, ok} dict for read/verb results."""
+        return {
+            "status": KNOWLEDGE_API_OK_STATUS,
+            "entry": entry,
+            "ok": entry is not None,
+        }
+
     def crud(self, action: str, **kwargs: Any) -> Dict[str, Any]:
         """Single dispatcher for the WebUI's ``action`` parameter.
 
@@ -326,30 +329,21 @@ class KnowledgeAdminAPI:
                 content=kwargs.get("content", ""),
                 keywords=kwargs.get("keywords"),
             )
-            return {
-                "status": KNOWLEDGE_API_OK_STATUS,
-                "entry": entry,
-                "ok": True,
-            }
+            return self._crud_response(entry)
         if action == KNOWLEDGE_ACTION_READ:
-            entry = self.read_entry(kwargs.get("entry_id"))
-            return {
-                "status": KNOWLEDGE_API_OK_STATUS,
-                "entry": entry,
-                "ok": entry is not None,
-            }
+            return self._crud_response(
+                self.read_entry(kwargs.get("entry_id"))
+            )
         if action == KNOWLEDGE_ACTION_UPDATE:
-            entry_id = kwargs.get("entry_id")
-            fields = kwargs.get("fields", {})
-            entry = self.update_entry(entry_id, **fields)
-            return {
-                "status": KNOWLEDGE_API_OK_STATUS,
-                "entry": entry,
-                "ok": entry is not None,
-            }
+            return self._crud_response(
+                self.update_entry(
+                    kwargs.get("entry_id"), **kwargs.get("fields", {})
+                )
+            )
         if action == KNOWLEDGE_ACTION_DELETE:
-            entry_id = kwargs.get("entry_id")
-            deleted = self.delete_entry(entry_id)
+            # Delete is the only verb whose ``ok`` follows the
+            # affected-row count rather than entry-presence.
+            deleted = self.delete_entry(kwargs.get("entry_id"))
             return {
                 "status": KNOWLEDGE_API_OK_STATUS,
                 "entry": None,
