@@ -1,7 +1,8 @@
-"""[FR-52, FR-63] ABTestManager — SHA-256 deterministic A/B variant assignment.
+"""[FR-52, FR-63, FR-64] ABTestManager — SHA-256 deterministic A/B variant assignment
+and automatic winner promotion.
 
-Spec source: 02-architecture/TEST_SPEC.md (FR-52, FR-63)
-SRS source : SRS.md FR-52 (Module 9: Response Generator); SRS.md FR-63 (Module 9: Response Generator / A/B Testing)
+Spec source: 02-architecture/TEST_SPEC.md (FR-52, FR-63, FR-64)
+SRS source : SRS.md FR-52, FR-63, FR-64 (Modules 9 & 13: A/B Testing)
 
 FR-52 -- A/B Variant Injection：
     SHA-256 確定性分配（非 Python hash()）；
@@ -17,12 +18,23 @@ FR-63 -- ABTestManager.get_variant：
     Acceptance: 同 user_id + experiment_id 跨進程回傳相同 variant；
     SHA-256 hash 計算正確.
 
+FR-64 -- ABTestManager.auto_promote：
+    Minimum sample size 100; below 100 → return None (no judgement).
+    If metric diff between best and second-best variant ≥ 0.05
+    AND total sample size ≥ 100 → best variant wins, experiment
+    status is set to "completed".
+    If metric diff < 0.05 → no promotion (even at sufficient
+    sample size); experiment remains in its prior status.
+    Acceptance: 樣本 < 100 不判定勝負；差異 ≥ 0.05 且樣本足夠時自動
+    結束實驗；實驗 status 設 'completed'.
+
 Public surface pinned by this module:
 
     - ``ABTestManager(db, llm)`` — constructs a manager wired against
-      the experiment-config database (for ``get_experiment`` lookups)
-      and the LLM client (reserved for downstream CTA rewrite hooks;
-      unused by ``get_variant`` itself).
+      the experiment-config database (for ``get_experiment`` lookups
+      and ``update_experiment_status`` persistence) and the LLM client
+      (reserved for downstream CTA rewrite hooks; unused by
+      ``get_variant`` / ``auto_promote``).
     - ``ABTestManager.get_variant(user_id, experiment_id) -> str`` —
       deterministically resolves a user+experiment pair to a variant
       label via SHA-256 over the ``f"{user_id}:{experiment_id}"``
@@ -32,6 +44,14 @@ Public surface pinned by this module:
       across processes (SRS FR-52 mandate: "SHA-256 確定性分配
       （非 Python hash()）" / "SHA-256 分配跨進程一致"; SRS FR-63
       mandate: "SHA-256 確定性 variant 分配"; "跨進程一致").
+    - ``ABTestManager.auto_promote(experiment_id, results) -> str | None`` —
+      promotes the best-performing variant when the total observation
+      count is ≥ 100 AND the gap between the best and the second-best
+      mean is ≥ 0.05; otherwise returns None. On promotion the
+      experiment's status is persisted as "completed" via
+      ``db.update_experiment_status(experiment_id, "completed")``
+      (SRS FR-64 mandate: "差異 ≥ 0.05 且樣本足夠時自動結束實驗";
+      "實驗 status 設 'completed'"; "樣本 < 100 不判定勝負").
 
 Citations:
     - SRS.md FR-52 -- "SHA-256 確定性分配（非 Python hash()）" (line 115).
@@ -43,6 +63,9 @@ Citations:
     - SRS.md FR-63 -- "ABTestManager：get_variant(user_id, experiment_id) 使用 SHA-256（hashlib.sha256，非 Python hash()）確定性分配 variant" (line 146).
     - SRS.md FR-63 -- acceptance "同 user_id + experiment_id 跨進程回傳相同 variant；SHA-256 hash 計算正確" (line 146).
     - SRS.md FR-63 -- implementation_functions: "ABTestManager.get_variant()" (line 146).
+    - SRS.md FR-64 -- "auto_promote：最小樣本量 100；metric 差異 ≥ 0.05（threshold）→ 最佳 variant 勝出，實驗 status 設 'completed'；樣本量不足 → 回傳 None" (line 147).
+    - SRS.md FR-64 -- acceptance "樣本 < 100 不判定勝負；差異 ≥ 0.05 且樣本足夠時自動結束實驗" (line 147).
+    - SRS.md FR-64 -- implementation_functions: "ABTestManager.auto_promote()" (line 147).
 """
 
 from __future__ import annotations
@@ -163,3 +186,100 @@ class ABTestManager:
         if get_experiment is None:
             return None
         return get_experiment(experiment_id)
+
+    # FR-64 promotion contract thresholds. Named as constants so the
+    # spec-mandated values ("最小樣本量 100", "差異 ≥ 0.05") are
+    # self-documenting and a future spec bump edits one line per value.
+    _MIN_SAMPLE_SIZE: int = 100
+    _PROMOTION_DIFF_THRESHOLD: float = 0.05
+    _COMPLETED_STATUS: str = "completed"
+
+    def auto_promote(
+        self, experiment_id: str, results: dict[str, list[float]]
+    ) -> str | None:
+        """[FR-64] Automatically promote the winning variant.
+
+        Implements SRS FR-64 ("auto_promote：最小樣本量 100；metric
+        差異 ≥ 0.05（threshold）→ 最佳 variant 勝出，實驗 status 設
+        'completed'；樣本量不足 → 回傳 None"):
+
+            1. Compute the per-variant mean metric from ``results``
+               (a ``{variant_label: [metric scores]}`` mapping).
+            2. If the total observation count across all variants is
+               below ``_MIN_SAMPLE_SIZE`` (100), return ``None`` —
+               SRS FR-64 acceptance: "樣本 < 100 不判定勝負".
+            3. Otherwise sort variants by mean descending and compute
+               the diff between the best and the second-best mean.
+            4. If that diff is below ``_PROMOTION_DIFF_THRESHOLD``
+               (0.05), return ``None`` — even at sufficient sample
+               size, the evidence is not strong enough to call a
+               winner (SRS FR-64 acceptance: "差異 ≥ 0.05 且樣本足夠
+               時自動結束實驗" — the < 0.05 branch does not end).
+            5. Otherwise the best variant wins: return its label and
+               persist ``experiment.status = "completed"`` via
+               ``db.update_experiment_status(experiment_id,
+               "completed")`` — SRS FR-64 acceptance: "實驗 status
+               設 'completed'".
+
+        A single-variant ``results`` (no second-best to compare
+        against) is treated as diff = ∞ and therefore promotes
+        whenever sample size ≥ 100.
+
+        Args:
+            experiment_id: Experiment key (e.g. ``"exp-1"``).
+            results: ``{variant_label: [metric scores]}`` mapping
+                collected for the experiment. Values may be empty
+                lists (counted as zero observations).
+
+        Returns:
+            The promoted variant label, or ``None`` if the sample
+            size is below the minimum or the diff is below the
+            threshold.
+        """
+        # 1. Per-variant mean metric + total sample size.
+        means: list[tuple[str, float]] = []
+        total_sample = 0
+        for variant, scores in results.items():
+            scores_list = list(scores or [])
+            count = len(scores_list)
+            total_sample += count
+            if count == 0:
+                means.append((str(variant), 0.0))
+                continue
+            mean = sum(scores_list) / count
+            means.append((str(variant), mean))
+
+        # 2. Below-minimum sample size guard — short-circuit to None
+        # BEFORE any diff comparison runs (SRS FR-64: "樣本 < 100 不
+        # 判定勝負").
+        if total_sample < self._MIN_SAMPLE_SIZE:
+            return None
+
+        # 3. Sort by mean descending; the best and second-best give
+        # us the diff used in the promotion gate.
+        means.sort(key=lambda item: item[1], reverse=True)
+        best_label, best_mean = means[0]
+        if len(means) == 1:
+            # Single-variant experiment: no second-best to compare
+            # against, so the diff is implicitly "infinite" and the
+            # sample-size gate alone qualifies for promotion.
+            second_mean = float("-inf")
+        else:
+            second_mean = means[1][1]
+        diff = best_mean - second_mean
+
+        # 4. Below-threshold diff: no promotion even at sufficient
+        # sample size (SRS FR-64 acceptance — the < 0.05 branch does
+        # not end the experiment).
+        if diff < self._PROMOTION_DIFF_THRESHOLD:
+            return None
+
+        # 5. Promote the winner and persist the "completed" status
+        # via the injected DB adapter. Both strategies the test
+        # accepts (mutate fetched record / call update_experiment_status)
+        # leave the same end state — calling the persistence method
+        # is the canonical contract from SRS FR-64.
+        update = getattr(self._db, "update_experiment_status", None)
+        if callable(update):
+            update(experiment_id, self._COMPLETED_STATUS)
+        return best_label
