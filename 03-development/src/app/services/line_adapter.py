@@ -47,8 +47,8 @@ class LineWebhookAdapter:
         """
         messages: list[UnifiedMessage] = []
         for event in events_payload:
-            message = event.get("message", {})
-            content = message.get("text", "")
+            line_msg = event.get("message", {})
+            content = line_msg.get("text", "")
 
             received_at = datetime.fromtimestamp(
                 event["timestamp"] / 1000.0, tz=timezone.utc
