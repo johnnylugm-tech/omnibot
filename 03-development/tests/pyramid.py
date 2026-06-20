@@ -217,7 +217,7 @@ class E2EPipelineRunner:
         """
         return {
             "source": "rule",
-            "result": {"matched": True, "answer": "FAQ answer for: " + query},
+            "result": {"matched": True, "answer": f"FAQ answer for: {query}"},
             "passed": True,
         }
 
@@ -268,6 +268,15 @@ class E2EPipelineRunner:
             "passed": True,
         }
 
+    @staticmethod
+    def _escalation_result() -> dict[str, Any]:
+        """Return a standard escalation result dict.
+
+        [FR-107] Both emotion-triggered (FR-48) and fallback (FR-31)
+        escalation paths return the same shape.
+        """
+        return {"action": "escalate", "escalated": True, "passed": True}
+
     def run_emotion_escalation_scenario(
         self, consecutive_negative: int
     ) -> dict[str, Any]:
@@ -282,11 +291,7 @@ class E2EPipelineRunner:
         Returns:
             {"action": "escalate", "escalated": bool, "passed": bool}
         """
-        return {
-            "action": "escalate",
-            "escalated": True,
-            "passed": True,
-        }
+        return self._escalation_result()
 
     def run_prompt_injection_scenario(self, text: str) -> dict[str, Any]:
         """Run prompt injection defense scenario per FR-11.
@@ -325,8 +330,4 @@ class E2EPipelineRunner:
         Returns:
             {"action": "escalate", "escalated": bool, "passed": bool}
         """
-        return {
-            "action": "escalate",
-            "escalated": True,
-            "passed": True,
-        }
+        return self._escalation_result()
