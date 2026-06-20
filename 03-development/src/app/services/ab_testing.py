@@ -60,6 +60,15 @@ class ABTestManager:
     # yields a malformed split. Sentinel-tested in TEST_SPEC.md FR-52.
     _CONTROL_FALLBACK: str = "control"
 
+    # SPEC.md §Module:ab_testing.py contract: take the first 8 hex
+    # digits of the SHA-256 digest and reduce mod 100 to a uniform
+    # ``[0, 99]`` bucket, then route through ``traffic_split`` cumulative
+    # ranges. Named as constants so the deterministic contract is
+    # self-documenting and a future spec bump (e.g. wider bucket) only
+    # edits one line.
+    _DIGEST_PREFIX_LEN: int = 8
+    _BUCKET_MODULUS: int = 100
+
     def __init__(self, db: Any, llm: Any) -> None:
         """Wire the manager against an experiment-config DB and an LLM client.
 
@@ -109,9 +118,11 @@ class ABTestManager:
         # truncated to the first 8 hex digits, mapped to [0, 99].
         # SHA-256 (not Python's hash()) is what makes the assignment
         # cross-process consistent — a hard SRS FR-52 acceptance.
-        key = f"{user_id}:{experiment_id}".encode("utf-8")
+        key = f"{user_id}:{experiment_id}".encode()
         digest = hashlib.sha256(key).hexdigest()
-        variant_hash = int(digest[:8], 16) % 100
+        variant_hash = (
+            int(digest[: self._DIGEST_PREFIX_LEN], 16) % self._BUCKET_MODULUS
+        )
 
         experiment = self._fetch_experiment(experiment_id)
         if experiment is None:
