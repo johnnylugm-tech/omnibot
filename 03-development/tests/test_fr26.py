@@ -42,7 +42,7 @@ import pytest
 #            knowledge_id)``.
 #         5. Otherwise → returns ``None`` (caller falls through to Tier 2).
 # ---------------------------------------------------------------------------
-from app.core.knowledge import HybridKnowledge, KnowledgeResult
+from app.core.knowledge import HybridKnowledge
 
 
 # ---------------------------------------------------------------------------
@@ -228,7 +228,6 @@ def test_fr26_confidence_below_080_falls_through_tier2():
 def test_fr26_limit_5_applied():
     query = "訂單"
     results_count = 10
-    expected_limit = 5
 
     # GREEN TODO: HybridKnowledge._rule_match must issue a SQL statement
     # that contains a LIMIT 5 clause (case-insensitive — Postgres accepts

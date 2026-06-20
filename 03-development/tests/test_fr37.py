@@ -15,8 +15,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — the AWAITING_CONFIRMATION timeout surface of
 # ``app.core.dst`` does NOT exist yet (RED state).
@@ -58,9 +56,9 @@ import pytest
 #   surface does not exist yet. That is the valid RED signal for this
 #   step.
 # ---------------------------------------------------------------------------
-from app.core.dst import (  # noqa: F401
-    DialogueState,
+from app.core.dst import (
     MAX_AWAITING_CONFIRMATION_ROUNDS,
+    DialogueState,
 )
 
 

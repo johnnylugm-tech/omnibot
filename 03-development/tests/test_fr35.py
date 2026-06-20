@@ -16,8 +16,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — the slot-filling surface of ``app.core.dst`` does
 # NOT exist yet (RED state).
@@ -57,8 +55,7 @@ import pytest
 #   or ``missing_slots`` references because the slot-filling surface
 #   does not exist yet. That is the valid RED signal for this step.
 # ---------------------------------------------------------------------------
-from app.core.dst import DialogueSlot, INTENT_TO_SLOTS  # noqa: F401
-from app.core.dst import DialogueState
+from app.core.dst import INTENT_TO_SLOTS, DialogueSlot, DialogueState  # noqa: F401
 
 
 # ---------------------------------------------------------------------------

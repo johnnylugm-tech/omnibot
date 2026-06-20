@@ -18,10 +18,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
-
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test.
 #
@@ -63,11 +59,10 @@ import pytest
 # ---------------------------------------------------------------------------
 from tests.load import (  # noqa: F401 -- RED: GREEN owns the names
     DEFAULT_TEST_WEIGHTS,
+    STRESS_STAGES,
     K6Config,
     K6Runner,
-    STRESS_STAGES,
 )
-
 
 # ======================================================================
 # Test cases — names match TEST_SPEC.md exactly

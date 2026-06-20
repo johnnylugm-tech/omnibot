@@ -14,8 +14,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — ``app.core.pii`` exists but ``should_escalate`` is a
 # stub that returns False. The import below succeeds (FR-18 GREEN landed),
@@ -37,7 +35,7 @@ import pytest
 # call — so no autouse fixture is required. RED signals come from the
 # assertion failures the GREEN agent must fix.
 # ---------------------------------------------------------------------------
-from app.core.pii import PIIMasking  # noqa: F401
+from app.core.pii import PIIMasking
 
 
 # ---------------------------------------------------------------------------

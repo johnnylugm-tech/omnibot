@@ -36,8 +36,6 @@ import inspect
 import types
 from unittest.mock import MagicMock
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test.
 #
@@ -62,7 +60,7 @@ import pytest
 # pytest crashes with Collection Error (Exit Code 2) because the
 # aggregation logic does not yet exist — that is the valid RED signal.
 # ---------------------------------------------------------------------------
-from app.services.llm_judge import (  # noqa: F401  -- RED: GREEN owns the names
+from app.services.llm_judge import (
     LLMJudge,
 )
 
@@ -106,7 +104,7 @@ def _extract_politeness(result: object) -> object:
     """Read ``politeness`` from any JudgeResult shape (object attr / dict /
     tuple). Used so GREEN can pick whichever representation makes sense."""
     if hasattr(result, "politeness"):
-        return getattr(result, "politeness")
+        return result.politeness
     if isinstance(result, dict):
         return result.get("politeness")
     if isinstance(result, tuple) and len(result) >= 1:
@@ -311,5 +309,5 @@ def test_fr66_primary_lower_secondary_higher_uses_secondary():
 # to force collection-time failures during the RED step. These stay in
 # scope so a future refactor cannot silently drop the FR-66 contract.
 # ---------------------------------------------------------------------------
-_ = MagicMock  # noqa: F841  -- RED sentinel: MagicMock is the mock primitive
+_ = MagicMock
                 # GREEN will see once it implements the aggregation.

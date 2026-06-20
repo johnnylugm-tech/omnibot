@@ -98,11 +98,11 @@ def _isolate_dashboard_io(monkeypatch):
 #           above patches this to avoid real DB connections in tests.
 # ---------------------------------------------------------------------------
 from app.admin.webui import (  # noqa: E402
-    OperationsDashboard,
-    FCR_ALERT_THRESHOLD,
-    ALERT_COLOR_YELLOW,
     ALERT_COLOR_GREEN,
+    ALERT_COLOR_YELLOW,
+    FCR_ALERT_THRESHOLD,
     VALID_TIME_RANGES,
+    OperationsDashboard,
 )
 
 
@@ -122,13 +122,13 @@ def test_fr103_fcr_below_90_triggers_yellow_alert():
     expected_color = "yellow"  # spec: expected_color="yellow"
 
     # Anchor: the canonical threshold constant MUST match the spec value.
-    assert FCR_ALERT_THRESHOLD == threshold, (
+    assert threshold == FCR_ALERT_THRESHOLD, (
         f"FR-103 FCR_ALERT_THRESHOLD must be {threshold}; "
         f"got {FCR_ALERT_THRESHOLD!r}"
     )
 
     # Anchor: the yellow colour constant MUST use the canonical string.
-    assert ALERT_COLOR_YELLOW == expected_color, (
+    assert expected_color == ALERT_COLOR_YELLOW, (
         f"FR-103 ALERT_COLOR_YELLOW must be 'yellow'; "
         f"got {ALERT_COLOR_YELLOW!r}"
     )

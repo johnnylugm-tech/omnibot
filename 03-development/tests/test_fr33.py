@@ -18,8 +18,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):
 #
@@ -87,7 +85,7 @@ import pytest
 # the missing feature as ``AttributeError`` on the call sites below,
 # which is the valid RED signal for this step.
 # ---------------------------------------------------------------------------
-from app.core.knowledge import HybridKnowledge  # noqa: F401
+from app.core.knowledge import HybridKnowledge
 
 
 # ---------------------------------------------------------------------------
@@ -174,7 +172,7 @@ def test_fr33_embedding_dim_1536_constant():
         # ``"text-embedding-3-small"``. The string is the exact OpenAI
         # model id — typos at the call site would corrupt the
         # vector-store dimension, so this assertion pins the value.
-        assert getattr(HybridKnowledge, "EMBEDDING_MODEL") == model, (
+        assert model == HybridKnowledge.EMBEDDING_MODEL, (
             f"FR-33: HybridKnowledge.EMBEDDING_MODEL must equal "
             f"{model!r} (SRS FR-33); got "
             f"{getattr(HybridKnowledge, 'EMBEDDING_MODEL', None)!r}"
@@ -185,7 +183,7 @@ def test_fr33_embedding_dim_1536_constant():
     # output size. The pgvector HNSW index, the embedding client, and
     # any downstream dataclass with ``vector(N)`` columns all read
     # from this single source of truth.
-    assert HybridKnowledge.EMBEDDING_DIM == expected_dim, (
+    assert expected_dim == HybridKnowledge.EMBEDDING_DIM, (
         f"FR-33: HybridKnowledge.EMBEDDING_DIM must equal "
         f"{expected_dim} (SRS FR-33 / OpenAI text-embedding-3-small); "
         f"got EMBEDDING_DIM={HybridKnowledge.EMBEDDING_DIM}"

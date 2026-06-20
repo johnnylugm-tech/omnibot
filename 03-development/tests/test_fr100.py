@@ -53,6 +53,7 @@ from __future__ import annotations
 
 import pytest
 
+
 # ---------------------------------------------------------------------------
 # Test isolation — ClamAV scans are real subprocess I/O. The GREEN
 # implementation MUST expose an injection seam (constructor arg or class
@@ -197,29 +198,28 @@ def _isolate_clamav_subprocess(monkeypatch):
 # they exercise the MediaPipeline + ClamAVScanner abstraction in
 # isolation, which is the canonical unit-test shape for FR-100.
 # ---------------------------------------------------------------------------
-from app.services.media import MediaPipeline  # noqa: E402
-from app.services.media import ClamAVScanner  # noqa: E402
-from app.services.media import MediaResult  # noqa: E402
-from app.services.media import ClamAVScanResult  # noqa: E402
-
 # Re-export the constants so the tests can assert against the same values
 # the production code uses (and so the harness sees the same names in the
 # import surface as the green implementation must expose).
 from app.services.media import (  # noqa: E402,F401
-    STICKER_FIXED_REPLY,
-    FILE_SIZE_LIMIT_MB,
     ALLOWED_FILE_TYPES,
     CLAMAV_SCAN_P95_LIMIT_MS,
     CLAMAV_SCAN_TIMEOUT_MS,
-    FILE_SCAN_UNAVAILABLE_ERROR,
+    CLAMAV_STATUS_DOWN,
+    CLAMAV_STATUS_OK,
+    CLAMAV_STATUS_UNAVAILABLE,
     FILE_SCAN_HTTP_503,
+    FILE_SCAN_UNAVAILABLE_ERROR,
+    FILE_SIZE_LIMIT_MB,
     MEDIA_ACTION_AUTO_ESCALATE,
-    MEDIA_ACTION_STICKER_REPLY,
     MEDIA_ACTION_FILE_REJECTED,
     MEDIA_ACTION_LOCATION_CTX,
-    CLAMAV_STATUS_DOWN,
-    CLAMAV_STATUS_UNAVAILABLE,
-    CLAMAV_STATUS_OK,
+    MEDIA_ACTION_STICKER_REPLY,
+    STICKER_FIXED_REPLY,
+    ClamAVScanner,
+    ClamAVScanResult,
+    MediaPipeline,
+    MediaResult,
 )
 
 
@@ -307,7 +307,6 @@ def test_fr100_image_auto_escalate():
 # ---------------------------------------------------------------------------
 def test_fr100_sticker_fixed_reply():
     # Spec input literals.
-    message_type = "sticker"
     expected_reply = "請用文字描述您的問題"  # spec string sentinel
 
     # GREEN TODO: ``STICKER_FIXED_REPLY`` MUST be exported and MUST equal
@@ -383,7 +382,6 @@ def test_fr100_sticker_fixed_reply():
 # ---------------------------------------------------------------------------
 def test_fr100_location_extracts_coordinates():
     # Spec input literals.
-    message_type = "location"
     lat = "25.033"  # spec string sentinel (Taipei 101)
     lng = "121.565"
 
@@ -476,7 +474,6 @@ def test_fr100_location_extracts_coordinates():
 def test_fr100_file_above_10mb_rejected():
     # Spec input literals.
     file_size_mb = "11"
-    limit_mb = "10"
     expected_status = "rejected"  # spec string sentinel
 
     # GREEN TODO: ``FILE_SIZE_LIMIT_MB`` MUST equal 10 — the SRS FR-100

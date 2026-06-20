@@ -33,9 +33,6 @@ Sub-assertion rule:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional
-
-import pytest
 
 # ---------------------------------------------------------------------------
 # Source under test — ``app.core.pii`` exists (FR-18 GREEN landed), but the
@@ -70,7 +67,7 @@ import pytest
 # is required; the collection-error / assertion-failure RED signal comes
 # from the missing symbols.
 # ---------------------------------------------------------------------------
-from app.core.pii import PIIMasking  # noqa: F401
+from app.core.pii import PIIMasking
 
 
 # ---------------------------------------------------------------------------
@@ -252,7 +249,7 @@ def test_fr20_90day_anonymize_scheduled():
     #      has ``.table_name``, ``.retention_days``, ``.action`` fields.
     #   2. ``find_policy(table_name="pii_audit_log") -> RetentionPolicy|None``
     # The test below uses interface (1) — the GREEN agent may add either.
-    from app.infra.data_retention import RETENTION_POLICIES  # noqa: F401
+    from app.infra.data_retention import RETENTION_POLICIES
 
     policies = RETENTION_POLICIES
     assert isinstance(policies, (list, tuple)), (

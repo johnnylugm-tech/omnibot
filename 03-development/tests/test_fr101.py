@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import pytest
 
+
 # ---------------------------------------------------------------------------
 # Test isolation — Knowledge CRUD + CSV import touch the DB and the
 # embedding-sync stream consumer (FR-79). The GREEN implementation MUST
@@ -209,27 +210,27 @@ def _isolate_knowledge_admin_io(monkeypatch):
 # FR-101.
 # ---------------------------------------------------------------------------
 from app.admin.webui import (  # noqa: E402,F401
-    KnowledgeAdminAPI,
-    KnowledgeEntry,
-    ImportResult,
-    EmbeddingStatusProvider,
+    EMBEDDING_DISPLAY_FAILED,
+    EMBEDDING_DISPLAY_SYNCED,
+    EMBEDDING_DISPLAY_SYNCING,
+    EMBEDDING_STATUS_FAILED,
+    EMBEDDING_STATUS_SYNCED,
+    EMBEDDING_STATUS_SYNCING,
+    KNOWLEDGE_ACTION_CREATE,
+    KNOWLEDGE_ACTION_DELETE,
+    KNOWLEDGE_ACTION_READ,
+    KNOWLEDGE_ACTION_UPDATE,
     # Constants — re-exported so the tests assert against the same
     # values the production code uses (and so the harness sees the same
     # names in the import surface as GREEN must expose).
     KNOWLEDGE_API_OK_STATUS,
-    KNOWLEDGE_ACTION_CREATE,
-    KNOWLEDGE_ACTION_READ,
-    KNOWLEDGE_ACTION_UPDATE,
-    KNOWLEDGE_ACTION_DELETE,
     KNOWLEDGE_CSV_FILE_TYPE,
     KNOWLEDGE_JSON_FILE_TYPE,
-    EMBEDDING_STATUS_SYNCED,
-    EMBEDDING_STATUS_SYNCING,
-    EMBEDDING_STATUS_FAILED,
-    EMBEDDING_DISPLAY_SYNCED,
-    EMBEDDING_DISPLAY_SYNCING,
-    EMBEDDING_DISPLAY_FAILED,
     KNOWLEDGE_UI_RESPONSE_LIMIT_MS,
+    EmbeddingStatusProvider,
+    ImportResult,
+    KnowledgeAdminAPI,
+    KnowledgeEntry,
 )
 
 

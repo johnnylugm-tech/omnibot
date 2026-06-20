@@ -15,8 +15,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — ``HNSWIndexSpec`` is intentionally NOT YET exported by
 # ``app.infra.vector_index``. The import below is unguarded: pytest MUST

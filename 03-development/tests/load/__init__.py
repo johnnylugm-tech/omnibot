@@ -15,7 +15,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-
 # ---------------------------------------------------------------------------
 # Module-level constants (per TEST_SPEC.md FR-106 acceptance criteria)
 # ---------------------------------------------------------------------------

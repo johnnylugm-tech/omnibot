@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import pytest
 
+
 # ---------------------------------------------------------------------------
 # Test isolation — the RAG Debugger touches platform_configs (the persisted
 # threshold store) and runs the Tier 1 ILIKE + Tier 2 RAG + RRF pipeline
@@ -179,18 +180,18 @@ def _isolate_rag_debugger_io(monkeypatch):
 # canonical unit-test shape for FR-102.
 # ---------------------------------------------------------------------------
 from app.admin.webui import (  # noqa: E402,F401
-    RAGDebugger,
-    DebuggerResult,
     # Constants — re-exported so the tests assert against the same
     # values the production code uses (and so the harness sees the same
     # names in the import surface as GREEN must expose).
     RAG_DEFAULT_THRESHOLD,
+    RAG_REQUIRED_SECTIONS,
     RAG_RRF_K,
     RAG_RRF_TOP_N,
-    RAG_SECTION_ILIKE,
     RAG_SECTION_COSINE,
+    RAG_SECTION_ILIKE,
     RAG_SECTION_RRF_TOP3,
-    RAG_REQUIRED_SECTIONS,
+    DebuggerResult,
+    RAGDebugger,
 )
 
 

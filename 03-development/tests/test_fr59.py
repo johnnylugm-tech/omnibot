@@ -19,10 +19,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-from typing import Any
-
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test.
 #
@@ -66,7 +62,7 @@ import pytest
 # wrong. Either failure is the valid RED signal — GREEN adds the
 # implementation.
 # ---------------------------------------------------------------------------
-from app.api.websocket import (  # noqa: F401  -- RED: GREEN adds the symbols
+from app.api.websocket import (
     PING_INTERVAL_SECONDS,
     PONG_TIMEOUT_SECONDS,
     handle_subscribe,
@@ -123,7 +119,7 @@ def test_fr59_ping_sent_every_30s():
     # than to a domain data event. We accept either a constant
     # ``PING_MESSAGE_TYPE`` or a builder call — the spec test only
     # pins the resulting type string.
-    from app.api.websocket import build_ping_message  # noqa: F401  -- GREEN adds
+    from app.api.websocket import build_ping_message
 
     ping_msg = build_ping_message()
     assert ping_msg is not None, (
@@ -195,7 +191,7 @@ def test_fr59_no_pong_within_10s_disconnect():
     # whose ``action`` (or ``event`` / ``type``) is ``"disconnect"``
     # and whose ``reason`` is ``"timeout"`` — these two fields are
     # the SRS FR-59 contract for the timeout disconnect.
-    from app.api.websocket import pong_timeout_action  # noqa: F401  -- GREEN adds
+    from app.api.websocket import pong_timeout_action
 
     result = pong_timeout_action()
     assert result is not None, (

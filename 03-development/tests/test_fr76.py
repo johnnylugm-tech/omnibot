@@ -110,11 +110,10 @@ def _isolate_embedding_io(monkeypatch):
 # not yet defined in ``app.infra.jobs``. That is the valid RED signal —
 # GREEN adds the dataclass and the processor.
 # ---------------------------------------------------------------------------
-from app.infra.jobs import (  # noqa: E402,F401
+from app.infra.jobs import (  # noqa: E402
     EmbeddingJob,
     process_embedding_job,
 )
-
 
 # ---------------------------------------------------------------------------
 # Spec-pinned trigger values — keep these in lock-step with TEST_SPEC.md.

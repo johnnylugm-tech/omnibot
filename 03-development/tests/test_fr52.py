@@ -19,8 +19,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test.
 #
@@ -50,10 +48,10 @@ import pytest
 # Error (Exit Code 2), which is the valid RED signal — GREEN adds the
 # ``ab_testing`` module.
 # ---------------------------------------------------------------------------
-from app.core.response_generator import (  # noqa: F401  -- RED: GREEN adds _apply_ab_variant
+from app.core.response_generator import (
     ResponseGenerator,
 )
-from app.services.ab_testing import (  # noqa: F401  -- RED: GREEN adds this module
+from app.services.ab_testing import (
     ABTestManager,
 )
 

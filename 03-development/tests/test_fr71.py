@@ -25,8 +25,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — ``PROMETHEUS_METRICS`` is intentionally NOT YET
 # exported by ``app.infra.prometheus_metrics``. The import below is
@@ -40,7 +38,7 @@ import pytest
 # returns the Prometheus text-exposition payload for the registered
 # metrics.
 # ---------------------------------------------------------------------------
-from app.infra.prometheus_metrics import PROMETHEUS_METRICS  # noqa: E402
+from app.infra.prometheus_metrics import PROMETHEUS_METRICS
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):
@@ -185,7 +183,7 @@ def test_fr71_all_9_metrics_scraped():
     )
 
     # And no extras sneak in — every key must be one of the 9 names.
-    extra = [k for k in metrics_dict.keys() if k not in expected_metrics]
+    extra = [k for k in metrics_dict if k not in expected_metrics]
     assert not extra, (
         f"FR-71 PROMETHEUS_METRICS has unexpected extra keys: {extra}; "
         f"only {expected_metrics} are allowed"
@@ -305,7 +303,6 @@ def test_fr71_knowledge_hit_total_has_tier_label():
     # Spec fr71-ok predicate applies_to case 1 only; this is case 2 so the
     # predicate assertion is not redeclared here (would trigger_mismatch on
     # the harness check since case 1 inputs don't include `metric`).
-    result = kh_metric
     # Local sanity: the metric object must exist (top-level check).
     assert kh_metric is not None, (
         "FR-71 PROMETHEUS_METRICS['knowledge_hit_total'] must be defined"
@@ -348,7 +345,6 @@ def test_fr71_llm_tokens_total_has_model_label():
 
     # Spec fr71-ok predicate applies_to case 1 only; this is case 3 so the
     # predicate assertion is not redeclared here.
-    result = llm_metric
     # Local sanity: the metric object must exist (top-level check).
     assert llm_metric is not None, (
         "FR-71 PROMETHEUS_METRICS['llm_tokens_total'] must be defined"

@@ -6,8 +6,8 @@ arrays into UnifiedMessage.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-03)
 SRS source : SRS.md FR-03 (Module 1: Platform Adapter Layer)
-            "Messenger Webhook Adapter：GET 驗證（hub.mode, hub.verify_token,
-            hub.challenge 回傳）+ POST HMAC-SHA256 簽名驗證，映射為 UnifiedMessage"
+            "Messenger Webhook Adapter: GET 驗證 (hub.mode, hub.verify_token, "
+            "hub.challenge 回傳) + POST HMAC-SHA256 簽名驗證, 映射為 UnifiedMessage"
 
 Acceptance criteria (from SRS FR-03 / TEST_SPEC.md):
     - GET hub.challenge 回傳 challenge 字串
@@ -34,8 +34,6 @@ Sub-assertion (per TEST_SPEC):
 
 from __future__ import annotations
 
-import hmac
-import hashlib
 import json
 
 import pytest
@@ -51,15 +49,15 @@ import pytest
 # ``app.core.unified_message`` already exist and provide the contracts that
 # GREEN must wire together.
 # ---------------------------------------------------------------------------
-from app.core.unified_message import (  # noqa: E402 — RED: GREEN owns the path
+from app.core.unified_message import (
     MessageType,
     Platform,
     UnifiedMessage,
 )
-from app.services.messenger_adapter import (  # noqa: E402 — RED: GREEN must create
+from app.services.messenger_adapter import (
     MessengerWebhookAdapter,
 )
-from app.services.messenger_verifier import (  # noqa: E402 — RED: GREEN must create
+from app.services.messenger_verifier import (
     MessengerWebhookVerifier,
 )
 

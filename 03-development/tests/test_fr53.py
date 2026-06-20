@@ -82,7 +82,7 @@ import pytest
 # tests below will fail with AttributeError on the first call. That is the
 # valid RED signal — GREEN adds the method body.
 # ---------------------------------------------------------------------------
-from app.core.response_generator import (  # noqa: F401  -- RED: GREEN adds this method
+from app.core.response_generator import (
     ResponseGenerator,
 )
 

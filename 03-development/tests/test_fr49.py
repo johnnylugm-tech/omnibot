@@ -14,8 +14,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test.
 #
@@ -45,7 +43,7 @@ import pytest
 # ``app.core.pipeline`` does not yet exist. That is the valid RED
 # signal — GREEN adds the module.
 # ---------------------------------------------------------------------------
-from app.core.pipeline import Pipeline  # noqa: F401  -- RED: GREEN adds this class
+from app.core.pipeline import Pipeline
 
 
 # ---------------------------------------------------------------------------
@@ -75,7 +73,7 @@ def test_fr49_agent_platform_skips_emotion_module():
         calls = {"n": 0}
 
         class _StubEmotion:
-            def analyze(self, text):  # noqa: D401 — stub for counting
+            def analyze(self, text):
                 calls["n"] += 1
                 return {"category": "neutral", "intensity": 0.0}
 
@@ -142,7 +140,7 @@ def test_fr49_telegram_platform_emotion_module_runs():
         calls = {"n": 0}
 
         class _StubEmotion:
-            def analyze(self, text):  # noqa: D401 — stub for counting
+            def analyze(self, text):
                 calls["n"] += 1
                 return {"category": "neutral", "intensity": 0.0}
 

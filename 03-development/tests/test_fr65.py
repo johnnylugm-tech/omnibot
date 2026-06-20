@@ -62,7 +62,7 @@ import pytest
 # ``app.services.llm_judge`` does not yet export ``LLMJudge`` — that is
 # the valid RED signal.
 # ---------------------------------------------------------------------------
-from app.services.llm_judge import (  # noqa: F401  -- RED: GREEN owns the names
+from app.services.llm_judge import (
     LLMJudge,
 )
 
@@ -106,7 +106,7 @@ def _extract_politeness(result: object) -> object:
     """Read ``politeness`` from any JudgeResult shape (object attr / dict /
     tuple). Used so GREEN can pick whichever representation makes sense."""
     if hasattr(result, "politeness"):
-        return getattr(result, "politeness")
+        return result.politeness
     if isinstance(result, dict):
         return result.get("politeness")
     if isinstance(result, tuple) and len(result) >= 1:
@@ -119,7 +119,7 @@ def _extract_politeness(result: object) -> object:
 def _extract_accuracy(result: object) -> object:
     """Read ``accuracy`` from any JudgeResult shape."""
     if hasattr(result, "accuracy"):
-        return getattr(result, "accuracy")
+        return result.accuracy
     if isinstance(result, dict):
         return result.get("accuracy")
     if isinstance(result, tuple) and len(result) >= 2:
@@ -324,16 +324,16 @@ def test_fr65_temperature_0_in_config():
 
         # (a) instance attribute
         if hasattr(judge, "temperature"):
-            seen.append(f"judge.temperature={getattr(judge, 'temperature')!r}")
-            if getattr(judge, "temperature") == 0:
+            seen.append(f"judge.temperature={judge.temperature!r}")
+            if judge.temperature == 0:
                 found_temp_zero = True
 
         # (c) class constant
         if hasattr(LLMJudge, "TEMPERATURE"):
             seen.append(
-                f"LLMJudge.TEMPERATURE={getattr(LLMJudge, 'TEMPERATURE')!r}"
+                f"LLMJudge.TEMPERATURE={LLMJudge.TEMPERATURE!r}"
             )
-            if getattr(LLMJudge, "TEMPERATURE") == 0:
+            if LLMJudge.TEMPERATURE == 0:
                 found_temp_zero = True
 
         # (d) config dict (instance or class)
@@ -528,7 +528,7 @@ def test_fr65_judge_api_down_degraded_single_judge():
                 f"degradation); got {exc!r}. SRS FR-65: graceful "
                 f"degradation when one judge is down."
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             pytest.fail(
                 f"FR-65: LLMJudge.evaluate must NOT propagate the primary "
                 f"judge's exception in degraded mode; got {type(exc).__name__}:"
@@ -626,15 +626,15 @@ def test_fr65_judge_timeout_returns_partial_result():
                     timeout=3.0,  # outer test wall-clock cap (not the contract)
                 )
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             pytest.fail(
-                f"FR-65: LLMJudge.evaluate must NOT propagate "
-                f"asyncio.TimeoutError on per-judge timeout (NP-15 "
-                f"mandates partial-result semantics); outer 3s cap "
-                f"fired before per-judge degradation. SRS FR-65: "
-                f"'timeout 返回 partial result'."
+                "FR-65: LLMJudge.evaluate must NOT propagate "
+                "asyncio.TimeoutError on per-judge timeout (NP-15 "
+                "mandates partial-result semantics); outer 3s cap "
+                "fired before per-judge degradation. SRS FR-65: "
+                "'timeout 返回 partial result'."
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             pytest.fail(
                 f"FR-65: LLMJudge.evaluate must NOT propagate "
                 f"{type(exc).__name__} on per-judge timeout; got "
@@ -683,5 +683,5 @@ def test_fr65_judge_timeout_returns_partial_result():
 # to force collection-time failures during the RED step. These stay in
 # scope so a future refactor cannot silently drop the FR-65 contract.
 # ---------------------------------------------------------------------------
-_ = MagicMock  # noqa: F841  -- RED sentinel: MagicMock is the mock primitive
+_ = MagicMock
                 # GREEN will see once it implements the module.

@@ -134,12 +134,12 @@ def _isolate_portal_io(monkeypatch):
 #           Injectable seam for backend data queries.
 # ---------------------------------------------------------------------------
 from app.admin.portal import (  # noqa: E402
-    AgentPortal,
-    PRIORITY_URGENT_COLOR,
+    INBOX_SECTIONS,
     PRIORITY_HIGH_COLOR,
     PRIORITY_NORMAL_COLOR,
-    INBOX_SECTIONS,
+    PRIORITY_URGENT_COLOR,
     TAKEOVER_PANELS,
+    AgentPortal,
 )
 
 
@@ -283,19 +283,19 @@ def test_fr104_priority_colors_correct():
     normal_color = "blue"     # spec: normal_color="blue"
 
     # Anchor: PRIORITY_URGENT_COLOR MUST be "red" (SRS: urgent=紅).
-    assert PRIORITY_URGENT_COLOR == urgent_color, (
+    assert urgent_color == PRIORITY_URGENT_COLOR, (
         f"FR-104 PRIORITY_URGENT_COLOR must be '{urgent_color}' "
         f"(SRS: urgent=紅); got {PRIORITY_URGENT_COLOR!r}."
     )
 
     # Anchor: PRIORITY_HIGH_COLOR MUST be "orange" (SRS: high=橙).
-    assert PRIORITY_HIGH_COLOR == high_color, (
+    assert high_color == PRIORITY_HIGH_COLOR, (
         f"FR-104 PRIORITY_HIGH_COLOR must be '{high_color}' "
         f"(SRS: high=橙); got {PRIORITY_HIGH_COLOR!r}."
     )
 
     # Anchor: PRIORITY_NORMAL_COLOR MUST be "blue" (SRS: normal=藍).
-    assert PRIORITY_NORMAL_COLOR == normal_color, (
+    assert normal_color == PRIORITY_NORMAL_COLOR, (
         f"FR-104 PRIORITY_NORMAL_COLOR must be '{normal_color}' "
         f"(SRS: normal=藍); got {PRIORITY_NORMAL_COLOR!r}."
     )
@@ -440,19 +440,19 @@ def test_fr104_takeover_shows_emotion_dst_context():
         #   3. grounding — Grounding 知識背景高亮
         #   4. conversation — 對話時間軸
         missing_panels = [
-            p for p in required_panels + ["conversation"] if p not in result
+            p for p in [*required_panels, "conversation"] if p not in result
         ]
         assert not missing_panels, (
             f"FR-104: get_takeover_context result is missing panels "
             f"{missing_panels!r}; expected at least "
-            f"{required_panels + ['conversation']!r}. "
+            f"{[*required_panels, 'conversation']!r}. "
             f"SRS FR-104: '情緒歷史軌跡、對話時間軸、DST Slot 側邊欄、"
             f"Grounding 知識背景高亮'. Got keys={sorted(result.keys())!r}."
         )
 
         # Panel data integrity — each panel value MUST be non-None and
         # non-empty so the UI has something to render.
-        for panel in required_panels + ["conversation"]:
+        for panel in [*required_panels, "conversation"]:
             panel_data = result.get(panel)
             assert panel_data is not None, (
                 f"FR-104: takeover panel '{panel}' data must not be None; "
@@ -481,8 +481,8 @@ def test_fr104_takeover_shows_emotion_dst_context():
                     f"{type(panel_data).__name__}."
                 )
                 assert len(panel_data) > 0, (
-                    f"FR-104: takeover 'conversation' timeline must "
-                    f"contain at least one message; got empty list."
+                    "FR-104: takeover 'conversation' timeline must "
+                    "contain at least one message; got empty list."
                 )
 
         # The result MUST echo the escalation_id so the UI can align

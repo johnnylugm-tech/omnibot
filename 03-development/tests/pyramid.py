@@ -15,7 +15,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-
 # ---------------------------------------------------------------------------
 # Module-level coverage target declarations (per SRS FR-107)
 # ---------------------------------------------------------------------------

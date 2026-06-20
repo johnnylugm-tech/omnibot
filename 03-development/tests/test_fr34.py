@@ -47,7 +47,7 @@ import pytest
 # Error (Exit Code 2) on the ``app.core.dst`` import because the module
 # does not exist yet. That is the valid RED signal for this step.
 # ---------------------------------------------------------------------------
-from app.core.dst import DialogueState, ALLOWED_TRANSITIONS  # noqa: F401
+from app.core.dst import ALLOWED_TRANSITIONS, DialogueState
 
 
 # ---------------------------------------------------------------------------
@@ -334,7 +334,7 @@ def test_fr34_all_8_states_reachable():
         ],
         "ESCALATED": [
             "INTENT_DETECTED",
-            "SLOT_DETECTED" if False else "SLOT_FILLING",  # noqa
+            "SLOT_DETECTED" if False else "SLOT_FILLING",
             "AWAITING_CONFIRMATION",
             "PROCESSING",
             "TOOL_CALLING",
@@ -443,7 +443,7 @@ def test_fr34_concurrent_transitions_state_consistent():
         try:
             barrier.wait(timeout=5.0)
             result = ds.transition(to_state)
-        except BaseException as exc:  # noqa: BLE001
+        except BaseException as exc:
             with failures_lock:
                 failures.append(exc)
             return

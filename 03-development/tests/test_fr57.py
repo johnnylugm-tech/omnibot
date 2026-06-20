@@ -64,10 +64,10 @@ import pytest
 # dispatch is missing. Either failure is the valid RED signal — GREEN
 # adds the implementation.
 # ---------------------------------------------------------------------------
-from app.api.websocket import (  # noqa: F401  -- RED: GREEN adds the module
+from app.api.websocket import (
     AGENT_EVENT_TYPES,
-    verify_jwt,
     handle_agent_takeover,
+    verify_jwt,
 )
 
 

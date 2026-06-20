@@ -73,7 +73,7 @@ import pytest
 # ``CalibrationPipeline`` is not yet exported by ``app.services.llm_judge``
 # — that is the valid RED signal.
 # ---------------------------------------------------------------------------
-from app.services.llm_judge import (  # noqa: F401  -- RED: GREEN owns the names
+from app.services.llm_judge import (
     CalibrationPipeline,
 )
 
@@ -85,7 +85,7 @@ from app.services.llm_judge import (  # noqa: F401  -- RED: GREEN owns the names
 def _extract_kappa(result: object) -> object:
     """Read ``kappa`` from any CalibrationResult shape."""
     if hasattr(result, "kappa"):
-        return getattr(result, "kappa")
+        return result.kappa
     if isinstance(result, dict):
         return result.get("kappa")
     raise AssertionError(
@@ -96,7 +96,7 @@ def _extract_kappa(result: object) -> object:
 def _extract_action(result: object) -> object:
     """Read ``action`` from any CalibrationResult shape."""
     if hasattr(result, "action"):
-        return getattr(result, "action")
+        return result.action
     if isinstance(result, dict):
         return result.get("action")
     raise AssertionError(
@@ -107,7 +107,7 @@ def _extract_action(result: object) -> object:
 def _extract_fallback(result: object) -> object:
     """Read ``fallback`` from any CalibrationResult shape."""
     if hasattr(result, "fallback"):
-        return getattr(result, "fallback")
+        return result.fallback
     if isinstance(result, dict):
         return result.get("fallback")
     raise AssertionError(
@@ -192,7 +192,7 @@ def test_fr69_kappa_above_07_on_golden_set():
         import asyncio as _asyncio
 
         cycle_result = pipeline.run_cycle(
-            golden_set=list(zip(human_labels, judge_labels)),
+            golden_set=list(zip(human_labels, judge_labels, strict=False)),
         )
         if inspect.isawaitable(cycle_result):
             cycle_result = _asyncio.new_event_loop().run_until_complete(
@@ -549,7 +549,7 @@ def test_fr69_calibration_timeout_skips_cycle():
         if inspect.isawaitable(cycle_result):
             try:
                 cycle_result = _asyncio.run(cycle_result)
-            except _asyncio.TimeoutError:
+            except TimeoutError:
                 pytest.fail(
                     "FR-69: CalibrationPipeline.run_cycle must not "
                     "propagate a TimeoutError to the caller (NP-15 "
@@ -605,5 +605,5 @@ def test_fr69_calibration_timeout_skips_cycle():
 # to force collection-time failures during the RED step. These stay in
 # scope so a future refactor cannot silently drop the FR-69 contract.
 # ---------------------------------------------------------------------------
-_ = MagicMock  # noqa: F841  -- RED sentinel: MagicMock is the mock primitive
+_ = MagicMock
                 # GREEN will see once it implements CalibrationPipeline.

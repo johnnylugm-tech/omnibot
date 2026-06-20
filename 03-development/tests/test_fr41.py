@@ -70,7 +70,7 @@ import pytest
 #   module does not exist. That is the valid RED signal. GREEN creates
 #   ``a2a_adapter.py`` with the surface above.
 # ---------------------------------------------------------------------------
-from app.services.aee.a2a_adapter import A2AAdapter  # noqa: F401  -- RED: ModuleNotFoundError
+from app.services.aee.a2a_adapter import A2AAdapter
 
 
 # ---------------------------------------------------------------------------
@@ -245,7 +245,7 @@ def test_fr41_timeout_2s_returns_error():
             "ask_customer_service",
             {"query": "order status?"},
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         pytest.fail(
             f"FR-41 NP-15: A2AAdapter.execute must NOT raise on "
             f"timeout; got {type(exc).__name__}: {exc}"
@@ -307,7 +307,7 @@ def test_fr41_unreachable_returns_empty_tools_no_exception():
 
     try:
         tools = adapter.list_tools()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         pytest.fail(
             f"FR-41 NP-07: A2AAdapter.list_tools() must NOT raise on "
             f"unreachable agent; got {type(exc).__name__}: {exc}"
@@ -421,8 +421,8 @@ def test_fr41_must_not_raise_on_unreachable():
 
     raised: list[BaseException] = []
     try:
-        tools = adapter.list_tools()
-    except BaseException as exc:  # noqa: BLE001 — record anything
+        adapter.list_tools()
+    except BaseException as exc:
         raised.append(exc)
 
     assert raised == [], (

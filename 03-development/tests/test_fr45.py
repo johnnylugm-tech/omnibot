@@ -20,7 +20,9 @@ from __future__ import annotations
 import importlib
 from pathlib import Path
 
-import pytest
+from app.core.dst import (
+    ToolDefinition as _DST_ToolDefinition,
+)
 
 # ---------------------------------------------------------------------------
 # Source under test.
@@ -63,9 +65,6 @@ import pytest
 #   adds the re-import line to ``app.core.dst``.
 # ---------------------------------------------------------------------------
 from app.services.aee.adapter import ToolDefinition as _AEE_ToolDefinition
-from app.core.dst import (  # noqa: F401  -- RED: GREEN adds this re-import to dst.py
-    ToolDefinition as _DST_ToolDefinition,
-)
 
 
 # ---------------------------------------------------------------------------

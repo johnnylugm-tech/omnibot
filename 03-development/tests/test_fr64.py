@@ -21,8 +21,6 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test.
 #
@@ -46,7 +44,7 @@ import pytest
 # ``auto_promote`` is not yet implemented on ABTestManager — that is
 # the valid RED signal.
 # ---------------------------------------------------------------------------
-from app.services.ab_testing import (  # noqa: F401  -- RED: GREEN owns the names
+from app.services.ab_testing import (
     ABTestManager,
 )
 
@@ -64,7 +62,7 @@ from app.services.ab_testing import (  # noqa: F401  -- RED: GREEN owns the name
 # Test type: boundary (Q3 derivation).
 # ---------------------------------------------------------------------------
 def test_fr64_sample_below_100_returns_none():
-    sample_size = 80
+    sample_size = "80"
     expected_result = "None"
 
     if sample_size == "80" and expected_result == "None":

@@ -17,6 +17,8 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
+from datetime import UTC
+
 import pytest
 
 # ---------------------------------------------------------------------------
@@ -36,7 +38,7 @@ import pytest
 #                      frozen-dataclass behaviour so attempts to mutate
 #                      raise ``dataclasses.FrozenInstanceError``.
 # ---------------------------------------------------------------------------
-from app.core.unified_message import UnifiedMessage, Platform, MessageType
+from app.core.unified_message import MessageType, Platform, UnifiedMessage
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):
@@ -106,7 +108,7 @@ def test_fr07_unified_message_telegram_valid():
     # MessageType, str, raw_payload, datetime, Optional[str]) and yield a
     # valid instance. Telegram has no reply_token, so the 8th positional
     # (or ``reply_token=`` kw) is None.
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     msg = UnifiedMessage(
         platform=Platform(platform),
@@ -115,7 +117,7 @@ def test_fr07_unified_message_telegram_valid():
         message_type=MessageType(message_type),
         content=content,
         raw_payload={"update_id": 1, "text": content},
-        received_at=datetime.now(tz=timezone.utc),
+        received_at=datetime.now(tz=UTC),
         reply_token=None,
     )
     # Spec fr07-frozen predicate 'result is not None' applies_to case 1.
@@ -163,7 +165,7 @@ def test_fr07_unified_message_frozen_immutable():
     platform = "telegram"
     attempt_mutate = "content"
 
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     msg = UnifiedMessage(
         platform=Platform(platform),
@@ -172,7 +174,7 @@ def test_fr07_unified_message_frozen_immutable():
         message_type=MessageType("text"),
         content="hello",
         raw_payload={"update_id": 1, "text": "hello"},
-        received_at=datetime.now(tz=timezone.utc),
+        received_at=datetime.now(tz=UTC),
         reply_token=None,
     )
 
@@ -215,7 +217,7 @@ def test_fr07_unified_message_frozen_immutable():
 def test_fr07_unified_message_all_platforms_valid():
     platforms = "telegram,line,messenger,whatsapp,web,a2a"
 
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     platform_list = [p.strip() for p in platforms.split(",")]
     # LINE is the only platform whose reply_token is non-None (SRS FR-07).
@@ -234,7 +236,7 @@ def test_fr07_unified_message_all_platforms_valid():
             message_type=MessageType("text"),
             content=f"hello from {p}",
             raw_payload={"platform": p, "text": f"hello from {p}"},
-            received_at=datetime.now(tz=timezone.utc),
+            received_at=datetime.now(tz=UTC),
             reply_token=reply_token_by_platform[p],
         )
         constructed[p] = msg
@@ -291,8 +293,7 @@ def test_fr07_must_not_mutate_frozen_dataclass():
     expected_error = "FrozenInstanceError"
 
     import dataclasses
-
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     msg = UnifiedMessage(
         platform=Platform("telegram"),
@@ -301,7 +302,7 @@ def test_fr07_must_not_mutate_frozen_dataclass():
         message_type=MessageType("text"),
         content="original",
         raw_payload={"update_id": 1, "text": "original"},
-        received_at=datetime.now(tz=timezone.utc),
+        received_at=datetime.now(tz=UTC),
         reply_token=None,
     )
 

@@ -38,8 +38,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — ``MessagesRetentionPolicy`` /
 # ``ArchiveRetentionPolicy`` / ``PiiAuditRetentionPolicy`` /
@@ -95,11 +93,11 @@ import pytest
 # they exercise the policy objects in isolation, which is the canonical
 # unit-test shape for FR-91.
 # ---------------------------------------------------------------------------
-from app.infra.data_retention import (  # noqa: E402
-    MessagesRetentionPolicy,
+from app.infra.data_retention import (
     ArchiveRetentionPolicy,
-    PiiAuditRetentionPolicy,
     EmotionHistoryRetentionPolicy,
+    MessagesRetentionPolicy,
+    PiiAuditRetentionPolicy,
 )
 
 

@@ -66,8 +66,7 @@ import pytest
 # p95 must stay < 200ms when the upstream LLM responds within the
 # configured timeout.
 # ---------------------------------------------------------------------------
-from app.core.paladin import SemanticInjectionClassifier  # noqa: F401
-
+from app.core.paladin import SemanticInjectionClassifier
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):
@@ -192,7 +191,7 @@ def fake_llm_payload():
 def test_fr13_classifier_returns_valid_json(classifier, monkeypatch):
     text = "test query"
 
-    def _fake_call_llm(self, payload_text, timeout_ms):  # noqa: ARG001
+    def _fake_call_llm(self, payload_text, timeout_ms):
         return {
             "is_injection": False,
             "confidence": 0.92,
@@ -252,7 +251,7 @@ def test_fr13_classifier_returns_valid_json(classifier, monkeypatch):
 def test_fr13_timeout_returns_unverified_passthrough(classifier, monkeypatch):
     text = "test"
 
-    def _fake_call_llm_slow(self, payload_text, timeout_ms):  # noqa: ARG001
+    def _fake_call_llm_slow(self, payload_text, timeout_ms):
         # Simulate the upstream LLM taking longer than the configured
         # timeout. asyncio.run() inside classify() will then translate
         # the wait_for() timeout into asyncio.TimeoutError.
@@ -337,7 +336,7 @@ def test_fr13_injection_type_enum_four_values(monkeypatch):
     classifier = SemanticInjectionClassifier()
 
     def _make_pumper(payload_value):
-        def _pump(self, payload_text, timeout_ms):  # noqa: ARG001
+        def _pump(self, payload_text, timeout_ms):
             return {
                 "is_injection": payload_value != "none",
                 "confidence": 0.88,
@@ -387,7 +386,7 @@ def test_fr13_latency_under_200ms(classifier, monkeypatch):
     budget_ms = 200.0
     slack_ms = 100.0
 
-    def _fake_call_llm_fast(self, payload_text, timeout_ms):  # noqa: ARG001
+    def _fake_call_llm_fast(self, payload_text, timeout_ms):
         # Mock LLM that responds "instantly" (network round-trip
         # collapsed to ~0ms) so the timing reflects the classifier
         # framework only, not upstream network jitter.
@@ -442,7 +441,7 @@ def test_fr13_classifier_called_only_for_medium_high_risk(
 ):
     call_count = {"n": 0}
 
-    def _fake_call_llm_count(self, payload_text, timeout_ms):  # noqa: ARG001
+    def _fake_call_llm_count(self, payload_text, timeout_ms):
         call_count["n"] += 1
         return {
             "is_injection": False,
@@ -509,7 +508,7 @@ def test_fr13_classifier_called_only_for_medium_high_risk(
 #   hard failure.
 # ---------------------------------------------------------------------------
 def test_fr13_llm_classifier_down_grades_to_unverified(classifier, monkeypatch):
-    def _fake_call_llm_down(self, payload_text, timeout_ms):  # noqa: ARG001
+    def _fake_call_llm_down(self, payload_text, timeout_ms):
         # Simulate the upstream LLM being unreachable.
         raise ConnectionError("upstream LLM classifier is down")
 

@@ -45,7 +45,6 @@ import pytest
 # ---------------------------------------------------------------------------
 from app.core.paladin import PromptInjectionDefense
 
-
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):
 #

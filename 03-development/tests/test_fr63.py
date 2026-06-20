@@ -58,7 +58,7 @@ import pytest
 # pytest crashes with Collection Error (Exit Code 2) if the source
 # module does not export the names — which is the valid RED signal.
 # ---------------------------------------------------------------------------
-from app.services.ab_testing import (  # noqa: F401  -- RED: GREEN owns the names
+from app.services.ab_testing import (
     ABTestManager,
 )
 
@@ -197,7 +197,7 @@ def test_fr63_variant_deterministic_cross_process():
         # the test does not depend on which file the GREEN agent will
         # place the implementation in — only the SHA-256 + traffic_split
         # contract matters.
-        key = f"{user_id}:{experiment_id}".encode("utf-8")
+        key = f"{user_id}:{experiment_id}".encode()
         digest = hashlib.sha256(key).hexdigest()
         expected_bucket = int(digest[:8], 16) % 100
         # 50/50 split, declaration order: a=[0,50), b=[50,100)

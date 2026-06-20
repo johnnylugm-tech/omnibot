@@ -22,8 +22,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — the context-window management surface of
 # ``app.core.dst`` does NOT exist yet (RED state).
@@ -84,13 +82,13 @@ import pytest
 #   references because the context-window management surface does not
 #   exist yet. That is the valid RED signal for this step.
 # ---------------------------------------------------------------------------
-from app.core.dst import (  # noqa: F401
-    ContextWindowManager,
+from app.core.dst import (
+    HISTORY_BUDGET,
+    KNOWLEDGE_MAX,
     MAX_TOKENS,
     SYSTEM_RESERVED,
-    KNOWLEDGE_MAX,
-    HISTORY_BUDGET,
     TOKEN_ENCODING,
+    ContextWindowManager,
 )
 
 
@@ -125,7 +123,7 @@ def test_fr38_token_count_uses_cl100k_base():
     # FR-38 functional assertion #1: the module MUST expose the
     # spec-pinned encoding identifier so a regression that drifts to
     # ``p50k_base`` or any other encoding is caught immediately.
-    assert TOKEN_ENCODING == encoding_name, (
+    assert encoding_name == TOKEN_ENCODING, (
         f"FR-38: TOKEN_ENCODING must equal {encoding_name!r} per "
         f"SRS FR-38 'Token 計算使用 tiktoken cl100k_base'; got "
         f"{TOKEN_ENCODING!r}"
@@ -189,7 +187,7 @@ def test_fr38_overflow_triggers_summary():
     # (per SRS FR-38 "history_budget=5632"). The constant is the
     # single source of truth for the history budget so a regression
     # that drifts it (e.g. to 4096 or 8192) is caught immediately.
-    assert HISTORY_BUDGET == budget, (
+    assert budget == HISTORY_BUDGET, (
         f"FR-38: HISTORY_BUDGET must equal {budget} per SRS FR-38 "
         f"'history_budget=5632'; got {HISTORY_BUDGET}"
     )
@@ -429,7 +427,7 @@ def test_fr38_system_reserved_512_tokens():
     # SRS FR-38 "max_tokens=8192"). The constant pins the total
     # context window so a regression that drifts it (e.g. to 4096
     # for a smaller model) is caught immediately.
-    assert MAX_TOKENS == max_tokens, (
+    assert max_tokens == MAX_TOKENS, (
         f"FR-38: MAX_TOKENS must equal {max_tokens} per SRS FR-38 "
         f"'max_tokens=8192'; got {MAX_TOKENS}"
     )
@@ -437,7 +435,7 @@ def test_fr38_system_reserved_512_tokens():
     # (per SRS FR-38 "system_reserved=512"). The constant pins the
     # system-prompt budget so a regression that drifts it (e.g. to
     # 1024 or 256) is caught immediately.
-    assert SYSTEM_RESERVED == system_reserved, (
+    assert system_reserved == SYSTEM_RESERVED, (
         f"FR-38: SYSTEM_RESERVED must equal {system_reserved} per "
         f"SRS FR-38 'system_reserved=512'; got {SYSTEM_RESERVED}"
     )
@@ -445,7 +443,7 @@ def test_fr38_system_reserved_512_tokens():
     # (per SRS FR-38 "knowledge_max=2048"). The constant pins the
     # knowledge-context budget so a regression that drifts it (e.g.
     # to 4096 or 1024) is caught immediately.
-    assert KNOWLEDGE_MAX == knowledge_max, (
+    assert knowledge_max == KNOWLEDGE_MAX, (
         f"FR-38: KNOWLEDGE_MAX must equal {knowledge_max} per SRS "
         f"FR-38 'knowledge_max=2048'; got {KNOWLEDGE_MAX}"
     )
@@ -453,7 +451,7 @@ def test_fr38_system_reserved_512_tokens():
     # (per SRS FR-38 "history_budget=5632"). The constant is also
     # tested in test 2 but pinning it here keeps the budget formula
     # coverage co-located with the constant coverage.
-    assert HISTORY_BUDGET == expected_history_budget, (
+    assert expected_history_budget == HISTORY_BUDGET, (
         f"FR-38: HISTORY_BUDGET must equal {expected_history_budget} "
         f"per SRS FR-38 'history_budget=5632'; got {HISTORY_BUDGET}"
     )

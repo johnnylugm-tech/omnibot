@@ -60,7 +60,6 @@ import pytest
 # ---------------------------------------------------------------------------
 from app.core.paladin import InputSanitizer, PromptInjectionDefense
 
-
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):
 #

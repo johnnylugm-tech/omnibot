@@ -20,8 +20,6 @@ import logging
 import re
 from typing import Any
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — ``StructuredLogger`` is intentionally NOT YET exported
 # by ``app.infra.observability``. The import below is unguarded: pytest MUST
@@ -34,7 +32,7 @@ import pytest
 # the record to the appropriate ``logging`` level (DEBUG/INFO/WARNING/ERROR/
 # CRITICAL).
 # ---------------------------------------------------------------------------
-from app.infra.observability import StructuredLogger  # noqa: E402
+from app.infra.observability import StructuredLogger
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):
@@ -139,7 +137,6 @@ def _detach(stream: io.StringIO) -> None:
 # ---------------------------------------------------------------------------
 def test_fr70_log_json_parseable():
     log_entry = '{"level":"INFO","message":"test"}'
-    expected_fields = ("timestamp", "level", "service", "message")
 
     # GREEN TODO: StructuredLogger(service="omnibot").log(level, message, **kw)
     # must return a single-line JSON string parseable by json.loads, and the
@@ -275,7 +272,7 @@ def test_fr70_all_log_levels_routed_correctly():
 
     # Walk the captured lines: the emitted JSON object's "level" field
     # must line up 1:1 with the requested level, in order.
-    for line, level in zip(captured, expected_python_levels):
+    for line, level in zip(captured, expected_python_levels, strict=False):
         record = json.loads(line)
         assert record.get("level") == level, (
             f"FR-70 routing mismatch: requested level={level!r}, "
@@ -303,7 +300,7 @@ def test_fr70_all_log_levels_routed_correctly():
         f"FR-70 must route exactly one stdlib record per level; "
         f"got {len(cap_records)} records"
     )
-    for rec, (level, py_level) in zip(cap_records, expected_python_levels.items()):
+    for rec, (level, py_level) in zip(cap_records, expected_python_levels.items(), strict=False):
         assert rec.levelno == py_level, (
             f"FR-70 level routing: {level} must map to Python level "
             f"{py_level} (logging.{logging.getLevelName(py_level)}); "

@@ -70,6 +70,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from typing import ClassVar
 
 
 @dataclass(frozen=True)
@@ -96,7 +97,7 @@ class ResponseGenerator:
     is layered on by FR-51 / FR-52 without changing this surface.
     """
 
-    DEFAULT_TEMPLATES: dict[str, ResponseTemplate] = {
+    DEFAULT_TEMPLATES: ClassVar[dict[str, ResponseTemplate]] = {
         "rule_default": ResponseTemplate(
             name="rule_default",
             platform="*",
@@ -252,7 +253,7 @@ class ResponseGenerator:
     # below is one ``.get()`` call rather than four near-identical
     # ``content[:N]`` branches — a single source of truth for "what is
     # <platform>'s limit today?".
-    _PLATFORM_MAX_CHARS: dict[str, int] = {
+    _PLATFORM_MAX_CHARS: ClassVar[dict[str, int]] = {
         "telegram": 4096,
         "line": 5000,
         "messenger": 2000,

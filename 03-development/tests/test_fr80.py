@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import asyncio
 import threading
-from typing import Any, Iterable
+from typing import Any
 
 import pytest
 
@@ -57,7 +57,7 @@ import pytest
 # (forward compatibility — producers can evolve their schema over time
 # and old consumers MUST NOT crash on a new field).
 # ---------------------------------------------------------------------------
-from app.infra.redis_streams import AsyncMessageProcessor  # noqa: E402
+from app.infra.redis_streams import AsyncMessageProcessor
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):
@@ -310,7 +310,7 @@ class _FakeRedisClient:
     # XRANGE <stream> <start> <end>
     async def xrange(self, stream, min, max):
         self.calls.append(("xrange", (stream, min, max), {}))
-        for sname, entries in self.streams.items():
+        for _sname, entries in self.streams.items():
             for row_id, fields in entries:
                 if min <= row_id <= max:
                     return [(row_id, fields)]
@@ -421,7 +421,6 @@ def test_fr80_consumer_group_created():
 # processor must NOT raise — startup must be idempotent.
 # ---------------------------------------------------------------------------
 def test_fr80_busygroup_error_silently_ignored():
-    error = "BUSYGROUP"
     expected_exception = "none"
 
     # Pre-arm the fake so the next XGROUP CREATE raises BUSYGROUP.
@@ -475,7 +474,6 @@ def test_fr80_busygroup_error_silently_ignored():
 # surface only the documented fields and drop the rest.
 # ---------------------------------------------------------------------------
 def test_fr80_unknown_fields_ignored():
-    message_fields = "known,extra_unknown"
     expected_error = "none"
 
     fake = _FakeRedisClient()
@@ -710,7 +708,7 @@ def test_fr80_concurrent_xclaim_isolated():
     # which is the real Redis behaviour under contention.
     fake.claim_winners[message_id] = "winner-0"
 
-    procs = [
+    [
         AsyncMessageProcessor(
             redis_client=fake,
             group_name=_FR80_GROUP_NAME_DEFAULT,

@@ -56,7 +56,7 @@ import pytest
 #   - SpanRecord : dataclass with fields
 #       (name, trace_id, parent_span_id, attributes)
 # ---------------------------------------------------------------------------
-from app.infra.tracing import (  # noqa: E402
+from app.infra.tracing import (
     TRACE_ID_HEADER,
     get_current_trace_id,
     get_recorded_spans,
@@ -124,11 +124,10 @@ def test_fr72_span_tree_complete_per_request():
     # Drive the pipeline: nested context-manager chain mirrors the
     # handle_message → emotion_analysis → knowledge_query → response_generation
     # control flow described in SRS FR-72.
-    with start_as_current_span("handle_message"):
-        with start_as_current_span("emotion_analysis"):
-            with start_as_current_span("knowledge_query"):
-                with start_as_current_span("response_generation"):
-                    pass
+    with start_as_current_span("handle_message"), start_as_current_span("emotion_analysis"):
+        with start_as_current_span("knowledge_query"):
+            with start_as_current_span("response_generation"):
+                pass
 
     spans = get_recorded_spans()
     span_names = {s.name for s in spans}
@@ -184,7 +183,7 @@ def test_fr72_trace_id_in_response_header():
     setup_tracing(service_name="omnibot-api")
 
     # Sanity: the module-level constant name MUST match the spec.
-    assert TRACE_ID_HEADER == expected_header, (
+    assert expected_header == TRACE_ID_HEADER, (
         f"FR-72 TRACE_ID_HEADER must be {expected_header!r}; "
         f"got {TRACE_ID_HEADER!r}"
     )
@@ -213,7 +212,6 @@ def test_fr72_trace_id_in_response_header():
         # header propagation validation. The `result` alias keeps the
         # harness variable convention consistent if a future spec
         # decision moves the predicate to case 2.
-        result = augmented
         # Header presence + value.
         assert expected_header in augmented, (
             f"FR-72 inject_trace_headers must add {expected_header!r}; "
@@ -271,7 +269,6 @@ def test_fr72_span_attributes_include_platform():
 
     # Spec fr72-ok predicate applies_to case 1 only — case 3 is a span
     # attribute validation; the predicate is not re-asserted here.
-    result = handle_message_spans
 
     assert handle_message_spans, (
         "FR-72 handle_message span must be recorded; "

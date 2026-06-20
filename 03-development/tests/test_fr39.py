@@ -19,8 +19,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — the ActionAdapter surface from FR-39 does NOT
 # exist yet (RED state).
@@ -73,13 +71,13 @@ import pytest
 #   ``CLIAdapter`` references because the package does not exist yet.
 #   That is the valid RED signal for this step.
 # ---------------------------------------------------------------------------
-from app.services.aee.adapter import (  # noqa: F401
+from app.services.aee.adapter import (
     ActionAdapter,
     ToolDefinition,
     ToolExecutionResult,
 )
-from app.services.aee.mcp_adapter import MCPAdapter  # noqa: F401
-from app.services.aee.cli_adapter import CLIAdapter  # noqa: F401
+from app.services.aee.cli_adapter import CLIAdapter
+from app.services.aee.mcp_adapter import MCPAdapter
 
 
 # ---------------------------------------------------------------------------

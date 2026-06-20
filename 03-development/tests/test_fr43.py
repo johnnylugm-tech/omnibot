@@ -20,8 +20,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test.
 #
@@ -84,7 +82,9 @@ from app.services.aee.adapter import (  # noqa: F401  -- RED: GREEN reuses this
     ToolDefinition,
     ToolExecutionResult,
 )
-from app.services.aee.tool_executor import ToolExecutor  # noqa: F401  -- RED: GREEN creates this module
+from app.services.aee.tool_executor import (
+    ToolExecutor,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -214,8 +214,8 @@ def test_fr43_update_address_blocked_when_shipped():
         f"success={result.success!r}, error_message={result.error_message!r}"
     )
     assert result.error_message is not None, (
-        f"FR-43: update_shipping_address on shipped order must carry "
-        f"a non-empty error_message; got None"
+        "FR-43: update_shipping_address on shipped order must carry "
+        "a non-empty error_message; got None"
     )
     # Error message MUST surface the shipped-state reason so the
     # caller / user can see why the update was blocked.
@@ -285,8 +285,8 @@ def test_fr43_get_shipping_status_returns_result():
     )
     # Output MUST be a non-empty shipping record referencing the order.
     assert result.output is not None, (
-        f"FR-43: get_shipping_status must return a non-None output; "
-        f"got None"
+        "FR-43: get_shipping_status must return a non-None output; "
+        "got None"
     )
     assert isinstance(result.output, dict), (
         f"FR-43: get_shipping_status output must be a dict; "
@@ -355,8 +355,8 @@ def test_fr43_update_address_blocked_when_delivered():
         f"success={result.success!r}, error_message={result.error_message!r}"
     )
     assert result.error_message is not None, (
-        f"FR-43: update_shipping_address on delivered order must carry "
-        f"a non-empty error_message; got None"
+        "FR-43: update_shipping_address on delivered order must carry "
+        "a non-empty error_message; got None"
     )
     lowered = result.error_message.lower()
     assert (

@@ -16,8 +16,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test.
 #
@@ -58,7 +56,7 @@ import pytest
 # ``app.core.response_generator`` does not yet export ``ResponseGenerator``.
 # That is the valid RED signal — GREEN adds the module.
 # ---------------------------------------------------------------------------
-from app.core.response_generator import (  # noqa: F401  -- RED: GREEN adds this class
+from app.core.response_generator import (
     ResponseGenerator,
 )
 

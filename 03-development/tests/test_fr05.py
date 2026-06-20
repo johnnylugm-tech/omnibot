@@ -35,8 +35,6 @@ Sub-assertion (per TEST_SPEC):
 
 from __future__ import annotations
 
-import json
-
 import pytest
 
 # ---------------------------------------------------------------------------

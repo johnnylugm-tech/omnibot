@@ -17,7 +17,6 @@ performs an exact-match lookup, so do not rename or alias.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional
 
 import pytest
 
@@ -75,7 +74,7 @@ import pytest
 # missing module (Collection Error) and from the assertion failures the
 # GREEN agent must fix.
 # ---------------------------------------------------------------------------
-from app.core.pii import PIIMasking  # noqa: F401
+from app.core.pii import PIIMasking
 
 
 # ---------------------------------------------------------------------------

@@ -63,7 +63,7 @@ import pytest
 #   the module does not exist. That is the valid RED signal. GREEN
 #   creates ``agent_card.py`` with the surface above.
 # ---------------------------------------------------------------------------
-from app.api.agent_card import app  # noqa: F401  -- RED: GREEN creates this module
+from app.api.agent_card import app
 
 
 # ---------------------------------------------------------------------------

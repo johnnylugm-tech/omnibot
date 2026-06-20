@@ -15,8 +15,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — ``GRAFANA_DASHBOARD`` is intentionally NOT YET exported
 # by ``app.infra.grafana_dashboard``. The imports below are unguarded:
@@ -48,7 +46,7 @@ import pytest
 #   - SUPPORTED_TIME_RANGES : tuple[str, ...]  = ("24hr", "7d", "30d")
 #       The three refresh intervals required by the spec.
 # ---------------------------------------------------------------------------
-from app.infra.grafana_dashboard import (  # noqa: E402
+from app.infra.grafana_dashboard import (
     GRAFANA_DASHBOARD,
     SUPPORTED_TIME_RANGES,
     get_panel,
@@ -242,7 +240,6 @@ def test_fr74_grafana_panels_wired_to_prometheus_metrics():
 
     # Spec fr74-ok predicate applies_to case 1; this is case 2 so the
     # predicate is not re-asserted here. Local sanity only.
-    result = dashboard
 
     # Normalise to a name→panel mapping.
     if hasattr(dashboard, "items"):

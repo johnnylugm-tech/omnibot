@@ -16,8 +16,6 @@ from __future__ import annotations
 
 import time
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — ``_llm_generate`` and ``_call_llm_api`` are
 # intentionally NOT YET exported by ``app.core.knowledge``. The imports
@@ -54,8 +52,7 @@ import pytest
 # ``HybridKnowledge`` — the import below reaches for module-level access
 # so GREEN must also expose them at the module top-level.
 # ---------------------------------------------------------------------------
-from app.core.knowledge import _llm_generate, _call_llm_api  # noqa: F401
-
+from app.core.knowledge import _call_llm_api, _llm_generate  # noqa: F401
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):
@@ -118,7 +115,7 @@ def test_fr30_grounding_below_075_escalates(monkeypatch):
     # ``KnowledgeResult`` and then run the grounding check. The stub
     # below mirrors the GREEN contract: model=primary returns a short
     # text answer; the actual grounding gate is what fails the test.
-    def _stub_call_llm_api(model: str, prompt: str) -> str:  # noqa: ARG001
+    def _stub_call_llm_api(model: str, prompt: str) -> str:
         return "stubbed answer"
 
     monkeypatch.setattr(
@@ -270,7 +267,7 @@ def test_fr30_fallback_switch_under_500ms(monkeypatch):
     # fallback). GREEN's real implementation may use a stub or a
     # recorded response; either way the wall-clock for the test path
     # must be under the budget.
-    def _stub_call_llm_api(model: str, prompt: str) -> str:  # noqa: ARG001
+    def _stub_call_llm_api(model: str, prompt: str) -> str:
         if model == "gpt-4o":
             raise RuntimeError("gpt-4o unavailable")
         # Simulate the fallback LLM taking fallback_latency_ms to

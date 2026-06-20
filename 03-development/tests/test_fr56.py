@@ -22,8 +22,6 @@ from __future__ import annotations
 
 from typing import Any
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test.
 #
@@ -58,7 +56,7 @@ import pytest
 # or with TypeError / AssertionError if the WS-push wiring is missing.
 # Either failure is the valid RED signal — GREEN adds the wiring.
 # ---------------------------------------------------------------------------
-from app.services.escalation import (  # noqa: F401  -- RED: GREEN adds pusher wiring
+from app.services.escalation import (
     EscalationManager,
 )
 
@@ -192,7 +190,7 @@ def test_fr56_escalation_new_ws_event_sent():
             "escalation_id so the agent workbench can join the push "
             "to the escalation_queue row."
         )
-        assert payload_eid == result or payload_eid == escalation_id, (
+        assert payload_eid in (result, escalation_id), (
             f"FR-56: escalation_id in the escalation.new payload must "
             f"match the created escalation id; payload "
             f"escalation_id={payload_eid!r}, create() returned "

@@ -32,8 +32,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — ``BackupStrategy`` is intentionally NOT YET exported by
 # ``app.infra.backup_strategy``. The import below is unguarded: pytest MUST
@@ -97,18 +95,17 @@ import pytest
 # redis-cli / subprocess I/O — they exercise the BackupStrategy abstraction
 # in isolation, which is the canonical unit-test shape for FR-97.
 # ---------------------------------------------------------------------------
-from app.infra.backup_strategy import BackupStrategy  # noqa: E402
-from app.infra.backup_strategy import BackupResult  # noqa: E402
-
 # Re-export the constants so the tests can assert against the same values
 # the production code uses (and so the harness sees the same names in
 # the import surface as the green implementation must expose).
-from app.infra.backup_strategy import (  # noqa: E402,F401
+from app.infra.backup_strategy import (  # noqa: F401
     BACKUP_TYPE_PG_BASEBACKUP,
     BACKUP_TYPE_REDIS_RDB,
     DR_RESTORE_TARGET_MINUTES,
     PG_RETENTION_DAYS,
     REDIS_RETENTION_DAYS,
+    BackupResult,
+    BackupStrategy,
 )
 
 

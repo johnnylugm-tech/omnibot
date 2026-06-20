@@ -19,8 +19,6 @@ from __future__ import annotations
 
 import math
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test.
 #
@@ -51,7 +49,7 @@ import pytest
 # ``app.core.emotion`` does not yet export ``EmotionTracker``.
 # That is the valid RED signal — GREEN adds the class.
 # ---------------------------------------------------------------------------
-from app.core.emotion import (  # noqa: F401  -- RED: GREEN adds this class
+from app.core.emotion import (
     EmotionTracker,
 )
 

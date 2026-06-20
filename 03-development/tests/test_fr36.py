@@ -16,8 +16,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — the auto-escalation surface of ``app.core.dst`` does
 # NOT exist yet (RED state).
@@ -58,10 +56,10 @@ import pytest
 #   the auto-escalation surface does not exist yet. That is the valid
 #   RED signal for this step.
 # ---------------------------------------------------------------------------
-from app.core.dst import (  # noqa: F401
-    DialogueState,
+from app.core.dst import (
     INTENT_CONFIDENCE_THRESHOLD,
     MAX_SLOT_FILLING_ROUNDS,
+    DialogueState,
 )
 
 
@@ -174,7 +172,7 @@ def test_fr36_confidence_below_065_escalated():
     # The constant is the single source of truth for the confidence
     # boundary so a regression that drifts it (e.g. to 0.5 or 0.8) is
     # caught immediately.
-    assert INTENT_CONFIDENCE_THRESHOLD == threshold, (
+    assert threshold == INTENT_CONFIDENCE_THRESHOLD, (
         f"FR-36: INTENT_CONFIDENCE_THRESHOLD must equal {threshold} "
         f"per SRS FR-36 'INTENT_CONFIDENCE_THRESHOLD (0.65)'; got "
         f"{INTENT_CONFIDENCE_THRESHOLD}"

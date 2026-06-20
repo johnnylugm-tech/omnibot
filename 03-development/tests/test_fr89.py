@@ -29,8 +29,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — ``TDEConfig`` / ``KeyRotationSchedule`` /
 # ``PiiVaultAccessPolicy`` are intentionally NOT YET exported by
@@ -69,10 +67,10 @@ import pytest
 # exercise the policy and config objects in isolation, which is the
 # canonical unit-test shape for FR-89.
 # ---------------------------------------------------------------------------
-from app.infra.tde import (  # noqa: E402
-    TDEConfig,
+from app.infra.tde import (
     KeyRotationSchedule,
     PiiVaultAccessPolicy,
+    TDEConfig,
 )
 
 

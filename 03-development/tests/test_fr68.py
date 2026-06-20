@@ -34,8 +34,6 @@ from __future__ import annotations
 import inspect
 from unittest.mock import MagicMock
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test.
 #
@@ -68,7 +66,7 @@ import pytest
 # ``aggregate_csat`` is not yet exported by ``app.services.llm_judge`` —
 # that is the valid RED signal.
 # ---------------------------------------------------------------------------
-from app.services.llm_judge import (  # noqa: F401  -- RED: GREEN owns the names
+from app.services.llm_judge import (
     aggregate_csat,
 )
 
@@ -293,5 +291,5 @@ def test_fr68_csat_score_in_0_5_range():
 # to force collection-time failures during the RED step. These stay in
 # scope so a future refactor cannot silently drop the FR-68 contract.
 # ---------------------------------------------------------------------------
-_ = (MagicMock, inspect)  # noqa: F841  -- RED sentinels: GREEN will see
+_ = (MagicMock, inspect)
 # these once it implements aggregate_csat.

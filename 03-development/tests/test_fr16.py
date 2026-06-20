@@ -25,8 +25,6 @@ from __future__ import annotations
 import asyncio
 import time
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — ``PALADINPipeline`` already exists for FR-15, but
 # the FR-16 retrospective-block behavior (security_log_writer hook,
@@ -87,8 +85,7 @@ import pytest
 #   touching a real database. The test asserts that the writer was
 #   called with the ``"injection_retrospective_block"`` event name.
 # ---------------------------------------------------------------------------
-from app.core.paladin import PALADINPipeline  # noqa: F401
-
+from app.core.paladin import PALADINPipeline
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):
@@ -198,7 +195,7 @@ class _ListSecurityLogWriter:
 def _make_injection_verdict_classifier():
     """Build a ``SemanticInjectionClassifier`` whose verdict is injection."""
 
-    async def _injection_call_llm(self, text, timeout_ms):  # noqa: ARG001
+    async def _injection_call_llm(self, text, timeout_ms):
         return {
             "is_injection": True,
             "confidence": 0.97,
@@ -218,7 +215,7 @@ def _make_injection_verdict_classifier():
 def _make_slow_injection_verdict_classifier(l4_delay_seconds: float):
     """Build a classifier whose L4 call delays before returning injection."""
 
-    async def _slow_injection_call_llm(self, text, timeout_ms):  # noqa: ARG001
+    async def _slow_injection_call_llm(self, text, timeout_ms):
         await asyncio.sleep(l4_delay_seconds)
         return {
             "is_injection": True,
@@ -234,7 +231,7 @@ def _make_slow_injection_verdict_classifier(l4_delay_seconds: float):
 def _make_clean_verdict_classifier():
     """Build a classifier whose verdict is clean (is_injection=False)."""
 
-    async def _clean_call_llm(self, text, timeout_ms):  # noqa: ARG001
+    async def _clean_call_llm(self, text, timeout_ms):
         return {
             "is_injection": False,
             "confidence": 0.92,
@@ -270,7 +267,7 @@ def test_fr16_retrospective_block_event_in_security_logs(monkeypatch):
 
     l3_counter = {"n": 0}
 
-    async def _fast_tier3(text):  # noqa: ARG001
+    async def _fast_tier3(text):
         l3_counter["n"] += 1
         # L3 finishes BEFORE L4 verdict — the canonical FR-16 race.
         # Both branches are awaited via asyncio.gather, but the
@@ -382,7 +379,7 @@ def test_fr16_l3_result_revoked_on_late_injection(monkeypatch):
     l4_completion_order: list[float] = []
     t0 = time.perf_counter()
 
-    async def _fast_tier3(text):  # noqa: ARG001
+    async def _fast_tier3(text):
         l3_counter["n"] += 1
         # L3 completes essentially instantly; L4 takes 100ms — the
         # canonical "L4 verdict arrives late" race.
@@ -512,7 +509,7 @@ def test_fr16_injection_retrospective_block_full_pipeline(monkeypatch):
 
     l3_counter = {"n": 0}
 
-    async def _fast_tier3(text):  # noqa: ARG001
+    async def _fast_tier3(text):
         l3_counter["n"] += 1
         # The "poisoned" L3 response that the FR-16 retroactive
         # block MUST revoke. The text contains the injection marker

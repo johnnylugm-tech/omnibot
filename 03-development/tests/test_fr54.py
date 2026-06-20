@@ -21,8 +21,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test.
 #
@@ -65,7 +63,7 @@ import pytest
 # ``app.services.escalation`` does not yet export ``EscalationManager``.
 # That is the valid RED signal — GREEN adds the module.
 # ---------------------------------------------------------------------------
-from app.services.escalation import (  # noqa: F401  -- RED: GREEN adds this class
+from app.services.escalation import (
     EscalationManager,
 )
 

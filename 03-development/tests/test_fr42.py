@@ -71,7 +71,7 @@ from app.services.aee.adapter import (  # noqa: F401  -- RED: GREEN extends this
     ToolDefinition,
     ToolExecutionResult,
 )
-from app.services.aee.cli_adapter import CLIAdapter  # noqa: F401  -- RED: GREEN extends this module
+from app.services.aee.cli_adapter import CLIAdapter
 
 
 # ---------------------------------------------------------------------------
@@ -236,7 +236,7 @@ def test_fr42_cli_script_timeout_terminates_process():
             script,
             timeout_seconds=5.0,
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         pytest.fail(
             f"FR-42 NP-15: CLIAdapter.run_script must NOT raise on "
             f"timeout; got {type(exc).__name__}: {exc}"
@@ -329,7 +329,7 @@ def test_fr42_cli_process_killed_returns_false_error():
             "kill_signal='SIGKILL' kwarg and return success=False "
             "without raising"
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         pytest.fail(
             f"FR-42 NP-07: CLIAdapter.run_script must NOT raise on "
             f"process kill; got {type(exc).__name__}: {exc}"

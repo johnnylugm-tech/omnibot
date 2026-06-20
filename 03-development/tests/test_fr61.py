@@ -74,7 +74,7 @@ from __future__ import annotations
 # valid RED signal — GREEN adds the enforcement function and tightens
 # the matrix to make every assertion hold.
 # ---------------------------------------------------------------------------
-from app.admin.rbac import ROLE_PERMISSIONS, RESOURCES, enforce
+from app.admin.rbac import RESOURCES, ROLE_PERMISSIONS, enforce
 
 
 # ---------------------------------------------------------------------------

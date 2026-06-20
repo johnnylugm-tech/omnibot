@@ -169,7 +169,7 @@ class PIIMasking:
     # log survives instance churn and the scheduler (FR-91) can read it
     # via the class accessor without holding a masker instance. A real
     # deployment writes to a DB; this list is the test-visible surrogate.
-    _audit_log: list[AuditEntry] = []  # type: ignore[assignment]
+    _audit_log: list[AuditEntry] = []  # noqa: RUF012 (intentional: class-level audit log surrogate — see docstring above)
 
     # -- public API --------------------------------------------------------
 

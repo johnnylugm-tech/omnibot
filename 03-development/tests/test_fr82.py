@@ -47,11 +47,11 @@ import pytest
 # without spinning up Postgres or pgvector.
 # ---------------------------------------------------------------------------
 from app.infra.schema import (
-    DatabaseSchema,        # noqa: E402
-    EXPECTED_TABLES,       # noqa: E402
-    FK_CONSTRAINTS,        # noqa: E402
-    HNSW_INDEX_SPEC,       # noqa: E402
-    GIN_TSVECTOR_INDEX_SPEC,  # noqa: E402
+    EXPECTED_TABLES,
+    FK_CONSTRAINTS,
+    GIN_TSVECTOR_INDEX_SPEC,
+    HNSW_INDEX_SPEC,
+    DatabaseSchema,
 )
 
 # ---------------------------------------------------------------------------
@@ -252,7 +252,7 @@ def test_fr82_fk_constraints_valid():
     # 20-table set (a FK pointing to a non-existent child table would
     # fail at CREATE TABLE time).
     invalid_children = sorted(
-        t for t in fk_map.keys() if t not in _FR82_EXPECTED_TABLES
+        t for t in fk_map if t not in _FR82_EXPECTED_TABLES
     )
     assert not invalid_children, (
         f"FR-82 FK_CONSTRAINTS references child tables not in the "

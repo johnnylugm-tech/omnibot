@@ -19,7 +19,8 @@ Citations:
 from __future__ import annotations
 
 import functools
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 # HTTP-style status codes returned by ``enforce``. Mirrors the
 # canonical REST semantics: 200 = grant, 403 = authz denial
@@ -238,4 +239,5 @@ class RBACEnforcer:
         return decorator
 
 
-__all__ = ["ROLE_PERMISSIONS", "RESOURCES", "enforce", "RBACEnforcer"]
+__all__ = ["RESOURCES", "ROLE_PERMISSIONS", "RBACEnforcer", "enforce"]
+

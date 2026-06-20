@@ -14,9 +14,7 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import random
 import threading
-import time
 from typing import Any
 
 import pytest
@@ -46,7 +44,7 @@ import pytest
 #           The attempt counter starts at 0; ``max_retries=3`` therefore
 #           allows at most 3 invocations of ``fn`` before giving up.
 # ---------------------------------------------------------------------------
-from app.infra.retry import RetryStrategy  # noqa: E402
+from app.infra.retry import RetryStrategy
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):
@@ -120,7 +118,7 @@ def test_fr81_3_retries_then_stop(monkeypatch):
     # Same for app.infra.retry.time.sleep if GREEN imports ``time``
     # directly into the module namespace.
     try:
-        import app.infra.retry as _retry_mod  # noqa: F401
+        import app.infra.retry as _retry_mod
         monkeypatch.setattr(_retry_mod.time, "sleep",
                             lambda *_a, **_k: None, raising=False)
     except Exception:
@@ -261,7 +259,7 @@ def test_fr81_jitter_applied():
     # Stronger: the samples must NOT all be the same value — that
     # would mean the jitter is constant (e.g. always 1.0) and the
     # thundering-herd property is lost.
-    assert len(set(round(s, 6) for s in samples)) >= 10, (
+    assert len({round(s, 6) for s in samples}) >= 10, (
         f"FR-81 jitter must produce a non-degenerate distribution; "
         f"observed unique rounded values={len(set(samples))}"
     )
@@ -352,7 +350,7 @@ def test_fr81_must_not_thundering_herd_without_jitter(monkeypatch):
     # GREEN adds.
     monkeypatch.setattr("time.sleep", _recording_sleep, raising=False)
     try:
-        import app.infra.retry as _retry_mod  # noqa: F401
+        import app.infra.retry as _retry_mod
         monkeypatch.setattr(_retry_mod.time, "sleep",
                             _recording_sleep, raising=False)
     except Exception:

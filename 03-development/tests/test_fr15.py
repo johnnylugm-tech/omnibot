@@ -18,8 +18,6 @@ from __future__ import annotations
 import asyncio
 import time
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — ``PALADINPipeline`` is intentionally NOT YET exported
 # by ``app.core.paladin``. The import below resolves (the module exists for
@@ -86,8 +84,7 @@ import pytest
 #           silently fall through to a default branch — that would hide
 #           routing bugs that this FR is designed to surface).
 # ---------------------------------------------------------------------------
-from app.core.paladin import PALADINPipeline  # noqa: F401
-
+from app.core.paladin import PALADINPipeline
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):
@@ -222,7 +219,7 @@ from app.core.paladin import PALADINPipeline  # noqa: F401
 def _track_call_llm(call_counter: dict, payload: dict):
     """Build an ``_call_llm`` replacement that increments ``call_counter``."""
 
-    async def _fake(self, text, timeout_ms):  # noqa: ARG001
+    async def _fake(self, text, timeout_ms):
         call_counter["n"] += 1
         return payload
 
@@ -232,7 +229,7 @@ def _track_call_llm(call_counter: dict, payload: dict):
 def _track_tier3(call_counter: dict, response: str = "tier3-answer"):
     """Build a Tier-3 async callable that increments ``call_counter``."""
 
-    async def _fake(text):  # noqa: ARG001
+    async def _fake(text):
         call_counter["n"] += 1
         return response
 
@@ -253,7 +250,7 @@ def test_fr15_low_risk_skips_l4(monkeypatch):
     risk_level = "low"
     expected_l4_calls = "0"
 
-    from app.core.paladin import PALADINPipeline, SemanticInjectionClassifier
+    from app.core.paladin import SemanticInjectionClassifier
 
     l4_counter = {"n": 0}
     l3_counter = {"n": 0}
@@ -341,7 +338,7 @@ def test_fr15_medium_risk_l4_parallel_l3(monkeypatch):
     risk_level = "medium"
     expected_parallel = "true"
 
-    from app.core.paladin import PALADINPipeline, SemanticInjectionClassifier
+    from app.core.paladin import SemanticInjectionClassifier
 
     l4_counter = {"n": 0}
     l3_counter = {"n": 0}
@@ -350,7 +347,7 @@ def test_fr15_medium_risk_l4_parallel_l3(monkeypatch):
     L4_DELAY_SECONDS = 0.30
     L3_DELAY_SECONDS = 0.05
 
-    async def _slow_clean_classify(self, text, timeout_ms):  # noqa: ARG001
+    async def _slow_clean_classify(self, text, timeout_ms):
         l4_counter["n"] += 1
         call_order.append(("l4_start", time.perf_counter()))
         await asyncio.sleep(L4_DELAY_SECONDS)
@@ -367,7 +364,7 @@ def test_fr15_medium_risk_l4_parallel_l3(monkeypatch):
         _slow_clean_classify,
     )
 
-    async def _fast_tier3(text):  # noqa: ARG001
+    async def _fast_tier3(text):
         l3_counter["n"] += 1
         call_order.append(("l3_start", time.perf_counter()))
         await asyncio.sleep(L3_DELAY_SECONDS)
@@ -452,12 +449,12 @@ def test_fr15_high_risk_l4_sync_blocks_l3(monkeypatch):
     risk_level = "high"
     expected_l3_blocked = "true"
 
-    from app.core.paladin import PALADINPipeline, SemanticInjectionClassifier
+    from app.core.paladin import SemanticInjectionClassifier
 
     l4_counter = {"n": 0}
     l3_counter = {"n": 0}
 
-    async def _classify_injection(self, text, timeout_ms):  # noqa: ARG001
+    async def _classify_injection(self, text, timeout_ms):
         l4_counter["n"] += 1
         return {
             "is_injection": True,
@@ -471,7 +468,7 @@ def test_fr15_high_risk_l4_sync_blocks_l3(monkeypatch):
         _classify_injection,
     )
 
-    async def _tier3(text):  # noqa: ARG001
+    async def _tier3(text):
         l3_counter["n"] += 1
         return "high-tier3-answer"
 
@@ -537,12 +534,12 @@ def test_fr15_critical_risk_immediate_block(monkeypatch):
     risk_level = "critical"
     expected_response = "blocked"
 
-    from app.core.paladin import PALADINPipeline, SemanticInjectionClassifier
+    from app.core.paladin import SemanticInjectionClassifier
 
     l4_counter = {"n": 0}
     l3_counter = {"n": 0}
 
-    async def _classify(self, text, timeout_ms):  # noqa: ARG001
+    async def _classify(self, text, timeout_ms):
         l4_counter["n"] += 1
         return {
             "is_injection": True,
@@ -556,7 +553,7 @@ def test_fr15_critical_risk_immediate_block(monkeypatch):
         _classify,
     )
 
-    async def _tier3(text):  # noqa: ARG001
+    async def _tier3(text):
         l3_counter["n"] += 1
         return "critical-tier3-answer"
 

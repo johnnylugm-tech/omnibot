@@ -68,8 +68,7 @@ import pytest
 # computation MUST be local (no remote embedding API) so the per-call
 # cost stays well under the 5ms p95 budget.
 # ---------------------------------------------------------------------------
-from app.core.paladin import GroundingChecker  # noqa: F401
-
+from app.core.paladin import GroundingChecker
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):
@@ -243,7 +242,7 @@ def test_fr14_cosine_below_075_grounded_false(checker: GroundingChecker):
     output_embedding = _unit_vector(1536)
     source_texts = [_unit_vector(1536, seed=1)]
 
-    def _fake_cosine(self, a, b):  # noqa: ARG001
+    def _fake_cosine(self, a, b):
         # Inject a deterministic score below the 0.75 threshold so the
         # check() logic decides grounded=False without depending on
         # the underlying cosine math or numpy.
@@ -316,7 +315,7 @@ def test_fr14_cosine_above_075_grounded_true(checker: GroundingChecker):
     output_embedding = _unit_vector(1536)
     source_texts = [_unit_vector(1536, seed=2)]
 
-    def _fake_cosine(self, a, b):  # noqa: ARG001
+    def _fake_cosine(self, a, b):
         return 0.80
 
     from app.core.paladin import GroundingChecker as _Checker
@@ -432,7 +431,7 @@ def test_fr14_latency_under_5ms(checker: GroundingChecker):
     output_embedding = _unit_vector(1536)
     source_texts = [_unit_vector(1536, seed=idx) for idx in range(3)]
 
-    def _fake_cosine(self, a, b):  # noqa: ARG001
+    def _fake_cosine(self, a, b):
         # Mock the cosine math to return a deterministic score so the
         # latency measurement reflects the GroundingChecker.check
         # framework only (routing, max() aggregation, dataclass

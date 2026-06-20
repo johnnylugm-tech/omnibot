@@ -94,7 +94,7 @@ def test_fr60_7_roles_defined():
     # compare membership deterministically.
     try:
         actual_role_set = set(ROLE_PERMISSIONS.keys())
-    except AttributeError as exc:  # noqa: PERF203 — explicit guard for RED signal
+    except AttributeError as exc:
         raise AssertionError(
             "FR-60: ROLE_PERMISSIONS must be a mapping with .keys(); the "
             f"RBAC enforcer needs role-keyed dispatch. Got: {exc}."

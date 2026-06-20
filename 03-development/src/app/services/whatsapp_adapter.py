@@ -18,7 +18,6 @@ from datetime import UTC, datetime
 
 from app.core.unified_message import MessageType, Platform, UnifiedMessage
 
-
 # Mapping from WhatsApp message type strings to MessageType enum.
 _WHATSAPP_TYPE_MAP: dict[str, MessageType] = {
     "text": MessageType.TEXT,

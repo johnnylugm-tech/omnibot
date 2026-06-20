@@ -28,8 +28,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — ``RedisTLSConfig`` / ``RedisAuthConfig`` /
 # ``RedisACLConfig`` are intentionally NOT YET exported by
@@ -83,10 +81,10 @@ import pytest
 # the policy / config objects in isolation, which is the canonical
 # unit-test shape for FR-90.
 # ---------------------------------------------------------------------------
-from app.infra.redis_security import (  # noqa: E402
-    RedisTLSConfig,
-    RedisAuthConfig,
+from app.infra.redis_security import (
     RedisACLConfig,
+    RedisAuthConfig,
+    RedisTLSConfig,
 )
 
 

@@ -6,8 +6,8 @@ and mapping of WhatsApp message arrays into UnifiedMessage.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-04)
 SRS source : SRS.md FR-04 (Module 1: Platform Adapter Layer)
-            "WhatsApp Webhook Adapter：GET 驗證（hub.challenge）+
-            POST HMAC-SHA256 簽名驗證（sha256= prefix），
+            "WhatsApp Webhook Adapter:GET 驗證(hub.challenge)+
+            POST HMAC-SHA256 簽名驗證(sha256= prefix),
             映射為 UnifiedMessage"
 
 Acceptance criteria (from SRS FR-04 / TEST_SPEC.md):
@@ -32,8 +32,6 @@ Sub-assertion (per TEST_SPEC):
 
 from __future__ import annotations
 
-import hmac
-import hashlib
 import json
 
 import pytest
@@ -49,15 +47,15 @@ import pytest
 # ``app.core.unified_message`` already exist and provide the contracts that
 # GREEN must wire together.
 # ---------------------------------------------------------------------------
-from app.core.unified_message import (  # noqa: E402 — RED: GREEN owns the path
+from app.core.unified_message import (
     MessageType,
     Platform,
     UnifiedMessage,
 )
-from app.services.whatsapp_adapter import (  # noqa: E402 — RED: GREEN must create
+from app.services.whatsapp_adapter import (
     WhatsAppWebhookAdapter,
 )
-from app.services.whatsapp_verifier import (  # noqa: E402 — RED: GREEN must create
+from app.services.whatsapp_verifier import (
     WhatsAppWebhookVerifier,
 )
 

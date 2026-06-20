@@ -38,8 +38,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — ``ComposeHealth`` is intentionally NOT YET exported by
 # ``app.infra.compose``. The import below is unguarded: pytest MUST fail with
@@ -85,8 +83,10 @@ import pytest
 # I/O — they exercise the ComposeHealth abstraction in isolation, which is
 # the canonical unit-test shape for FR-95.
 # ---------------------------------------------------------------------------
-from app.infra.compose import ComposeHealth  # noqa: E402
-from app.infra.compose import REQUIRED_SERVICES  # noqa: E402
+from app.infra.compose import (
+    REQUIRED_SERVICES,
+    ComposeHealth,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -191,7 +191,6 @@ def test_fr95_all_7_services_healthy():
 # endpoint.
 # ---------------------------------------------------------------------------
 def test_fr95_health_endpoint_200_after_compose_up():
-    path = "/api/v1/health"
     expected_status = 200  # spec string sentinel ("200" -> int 200)
 
     # GREEN TODO: ``ComposeHealth.health_endpoint()`` MUST return a

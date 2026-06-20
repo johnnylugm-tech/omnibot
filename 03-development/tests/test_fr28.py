@@ -14,8 +14,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — ``Chunker`` / ``ChunkSpec`` / ``ParentChildIndex`` are
 # intentionally NOT YET defined. The imports below are unguarded: pytest
@@ -42,14 +40,14 @@ import pytest
 #     child hit. Also needs a seed method (e.g. ``add_link``) so unit
 #     tests can wire child_id → parent_id without standing up PostgreSQL.
 # ---------------------------------------------------------------------------
-from app.core.chunking import (  # noqa: E402
-    Chunker,
-    Chunk,
-    ChunkSpec,
-    ParentChildIndex,
-    PARENT_TOKEN_SIZE,
+from app.core.chunking import (
     CHILD_TOKEN_SIZE,
     OVERLAP_TOKENS,
+    PARENT_TOKEN_SIZE,
+    Chunk,
+    Chunker,
+    ChunkSpec,
+    ParentChildIndex,
 )
 
 
@@ -288,11 +286,11 @@ def test_fr28_overlap_100_tokens_correct():
     # Module-level constants — these are the values the embedding-job /
     # Tier-2 wiring layer reads so the constants must agree with
     # ChunkSpec defaults.
-    assert OVERLAP_TOKENS == expected_overlap, (
+    assert expected_overlap == OVERLAP_TOKENS, (
         f"FR-28: OVERLAP_TOKENS module constant must be "
         f"{expected_overlap}; got OVERLAP_TOKENS={OVERLAP_TOKENS}"
     )
-    assert PARENT_TOKEN_SIZE == chunk_size, (
+    assert chunk_size == PARENT_TOKEN_SIZE, (
         f"FR-28: PARENT_TOKEN_SIZE must be {chunk_size}; got "
         f"PARENT_TOKEN_SIZE={PARENT_TOKEN_SIZE}"
     )

@@ -50,8 +50,7 @@ import pytest
 # ``source`` so a strict-assertion test that constructs an INVALID source
 # and expects ``ValueError`` MUST fail until GREEN adds ``__post_init__``.
 # ---------------------------------------------------------------------------
-from app.core.knowledge import KnowledgeResult  # noqa: F401
-
+from app.core.knowledge import KnowledgeResult
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):

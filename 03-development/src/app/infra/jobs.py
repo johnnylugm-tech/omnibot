@@ -541,8 +541,7 @@ async def create_knowledge_with_chunks(
 #     with title, content, model) and a boolean ``is_batch`` flag.
 #   - The function MUST return a ``BatchImportResult`` exposing
 #     ``entry_count``, ``enqueued_count``, ``sync_wait``, ``per_entry_ms``.
-#   - When ``is_batch=True`` and entry_count > _FR78_BATCH_THRESHOLD
-#     (SRS-pinned at 10), ALL chunks MUST be enqueued asynchronously
+#   - When ``is_batch=True``, ALL chunks MUST be enqueued asynchronously
 #     — NO ``asyncio.wait_for`` embedding call for the first chunk
 #     (contrast FR-77 which does a synchronous 2.0s wait).
 #   - Per-entry processing latency MUST be < 50ms (NP-06 SLA). With the

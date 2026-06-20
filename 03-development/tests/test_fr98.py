@@ -33,8 +33,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — ``RollbackStrategy`` is intentionally NOT YET exported
 # by ``app.infra.rollback_strategy``. The import below is unguarded: pytest
@@ -102,22 +100,21 @@ import pytest
 # controller I/O — they exercise the RollbackStrategy abstraction in
 # isolation, which is the canonical unit-test shape for FR-98.
 # ---------------------------------------------------------------------------
-from app.infra.rollback_strategy import RollbackStrategy  # noqa: E402
-from app.infra.rollback_strategy import KnowledgeRollbackResult  # noqa: E402
-from app.infra.rollback_strategy import SchemaMigrationResult  # noqa: E402
-from app.infra.rollback_strategy import ExperimentAbortResult  # noqa: E402
-
 # Re-export the constants so the tests can assert against the same values
 # the production code uses (and so the harness sees the same names in
 # the import surface as the green implementation must expose).
-from app.infra.rollback_strategy import (  # noqa: E402,F401
-    KNOWLEDGE_VERSION_FIELD,
-    KNOWLEDGE_IS_ACTIVE_FIELD,
-    MIGRATION_DOWNGRADE,
+from app.infra.rollback_strategy import (  # noqa: F401
+    AB_ROLLBACK_THRESHOLD_PCT,
+    AB_TEST_STAGES,
     EXPERIMENT_STATUS_ABORTED,
     EXPERIMENT_TRAFFIC_CONTROL,
-    AB_TEST_STAGES,
-    AB_ROLLBACK_THRESHOLD_PCT,
+    KNOWLEDGE_IS_ACTIVE_FIELD,
+    KNOWLEDGE_VERSION_FIELD,
+    MIGRATION_DOWNGRADE,
+    ExperimentAbortResult,
+    KnowledgeRollbackResult,
+    RollbackStrategy,
+    SchemaMigrationResult,
 )
 
 

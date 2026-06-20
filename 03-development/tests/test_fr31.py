@@ -14,8 +14,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — ``_escalate`` is intentionally NOT YET exported by
 # ``app.core.knowledge``. The import below is unguarded: pytest MUST fail
@@ -49,8 +47,7 @@ import pytest
 # the import below reaches for module-level access so GREEN must also
 # expose it at the module top-level.
 # ---------------------------------------------------------------------------
-from app.core.knowledge import _escalate  # noqa: F401
-
+from app.core.knowledge import _escalate
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):

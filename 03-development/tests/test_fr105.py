@@ -52,10 +52,9 @@ import pytest
 # ---------------------------------------------------------------------------
 from app.admin.odd_sql import (  # noqa: F401 -- RED: GREEN owns the names
     JUDGE_SAMPLE_RATE_DEFAULT,
-    ODDSqlRunner,
     TIER_COSTS,
+    ODDSqlRunner,
 )
-
 
 # ======================================================================
 # Test cases — names match TEST_SPEC.md exactly

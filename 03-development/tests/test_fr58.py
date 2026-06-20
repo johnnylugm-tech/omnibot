@@ -20,8 +20,6 @@ from __future__ import annotations
 
 from typing import Any
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test.
 #
@@ -65,8 +63,8 @@ import pytest
 # ---------------------------------------------------------------------------
 from app.api.websocket import (  # noqa: F401  -- RED: GREEN adds the names
     USER_EVENT_TYPES,
-    verify_jwt,
     handle_message_reply,
+    verify_jwt,
 )
 
 

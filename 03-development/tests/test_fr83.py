@@ -25,8 +25,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — ``MigrationRunner`` / ``MigrationConfig`` /
 # ``MigrationResult`` are intentionally NOT YET exported by
@@ -77,9 +75,8 @@ import pytest
 # both the global ``alembic.command`` module and the
 # ``app.infra.migrations`` module that GREEN must create.
 # ---------------------------------------------------------------------------
-from app.infra.migrations import (  # noqa: E402
+from app.infra.migrations import (
     MigrationConfig,
-    MigrationResult,
     MigrationRunner,
 )
 
@@ -120,7 +117,7 @@ def _patch_alembic_commands(monkeypatch, recorder: dict) -> None:
     # module so GREEN can call ``migrations.command.upgrade(...)``
     # without breaking the test isolation.
     try:
-        import app.infra.migrations as _mig_mod  # noqa: F401
+        import app.infra.migrations as _mig_mod
     except Exception:
         # Module does not exist yet — that IS the RED state we want to
         # surface at collection time. We do not silence it; the import
@@ -204,7 +201,6 @@ def test_fr83_upgrade_migration_succeeds(monkeypatch):
 # ---------------------------------------------------------------------------
 def test_fr83_downgrade_migration_succeeds(monkeypatch):
     direction = "downgrade"
-    expected_status = "success"
 
     # GREEN TODO: MigrationRunner.downgrade(config) must invoke the
     # alembic reverse-migration command and return a MigrationResult

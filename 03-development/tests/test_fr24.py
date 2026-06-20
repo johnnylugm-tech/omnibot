@@ -17,7 +17,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import logging
 from unittest.mock import MagicMock
 
 # ---------------------------------------------------------------------------
@@ -30,7 +29,7 @@ from unittest.mock import MagicMock
 # ``MiddlewareChain`` class + ``ChainResult`` dataclass with the shape
 # dictated by the test inputs below.
 # ---------------------------------------------------------------------------
-from app.middleware.chain import ChainResult, MiddlewareChain
+from app.middleware.chain import MiddlewareChain
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):
@@ -145,8 +144,6 @@ def _platform_adapter(user_id: str = "user-001", platform: str = "telegram"):
 # final status would not be 403.
 # ---------------------------------------------------------------------------
 def test_fr24_ip_block_before_signature_validation():
-    ip = "blocked"
-    signature = "valid"
     expected_status = 403
 
     ip_whitelist = _deny_ip()
@@ -290,7 +287,7 @@ def _call_order_index(mock, method_name, *expected_args):
     # and the 5th is "rate". We compare the index in CHAIN_ORDER instead
     # of an absolute global index. This is the cleanest order assertion
     # without a global recorder.
-    from app.middleware.chain import MiddlewareChain as _Chain  # noqa: F401
+    from app.middleware.chain import MiddlewareChain as _Chain
 
     order = list(getattr(_Chain, "CHAIN_ORDER", ("tls", "ip", "signature", "parse", "rate", "rbac")))
     if method_name == "parse":

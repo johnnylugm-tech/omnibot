@@ -36,7 +36,7 @@ import pytest
 #                       attempts to mutate raise
 #                       ``dataclasses.FrozenInstanceError``.
 # ---------------------------------------------------------------------------
-from app.core.unified_response import UnifiedResponse, ResponseSource
+from app.core.unified_response import ResponseSource, UnifiedResponse
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):

@@ -36,8 +36,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — ``K8sManifest`` is intentionally NOT YET exported by
 # ``app.infra.k8s_deployment``. The import below is unguarded: pytest MUST
@@ -108,23 +106,22 @@ import pytest
 # I/O — they exercise the K8sManifest abstraction in isolation, which is
 # the canonical unit-test shape for FR-96.
 # ---------------------------------------------------------------------------
-from app.infra.k8s_deployment import K8sManifest  # noqa: E402
-
 # Re-export the constants so the tests can assert against the same values
 # the production code uses (and so the harness sees the same names in
 # the import surface as the green implementation must expose).
-from app.infra.k8s_deployment import (  # noqa: E402,F401
+from app.infra.k8s_deployment import (
+    DEFAULT_MAX_UNAVAILABLE,
     DEFAULT_REPLICAS,
     DEFAULT_STRATEGY,
-    DEFAULT_MAX_UNAVAILABLE,
-    HPA_MIN_REPLICAS,
-    HPA_MAX_REPLICAS,
     HPA_CPU_TARGET_PERCENT,
+    HPA_MAX_REPLICAS,
+    HPA_MIN_REPLICAS,
     PDB_MIN_AVAILABLE,
+    RESOURCE_LIMITS,
+    RESOURCE_REQUESTS,
     SECRETS_SOURCE,
     SERVICE_PORT,
-    RESOURCE_REQUESTS,
-    RESOURCE_LIMITS,
+    K8sManifest,
 )
 
 
@@ -145,7 +142,6 @@ def test_fr96_deployment_3_replicas():
     # Spec input literals — also used as trigger values for the fr96-ok
     # sub-assertion guard.
     replicas = "3"
-    strategy = "RollingUpdate"
 
     # GREEN TODO: ``DEFAULT_REPLICAS`` MUST be exported from
     # ``app.infra.k8s_deployment`` and MUST equal 3. ``DEFAULT_STRATEGY``

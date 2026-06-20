@@ -114,13 +114,12 @@ def _isolate_pipeline_io(monkeypatch):
 # pytest crashes with Collection Error (Exit Code 2) because
 # ``tests.pyramid`` does not exist yet — that is the valid RED signal.
 # ---------------------------------------------------------------------------
-from tests.pyramid import (  # noqa: F401 -- RED: GREEN owns the names
-    E2EPipelineRunner,
+from tests.pyramid import (
     INTEGRATION_COVERAGE_TARGETS,
-    TestPyramidValidator,
     UNIT_COVERAGE_TARGETS,
+    E2EPipelineRunner,
+    TestPyramidValidator,
 )
-
 
 # ======================================================================
 # Test cases — names match TEST_SPEC.md exactly

@@ -5,9 +5,9 @@ and mapping of Telegram updates into UnifiedMessage.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-01)
 SRS source : SRS.md FR-01 (Module 1: Platform Adapter Layer)
-            "Telegram Webhook Adapter：接收 POST /api/v1/webhook/telegram，
-            驗證 X-Telegram-Bot-Api-Secret-Token（HMAC-SHA256），
-            解析 update_id + message，映射為 UnifiedMessage"
+            "Telegram Webhook Adapter: 接收 POST /api/v1/webhook/telegram, "
+            "驗證 X-Telegram-Bot-Api-Secret-Token (HMAC-SHA256), "
+            "解析 update_id + message, 映射為 UnifiedMessage"
 
 Acceptance criteria (from SRS FR-01 / TEST_SPEC.md):
     - 合法請求回 200
@@ -34,10 +34,6 @@ Sub-assertion (per TEST_SPEC):
 
 from __future__ import annotations
 
-import hashlib
-import hmac
-import json
-
 import pytest
 
 # ---------------------------------------------------------------------------
@@ -51,19 +47,18 @@ import pytest
 # ``UnifiedMessage`` / ``Platform`` / ``MessageType`` at ``app.core.unified_message``
 # already exist and provide the contracts that GREEN must wire together.
 # ---------------------------------------------------------------------------
-from app.core.unified_message import (  # noqa: E402 — RED: GREEN owns the path
+from app.core.unified_message import (
     MessageType,
     Platform,
     UnifiedMessage,
 )
-from app.infra.rate_limit import (  # noqa: E402 — already exists
+from app.infra.rate_limit import (
     RateLimiter,
-    RateLimitResult,
 )
-from app.services.telegram_adapter import (  # noqa: E402 — RED: GREEN must create
+from app.services.telegram_adapter import (
     TelegramWebhookAdapter,
 )
-from app.services.telegram_verifier import (  # noqa: E402 — RED: GREEN must create
+from app.services.telegram_verifier import (
     TelegramWebhookVerifier,
 )
 
@@ -272,7 +267,7 @@ def test_fr01_telegram_end_to_end_message_mapped_to_unified_message():
 
     # raw_payload must be the full update dict
     assert result.raw_payload == telegram_update, (
-        f"raw_payload must preserve the full Telegram Update dict"
+        "raw_payload must preserve the full Telegram Update dict"
     )
 
     # received_at must be set to a datetime

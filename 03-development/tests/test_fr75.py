@@ -108,7 +108,6 @@ from app.infra.jobs import (  # noqa: E402,F401
     get_queue_config,
 )
 
-
 # ---------------------------------------------------------------------------
 # Spec-pinned trigger values — keep these in lock-step with TEST_SPEC.md.
 # A drift here (e.g. changing "3" -> "4") will silently break the

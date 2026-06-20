@@ -18,8 +18,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test — ``ALERT_RULES`` is intentionally NOT YET exported by
 # ``app.infra.alert_rules``. The imports below are unguarded: pytest MUST
@@ -46,7 +44,7 @@ import pytest
 #   - get_alert_rule(name: str) -> AlertRule | None
 #       Lookup helper returning the named rule, or None if absent.
 # ---------------------------------------------------------------------------
-from app.infra.alert_rules import (  # noqa: E402
+from app.infra.alert_rules import (
     ALERT_RULES,
     get_alert_rule,
 )
@@ -211,7 +209,6 @@ def test_fr73_slabreach_for_0m_immediate():
 
     # Spec fr73-ok predicate applies_to case 1; this is case 2 so the
     # predicate assertion is not redeclared here. Local sanity only.
-    result = rule
     assert rule is not None, (
         f"FR-73 {rule_name} alert rule must be defined; "
         f"got None from get_alert_rule"
@@ -276,7 +273,6 @@ def test_fr73_high_latency_threshold_0_8s():
 
     # Spec fr73-ok predicate applies_to case 1; this is case 3 so the
     # predicate is not re-asserted here. Local sanity only.
-    result = rule
     assert rule is not None, (
         f"FR-73 {rule_name} alert rule must be defined; "
         f"got None from get_alert_rule"
@@ -352,7 +348,6 @@ def test_fr73_high_error_rate_threshold_0_5pct():
 
     # Spec fr73-ok predicate applies_to case 1; this is case 4 so the
     # predicate is not re-asserted here. Local sanity only.
-    result = rule
     assert rule is not None, (
         f"FR-73 {rule_name} alert rule must be defined; "
         f"got None from get_alert_rule"

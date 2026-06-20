@@ -16,8 +16,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test.
 #
@@ -45,7 +43,7 @@ import pytest
 # ``app.core.emotion`` does not yet expose ``EmotionTracker.should_escalate``.
 # That is the valid RED signal — GREEN adds the method.
 # ---------------------------------------------------------------------------
-from app.core.emotion import (  # noqa: F401  -- RED: GREEN adds this method
+from app.core.emotion import (
     EmotionTracker,
 )
 

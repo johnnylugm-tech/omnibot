@@ -61,12 +61,12 @@ import pytest
 #   errors because the FR-40 contract is not implemented yet. That is
 #   the valid RED signal for this step.
 # ---------------------------------------------------------------------------
-from app.services.aee.adapter import (  # noqa: F401
+from app.services.aee.adapter import (
     ActionAdapter,
     ToolDefinition,
     ToolExecutionResult,
 )
-from app.services.aee.mcp_adapter import MCPAdapter  # noqa: F401
+from app.services.aee.mcp_adapter import MCPAdapter
 
 
 # ---------------------------------------------------------------------------
@@ -343,7 +343,7 @@ def test_fr40_mcp_server_down_returns_empty_tools():
     # empty list — NOT raise — when the MCP server is unreachable.
     try:
         tools = adapter.list_tools()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         pytest.fail(
             f"FR-40 NP-07: MCPAdapter must NOT raise when server "
             f"is down; got {type(exc).__name__}: {exc}"
@@ -406,7 +406,7 @@ def test_fr40_mcp_connection_timeout_returns_error():
     # raise an uncaught exception.
     try:
         result = adapter.execute("get_data", {})
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         pytest.fail(
             f"FR-40 NP-15: MCPAdapter.execute must NOT raise on "
             f"connection timeout; got {type(exc).__name__}: {exc}"

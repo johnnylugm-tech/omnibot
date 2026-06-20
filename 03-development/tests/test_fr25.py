@@ -67,7 +67,6 @@ from app.middleware.ip_whitelist import IPWhitelist, IPWhitelistError
 # ---------------------------------------------------------------------------
 def test_fr25_valid_cidr_startup_succeeds():
     cidr = "192.168.1.0/24"
-    expected_status = "initialized"
 
     # GREEN TODO: IPWhitelist(["192.168.1.0/24"]) must succeed — the entry
     # is well-formed, so no IPWhitelistError is raised and the instance is
