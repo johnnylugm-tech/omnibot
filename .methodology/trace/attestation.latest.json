@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "a03f3c9b004cb36c76ee38fe235d224b7b2535b8",
-  "content_sha256": "31199f37e8285ea6d4e5e5c444458a99edc24d41ebe04ff483a39fe0a8826cb1",
+  "git_sha": "d00bc2835ce6a46bffc7257f584c9e3a3fb22956",
+  "content_sha256": "0cffe1d2aeaa02e808bbd247190bb1454d6bc326ec5eb7add1c4cf8fc4844c2e",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,23 +11,17 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "71.3%",
-      "test_coverage": "75.0%",
-      "verification_rate": "71.3%",
-      "total_links": 281,
+      "code_coverage": "76.9%",
+      "test_coverage": "80.6%",
+      "verification_rate": "76.9%",
+      "total_links": 295,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
-          "FR-01",
-          "FR-02",
           "FR-03",
           "FR-04",
           "FR-05",
           "FR-06",
-          "FR-104",
-          "FR-105",
-          "FR-106",
-          "FR-107",
           "FR-108",
           "FR-54",
           "FR-60",
@@ -51,15 +45,9 @@
           "FR-99"
         ],
         "fr_without_test": [
-          "FR-01",
-          "FR-02",
-          "FR-03",
           "FR-04",
           "FR-05",
           "FR-06",
-          "FR-105",
-          "FR-106",
-          "FR-107",
           "FR-108",
           "FR-60",
           "FR-61",
@@ -84,16 +72,10 @@
     "missing": {
       "fr_without_srs": [],
       "fr_without_code": [
-        "FR-01",
-        "FR-02",
         "FR-03",
         "FR-04",
         "FR-05",
         "FR-06",
-        "FR-104",
-        "FR-105",
-        "FR-106",
-        "FR-107",
         "FR-108",
         "FR-54",
         "FR-60",
@@ -117,15 +99,9 @@
         "FR-99"
       ],
       "fr_without_test": [
-        "FR-01",
-        "FR-02",
-        "FR-03",
         "FR-04",
         "FR-05",
         "FR-06",
-        "FR-105",
-        "FR-106",
-        "FR-107",
         "FR-108",
         "FR-60",
         "FR-61",
@@ -149,19 +125,29 @@
     "requirements": {
       "FR-01": {
         "fr_id": "FR-01",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/services/telegram_adapter.py",
+          "03-development/src/app/services/telegram_verifier.py"
+        ],
+        "test_files": [
+          "tests/test_fr01.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-02": {
         "fr_id": "FR-02",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/services/line_adapter.py",
+          "03-development/src/app/services/line_verifier.py"
+        ],
+        "test_files": [
+          "tests/test_fr02.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
@@ -170,7 +156,9 @@
         "status": "pending",
         "srs_section": "SAD.md",
         "code_files": [],
-        "test_files": [],
+        "test_files": [
+          "tests/test_fr03.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
@@ -309,9 +297,11 @@
       },
       "FR-104": {
         "fr_id": "FR-104",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
+        "code_files": [
+          "03-development/src/app/admin/portal.py"
+        ],
         "test_files": [
           "tests/test_fr104.py"
         ],
@@ -320,28 +310,40 @@
       },
       "FR-105": {
         "fr_id": "FR-105",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/admin/odd_sql.py"
+        ],
+        "test_files": [
+          "tests/test_fr105.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-106": {
         "fr_id": "FR-106",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/tests/load/__init__.py"
+        ],
+        "test_files": [
+          "tests/test_fr106.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-107": {
         "fr_id": "FR-107",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/tests/pyramid.py"
+        ],
+        "test_files": [
+          "tests/test_fr107.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
