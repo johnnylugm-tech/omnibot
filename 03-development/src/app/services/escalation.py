@@ -179,7 +179,7 @@ class EscalationManager:
         escalation_id = f"esc-{uuid.uuid4().hex[:8]}"
         sla_minutes = self.SLA_BY_PRIORITY.get(priority, self.SLA_BY_PRIORITY[0])
         now = self._utcnow()
-        self.rows[escalation_id] = self._make_row(
+        row = self._make_row(
             escalation_id=escalation_id,
             conversation_id=conversation_id,
             priority=priority,
@@ -189,6 +189,7 @@ class EscalationManager:
             now=now,
             sla_minutes=sla_minutes,
         )
+        self.rows[escalation_id] = row
         # [FR-56] Real-time WebSocket push to the agent workbench.
         # Skipped when no pusher is injected so FR-54 / FR-55 callers
         # (which use the zero-arg constructor) keep working unchanged.
@@ -196,17 +197,27 @@ class EscalationManager:
             self.pusher.push(
                 channel="/ws/agent",
                 event="escalation.new",
-                payload={
-                    "escalation_id": escalation_id,
-                    "conversation_id": conversation_id,
-                    "priority": priority,
-                    "reason": reason,
-                    "platform": platform,
-                    "queued_at": now,
-                    "preview": preview or {},
-                },
+                payload=self._ws_payload(row),
             )
         return escalation_id
+
+    @staticmethod
+    def _ws_payload(row: dict[str, Any]) -> dict[str, Any]:
+        """[FR-56] Build the escalation.new payload from the row.
+
+        Single source of truth for the SRS FR-56 field set so the
+        push contract stays in lockstep with the row schema produced
+        by ``_make_row``.
+        """
+        return {
+            "escalation_id": row["escalation_id"],
+            "conversation_id": row["conversation_id"],
+            "priority": row["priority"],
+            "reason": row["reason"],
+            "platform": row["platform"],
+            "queued_at": row["queued_at"],
+            "preview": row["preview"],
+        }
 
     def _ensure_row(self, escalation_id: str) -> dict[str, Any]:
         """Return the row for ``escalation_id``, upserting a stub if missing.
