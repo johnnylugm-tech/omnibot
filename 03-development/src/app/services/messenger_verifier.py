@@ -50,12 +50,7 @@ class MessengerWebhookVerifier:
             - TEST_SPEC.md FR-03:103-106 — verify contract + HMAC-SHA256 hex
             - SRS.md FR-03:13 — signature format ``sha256=<hex>``
         """
-        prefix = "sha256="
-        expected = (
-            received_signature[len(prefix):]
-            if received_signature.startswith(prefix)
-            else received_signature
-        )
+        expected = received_signature.removeprefix("sha256=")
         computed = hmac.new(
             self._app_secret.encode("utf-8"),
             raw_body,

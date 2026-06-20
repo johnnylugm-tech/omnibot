@@ -78,25 +78,25 @@ class MessengerWebhookAdapter:
             - TEST_SPEC.md FR-03:115-125 — parse_entries mapping spec
             - SRS.md FR-03:15 — Messenger entry → UnifiedMessage mapping
         """
-        results: list[UnifiedMessage] = []
+        messages: list[UnifiedMessage] = []
         for entry in entries:
             timestamp_ms = entry.get("time", 0)
             received_at = datetime.fromtimestamp(
-                timestamp_ms / 1000.0, tz=timezone.utc
+                timestamp_ms / 1000, tz=timezone.utc
             )
-            for msg in entry.get("messaging", []):
-                sender_id = msg["sender"]["id"]
-                content = msg.get("message", {}).get("text", "")
-                results.append(
+            for messaging_event in entry.get("messaging", []):
+                sender_id = messaging_event["sender"]["id"]
+                content = messaging_event.get("message", {}).get("text", "")
+                messages.append(
                     UnifiedMessage(
                         platform=Platform.MESSENGER,
                         platform_user_id=sender_id,
                         unified_user_id=None,
                         message_type=MessageType.TEXT,
                         content=content,
-                        raw_payload=msg,
+                        raw_payload=messaging_event,
                         received_at=received_at,
                         reply_token=None,
                     )
                 )
-        return results
+        return messages
