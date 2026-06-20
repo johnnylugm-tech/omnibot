@@ -252,18 +252,43 @@ class LLMJudge:
         primary: JudgeResult | None,
         secondary: JudgeResult | None,
     ) -> JudgeResult:
-        """Aggregate two per-judge results into a final JudgeResult.
+        """[FR-66] Aggregate two per-judge results into a final JudgeResult.
 
-        Aggregation rules (SRS FR-65 + FR-66 + FR-67):
+        FR-66 — Politeness aggregation (max):
+            When BOTH judges succeed, the aggregated ``politeness`` MUST
+            equal ``max(primary.politeness, secondary.politeness)`` — the
+            MORE generous of the two scores (SRS FR-66: "寬鬆評分，情感
+            支持寧可寬容"; we take the kinder judge so a single stricter
+            judge cannot drag a kind response down).
+
+        FR-67 — Accuracy aggregation (min, companion rule):
+            The aggregated ``accuracy`` is ``min(primary.accuracy,
+            secondary.accuracy)`` (SRS FR-67: "保守評分，幻覺不可接受";
+            FR-67 scope, not pinned here).
+
+        Aggregation cases:
             - Both None (both judges failed) → zero default JudgeResult
               (defensive; the contract is "non-None return value").
             - Exactly one survivor → return the survivor's raw scores
               verbatim. This is the NP-07 / NP-15 partial-result
-              contract.
-            - Both survivors → politeness = max (FR-66, "寬鬆評分，情感
-              支持寧可寬容"), accuracy = min (FR-67, "保守評分，幻覺
-              不可接受"). FR-65 only mandates the aggregated shape is
-              a valid JudgeResult; the max/min rules are FR-66/FR-67.
+              contract; with a single survivor, max/min collapse to the
+              survivor's own score (so FR-66's rule is trivially
+              satisfied).
+            - Both survivors → politeness = max (FR-66), accuracy = min
+              (FR-67). FR-65 only mandates the aggregated shape is a
+              valid JudgeResult; the max/min rules are FR-66/FR-67.
+
+        Citations:
+            - SRS.md FR-66 — "Politeness 聚合：max(primary_score,
+              secondary_score)（寬鬆評分，情感支持寧可寬容）" (line 154).
+            - SRS.md FR-66 — acceptance "politeness = max(two scores)"
+              (line 154).
+            - SRS.md FR-66 — "情感支持寧可寬容" rationale (line 154).
+            - SRS.md FR-67 — "Accuracy 聚合：min(primary_score,
+              secondary_score)（保守評分，幻覺不可接受）" (line 155).
+            - TEST_SPEC.md FR-66 — "Politeness 聚合 max(primary, secondary)".
+            - SAD.md — module→FR mapping "app.services.llm_judge →
+              FR-65" (line 813); FR-66/67 ride on the same evaluate().
         """
         if primary is None and secondary is None:
             return JudgeResult(politeness=0, accuracy=0, judge_name="degraded")
