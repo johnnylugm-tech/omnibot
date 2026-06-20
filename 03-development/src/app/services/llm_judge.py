@@ -319,3 +319,73 @@ class LLMJudge:
             accuracy=min(primary.accuracy, secondary.accuracy),
             judge_name="ensemble",
         )
+
+
+# ---------------------------------------------------------------------------
+# aggregate_csat — FR-68 canonical formula.
+#
+# Lives at module scope (not on LLMJudge) because the SRS FR-68 spec names
+# the function explicitly as ``aggregate_csat`` and TEST_SPEC.md performs
+# an exact-match lookup on that name. A bound method would force callers
+# to instantiate the ensemble first, which is not the contract the spec
+# pins — a downstream evaluator should be able to call the formula with
+# four numbers and get one number back, with no judge plumbing.
+# ---------------------------------------------------------------------------
+def aggregate_csat(
+    speed: float,
+    personalization: float,
+    politeness: float,
+    accuracy: float,
+) -> float:
+    """[FR-68] Compute the canonical CSAT score from the four 1-5 components.
+
+    Implements the SRS FR-68 weighting verbatim:
+
+        CSAT = 0.4 * speed
+             + 0.2 * personalization
+             + 0.2 * politeness
+             + 0.2 * accuracy
+
+    The 0.4 weight on speed reflects the dominant business value of
+    response latency; the three 0.2 weights share the remainder across
+    the qualitative axes (SRS FR-68: "CSAT = 0.4×速度 + 0.2×擬人化 +
+    0.2×禮貌度 + 0.2×準確度"). Weights sum to 1.0, so for inputs on the
+    canonical [1, 5] scale the result naturally lies in [1.0, 5.0] and
+    therefore satisfies the SRS FR-68 acceptance "score 正規化至 0-5
+    範圍" without explicit clamping.
+
+    The function is a pure formula — no I/O, no state, no LLM access —
+    so the test contract (which forbids any mocking) is satisfied by
+    construction.
+
+    Args:
+        speed: Speed component (1-5 scale; 0.4 weight).
+        personalization: Personalization / 擬人化 component (1-5 scale;
+            0.2 weight).
+        politeness: Politeness / 禮貌度 component (1-5 scale; 0.2
+            weight).
+        accuracy: Accuracy / 準確度 component (1-5 scale; 0.2 weight).
+
+    Returns:
+        The weighted CSAT score. For canonical [1, 5] inputs the result
+        is in [1.0, 5.0], which satisfies the [0, 5] contract range
+        mandated by SRS FR-68.
+
+    Citations:
+        - SRS.md FR-68 — "CSAT = 0.4×速度 + 0.2×擬人化 + 0.2×禮貌度 +
+          0.2×準確度；aggregate_csat 以正規化公式計算；目標 CSAT 4.8
+          （2025Q4 基準 3.2，+50%）" (line 156).
+        - SRS.md FR-68 — acceptance "CSAT 公式計算正確；score 正規化至
+          0-5 範圍" (line 156).
+        - TEST_SPEC.md FR-68 — canonical formula spec.
+        - SAD.md — "app.services.llm_judge — CSAT = 0.4×speed +
+          0.2×anthro + 0.2×politeness + 0.2×accuracy → FR-68" (line 270).
+        - SAD.md — module→FR mapping "app.services.llm_judge → FR-68"
+          (line 813).
+    """
+    return (
+        0.4 * float(speed)
+        + 0.2 * float(personalization)
+        + 0.2 * float(politeness)
+        + 0.2 * float(accuracy)
+    )
