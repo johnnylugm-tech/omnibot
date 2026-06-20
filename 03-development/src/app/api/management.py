@@ -22,12 +22,26 @@ import time
 from app.admin.rbac import RBACEnforcer
 from app.core.api_response import PaginatedResponse
 
+# HTTP status codes used across management endpoints.
+_HTTP_OK: int = 200
+_HTTP_FORBIDDEN: int = 403
+
 # Process start time for uptime_seconds computation (monotonic, int seconds).
 _START_TIME: float = time.monotonic()
 
 # RBAC resource:action contract for management knowledge endpoints.
 _KNOWLEDGE_RESOURCE: str = "knowledge"
 _KNOWLEDGE_READ: str = "read"
+
+
+def _authorized(role: str, resource: str, action: str) -> bool:
+    """Return True when ``role`` holds the ``(resource, action)`` grant.
+
+    Thin wrapper over ``RBACEnforcer.check`` that expresses the positive
+    case directly, so callers avoid the mental-inversion pattern
+    ``if check(...) != 200: return 403``.
+    """
+    return RBACEnforcer.check(role, resource, action) == _HTTP_OK
 
 
 def check_health() -> dict:
@@ -43,12 +57,12 @@ def check_health() -> dict:
         and redis are "ok", "degraded" otherwise.
     """
     uptime_seconds: int = int(time.monotonic() - _START_TIME)
-    pg: str = "ok"
-    rd: str = "ok"
+    postgres_status: str = "ok"
+    redis_status: str = "ok"
     return {
-        "status": "ok" if pg == "ok" and rd == "ok" else "degraded",
-        "postgres": pg,
-        "redis": rd,
+        "status": "ok" if postgres_status == "ok" and redis_status == "ok" else "degraded",
+        "postgres": postgres_status,
+        "redis": redis_status,
         "uptime_seconds": uptime_seconds,
     }
 
@@ -68,8 +82,8 @@ def list_knowledge(role: str, page: int, limit: int) -> PaginatedResponse | int:
     Returns:
         PaginatedResponse when authorised, or HTTP 403 int when denied.
     """
-    if RBACEnforcer.check(role, _KNOWLEDGE_RESOURCE, _KNOWLEDGE_READ) != 200:
-        return 403
+    if not _authorized(role, _KNOWLEDGE_RESOURCE, _KNOWLEDGE_READ):
+        return _HTTP_FORBIDDEN
     return PaginatedResponse(total=0, page=page, limit=limit)
 
 
@@ -79,44 +93,44 @@ def list_knowledge(role: str, page: int, limit: int) -> PaginatedResponse | int:
 
 def create_knowledge(role: str, payload: dict) -> int:
     """[FR-85] POST /api/v1/knowledge — stub (deferred)."""
-    if RBACEnforcer.check(role, _KNOWLEDGE_RESOURCE, "write") != 200:
-        return 403
-    return 200
+    if not _authorized(role, _KNOWLEDGE_RESOURCE, "write"):
+        return _HTTP_FORBIDDEN
+    return _HTTP_OK
 
 
 def update_knowledge(role: str, id_: str, payload: dict) -> int:
     """[FR-85] PUT /api/v1/knowledge/{id} — stub (deferred)."""
-    if RBACEnforcer.check(role, _KNOWLEDGE_RESOURCE, "write") != 200:
-        return 403
-    return 200
+    if not _authorized(role, _KNOWLEDGE_RESOURCE, "write"):
+        return _HTTP_FORBIDDEN
+    return _HTTP_OK
 
 
 def delete_knowledge(role: str, id_: str) -> int:
     """[FR-85] DELETE /api/v1/knowledge/{id} — stub (deferred)."""
-    if RBACEnforcer.check(role, _KNOWLEDGE_RESOURCE, "delete") != 200:
-        return 403
-    return 200
+    if not _authorized(role, _KNOWLEDGE_RESOURCE, "delete"):
+        return _HTTP_FORBIDDEN
+    return _HTTP_OK
 
 
 def bulk_create_knowledge(role: str, payload: dict) -> int:
     """[FR-85] POST /api/v1/knowledge/bulk — stub (deferred)."""
-    if RBACEnforcer.check(role, _KNOWLEDGE_RESOURCE, "write") != 200:
-        return 403
-    return 200
+    if not _authorized(role, _KNOWLEDGE_RESOURCE, "write"):
+        return _HTTP_FORBIDDEN
+    return _HTTP_OK
 
 
 def list_conversations(role: str, page: int, limit: int) -> int:
     """[FR-85] GET /api/v1/conversations — stub (deferred)."""
-    if RBACEnforcer.check(role, "escalate", "read") != 200:
-        return 403
-    return 200
+    if not _authorized(role, "escalate", "read"):
+        return _HTTP_FORBIDDEN
+    return _HTTP_OK
 
 
 def create_experiment(role: str, payload: dict) -> int:
     """[FR-85] POST /api/v1/experiments — stub (deferred)."""
-    if RBACEnforcer.check(role, "experiment", "write") != 200:
-        return 403
-    return 200
+    if not _authorized(role, "experiment", "write"):
+        return _HTTP_FORBIDDEN
+    return _HTTP_OK
 
 
 __all__ = [
