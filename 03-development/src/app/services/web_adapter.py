@@ -13,7 +13,6 @@ Citations:
 
 from __future__ import annotations
 
-import base64
 import hashlib
 import hmac
 import json
@@ -22,20 +21,8 @@ import time
 from datetime import UTC, datetime
 
 from app.core.unified_message import MessageType, Platform, UnifiedMessage
+from app.services._jwt_utils import _b64url_decode, _b64url_encode
 from app.services.web_verifier import WebJwtVerifier
-
-
-def _b64url_encode(data: bytes) -> str:
-    """Encode bytes to a base64url string without padding."""
-    return base64.urlsafe_b64encode(data).rstrip(b"=").decode("ascii")
-
-
-def _b64url_decode(data: str) -> bytes:
-    """Decode a base64url string (no padding) to bytes."""
-    rem = len(data) % 4
-    if rem:
-        data += "=" * (4 - rem)
-    return base64.urlsafe_b64decode(data)
 
 
 class WebAuthError(Exception):

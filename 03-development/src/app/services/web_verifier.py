@@ -12,19 +12,12 @@ Citations:
 
 from __future__ import annotations
 
-import base64
 import hashlib
 import hmac
 import json
 import time
 
-
-def _b64url_decode(data: str) -> bytes:
-    """Decode a base64url string (no padding) to bytes."""
-    rem = len(data) % 4
-    if rem:
-        data += "=" * (4 - rem)
-    return base64.urlsafe_b64decode(data)
+from app.services._jwt_utils import _b64url_decode
 
 
 class WebJwtVerifier:
