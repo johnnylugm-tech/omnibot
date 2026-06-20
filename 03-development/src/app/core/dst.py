@@ -190,7 +190,7 @@ HISTORY_BUDGET: int = MAX_TOKENS - SYSTEM_RESERVED - KNOWLEDGE_MAX  # 5632
 # SRS FR-38: "Token 計算使用 tiktoken cl100k_base (適用 gpt-4o)".
 # ``cl100k_base`` is the GPT-4 / GPT-4o tokenizer; using it for BOTH
 # the gpt-4o primary path and the gemini fallback path is the
-# "保守估算，不因 tokenizer 差異導致 context overflow" guarantee —
+# "保守估算, 不因 tokenizer 差異導致 context overflow" guarantee —
 # cl100k_base counts are >= what the gemini tokenizer would count
 # for the same text, so reusing it under-fallback never overflows.
 # ---------------------------------------------------------------------------

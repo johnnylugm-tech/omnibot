@@ -1,7 +1,7 @@
-"""[FR-54, FR-55] EscalationManager — create/assign/resolve lifecycle + SLA.
+"""[FR-54, FR-55, FR-56] EscalationManager — lifecycle + SLA + WS push.
 
-Spec source: 02-architecture/TEST_SPEC.md (FR-54, FR-55)
-SRS source : SRS.md FR-54 / FR-55 (Module 10: Human Escalation)
+Spec source: 02-architecture/TEST_SPEC.md (FR-54, FR-55, FR-56)
+SRS source : SRS.md FR-54 / FR-55 / FR-56 (Module 10: Human Escalation)
 
 FR-54 — EscalationManager：create/assign/resolve 完整生命週期
     EscalationManager：
@@ -18,16 +18,29 @@ FR-55 — SLA 定義：normal(priority=0) 30 分鐘；high(priority=1) 15 分鐘
     sla_deadline = queued_at + SLA 分鐘；
     breach = resolved_at IS NULL AND sla_deadline < NOW()
 
+FR-56 — WebSocket 轉接推送：建立轉接後透過 /ws/agent 推送
+    escalation.new 事件（payload: escalation_id, conversation_id,
+    priority, reason, platform, queued_at,
+    preview{user_message, emotion}）。 ``create()`` 插入新列後立即
+    呼叫 injected ``pusher.push("/ws/agent", "escalation.new", payload)``
+    一次。 pusher 預設為 ``None``（既有 FR-54 / FR-55 零引數建構不變），
+    測試可注入 stub pusher 以避免真實 WebSocket I/O。
+
 Public surface pinned by this module:
 
     - ``EscalationManager()`` — constructs an in-memory escalation
       queue keyed by escalation_id. Storage backing is a public
       ``rows`` dict mapping escalation_id → row dict (per TEST_SPEC
       read-back contract: ``manager.rows.get(id)`` / ``manager.get(id)``).
+    - ``EscalationManager(pusher=...)`` — optional injectable WebSocket
+      pusher (FR-56). ``pusher.push(channel, event, payload)`` is
+      invoked once per ``create()`` so the agent workbench receives
+      ``escalation.new`` on ``/ws/agent`` in real time.
     - ``EscalationManager.create(conversation_id, priority, ...)`` —
       inserts a new escalation_queue row carrying
       ``conversation_id`` / ``reason`` / ``priority`` / ``sla_deadline``
-      (per SRS FR-54 row layout) and returns the newly generated
+      (per SRS FR-54 row layout), fires the FR-56 ``escalation.new``
+      WebSocket push, and returns the newly generated
       ``escalation_id`` as a non-empty string. Priority participates
       in ``sla_deadline`` derivation via FR-55 ``SLA_BY_PRIORITY``.
     - ``EscalationManager.assign(escalation_id, agent_id)`` — sets
@@ -63,6 +76,12 @@ Citations:
       IS NULL AND sla_deadline < NOW()".
     - SRS.md FR-55 implementation_functions (line 880-883):
       ["EscalationManager.SLA_BY_PRIORITY", "get_sla_breaches()"].
+    - SRS.md FR-56 (line 124): WebSocket 推送合約
+      "建立轉接後透過 /ws/agent 推送 escalation.new 事件
+      （payload: escalation_id, conversation_id, priority, reason,
+      platform, queued_at, preview{user_message, emotion}）".
+    - SRS.md FR-56 (line 888-890): implementation_functions =
+      ["EscalationManager + WebSocket push"].
     - SAD.md (line 257-260): "EscalationManager.create(), .assign(),
       .resolve() → FR-54".
 """
@@ -94,10 +113,14 @@ class EscalationManager:
         2: 5,   # urgent (emotion_trigger)
     }
 
-    def __init__(self) -> None:
+    def __init__(self, pusher: Any | None = None) -> None:
         # Public read-back attribute — TEST_SPEC reads via
         # ``manager.rows.get(escalation_id)``.
         self.rows: dict[str, dict[str, Any]] = {}
+        # [FR-56] Injectable WebSocket pusher. ``None`` default keeps
+        # the FR-54 / FR-55 zero-arg construction contract intact;
+        # production wires a real pusher that fans out to ``/ws/agent``.
+        self.pusher = pusher
 
     def _utcnow(self) -> datetime:
         """Current UTC time — single source for timestamps."""
@@ -146,9 +169,16 @@ class EscalationManager:
 
         Returns the newly generated ``escalation_id`` as a non-empty
         string (format: ``"esc-" + uuid4 hex[:8]``).
+
+        [FR-56] After the row is inserted, fires a single
+        ``escalation.new`` event on the ``/ws/agent`` channel via the
+        injected ``self.pusher`` (if any). The payload carries the full
+        SRS FR-56 field set so the agent workbench can render the new
+        case without a follow-up query.
         """
         escalation_id = f"esc-{uuid.uuid4().hex[:8]}"
         sla_minutes = self.SLA_BY_PRIORITY.get(priority, self.SLA_BY_PRIORITY[0])
+        now = self._utcnow()
         self.rows[escalation_id] = self._make_row(
             escalation_id=escalation_id,
             conversation_id=conversation_id,
@@ -156,9 +186,26 @@ class EscalationManager:
             reason=reason,
             platform=platform,
             preview=preview,
-            now=self._utcnow(),
+            now=now,
             sla_minutes=sla_minutes,
         )
+        # [FR-56] Real-time WebSocket push to the agent workbench.
+        # Skipped when no pusher is injected so FR-54 / FR-55 callers
+        # (which use the zero-arg constructor) keep working unchanged.
+        if self.pusher is not None:
+            self.pusher.push(
+                channel="/ws/agent",
+                event="escalation.new",
+                payload={
+                    "escalation_id": escalation_id,
+                    "conversation_id": conversation_id,
+                    "priority": priority,
+                    "reason": reason,
+                    "platform": platform,
+                    "queued_at": now,
+                    "preview": preview or {},
+                },
+            )
         return escalation_id
 
     def _ensure_row(self, escalation_id: str) -> dict[str, Any]:
