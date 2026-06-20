@@ -12,12 +12,12 @@ Citations:
 
 from __future__ import annotations
 
-import base64
 import json
 import secrets
 import time
 
 from app.admin.rbac import RBACEnforcer
+from app.services._jwt_utils import _b64url_encode
 
 
 def _make_jwt(username: str) -> str:
@@ -28,28 +28,16 @@ def _make_jwt(username: str) -> str:
     required by FR-86 so the token only needs to be a non-empty
     distinct string per the GREEN contract.
     """
-    header_b64 = (
-        base64.urlsafe_b64encode(
-            json.dumps({"alg": "HS256", "typ": "JWT"}).encode()
-        )
-        .rstrip(b"=")
-        .decode()
+    header_b64 = _b64url_encode(
+        json.dumps({"alg": "HS256", "typ": "JWT"}).encode()
     )
     payload = {
         "sub": username,
         "iat": int(time.time()),
         "exp": int(time.time()) + 3600,
     }
-    payload_b64 = (
-        base64.urlsafe_b64encode(json.dumps(payload).encode())
-        .rstrip(b"=")
-        .decode()
-    )
-    sig_b64 = (
-        base64.urlsafe_b64encode(secrets.token_bytes(32))
-        .rstrip(b"=")
-        .decode()
-    )
+    payload_b64 = _b64url_encode(json.dumps(payload).encode())
+    sig_b64 = _b64url_encode(secrets.token_bytes(32))
     return f"{header_b64}.{payload_b64}.{sig_b64}"
 
 
