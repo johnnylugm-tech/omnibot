@@ -1,0 +1,279 @@
+{
+  "generated_at": "2026-06-20T08:27:48.212904+00:00",
+  "git_sha": "6c05b4d70926eb2c507080ccbdf5682b3d860df8",
+  "language": "python",
+  "high_risk": [
+    {
+      "path": "app.core.dst",
+      "name": "app.core",
+      "reasons": [
+        "declared"
+      ]
+    },
+    {
+      "path": "app.core.knowledge",
+      "name": "app.core",
+      "reasons": [
+        "declared"
+      ]
+    },
+    {
+      "path": "app.core.paladin",
+      "name": "app.core",
+      "reasons": [
+        "declared"
+      ]
+    },
+    {
+      "path": "app.infra.circuit_breaker",
+      "name": "app.infra",
+      "reasons": [
+        "declared"
+      ]
+    },
+    {
+      "path": "app.infra.jobs",
+      "name": "app.infra",
+      "reasons": [
+        "declared"
+      ]
+    },
+    {
+      "path": "app.infra.rate_limit",
+      "name": "app.infra",
+      "reasons": [
+        "declared"
+      ]
+    },
+    {
+      "path": "app.infra.redis_streams",
+      "name": "app.infra",
+      "reasons": [
+        "declared"
+      ]
+    },
+    {
+      "path": "app.services.aee",
+      "name": "app.services",
+      "reasons": [
+        "declared"
+      ]
+    },
+    {
+      "path": "app.services.llm_judge",
+      "name": "app.services",
+      "reasons": [
+        "declared"
+      ]
+    },
+    {
+      "path": "app.services.media",
+      "name": "app.services",
+      "reasons": [
+        "declared"
+      ]
+    }
+  ],
+  "standard": [
+    {
+      "path": "03-development/src/app/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/app/admin/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/app/api/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/app/api/agent_card.py",
+      "name": "agent_card"
+    },
+    {
+      "path": "03-development/src/app/api/websocket.py",
+      "name": "websocket"
+    },
+    {
+      "path": "03-development/src/app/core/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/app/core/api_response.py",
+      "name": "api_response"
+    },
+    {
+      "path": "03-development/src/app/core/chunking.py",
+      "name": "chunking"
+    },
+    {
+      "path": "03-development/src/app/core/dst.py",
+      "name": "dst"
+    },
+    {
+      "path": "03-development/src/app/core/emotion.py",
+      "name": "emotion"
+    },
+    {
+      "path": "03-development/src/app/core/knowledge.py",
+      "name": "knowledge"
+    },
+    {
+      "path": "03-development/src/app/core/paladin.py",
+      "name": "paladin"
+    },
+    {
+      "path": "03-development/src/app/core/pii.py",
+      "name": "pii"
+    },
+    {
+      "path": "03-development/src/app/core/pipeline.py",
+      "name": "pipeline"
+    },
+    {
+      "path": "03-development/src/app/core/response_generator.py",
+      "name": "response_generator"
+    },
+    {
+      "path": "03-development/src/app/core/retraction.py",
+      "name": "retraction"
+    },
+    {
+      "path": "03-development/src/app/core/unified_message.py",
+      "name": "unified_message"
+    },
+    {
+      "path": "03-development/src/app/core/unified_response.py",
+      "name": "unified_response"
+    },
+    {
+      "path": "03-development/src/app/infra/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/app/infra/alert_rules.py",
+      "name": "alert_rules"
+    },
+    {
+      "path": "03-development/src/app/infra/backup_strategy.py",
+      "name": "backup_strategy"
+    },
+    {
+      "path": "03-development/src/app/infra/compose.py",
+      "name": "compose"
+    },
+    {
+      "path": "03-development/src/app/infra/data_retention.py",
+      "name": "data_retention"
+    },
+    {
+      "path": "03-development/src/app/infra/grafana_dashboard.py",
+      "name": "grafana_dashboard"
+    },
+    {
+      "path": "03-development/src/app/infra/k8s_deployment.py",
+      "name": "k8s_deployment"
+    },
+    {
+      "path": "03-development/src/app/infra/migrations.py",
+      "name": "migrations"
+    },
+    {
+      "path": "03-development/src/app/infra/observability.py",
+      "name": "observability"
+    },
+    {
+      "path": "03-development/src/app/infra/prometheus_metrics.py",
+      "name": "prometheus_metrics"
+    },
+    {
+      "path": "03-development/src/app/infra/rate_limit.py",
+      "name": "rate_limit"
+    },
+    {
+      "path": "03-development/src/app/infra/redis_security.py",
+      "name": "redis_security"
+    },
+    {
+      "path": "03-development/src/app/infra/redis_streams.py",
+      "name": "redis_streams"
+    },
+    {
+      "path": "03-development/src/app/infra/retry.py",
+      "name": "retry"
+    },
+    {
+      "path": "03-development/src/app/infra/schema.py",
+      "name": "schema"
+    },
+    {
+      "path": "03-development/src/app/infra/tde.py",
+      "name": "tde"
+    },
+    {
+      "path": "03-development/src/app/infra/tracing.py",
+      "name": "tracing"
+    },
+    {
+      "path": "03-development/src/app/infra/vector_index.py",
+      "name": "vector_index"
+    },
+    {
+      "path": "03-development/src/app/middleware/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/app/middleware/chain.py",
+      "name": "chain"
+    },
+    {
+      "path": "03-development/src/app/middleware/ip_whitelist.py",
+      "name": "ip_whitelist"
+    },
+    {
+      "path": "03-development/src/app/services/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/app/services/ab_testing.py",
+      "name": "ab_testing"
+    },
+    {
+      "path": "03-development/src/app/services/aee/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/app/services/aee/a2a_adapter.py",
+      "name": "a2a_adapter"
+    },
+    {
+      "path": "03-development/src/app/services/aee/adapter.py",
+      "name": "adapter"
+    },
+    {
+      "path": "03-development/src/app/services/aee/cli_adapter.py",
+      "name": "cli_adapter"
+    },
+    {
+      "path": "03-development/src/app/services/aee/mcp_adapter.py",
+      "name": "mcp_adapter"
+    },
+    {
+      "path": "03-development/src/app/services/aee/tool_executor.py",
+      "name": "tool_executor"
+    },
+    {
+      "path": "03-development/src/app/services/escalation.py",
+      "name": "escalation"
+    }
+  ],
+  "mutation_survivors": [],
+  "integration_coverage": null,
+  "sources": {
+    "declared": 10,
+    "crg_hubs": 0,
+    "mutation_survivors": 0,
+    "integration_coverage": false
+  }
+}

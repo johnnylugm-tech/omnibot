@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "41f8deb62ad661bf0261945e8834f019419d11e8",
-  "content_sha256": "a89a46a423e96a6c4e1bdecba90cb30c652d0fedab69e05bd0d7a74d70c91e37",
+  "git_sha": "2355cc776bea6a450b7f5856ba8fbde57dd327f3",
+  "content_sha256": "08be1032d528e8abde867ffe28c9319b099655d5bccfab0f5a4df16dd4c1b9b3",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,21 +11,16 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "80.6%",
-      "test_coverage": "84.3%",
-      "verification_rate": "80.6%",
-      "total_links": 307,
+      "code_coverage": "85.2%",
+      "test_coverage": "88.9%",
+      "verification_rate": "85.2%",
+      "total_links": 317,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
           "FR-108",
           "FR-54",
-          "FR-60",
-          "FR-61",
-          "FR-62",
           "FR-63",
-          "FR-75",
-          "FR-76",
           "FR-77",
           "FR-78",
           "FR-79",
@@ -42,11 +37,6 @@
         ],
         "fr_without_test": [
           "FR-108",
-          "FR-61",
-          "FR-62",
-          "FR-75",
-          "FR-76",
-          "FR-77",
           "FR-78",
           "FR-79",
           "FR-84",
@@ -66,12 +56,7 @@
       "fr_without_code": [
         "FR-108",
         "FR-54",
-        "FR-60",
-        "FR-61",
-        "FR-62",
         "FR-63",
-        "FR-75",
-        "FR-76",
         "FR-77",
         "FR-78",
         "FR-79",
@@ -88,11 +73,6 @@
       ],
       "fr_without_test": [
         "FR-108",
-        "FR-61",
-        "FR-62",
-        "FR-75",
-        "FR-76",
-        "FR-77",
         "FR-78",
         "FR-79",
         "FR-84",
@@ -1008,9 +988,11 @@
       },
       "FR-60": {
         "fr_id": "FR-60",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
+        "code_files": [
+          "03-development/src/app/admin/rbac.py"
+        ],
         "test_files": [
           "tests/test_fr60.py"
         ],
@@ -1019,19 +1001,27 @@
       },
       "FR-61": {
         "fr_id": "FR-61",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/admin/rbac.py"
+        ],
+        "test_files": [
+          "tests/test_fr61.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-62": {
         "fr_id": "FR-62",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/admin/rbac.py"
+        ],
+        "test_files": [
+          "tests/test_fr62.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
@@ -1191,19 +1181,27 @@
       },
       "FR-75": {
         "fr_id": "FR-75",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/infra/jobs.py"
+        ],
+        "test_files": [
+          "tests/test_fr75.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-76": {
         "fr_id": "FR-76",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/infra/jobs.py"
+        ],
+        "test_files": [
+          "tests/test_fr76.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
@@ -1212,7 +1210,9 @@
         "status": "pending",
         "srs_section": "SAD.md",
         "code_files": [],
-        "test_files": [],
+        "test_files": [
+          "tests/test_fr77.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },

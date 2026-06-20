@@ -523,6 +523,230 @@
         "rounds_used": 1,
         "open_critical": 0,
         "open_high": 0
+      },
+      "FR-54": {
+        "score": 52.91,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-55": {
+        "score": 19.8,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-56": {
+        "score": 43.974,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-57": {
+        "score": 19.8,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-58": {
+        "score": 46.52,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-59": {
+        "score": 34.76,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-63": {
+        "score": 47.34,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-65": {
+        "score": 39.61,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-66": {
+        "score": 34.82,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-67": {
+        "score": 34.48,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-68": {
+        "score": 23.124,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-69": {
+        "score": 29.55,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-98": {
+        "score": 37.64,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-100": {
+        "score": 32.54,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-101": {
+        "score": 0.0,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-102": {
+        "score": 19.14,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-103": {
+        "score": 16.93,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-104": {
+        "score": 37.8,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-105": {
+        "score": 11.55,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-106": {
+        "score": 0.0,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-107": {
+        "score": 0.0,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-01": {
+        "score": 11.55,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-02": {
+        "score": 33.15,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-03": {
+        "score": 0.0,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-04": {
+        "score": 0.0,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-05": {
+        "score": 0.0,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-06": {
+        "score": 38.08,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-60": {
+        "score": 34.0,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-61": {
+        "score": 30.43,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-62": {
+        "score": 19.108,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-75": {
+        "score": 34.0,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-76": {
+        "score": 32.742,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
       }
     },
     "gate2": null,

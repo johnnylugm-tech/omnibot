@@ -1,19 +1,367 @@
 {
   "summary": {
-    "total": 203,
+    "total": 355,
     "missing": 0,
     "incomplete": 0,
-    "orphaned": 203,
+    "orphaned": 355,
     "critical": 0,
     "major": 0,
-    "minor": 203
+    "minor": 355
   },
   "gaps": [
     {
       "type": "ORPHANED",
       "severity": "minor",
+      "reason": "'ODDSqlRunner' has no corresponding specification in SPEC.md",
+      "action": "Add spec for ODDSqlRunner or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'execute_all' has no corresponding specification in SPEC.md",
+      "action": "Add spec for execute_all or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'build_fcr_query' has no corresponding specification in SPEC.md",
+      "action": "Add spec for build_fcr_query or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'calculate_cost' has no corresponding specification in SPEC.md",
+      "action": "Add spec for calculate_cost or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'get_judge_sampling_config' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get_judge_sampling_config or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'AgentPortal' has no corresponding specification in SPEC.md",
+      "action": "Add spec for AgentPortal or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'on_escalation_new' has no corresponding specification in SPEC.md",
+      "action": "Add spec for on_escalation_new or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'get_inbox' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get_inbox or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'get_priority_color' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get_priority_color or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'get_takeover_context' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get_takeover_context or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'enforce' has no corresponding specification in SPEC.md",
+      "action": "Add spec for enforce or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'RBACEnforcer' has no corresponding specification in SPEC.md",
+      "action": "Add spec for RBACEnforcer or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'check' has no corresponding specification in SPEC.md",
+      "action": "Add spec for check or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'require' has no corresponding specification in SPEC.md",
+      "action": "Add spec for require or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'decorator' has no corresponding specification in SPEC.md",
+      "action": "Add spec for decorator or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'wrapper' has no corresponding specification in SPEC.md",
+      "action": "Add spec for wrapper or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'KnowledgeEntry' has no corresponding specification in SPEC.md",
+      "action": "Add spec for KnowledgeEntry or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'ImportResult' has no corresponding specification in SPEC.md",
+      "action": "Add spec for ImportResult or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'EmbeddingStatusProvider' has no corresponding specification in SPEC.md",
+      "action": "Add spec for EmbeddingStatusProvider or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'force_sync_status' has no corresponding specification in SPEC.md",
+      "action": "Add spec for force_sync_status or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'get_status' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get_status or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'add' has no corresponding specification in SPEC.md",
+      "action": "Add spec for add or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'get' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'delete' has no corresponding specification in SPEC.md",
+      "action": "Add spec for delete or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'commit' has no corresponding specification in SPEC.md",
+      "action": "Add spec for commit or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'rollback' has no corresponding specification in SPEC.md",
+      "action": "Add spec for rollback or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'KnowledgeAdminAPI' has no corresponding specification in SPEC.md",
+      "action": "Add spec for KnowledgeAdminAPI or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'create_entry' has no corresponding specification in SPEC.md",
+      "action": "Add spec for create_entry or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'read_entry' has no corresponding specification in SPEC.md",
+      "action": "Add spec for read_entry or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'update_entry' has no corresponding specification in SPEC.md",
+      "action": "Add spec for update_entry or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'delete_entry' has no corresponding specification in SPEC.md",
+      "action": "Add spec for delete_entry or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'crud' has no corresponding specification in SPEC.md",
+      "action": "Add spec for crud or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'import_csv' has no corresponding specification in SPEC.md",
+      "action": "Add spec for import_csv or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'get_embedding_status' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get_embedding_status or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'ILIKEMatch' has no corresponding specification in SPEC.md",
+      "action": "Add spec for ILIKEMatch or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'CosineHit' has no corresponding specification in SPEC.md",
+      "action": "Add spec for CosineHit or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'RRFEntry' has no corresponding specification in SPEC.md",
+      "action": "Add spec for RRFEntry or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'DebuggerResult' has no corresponding specification in SPEC.md",
+      "action": "Add spec for DebuggerResult or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'ilike_search' has no corresponding specification in SPEC.md",
+      "action": "Add spec for ilike_search or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'cosine_search' has no corresponding specification in SPEC.md",
+      "action": "Add spec for cosine_search or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'rrf_fuse' has no corresponding specification in SPEC.md",
+      "action": "Add spec for rrf_fuse or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'RAGDebugger' has no corresponding specification in SPEC.md",
+      "action": "Add spec for RAGDebugger or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'debug' has no corresponding specification in SPEC.md",
+      "action": "Add spec for debug or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'set_slider_threshold' has no corresponding specification in SPEC.md",
+      "action": "Add spec for set_slider_threshold or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'get_saved_threshold' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get_saved_threshold or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'OperationsDashboard' has no corresponding specification in SPEC.md",
+      "action": "Add spec for OperationsDashboard or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'get_fcr_alert_color' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get_fcr_alert_color or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'get_dashboard_data' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get_dashboard_data or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
       "reason": "'agent_card' has no corresponding specification in SPEC.md",
       "action": "Add spec for agent_card or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'A2AAuthError' has no corresponding specification in SPEC.md",
+      "action": "Add spec for A2AAuthError or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'A2AAdapter' has no corresponding specification in SPEC.md",
+      "action": "Add spec for A2AAdapter or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'verify_m2m_token' has no corresponding specification in SPEC.md",
+      "action": "Add spec for verify_m2m_token or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'handle_jsonrpc_call' has no corresponding specification in SPEC.md",
+      "action": "Add spec for handle_jsonrpc_call or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'verify_jwt' has no corresponding specification in SPEC.md",
+      "action": "Add spec for verify_jwt or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'handle_agent_takeover' has no corresponding specification in SPEC.md",
+      "action": "Add spec for handle_agent_takeover or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'build_ping_message' has no corresponding specification in SPEC.md",
+      "action": "Add spec for build_ping_message or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'pong_timeout_action' has no corresponding specification in SPEC.md",
+      "action": "Add spec for pong_timeout_action or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'handle_subscribe' has no corresponding specification in SPEC.md",
+      "action": "Add spec for handle_subscribe or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'handle_message_reply' has no corresponding specification in SPEC.md",
+      "action": "Add spec for handle_message_reply or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
@@ -522,6 +870,30 @@
     {
       "type": "ORPHANED",
       "severity": "minor",
+      "reason": "'get' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'set' has no corresponding specification in SPEC.md",
+      "action": "Add spec for set or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'as_dict' has no corresponding specification in SPEC.md",
+      "action": "Add spec for as_dict or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'get_config_store' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get_config_store or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
       "reason": "'MessagesRetentionPolicy' has no corresponding specification in SPEC.md",
       "action": "Add spec for MessagesRetentionPolicy or remove if unnecessary"
     },
@@ -576,6 +948,12 @@
     {
       "type": "ORPHANED",
       "severity": "minor",
+      "reason": "'get_session' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get_session or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
       "reason": "'GrafanaPanel' has no corresponding specification in SPEC.md",
       "action": "Add spec for GrafanaPanel or remove if unnecessary"
     },
@@ -584,6 +962,36 @@
       "severity": "minor",
       "reason": "'get_panel' has no corresponding specification in SPEC.md",
       "action": "Add spec for get_panel or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'QueueConfig' has no corresponding specification in SPEC.md",
+      "action": "Add spec for QueueConfig or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'get_queue_config' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get_queue_config or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'EmbeddingJob' has no corresponding specification in SPEC.md",
+      "action": "Add spec for EmbeddingJob or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'EmbeddingJobResult' has no corresponding specification in SPEC.md",
+      "action": "Add spec for EmbeddingJobResult or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'process_embedding_job' has no corresponding specification in SPEC.md",
+      "action": "Add spec for process_embedding_job or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
@@ -768,6 +1176,12 @@
     {
       "type": "ORPHANED",
       "severity": "minor",
+      "reason": "'ResponseError' has no corresponding specification in SPEC.md",
+      "action": "Add spec for ResponseError or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
       "reason": "'RateLimitResult' has no corresponding specification in SPEC.md",
       "action": "Add spec for RateLimitResult or remove if unnecessary"
     },
@@ -908,6 +1322,60 @@
       "severity": "minor",
       "reason": "'execute_with_retry' has no corresponding specification in SPEC.md",
       "action": "Add spec for execute_with_retry or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'KnowledgeRollbackResult' has no corresponding specification in SPEC.md",
+      "action": "Add spec for KnowledgeRollbackResult or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'SchemaMigrationResult' has no corresponding specification in SPEC.md",
+      "action": "Add spec for SchemaMigrationResult or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'ExperimentAbortResult' has no corresponding specification in SPEC.md",
+      "action": "Add spec for ExperimentAbortResult or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'ModelSwitchResult' has no corresponding specification in SPEC.md",
+      "action": "Add spec for ModelSwitchResult or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'RollbackStrategy' has no corresponding specification in SPEC.md",
+      "action": "Add spec for RollbackStrategy or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'rollback_knowledge_update' has no corresponding specification in SPEC.md",
+      "action": "Add spec for rollback_knowledge_update or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'downgrade_schema' has no corresponding specification in SPEC.md",
+      "action": "Add spec for downgrade_schema or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'abort_experiment' has no corresponding specification in SPEC.md",
+      "action": "Add spec for abort_experiment or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'ab_test_progress' has no corresponding specification in SPEC.md",
+      "action": "Add spec for ab_test_progress or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
@@ -1104,6 +1572,12 @@
     {
       "type": "ORPHANED",
       "severity": "minor",
+      "reason": "'auto_promote' has no corresponding specification in SPEC.md",
+      "action": "Add spec for auto_promote or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
       "reason": "'A2AAdapter' has no corresponding specification in SPEC.md",
       "action": "Add spec for A2AAdapter or remove if unnecessary"
     },
@@ -1220,6 +1694,444 @@
       "severity": "minor",
       "reason": "'execute' has no corresponding specification in SPEC.md",
       "action": "Add spec for execute or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'EscalationManager' has no corresponding specification in SPEC.md",
+      "action": "Add spec for EscalationManager or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'create' has no corresponding specification in SPEC.md",
+      "action": "Add spec for create or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'assign' has no corresponding specification in SPEC.md",
+      "action": "Add spec for assign or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'resolve' has no corresponding specification in SPEC.md",
+      "action": "Add spec for resolve or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'get' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'get_sla_breaches' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get_sla_breaches or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'LineWebhookAdapter' has no corresponding specification in SPEC.md",
+      "action": "Add spec for LineWebhookAdapter or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'process_events' has no corresponding specification in SPEC.md",
+      "action": "Add spec for process_events or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'LineWebhookVerifier' has no corresponding specification in SPEC.md",
+      "action": "Add spec for LineWebhookVerifier or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'verify' has no corresponding specification in SPEC.md",
+      "action": "Add spec for verify or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'JudgeResult' has no corresponding specification in SPEC.md",
+      "action": "Add spec for JudgeResult or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'LLMJudge' has no corresponding specification in SPEC.md",
+      "action": "Add spec for LLMJudge or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'evaluate' has no corresponding specification in SPEC.md",
+      "action": "Add spec for evaluate or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'CalibrationResult' has no corresponding specification in SPEC.md",
+      "action": "Add spec for CalibrationResult or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'CalibrationPipeline' has no corresponding specification in SPEC.md",
+      "action": "Add spec for CalibrationPipeline or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'run_cycle' has no corresponding specification in SPEC.md",
+      "action": "Add spec for run_cycle or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'aggregate_csat' has no corresponding specification in SPEC.md",
+      "action": "Add spec for aggregate_csat or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'ClamAVScanResult' has no corresponding specification in SPEC.md",
+      "action": "Add spec for ClamAVScanResult or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'ClamAVScanner' has no corresponding specification in SPEC.md",
+      "action": "Add spec for ClamAVScanner or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'force_status' has no corresponding specification in SPEC.md",
+      "action": "Add spec for force_status or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'is_available' has no corresponding specification in SPEC.md",
+      "action": "Add spec for is_available or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'scan' has no corresponding specification in SPEC.md",
+      "action": "Add spec for scan or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'scan_p95' has no corresponding specification in SPEC.md",
+      "action": "Add spec for scan_p95 or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'MediaResult' has no corresponding specification in SPEC.md",
+      "action": "Add spec for MediaResult or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'MediaPipeline' has no corresponding specification in SPEC.md",
+      "action": "Add spec for MediaPipeline or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'process_image' has no corresponding specification in SPEC.md",
+      "action": "Add spec for process_image or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'process_sticker' has no corresponding specification in SPEC.md",
+      "action": "Add spec for process_sticker or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'process_location' has no corresponding specification in SPEC.md",
+      "action": "Add spec for process_location or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'is_file_allowed' has no corresponding specification in SPEC.md",
+      "action": "Add spec for is_file_allowed or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'process_file' has no corresponding specification in SPEC.md",
+      "action": "Add spec for process_file or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'MessengerWebhookAdapter' has no corresponding specification in SPEC.md",
+      "action": "Add spec for MessengerWebhookAdapter or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'handle_challenge' has no corresponding specification in SPEC.md",
+      "action": "Add spec for handle_challenge or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'parse_entries' has no corresponding specification in SPEC.md",
+      "action": "Add spec for parse_entries or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'MessengerWebhookVerifier' has no corresponding specification in SPEC.md",
+      "action": "Add spec for MessengerWebhookVerifier or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'verify' has no corresponding specification in SPEC.md",
+      "action": "Add spec for verify or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'TelegramWebhookAdapter' has no corresponding specification in SPEC.md",
+      "action": "Add spec for TelegramWebhookAdapter or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'process_update' has no corresponding specification in SPEC.md",
+      "action": "Add spec for process_update or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'TelegramWebhookVerifier' has no corresponding specification in SPEC.md",
+      "action": "Add spec for TelegramWebhookVerifier or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'verify' has no corresponding specification in SPEC.md",
+      "action": "Add spec for verify or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'WebAuthError' has no corresponding specification in SPEC.md",
+      "action": "Add spec for WebAuthError or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'WebAdapter' has no corresponding specification in SPEC.md",
+      "action": "Add spec for WebAdapter or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'create_guest_session' has no corresponding specification in SPEC.md",
+      "action": "Add spec for create_guest_session or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'process_message' has no corresponding specification in SPEC.md",
+      "action": "Add spec for process_message or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'WebJwtVerifier' has no corresponding specification in SPEC.md",
+      "action": "Add spec for WebJwtVerifier or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'verify' has no corresponding specification in SPEC.md",
+      "action": "Add spec for verify or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'WhatsAppWebhookAdapter' has no corresponding specification in SPEC.md",
+      "action": "Add spec for WhatsAppWebhookAdapter or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'handle_challenge' has no corresponding specification in SPEC.md",
+      "action": "Add spec for handle_challenge or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'parse_messages' has no corresponding specification in SPEC.md",
+      "action": "Add spec for parse_messages or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'WhatsAppWebhookVerifier' has no corresponding specification in SPEC.md",
+      "action": "Add spec for WhatsAppWebhookVerifier or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'verify' has no corresponding specification in SPEC.md",
+      "action": "Add spec for verify or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'K6Config' has no corresponding specification in SPEC.md",
+      "action": "Add spec for K6Config or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'K6Runner' has no corresponding specification in SPEC.md",
+      "action": "Add spec for K6Runner or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'run_smoke' has no corresponding specification in SPEC.md",
+      "action": "Add spec for run_smoke or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'run_load' has no corresponding specification in SPEC.md",
+      "action": "Add spec for run_load or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'run_stress' has no corresponding specification in SPEC.md",
+      "action": "Add spec for run_stress or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'run_spike' has no corresponding specification in SPEC.md",
+      "action": "Add spec for run_spike or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'to_dict' has no corresponding specification in SPEC.md",
+      "action": "Add spec for to_dict or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'TestPyramidValidator' has no corresponding specification in SPEC.md",
+      "action": "Add spec for TestPyramidValidator or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'measure_coverage' has no corresponding specification in SPEC.md",
+      "action": "Add spec for measure_coverage or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'E2EPipelineRunner' has no corresponding specification in SPEC.md",
+      "action": "Add spec for E2EPipelineRunner or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'run_faq_exact_match_scenario' has no corresponding specification in SPEC.md",
+      "action": "Add spec for run_faq_exact_match_scenario or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'run_semantic_search_scenario' has no corresponding specification in SPEC.md",
+      "action": "Add spec for run_semantic_search_scenario or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'run_multi_turn_dst_scenario' has no corresponding specification in SPEC.md",
+      "action": "Add spec for run_multi_turn_dst_scenario or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'run_emotion_escalation_scenario' has no corresponding specification in SPEC.md",
+      "action": "Add spec for run_emotion_escalation_scenario or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'run_prompt_injection_scenario' has no corresponding specification in SPEC.md",
+      "action": "Add spec for run_prompt_injection_scenario or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'run_fallback_escalation_scenario' has no corresponding specification in SPEC.md",
+      "action": "Add spec for run_fallback_escalation_scenario or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'extract_section' has no corresponding specification in SPEC.md",
+      "action": "Add spec for extract_section or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'get_logical_lines' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get_logical_lines or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'DocstringRemover' has no corresponding specification in SPEC.md",
+      "action": "Add spec for DocstringRemover or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'visit_Module' has no corresponding specification in SPEC.md",
+      "action": "Add spec for visit_Module or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'visit_ClassDef' has no corresponding specification in SPEC.md",
+      "action": "Add spec for visit_ClassDef or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'visit_FunctionDef' has no corresponding specification in SPEC.md",
+      "action": "Add spec for visit_FunctionDef or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'visit_AsyncFunctionDef' has no corresponding specification in SPEC.md",
+      "action": "Add spec for visit_AsyncFunctionDef or remove if unnecessary"
     },
     {
       "type": "ORPHANED",

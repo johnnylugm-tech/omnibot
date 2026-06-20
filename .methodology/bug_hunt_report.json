@@ -1,0 +1,665 @@
+{
+  "generated_at": "2026-06-20",
+  "targets": [
+    "dst",
+    "knowledge",
+    "paladin",
+    "rate_limit",
+    "redis_streams",
+    "a2a_adapter",
+    "adapter",
+    "tool_executor",
+    "cli_adapter",
+    "mcp_adapter"
+  ],
+  "lenses": [
+    "correctness",
+    "concurrency",
+    "resilience"
+  ],
+  "raw_count": 64,
+  "confirmed_count": 0,
+  "refuted_count": 64,
+  "findings": [
+    {
+      "id": "undefined#1",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#2",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#3",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#4",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#5",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#6",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#7",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#8",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#9",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#10",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#11",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#12",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#13",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#14",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#15",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#16",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#17",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#18",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#19",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#20",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#21",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#22",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#23",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#24",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#25",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#26",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#27",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#28",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#29",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#30",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#31",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#32",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#33",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#34",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#35",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#36",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#37",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#38",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#39",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#40",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#41",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#42",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#43",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#44",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#45",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#46",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#47",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#48",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#49",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#50",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#51",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#52",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#53",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#54",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#55",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#56",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#57",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#58",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#59",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#60",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#61",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#62",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#63",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    },
+    {
+      "id": "undefined#64",
+      "code_snippet": "",
+      "confirmed": false,
+      "verify_evidence": "",
+      "resolution": {
+        "status": "refuted",
+        "refute_evidence": "no verifier confirmed"
+      }
+    }
+  ]
+}

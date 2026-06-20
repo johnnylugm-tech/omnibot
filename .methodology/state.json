@@ -5,7 +5,7 @@
   "last_fr": null,
   "last_update": "2026-06-17T22:09:31.163856+00:00",
   "phase_truth_passed": false,
-  "last_milestone_command": "advance-phase --completed-phase 2",
+  "last_milestone_command": "push-milestone --type p3-mid",
   "last_push_checkpoint": "2026-06-17T22:55:10.771107+00:00",
   "last_push_checkpoint_phase": 2,
   "phase_completed": {
@@ -13,5 +13,6 @@
       "sha": "a2f1c0e658a9b221c7c87e2841cd768ef5715bf4",
       "timestamp": "2026-06-17T22:55:10.790724+00:00"
     }
-  }
+  },
+  "last_milestone_at": "2026-06-20T02:05:23.513724+00:00"
 }
