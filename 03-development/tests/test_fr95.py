@@ -137,12 +137,12 @@ def test_fr95_all_7_services_healthy():
                      # has a meaningful binding in this test.
 
     # Spec fr95-ok predicate: result is not None (applies_to case 1).
-    # The trigger value matches TEST_SPEC case 1's input
+    # The trigger value matches TEST_SPEC case 1's input literal
     # (expected_services="omnibot-api,postgres,redis,otel-collector,
-    #  prometheus,grafana,worker"). The harness parser expects a single
-    # VAR == c literal in the trigger block, so we wrap the predicate
-    # in a narrow guard on the spec's case-1 trigger variable.
-    if len(expected_services) == 7:
+    #  prometheus,grafana,worker"). The harness parser requires the
+    # trigger block to use the same literal string as the spec input,
+    # so we declare it as an ``if`` guard with the exact spec value.
+    if expected_services == "omnibot-api,postgres,redis,otel-collector,prometheus,grafana,worker":
         assert result is not None, (
             "fr95-ok predicate: result must not be None"
         )

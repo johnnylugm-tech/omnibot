@@ -302,14 +302,14 @@ def test_fr71_knowledge_hit_total_has_tier_label():
     # label keys.
     kh_metric = PROMETHEUS_METRICS[metric]
 
-    # Spec fr71-ok predicate applies_to case 1; case 2 has no predicate,
-    # so we still need a result-not-None sanity check.
+    # Spec fr71-ok predicate applies_to case 1 only; this is case 2 so the
+    # predicate assertion is not redeclared here (would trigger_mismatch on
+    # the harness check since case 1 inputs don't include `metric`).
     result = kh_metric
-    if metric == "knowledge_hit_total":
-        # Local sanity: the metric object must exist.
-        assert result is not None, (
-            "FR-71 PROMETHEUS_METRICS['knowledge_hit_total'] must be defined"
-        )
+    # Local sanity: the metric object must exist (top-level check).
+    assert kh_metric is not None, (
+        "FR-71 PROMETHEUS_METRICS['knowledge_hit_total'] must be defined"
+    )
 
     # The declared label set MUST include "tier".
     label_names = set(getattr(kh_metric, "_labelnames", ()))
@@ -346,11 +346,13 @@ def test_fr71_llm_tokens_total_has_model_label():
     # "model" MUST be present.
     llm_metric = PROMETHEUS_METRICS[metric]
 
+    # Spec fr71-ok predicate applies_to case 1 only; this is case 3 so the
+    # predicate assertion is not redeclared here.
     result = llm_metric
-    if metric == "llm_tokens_total":
-        assert result is not None, (
-            "FR-71 PROMETHEUS_METRICS['llm_tokens_total'] must be defined"
-        )
+    # Local sanity: the metric object must exist (top-level check).
+    assert llm_metric is not None, (
+        "FR-71 PROMETHEUS_METRICS['llm_tokens_total'] must be defined"
+    )
 
     label_names = set(getattr(llm_metric, "_labelnames", ()))
     assert expected_label in label_names, (

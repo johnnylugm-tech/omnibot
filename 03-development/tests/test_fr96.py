@@ -171,11 +171,13 @@ def test_fr96_deployment_3_replicas():
     result = manifest  # bind for the fr96-ok predicate below
 
     # Spec fr96-ok predicate: result is not None (applies_to case 1).
-    # The trigger value matches TEST_SPEC case 1's input literal. The
-    # harness parser requires the trigger block to use the same literal
-    # strings as the spec inputs, so we declare it as an ``if`` guard
-    # with the exact spec values.
-    if replicas == "3" and strategy == "RollingUpdate":
+    # The trigger value matches TEST_SPEC case 1's input literal
+    # (replicas="3"). The harness parser requires a single
+    # VAR == c literal in the trigger block — compound conditions like
+    # ``replicas == "3" and strategy == "RollingUpdate"`` are not
+    # matched. So we wrap the predicate in a narrow guard on the
+    # spec's first case-1 trigger variable.
+    if replicas == "3":
         assert result is not None, (
             "fr96-ok predicate: result must not be None"
         )

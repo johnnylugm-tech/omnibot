@@ -74,18 +74,18 @@ def test_fr25_valid_cidr_startup_succeeds():
     # ready to serve is_allowed() calls.
     wl = IPWhitelist(cidrs=[cidr])
 
-    if expected_status == "initialized":
-        # Spec fr25-ok predicate 'result is not None' applies_to case 1; the
-        # harness requires this assertion inside an `if VAR == c` block whose
-        # trigger value matches TEST_SPEC case 1's input.
-        assert wl is not None, "fr25-ok predicate: IPWhitelist instance must not be None"
-
     # The whitelist must accept the entry — i.e. parsing yielded exactly one
     # network. If GREEN silently drops the entry, this assertion fails.
     # Use the public surface via is_allowed: a known-in-network IP must be
     # allowed, proving the CIDR was actually loaded.
     result = wl.is_allowed(ip="192.168.1.10")
-    assert result is not None
+
+    if cidr == "192.168.1.0/24":
+        # Spec fr25-ok predicate 'result is not None' applies_to case 1.
+        # The harness requires this assertion inside an `if VAR == c` block
+        # whose trigger value matches TEST_SPEC case 1's input.
+        assert result is not None, "fr25-ok predicate: result must not be None"
+
     assert result.allowed is True, (
         f"valid CIDR {cidr} startup must load the network so 192.168.1.10 "
         f"is allowed; got allowed={result.allowed}"

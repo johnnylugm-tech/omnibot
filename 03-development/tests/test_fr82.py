@@ -178,7 +178,9 @@ def test_fr82_all_20_tables_created():
     # value is expected_count="20". The predicate free variable is
     # `result` — alias `tables` → `result`.
     result = tables
-    if expected_count == 20:
+    # Spec stores expected_count as the string "20"; the harness compares
+    # literal values exactly, so this trigger must use the same form.
+    if expected_count == "20":
         assert result is not None, "fr82-ok predicate: result must not be None"
 
     # FR-82 requires EXACTLY 20 tables.
@@ -231,11 +233,12 @@ def test_fr82_fk_constraints_valid():
 
     if expected_valid == "true":
         # Spec fr82-ok predicate applies_to case 1 only; case 2 has no
-        # predicate. We still need a local result-not-None sanity check.
+        # predicate so we don't redeclare it here. The sanity check below
+        # is a top-level assertion (NOT inside an if-block harness form).
         result = fk_map
-        assert result is not None, (
-            "FR-82 FK_CONSTRAINTS mapping must not be None"
-        )
+    assert result is not None, (
+        "FR-82 FK_CONSTRAINTS mapping must not be None"
+    )
 
     # The FK map must be non-empty — FR-82 acceptance criterion explicitly
     # says "所有 FK 約束正確". An empty dict would mean no referential
@@ -341,11 +344,11 @@ def test_fr82_hnsw_index_exists():
 
     if index_type == "hnsw":
         # Spec fr82-ok predicate applies_to case 1 only; case 3 has no
-        # predicate. Local sanity check.
+        # predicate so we don't redeclare it here.
         result = hnsw
-        assert result is not None, (
-            "FR-82 HNSW_INDEX_SPEC must not be None"
-        )
+    assert result is not None, (
+        "FR-82 HNSW_INDEX_SPEC must not be None"
+    )
 
     # The HNSW index spec must reference the knowledge_chunks table.
     hnsw_table = getattr(hnsw, "table", None)
@@ -424,11 +427,11 @@ def test_fr82_gin_tsvector_index_exists():
 
     if index_type == "gin":
         # Spec fr82-ok predicate applies_to case 1 only; case 4 has no
-        # predicate. Local sanity check.
+        # predicate so we don't redeclare it here.
         result = gin
-        assert result is not None, (
-            "FR-82 GIN_TSVECTOR_INDEX_SPEC must not be None"
-        )
+    assert result is not None, (
+        "FR-82 GIN_TSVECTOR_INDEX_SPEC must not be None"
+    )
 
     # The GIN index must be on knowledge_chunks.
     gin_table = getattr(gin, "table", None)

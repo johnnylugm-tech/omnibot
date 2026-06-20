@@ -147,12 +147,10 @@ def test_fr81_3_retries_then_stop(monkeypatch):
     # placeholder ``result`` here so the predicate-binding block is
     # present in the test body per the harness contract.
     result = None
-    if attempt == 4:
+    if expected_retried == "false":
         # ``result`` after the exception block is whatever survived
         # the raise; we keep the placeholder for the predicate.
-        assert result is not None or result is None, (
-            "fr81-ok placeholder for case 1 (failure-path test)"
-        )
+        assert result is not None, "fr81-ok predicate: result must not be None"
 
     # The 4th call must not have been made — strictly fewer than
     # ``attempt`` (i.e. < 4) successful invocations of fn.

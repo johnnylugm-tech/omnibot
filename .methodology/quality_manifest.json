@@ -488,6 +488,41 @@
         "rounds_used": 1,
         "open_critical": 0,
         "open_high": 0
+      },
+      "FR-50": {
+        "score": 53.8,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-51": {
+        "score": 52.27,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-52": {
+        "score": 47.95,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-53": {
+        "score": 44.31,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-97": {
+        "score": 51.59,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
       }
     },
     "gate2": null,

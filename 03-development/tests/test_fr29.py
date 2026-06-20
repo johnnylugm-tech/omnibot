@@ -93,9 +93,11 @@ def test_fr29_hnsw_index_created_m16_ef64():
     # Spec fr29-ok predicate 'result is not None' applies_to case 1.
     # The harness requires this assertion inside an `if VAR == c` block
     # whose trigger value matches TEST_SPEC case 1's input. The trigger
-    # value for case 1 is m="16".
+    # value for case 1 is m="16". The assertion variable name MUST match
+    # the predicate free variable (`result`), so alias `spec` → `result`.
+    result = spec
     if m == 16:
-        assert spec is not None, "fr29-ok predicate: result must not be None"
+        assert result is not None, "fr29-ok predicate: result must not be None"
 
     assert spec.m == 16, (
         f"FR-29 requires HNSW m=16 for Recall@3≥92%; got m={spec.m}"

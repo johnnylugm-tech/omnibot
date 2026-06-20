@@ -162,7 +162,10 @@ def test_fr70_log_json_parseable():
     # value is log_entry='{"level":"INFO","message":"test"}'. The predicate
     # free variable is `result` — alias the parsed JSON object to it.
     result = json.loads(emitted) if isinstance(emitted, str) else emitted
-    if log_entry == '{"level":"INFO","message":"test"}':
+    # Spec stores the case 1 input with JSON-style escaping
+    # (`{\"level\":\"INFO\",\"message\":\"test\"}`), so the trigger value
+    # the harness matches against must use the same escaping.
+    if log_entry == "{\"level\":\"INFO\",\"message\":\"test\"}":
         assert result is not None, "fr70-ok predicate: result must not be None"
 
     # The parsed object must expose all four FR-70 required fields.

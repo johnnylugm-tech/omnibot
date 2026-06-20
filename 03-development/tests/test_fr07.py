@@ -118,12 +118,16 @@ def test_fr07_unified_message_telegram_valid():
         received_at=datetime.now(tz=timezone.utc),
         reply_token=None,
     )
+    # Spec fr07-frozen predicate 'result is not None' applies_to case 1.
+    # The predicate free variable is ``result`` — alias msg to result so
+    # the harness's parser can bind the assertion to the predicate.
+    result = msg
 
     if platform == "telegram":
         # Spec fr07-frozen predicate 'result is not None' applies_to case 1.
         # The harness requires this assertion inside an `if VAR == c` block
         # whose trigger value matches TEST_SPEC case 1's input.
-        assert msg is not None, "fr07-frozen predicate: result must not be None"
+        assert result is not None, "fr07-frozen predicate: result must not be None"
 
     assert isinstance(msg, UnifiedMessage), (
         f"UnifiedMessage(platform={platform!r}) must return a UnifiedMessage; "

@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "c1717941998d4272d690912ff4fa4fb2306c9893",
-  "content_sha256": "2648c2cf31e41bfb34ac7f4c664ac39a867e0f0ce2e089c1122432caf20db68a",
+  "git_sha": "e6cc54d5033ee7d5a484ee28c268ea2f8d760d9b",
+  "content_sha256": "3bcf42540683e89438a3046fcbb7fb710cde97667fd9ee5facdc7b55ff9e3c58",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,10 +11,10 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "51.9%",
-      "test_coverage": "53.7%",
-      "verification_rate": "51.9%",
-      "total_links": 236,
+      "code_coverage": "55.6%",
+      "test_coverage": "57.4%",
+      "verification_rate": "55.6%",
+      "total_links": 245,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -33,10 +33,6 @@
           "FR-106",
           "FR-107",
           "FR-108",
-          "FR-50",
-          "FR-51",
-          "FR-52",
-          "FR-53",
           "FR-54",
           "FR-55",
           "FR-56",
@@ -87,9 +83,6 @@
           "FR-106",
           "FR-107",
           "FR-108",
-          "FR-51",
-          "FR-52",
-          "FR-53",
           "FR-54",
           "FR-55",
           "FR-56",
@@ -119,7 +112,6 @@
           "FR-92",
           "FR-93",
           "FR-94",
-          "FR-97",
           "FR-98",
           "FR-99"
         ]
@@ -143,10 +135,6 @@
         "FR-106",
         "FR-107",
         "FR-108",
-        "FR-50",
-        "FR-51",
-        "FR-52",
-        "FR-53",
         "FR-54",
         "FR-55",
         "FR-56",
@@ -197,9 +185,6 @@
         "FR-106",
         "FR-107",
         "FR-108",
-        "FR-51",
-        "FR-52",
-        "FR-53",
         "FR-54",
         "FR-55",
         "FR-56",
@@ -229,7 +214,6 @@
         "FR-92",
         "FR-93",
         "FR-94",
-        "FR-97",
         "FR-98",
         "FR-99"
       ]
@@ -945,9 +929,11 @@
       },
       "FR-50": {
         "fr_id": "FR-50",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
+        "code_files": [
+          "03-development/src/app/core/response_generator.py"
+        ],
         "test_files": [
           "tests/test_fr50.py"
         ],
@@ -956,28 +942,41 @@
       },
       "FR-51": {
         "fr_id": "FR-51",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/core/response_generator.py"
+        ],
+        "test_files": [
+          "tests/test_fr51.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-52": {
         "fr_id": "FR-52",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/core/response_generator.py",
+          "03-development/src/app/services/ab_testing.py"
+        ],
+        "test_files": [
+          "tests/test_fr52.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-53": {
         "fr_id": "FR-53",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/core/response_generator.py"
+        ],
+        "test_files": [
+          "tests/test_fr53.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
@@ -1427,7 +1426,9 @@
         "status": "pending",
         "srs_section": "SAD.md",
         "code_files": [],
-        "test_files": [],
+        "test_files": [
+          "tests/test_fr97.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },

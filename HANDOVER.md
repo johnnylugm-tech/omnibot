@@ -1,8 +1,8 @@
 # Harness Methodology — Session Handover
 
-**Checkpoint**: `P3-progress-20260619`  
-**Phase**: P3 — Implementation (in progress)  
-**Generated**: 2026-06-19T02:25:00Z
+**Checkpoint**: `P3-mid-20260620`  
+**Phase**: P3 — Implementation  
+**Generated**: 2026-06-20T02:05:03Z
 
 > ⚠️  **開始下一個工作階段前，請先執行 `/compact` 壓縮上下文**，再從「接下來的工作」繼續。
 
@@ -11,12 +11,12 @@
 ## ▶ 立即開始（兩步）
 
 ```bash
-# 1. Confirm working tree (skip clone if local repo intact)
-git log --oneline -3
-# Expected: e539e07 chore(structure): relocate app/... → a3bcbf2 chore(lint): ...
+# 1. Clone (if working directory cleared)
+git clone --recurse-submodules https://github.com/johnnylugm-tech/omnibot.git && cd omnibot
 
-# 2. Resume Phase 3 FR loop from FR-24
-python3 harness_cli.py resume-fr-phase --phase 3 --project .
+# 2. Read plan and continue Phase 3
+cat .methodology/phase3_plan.md
+# Follow the active plan and continue from where you left off
 ```
 
 ---
@@ -24,22 +24,17 @@ python3 harness_cli.py resume-fr-phase --phase 3 --project .
 ## 快速接手指令（詳細）
 
 ```bash
-# Confirm latest commits (last few should be FR-21..23 work + chore commits)
-git log --oneline -10
+# Clone (--recurse-submodules required for harness submodule)
+git clone --recurse-submodules https://github.com/johnnylugm-tech/omnibot.git /tmp/omnibot && cd /tmp/omnibot
+
+# Confirm latest commits
+git log --oneline -3
 
 # Confirm FSM state
 cat .methodology/state.json   # expected: phase=3 state=RUNNING
 
 # Read active plan
 cat .methodology/phase3_plan.md
-
-# Confirm sentinels
-ls .sessi-work/sentinels/
-# Expected: env_check.flag, g1_fr21.flag, g1_fr22.flag, g1_fr23.flag
-
-# Confirm tests pass
-PYTHONPATH=03-development/src:. python3 -m pytest 03-development/tests/ -q
-# Expected: 16 passed
 ```
 
 | 欄位 | 值 |
@@ -48,115 +43,116 @@ PYTHONPATH=03-development/src:. python3 -m pytest 03-development/tests/ -q
 | Branch | `main` |
 | State | `phase=3 state=RUNNING` |
 | Plan | `.methodology/phase3_plan.md` |
-| Last completed FR | FR-23 |
-| Next FR | FR-24 |
 
 ---
 
 ## 任務背景
 
-Phase 3 implementation in progress. 3 of 108 FRs have completed the per-FR template (TDD-RED → check-test-mirrors-spec → TDD-GREEN → TDD-IMPROVE → GATE1). All three have Gate 1 sentinels written and tests passing at 94.1% line coverage. Real code, no stubs, no fabrication.
-
-The project was previously reverted at commit `ca37d37` because the prior Phase 3 run was fabricated (assert True stubs, hand-written Gate 2 scores). This session is a fresh, genuine re-implementation following `harness/SKILL.md` + `phase3_plan.md`.
-
-## 交付物清單
-
-P3 (in progress):
-- `03-development/src/app/infra/rate_limit.py` (FR-21, FR-22 — 67 lines)
-- `03-development/src/app/middleware/ip_whitelist.py` (FR-23 — 53 lines)
-- `03-development/tests/test_fr21.py` (5 tests)
-- `03-development/tests/test_fr22.py` (6 tests)
-- `03-development/tests/test_fr23.py` (5 tests)
-- `03-development/tests/conftest.py`
-- `pyproject.toml` (minimal config for ruff/pyright/pytest/mypy)
-- `03-development/src/app/{api,core,services,infra,admin,}/__init__.py` (layer dirs scaffolded)
-
-P2 (✅ complete): SAD.md, ADR.md, TEST_SPEC.md, quality_manifest.json, SAB.json — all present and APPROVED.
+P3 Implementation in progress (≥50% milestone). 54/108 FRs done.
 
 ## 目前執行狀況
 
-3/108 FR(s) Gate 1 PASS:
-- FR-21 (Rate Limiter sliding window, app.infra.rate_limit) — 5/5 tests, 100% covered
-- FR-22 (Rate Limiter fail-open, app.infra.rate_limit) — 6/6 tests, integrated
-- FR-23 (IP Whitelist, app.middleware.ip_whitelist) — 5/5 tests, 90.6% covered
+54/108 FRs Gate 1 PASS [FR-21,FR-22,FR-23,FR-24,FR-25,…+57]. TDD cycles complete for passing FRs.
 
-**Total: 16 tests pass, 94.1% line coverage on `03-development/src/app/`**
+**A/B Session Results:**
+  - ? / implementor: **COMPLETED**
+  - FR-21 / developer: **complete**
+  - FR-22 / developer: **complete**
+  - FR-23 / developer: **complete**
+  - FR-24 / developer: **complete**
+  - FR-25 / developer: **complete**
+  - FR-29 / developer: **complete**
+  - FR-70 / developer: **complete**
+  - FR-71 / developer: **complete**
+  - FR-72 / developer: **complete**
+  - FR-82 / developer: **complete**
+  - FR-73 / developer: **complete**
+  - FR-74 / developer: **complete**
+  - FR-80 / developer: **complete**
+  - FR-81 / developer: **complete**
+  - FR-83 / developer: **complete**
+  - FR-89 / developer: **complete**
+  - FR-90 / developer: **complete**
+  - FR-91 / developer: **complete**
+  - FR-95 / developer: **complete**
+  - FR-96 / developer: **complete**
+  - FR-07 / developer: **complete**
+  - FR-08 / developer: **complete**
+  - FR-09 / developer: **complete**
+  - FR-10 / developer: **complete**
+  - FR-11 / developer: **complete**
+  - FR-12 / developer: **complete**
+  - FR-13 / developer: **complete**
+  - FR-14 / developer: **complete**
+  - FR-15 / developer: **complete**
+  - FR-16 / developer: **complete**
+  - FR-17 / developer: **complete**
+  - FR-18 / developer: **complete**
+  - FR-19 / developer: **complete**
+  - FR-20 / developer: **complete**
+  - FR-26 / developer: **complete**
+  - FR-27 / developer: **complete**
+  - FR-28 / developer: **complete**
+  - FR-30 / developer: **complete**
+  - FR-31 / developer: **complete**
+  - FR-32 / developer: **complete**
+  - FR-33 / developer: **complete**
+  - FR-34 / developer: **complete**
+  - FR-35 / developer: **complete**
+  - FR-36 / developer: **complete**
+  - FR-37 / developer: **complete**
+  - FR-38 / developer: **complete**
+  - FR-39 / developer: **complete**
+  - FR-40 / developer: **complete**
+  - FR-41 / developer: **complete**
+  - FR-42 / developer: **complete**
+  - FR-43 / developer: **complete**
+  - FR-44 / developer: **complete**
+  - FR-45 / developer: **complete**
+  - FR-46 / developer: **complete**
+  - FR-47 / developer: **complete**
+  - FR-48 / developer: **complete**
+  - FR-49 / developer: **complete**
+  - FR-50 / developer: **complete**
+  - FR-51 / developer: **complete**
+  - FR-52 / developer: **complete**
+  - FR-53 / developer: **complete**
+  - FR-97 / developer: **complete**
 
-**Recently Committed Files (this session):**
-- `03-development/src/app/infra/rate_limit.py`
-- `03-development/src/app/middleware/__init__.py`
-- `03-development/src/app/middleware/ip_whitelist.py`
-- `03-development/tests/test_fr21.py`
-- `03-development/tests/test_fr22.py`
-- `03-development/tests/test_fr23.py`
-- `03-development/tests/conftest.py`
-- `03-development/src/app/{api,core,services,infra,admin}/__init__.py`
-- `pyproject.toml`
-- `SRS.md` (symlink to `01-requirements/SRS.md`)
-- `.methodology/quality_manifest.json` (fr_ids populated)
-
-**Sentinels:**
-- `.sessi-work/sentinels/env_check.flag`
-- `.sessi-work/sentinels/g1_fr21.flag`
-- `.sessi-work/sentinels/g1_fr22.flag`
-- `.sessi-work/sentinels/g1_fr23.flag`
+**Recently Committed Files:**
+  - `03-development/src/app/infra/backup_strategy.py`
+  - `03-development/tests/test_fr97.py`
+  - `03-development/src/app/core/response_generator.py`
+  - `03-development/tests/test_fr53.py`
+  - `03-development/src/app/services/ab_testing.py`
+  - `03-development/tests/test_fr52.py`
+  - `03-development/tests/test_fr51.py`
+  - `.methodology/trace/attestation.json`
+  - `.methodology/trace/attestation.latest.json`
+  - `03-development/tests/test_fr50.py`
+  - `03-development/src/app/core/pipeline.py`
+  - `03-development/src/app/api/agent_card.py`
+  - `03-development/tests/test_fr49.py`
+  - `03-development/src/app/core/emotion.py`
+  - `03-development/tests/test_fr48.py`
 
 ## 接下來的工作
 
-1. Continue FR loop from FR-24 (next in dependency-respecting batch 1):
-   ```
-   FR-24: 攔截鏈順序 — TLS→IP→Signature→Parse→Rate→RBAC
-   FR-25: IP 白名單錯誤處理 — 超過 100 個 / CIDR 格式錯誤 → 400
-   FR-29: Hash 鏈結追蹤 (message_hash, parent_hash, root_hash)
-   FR-70: Prometheus 指標註冊 + 9 個 metrics
-   FR-71: OTel span + trace_id 注入 response header
-   FR-72: Alertmanager 警報規則
-   FR-82: PostgreSQL 連線池 + pgvector 擴展初始化
-   ```
-2. Apply per-FR template: TDD-RED → check-test-mirrors-spec → TDD-GREEN → TDD-IMPROVE → GATE1
-3. At FR 52 done: `push-milestone --type p3-mid --fr-done 52 --fr-total 108 --fr-ids <list>`
-4. At FR 108 done: `push-milestone --type p3-pre-gate2 --fr-ids <list>`
-5. Then Stage 6 (Gate 2 evaluation) → Stage 7 (advance-phase)
-
-## Per-FR command template
-
-```bash
-python3 harness_cli.py run-fr-step --phase 3 --fr-id FR-XX --step TDD-RED --project . --srs 01-requirements/SRS.md
-python3 harness_cli.py check-test-mirrors-spec --project . --fr-id FR-XX --test-file 03-development/tests/test_frXX.py
-python3 harness_cli.py run-fr-step --phase 3 --fr-id FR-XX --step TDD-GREEN --project . --srs 01-requirements/SRS.md
-python3 harness_cli.py run-fr-step --phase 3 --fr-id FR-XX --step TDD-IMPROVE --project .
-python3 harness_cli.py run-fr-step --phase 3 --fr-id FR-XX --step GATE1 --project .
-```
-
-**Note**: `--test-file` uses literal glob `03-development/tests/test_frXX.py` (single file path, NOT a glob). The harness dynamically resolves from there.
-
-## Test format requirements (CRITICAL)
-
-The harness's `check-test-mirrors-spec` only finds assertions **inside `if VAR == c:` blocks** with the variable matching TEST_SPEC's case input. Sub-assertion predicates like `frNN-ok: result is not None` require:
-
-1. Variable name MUST be **`result`** (singular, matching predicate free variable) — NOT `results` / `over` / `data` / etc.
-2. Assertion MUST be inside `if VAR == c:` where `c` matches the case's input value
-3. Multiple `assert result is not None` blocks across different cases cause `trigger_mismatch` violations — only declare it in the case the spec's `applies_to` field points to
-
-If `check-test-mirrors-spec` fails on a test file, restructure as above (the harness will report which predicate is missing or which trigger mismatched).
+1. Complete remaining 54 FR(s): FR-01, FR-02, FR-03, FR-04, FR-05, FR-06, FR-100, FR-101, FR-102, FR-103, FR-104, FR-105, FR-106, FR-107, FR-108, FR-54, FR-55, FR-56, FR-57, FR-58, FR-59, FR-60, FR-61, FR-62, FR-63, FR-64, FR-65, FR-66, FR-67, FR-68, FR-69, FR-75, FR-76, FR-77, FR-78, FR-79, FR-84, FR-85, FR-86, FR-87, FR-88, FR-92, FR-93, FR-94, FR-98, FR-99
+2. Ensure each FR has passing unit tests (TDD)
+3. When all FRs done → `push-milestone --type p3-pre-gate2`
 
 ## 注意事項
 
-- **Path convention**: All code goes under `03-development/src/app/<layer>/<module>.py` (NOT `app/` at root). All tests go under `03-development/tests/test_frNN.py`. The harness dynamically resolves from these canonical paths.
-- **PYTHONPATH**: For local pytest, set `PYTHONPATH=03-development/src:.` so `from app.infra.rate_limit import RateLimiter` resolves.
-- **Stop conditions**:
-  - Harness bug (unexpected error contradicting documented behavior) → halt, write to `.methodology/harness_bugs_found.md`, report upstream (HR-17)
-  - Project error (test format, code lint, coverage) → fix per framework policy
-  - Push failure, state corruption, sentinel missing → halt immediately
-- **Lint issues**: 16 × RUF002 (fullwidth semicolon in Chinese docstrings) remain. These are inherent to Chinese-language SRS.md comments. Add `# noqa: RUF002` per-line if they fail Gate 2's linting dim, OR switch those specific docstrings to ASCII punctuation.
-- **"WARNING — expected commit not found" on GATE1**: appears as a soft warning. Sentinel is still written. Investigate before `advance-phase` if advance fails.
+- 100% follow SKILL.md
+- Do NOT commit `.sessi-work/` or `.methodology/` runtime artifacts
+- Git failures are warnings — they never block the pipeline
 
 ## 附加資訊
 
-- **fr_count**: 3 of 108 (Gate 1 PASS)
-- **coverage**: 94.1% line coverage on `03-development/src/app/`
-- **sentinels written**: env_check, g1_fr21, g1_fr22, g1_fr23
-- **session commits**: 11 (10 harness FR commits + 1 chore lint)
+- **fr_done**: 54
+- **fr_total**: 108
+- **remaining_frs**: FR-01, FR-02, FR-03, FR-04, FR-05, FR-06, FR-100, FR-101, FR-102, FR-103, FR-104, FR-105, FR-106, FR-107, FR-108, FR-54, FR-55, FR-56, FR-57, FR-58, FR-59, FR-60, FR-61, FR-62, FR-63, FR-64, FR-65, FR-66, FR-67, FR-68, FR-69, FR-75, FR-76, FR-77, FR-78, FR-79, FR-84, FR-85, FR-86, FR-87, FR-88, FR-92, FR-93, FR-94, FR-98, FR-99
 
 ---
-*Updated by Phase 3 implementation session 1 (2026-06-19). Will be overwritten at P3-post-gate2 push.*
+*由 `HandoverGenerator` 自動生成。下次 push 時此檔案將被覆寫。*
