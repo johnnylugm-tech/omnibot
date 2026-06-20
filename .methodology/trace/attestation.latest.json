@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "c9f96f9370e2242941c5fd8188d790837570146e",
-  "content_sha256": "84e2bc542915ca074ee84eba28a6b85f2f441f2bd5eedd201e86d01a074fe91d",
+  "git_sha": "c1717941998d4272d690912ff4fa4fb2306c9893",
+  "content_sha256": "2648c2cf31e41bfb34ac7f4c664ac39a867e0f0ce2e089c1122432caf20db68a",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,10 +11,10 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "40.7%",
-      "test_coverage": "42.6%",
-      "verification_rate": "40.7%",
-      "total_links": 210,
+      "code_coverage": "51.9%",
+      "test_coverage": "53.7%",
+      "verification_rate": "51.9%",
+      "total_links": 236,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -33,18 +33,6 @@
           "FR-106",
           "FR-107",
           "FR-108",
-          "FR-38",
-          "FR-39",
-          "FR-40",
-          "FR-41",
-          "FR-42",
-          "FR-43",
-          "FR-44",
-          "FR-45",
-          "FR-46",
-          "FR-47",
-          "FR-48",
-          "FR-49",
           "FR-50",
           "FR-51",
           "FR-52",
@@ -99,18 +87,6 @@
           "FR-106",
           "FR-107",
           "FR-108",
-          "FR-39",
-          "FR-40",
-          "FR-41",
-          "FR-42",
-          "FR-43",
-          "FR-44",
-          "FR-45",
-          "FR-46",
-          "FR-47",
-          "FR-48",
-          "FR-49",
-          "FR-50",
           "FR-51",
           "FR-52",
           "FR-53",
@@ -167,18 +143,6 @@
         "FR-106",
         "FR-107",
         "FR-108",
-        "FR-38",
-        "FR-39",
-        "FR-40",
-        "FR-41",
-        "FR-42",
-        "FR-43",
-        "FR-44",
-        "FR-45",
-        "FR-46",
-        "FR-47",
-        "FR-48",
-        "FR-49",
         "FR-50",
         "FR-51",
         "FR-52",
@@ -233,18 +197,6 @@
         "FR-106",
         "FR-107",
         "FR-108",
-        "FR-39",
-        "FR-40",
-        "FR-41",
-        "FR-42",
-        "FR-43",
-        "FR-44",
-        "FR-45",
-        "FR-46",
-        "FR-47",
-        "FR-48",
-        "FR-49",
-        "FR-50",
         "FR-51",
         "FR-52",
         "FR-53",
@@ -835,9 +787,11 @@
       },
       "FR-38": {
         "fr_id": "FR-38",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
+        "code_files": [
+          "03-development/src/app/core/dst.py"
+        ],
         "test_files": [
           "tests/test_fr38.py"
         ],
@@ -846,100 +800,146 @@
       },
       "FR-39": {
         "fr_id": "FR-39",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/services/aee/__init__.py",
+          "03-development/src/app/services/aee/adapter.py",
+          "03-development/src/app/services/aee/cli_adapter.py"
+        ],
+        "test_files": [
+          "tests/test_fr39.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-40": {
         "fr_id": "FR-40",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/services/aee/mcp_adapter.py"
+        ],
+        "test_files": [
+          "tests/test_fr40.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-41": {
         "fr_id": "FR-41",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/services/aee/a2a_adapter.py"
+        ],
+        "test_files": [
+          "tests/test_fr41.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-42": {
         "fr_id": "FR-42",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/services/aee/cli_adapter.py"
+        ],
+        "test_files": [
+          "tests/test_fr42.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-43": {
         "fr_id": "FR-43",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/services/aee/tool_executor.py"
+        ],
+        "test_files": [
+          "tests/test_fr43.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-44": {
         "fr_id": "FR-44",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/api/agent_card.py"
+        ],
+        "test_files": [
+          "tests/test_fr44.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-45": {
         "fr_id": "FR-45",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/core/dst.py"
+        ],
+        "test_files": [
+          "tests/test_fr45.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-46": {
         "fr_id": "FR-46",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/core/emotion.py"
+        ],
+        "test_files": [
+          "tests/test_fr46.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-47": {
         "fr_id": "FR-47",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/core/emotion.py"
+        ],
+        "test_files": [
+          "tests/test_fr47.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-48": {
         "fr_id": "FR-48",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/core/emotion.py"
+        ],
+        "test_files": [
+          "tests/test_fr48.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-49": {
         "fr_id": "FR-49",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/core/pipeline.py"
+        ],
+        "test_files": [
+          "tests/test_fr49.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
@@ -948,7 +948,9 @@
         "status": "pending",
         "srs_section": "SAD.md",
         "code_files": [],
-        "test_files": [],
+        "test_files": [
+          "tests/test_fr50.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
