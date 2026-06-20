@@ -8,80 +8,87 @@ Citations:
 
 from __future__ import annotations
 
-# Resource → frozenset-of-actions. Nested encoding is the test's primary
-# contract (see test_fr60_dpo_has_pii_decrypt GREEN TODO note). frozenset
-# keeps the matrix immutable so callers cannot mutate role grants at
-# runtime; the RBAC enforcer treats ROLE_PERMISSIONS as read-only.
+# Full resource surface — every role entry MUST enumerate all resources
+# so the RBAC enforcer can dispatch ``matrix[role][resource]`` without
+# raising ``KeyError``. The nested ``resource -> frozenset-of-actions``
+# encoding is the test's primary contract (see test_fr60 GREEN TODO
+# note); frozenset keeps each role's grants immutable so callers
+# cannot mutate grants at runtime.
+RESOURCES: tuple[str, ...] = (
+    "knowledge",
+    "escalate",
+    "audit",
+    "experiment",
+    "system",
+    "pii",
+)
+
+# Shared empty-grants sentinel. frozensets are immutable so a single
+# instance is safe to reuse across roles and across resources.
+_NONE: frozenset[str] = frozenset()
+
+
+def _role(grants: dict[str, frozenset[str]]) -> dict[str, frozenset[str]]:
+    """Merge ``grants`` over the full ``RESOURCES`` surface, filling
+    every undeclared resource with the empty sentinel."""
+    return {resource: grants.get(resource, _NONE) for resource in RESOURCES}
+
+
 ROLE_PERMISSIONS: dict[str, dict[str, frozenset[str]]] = {
     # Anonymous: no authenticated identity → no permissions.
-    "anonymous": {},
+    "anonymous": _role({}),
 
     # Customer: read public knowledge, raise escalations (their own).
-    "customer": {
+    "customer": _role({
         "knowledge": frozenset({"read"}),
         "escalate": frozenset({"write"}),
-        "audit": frozenset(),
-        "experiment": frozenset(),
-        "system": frozenset(),
-        "pii": frozenset(),
-    },
+    }),
 
     # Agent: handle customer conversations — read/write knowledge and
     # escalate, no delete on customer data.
-    "agent": {
+    "agent": _role({
         "knowledge": frozenset({"read", "write"}),
         "escalate": frozenset({"read", "write"}),
         "audit": frozenset({"read"}),
-        "experiment": frozenset(),
-        "system": frozenset(),
-        "pii": frozenset(),
-    },
+    }),
 
     # Editor: curate the knowledge base.
-    "editor": {
+    "editor": _role({
         "knowledge": frozenset({"read", "write", "delete"}),
         "escalate": frozenset({"read"}),
-        "audit": frozenset(),
         "experiment": frozenset({"read"}),
-        "system": frozenset(),
-        "pii": frozenset(),
-    },
+    }),
 
     # Admin: full operational control except privacy-sensitive decrypt.
-    "admin": {
+    # admin MUST NOT decrypt; only dpo holds decrypt.
+    "admin": _role({
         "knowledge": frozenset({"read", "write", "delete"}),
         "escalate": frozenset({"read", "write", "delete"}),
         "audit": frozenset({"read", "write"}),
         "experiment": frozenset({"read", "write", "delete"}),
         "system": frozenset({"read", "write", "delete"}),
-        "pii": frozenset(),  # admin MUST NOT decrypt; only dpo holds decrypt.
-    },
+    }),
 
     # Auditor: read audit logs only — MUST NOT decrypt PII (privacy
     # boundary; reinforced by FR-61 explicit pii:none + 403 on
-    # pii:decrypt). ``pii`` resource carries zero actions so the
-    # test's "decrypt in pii" branch stays False.
-    "auditor": {
+    # pii:decrypt). ``pii`` resource stays empty so the test's
+    # "decrypt in pii" branch stays False.
+    "auditor": _role({
         "knowledge": frozenset({"read"}),
-        "escalate": frozenset(),
         "audit": frozenset({"read"}),
         "experiment": frozenset({"read"}),
-        "system": frozenset(),
-        "pii": frozenset(),
-    },
+    }),
 
     # DPO: sole holder of ``pii:decrypt`` (FR-60 acceptance: "dpo 獨有
     # pii:decrypt"). Also gates privacy-sensitive system and audit
     # operations.
-    "dpo": {
+    "dpo": _role({
         "knowledge": frozenset({"read"}),
-        "escalate": frozenset(),
         "audit": frozenset({"read", "write"}),
-        "experiment": frozenset(),
         "system": frozenset({"read", "write"}),
         "pii": frozenset({"decrypt"}),
-    },
+    }),
 }
 
 
-__all__ = ["ROLE_PERMISSIONS"]
+__all__ = ["ROLE_PERMISSIONS", "RESOURCES"]
