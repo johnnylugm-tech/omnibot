@@ -84,6 +84,41 @@ class EscalationManager:
         # ``manager.rows.get(escalation_id)``.
         self.rows: dict[str, dict[str, Any]] = {}
 
+    def _utcnow(self) -> datetime:
+        """Current UTC time — single source for timestamps."""
+        return datetime.now(timezone.utc)
+
+    def _make_row(
+        self,
+        escalation_id: str,
+        conversation_id: str,
+        priority: int,
+        reason: str,
+        platform: str,
+        preview: dict[str, Any] | None,
+        now: datetime,
+        sla_minutes: int | None = None,
+    ) -> dict[str, Any]:
+        """Build the canonical escalation_queue row.
+
+        Single source of truth for the row schema so ``create`` and
+        the ``_ensure_row`` upsert stub stay in lockstep.
+        """
+        deadline = now if sla_minutes is None else now + timedelta(minutes=sla_minutes)
+        return {
+            "escalation_id": escalation_id,
+            "conversation_id": conversation_id,
+            "reason": reason,
+            "priority": priority,
+            "platform": platform,
+            "preview": preview or {},
+            "assigned_agent": None,
+            "queued_at": now,
+            "picked_at": None,
+            "resolved_at": None,
+            "sla_deadline": deadline,
+        }
+
     def create(
         self,
         conversation_id: str,
@@ -98,21 +133,17 @@ class EscalationManager:
         string (format: ``"esc-" + uuid4 hex[:8]``).
         """
         escalation_id = f"esc-{uuid.uuid4().hex[:8]}"
-        now = datetime.now(timezone.utc)
         sla_minutes = self.SLA_BY_PRIORITY.get(priority, self.SLA_BY_PRIORITY[0])
-        self.rows[escalation_id] = {
-            "escalation_id": escalation_id,
-            "conversation_id": conversation_id,
-            "reason": reason,
-            "priority": priority,
-            "platform": platform,
-            "preview": preview or {},
-            "assigned_agent": None,
-            "queued_at": now,
-            "picked_at": None,
-            "resolved_at": None,
-            "sla_deadline": now + timedelta(minutes=sla_minutes),
-        }
+        self.rows[escalation_id] = self._make_row(
+            escalation_id=escalation_id,
+            conversation_id=conversation_id,
+            priority=priority,
+            reason=reason,
+            platform=platform,
+            preview=preview,
+            now=self._utcnow(),
+            sla_minutes=sla_minutes,
+        )
         return escalation_id
 
     def _ensure_row(self, escalation_id: str) -> dict[str, Any]:
@@ -124,32 +155,27 @@ class EscalationManager:
         assigned_agent / resolved_at post-conditions are observable.
         """
         if escalation_id not in self.rows:
-            now = datetime.now(timezone.utc)
-            self.rows[escalation_id] = {
-                "escalation_id": escalation_id,
-                "conversation_id": "",
-                "reason": "",
-                "priority": 0,
-                "platform": "",
-                "preview": {},
-                "assigned_agent": None,
-                "queued_at": now,
-                "picked_at": None,
-                "resolved_at": None,
-                "sla_deadline": now,
-            }
+            self.rows[escalation_id] = self._make_row(
+                escalation_id=escalation_id,
+                conversation_id="",
+                priority=0,
+                reason="",
+                platform="",
+                preview={},
+                now=self._utcnow(),
+            )
         return self.rows[escalation_id]
 
     def assign(self, escalation_id: str, agent_id: str) -> None:
         """Update assigned_agent + picked_at — SRS FR-54 assign()."""
         row = self._ensure_row(escalation_id)
         row["assigned_agent"] = agent_id
-        row["picked_at"] = datetime.now(timezone.utc)
+        row["picked_at"] = self._utcnow()
 
     def resolve(self, escalation_id: str) -> None:
         """Update resolved_at — SRS FR-54 resolve()."""
         row = self._ensure_row(escalation_id)
-        row["resolved_at"] = datetime.now(timezone.utc)
+        row["resolved_at"] = self._utcnow()
 
     def get(self, escalation_id: str) -> dict[str, Any] | None:
         """Public row accessor (alternative to ``manager.rows[id]``)."""
