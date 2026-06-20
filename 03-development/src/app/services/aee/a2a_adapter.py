@@ -123,10 +123,10 @@ class A2AAdapter(ActionAdapter):
             response.raise_for_status()
             card = response.json()
         except Exception:
-            # Store None with current timestamp so the failure is also
-            # cached for ``agent_card_ttl_seconds``; this avoids
-            # hammering an unreachable agent on every list_tools() call.
-            self._card_cache[self.agent_url] = (None, now)
+            # Store None with an older timestamp so the failure is cached
+            # for a shorter duration (max 30s) instead of the full TTL.
+            short_ttl = min(30, self.agent_card_ttl_seconds)
+            self._card_cache[self.agent_url] = (None, now - self.agent_card_ttl_seconds + short_ttl)
             return None
 
         self._card_cache[self.agent_url] = (card, now)
@@ -202,7 +202,9 @@ class A2AAdapter(ActionAdapter):
             # All execute() failures (connect / DNS / HTTP 4xx/5xx) surface
             # through the NP-15 channel so callers see a uniform
             # ``error_message`` containing ``"timeout"``.
-            return fail(f"{_TIMEOUT_FAILURE_PREFIX}{exc}")
+            # Truncate to avoid leaking bearer tokens in exception messages
+            safe_exc = str(exc).split('\n')[0][:200]
+            return fail(f"{_TIMEOUT_FAILURE_PREFIX}{safe_exc}")
 
         try:
             body: Any = response.json()
@@ -212,7 +214,7 @@ class A2AAdapter(ActionAdapter):
         if isinstance(body, dict) and "error" in body and "result" not in body:
             err = body.get("error")
             message = err.get("message") if isinstance(err, dict) else str(err)
-            return fail(f"{_TIMEOUT_FAILURE_PREFIX}JSON-RPC error: {message}")
+            return fail(f"jsonrpc_error: JSON-RPC error: {message}")
 
         return ok(body)
 

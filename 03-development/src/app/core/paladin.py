@@ -592,9 +592,11 @@ def _await_coro_from_sync(coro, timeout_ms: float):
         finally:
             new_loop.close()
 
-    t = threading.Thread(target=_runner)
+    t = threading.Thread(target=_runner, daemon=True)
     t.start()
-    t.join()
+    t.join(timeout=timeout_ms / 1000.0)
+    if t.is_alive():
+        raise TimeoutError(f"FR-15: _await_coro_from_sync timed out after {timeout_ms}ms")
     if "e" in holder:
         raise holder["e"]
     return holder["v"]
@@ -878,6 +880,8 @@ class PALADINPipeline:
         tier3_call: Callable[[str], Awaitable[str]] | None = None,
         security_log_writer: Callable[..., None] | None = None,
     ) -> None:
+        if tier3_call is None:
+            raise ValueError("tier3_call cannot be None")
         self._classifier = classifier or SemanticInjectionClassifier()
         self._tier3_call = tier3_call
         # [FR-16] Default to a no-op writer so production wiring can
@@ -968,13 +972,16 @@ class PALADINPipeline:
         Kept as a private helper so ``process`` stays a flat routing
         function and the audit-log schema lives in exactly one place.
         """
-        self._security_log_writer(
-            event=_RETROSPECTIVE_BLOCK_EVENT,
-            risk_level=risk_level,
-            injection_type=verdict.injection_type.value,
-            confidence=verdict.confidence,
-            text=text,
-        )
+        try:
+            self._security_log_writer(
+                event=_RETROSPECTIVE_BLOCK_EVENT,
+                risk_level=risk_level,
+                injection_type=verdict.injection_type.value,
+                confidence=verdict.confidence,
+                text=text,
+            )
+        except Exception:
+            pass
         return self._blocked_result(
             block_reason=_BLOCK_REASON_INJECTION,
             tier3_called=True,
@@ -1052,11 +1059,18 @@ class PALADINPipeline:
             )
 
         # ---- medium: parallel L4 + L3 (FR-16 retrospective block) ----
-        verdict, response = await asyncio.gather(
+        results = await asyncio.gather(
             self._run_l4(text, risk_level=risk_level, timeout_ms=timeout_ms),
             self._call_l3(text),
+            return_exceptions=True,
         )
-        if verdict.is_injection:
+        verdict, response = results
+        if isinstance(verdict, Exception):
+            raise verdict
+        if isinstance(response, Exception):
+            raise response
+        
+        if verdict.is_injection or verdict.is_unverified:
             return self._handle_retrospective_block(text, verdict, risk_level)
         return self._success_result(
             response=response, verdict=verdict, l4_called=True

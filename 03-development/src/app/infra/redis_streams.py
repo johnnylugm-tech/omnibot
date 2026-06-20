@@ -196,9 +196,10 @@ class AsyncMessageProcessor:
         rows = await self.redis.xrange(
             self.stream, min=message_id, max=message_id,
         )
-        if not rows:
+        if not rows or not rows[0] or len(rows[0]) < 2:
             return None
-        _row_id, fields = rows[0]
+        _row_id = rows[0][0]
+        fields = rows[0][1]
         return fields
 
     async def claim_pending(self, consumer: str) -> list[Message]:

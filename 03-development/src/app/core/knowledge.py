@@ -275,7 +275,7 @@ class HybridKnowledge:
         # "tier2" on a tie (matches insertion order).
         return sorted(scores.items(), key=lambda kv: -kv[1])
 
-    def _rag_search(self, query: str, confidence: float) -> KnowledgeResult | None:
+    def _rag_search(self, query: str, confidence: float | None) -> KnowledgeResult | None:
         """[FR-27] Tier-2 RAG short-circuit (source="rag" when ≥ 0.85).
 
         Wraps the child-chunk cosine search; the actual vector-store
@@ -584,9 +584,14 @@ def _call_llm_with_fallback(
     Citations:
         - SRS.md FR-30 — gpt-4o 主要 → gemini-1.5-flash fallback.
     """
+    import time
+    start_time = time.perf_counter()
     try:
         return _call_llm_api(primary_llm, prompt)
     except Exception:
+        elapsed_ms = (time.perf_counter() - start_time) * 1000
+        if elapsed_ms >= FALLBACK_BUDGET_MS:
+            raise TimeoutError(f"FR-30: 500ms budget exceeded during primary LLM failure ({elapsed_ms:.1f}ms)")
         return _call_llm_api(fallback_llm, prompt)
 
 
@@ -702,7 +707,10 @@ def _escalate(
     # reason as a substring of ``content`` (so callers that grep for
     # it do not need a dedicated ``reason`` field) while remaining
     # machine-parseable.
-    payload = json.dumps({"reason": reason})
+    try:
+        payload = json.dumps({"reason": reason})
+    except Exception:
+        payload = f'{{"reason": "{reason}"}}'
     return KnowledgeResult(
         id=-1,
         content=payload,

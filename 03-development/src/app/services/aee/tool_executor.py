@@ -222,6 +222,8 @@ class ToolExecutor:
 
         try:
             result = handler(**arguments)
+        except (MemoryError, RecursionError):
+            raise
         except Exception as exc:  # noqa: BLE001 — surface as structured error
             return fail(f"Tool '{tool_name}' raised an exception: {exc}")
 

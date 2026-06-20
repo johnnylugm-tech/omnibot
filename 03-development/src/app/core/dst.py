@@ -64,6 +64,7 @@ from __future__ import annotations
 
 import enum
 import threading
+from typing import ClassVar
 
 import tiktoken
 
@@ -293,15 +294,16 @@ class DialogueState:
         # No intent / unknown intent → no known required slots → nothing
         # can be missing. ``()`` as the default lets the loop below
         # bail out via the empty-tuple iteration.
-        required = INTENT_TO_SLOTS.get(self.intent, ())
-        missing: list[str] = []
-        for slot_name in required:
-            # An empty string (or whitespace-only) counts as "not yet
-            # filled" — the user has not provided a real answer.
-            value = self.slots.get(slot_name, "")
-            if not str(value).strip():
-                missing.append(slot_name)
-        return missing
+        with self._lock:
+            required = INTENT_TO_SLOTS.get(self.intent, ())
+            missing: list[str] = []
+            for slot_name in required:
+                # An empty string (or whitespace-only) counts as "not yet
+                # filled" — the user has not provided a real answer.
+                value = self.slots.get(slot_name, "")
+                if not str(value).strip():
+                    missing.append(slot_name)
+            return missing
 
     def auto_escalate(
         self, slot_filling_rounds: int = 0, confidence: float = 1.0
@@ -443,9 +445,9 @@ class DialogueState:
             and awaiting_rounds >= MAX_AWAITING_CONFIRMATION_ROUNDS
         ):
             return "ESCALATED"
-        if user_response == "confirm":
+        if user_response == "confirm" and self.state == "AWAITING_CONFIRMATION":
             return "PROCESSING"
-        if user_response == "deny":
+        if user_response == "deny" and self.state == "AWAITING_CONFIRMATION":
             return "SLOT_FILLING"
         return None
 
@@ -491,7 +493,7 @@ class ContextWindowManager:
       message and preserves the rest verbatim.
     """
 
-    __slots__ = ("model", "system_reserved", "knowledge_max", "history_budget", "_encoding_cache")
+    __slots__ = ("_encoding_cache", "history_budget", "knowledge_max", "model", "system_reserved")
 
     def __init__(
         self,
@@ -516,7 +518,7 @@ class ContextWindowManager:
     # earliest 1/3 — declared once so callers that introspect the
     # output (and the test suite that pins ``role == "system"``) all
     # agree on the exact payload.
-    _SUMMARY_MESSAGE: dict = {
+    _SUMMARY_MESSAGE: ClassVar[dict] = {
         "role": "system",
         "content": "<summary of dropped messages>",
     }
@@ -590,8 +592,8 @@ class ContextWindowManager:
         exactly equal to ``history_budget`` does NOT trigger
         summarization (matches the spec-pinned boundary condition).
         """
-        total_tokens = sum(self.count_tokens(m["content"]) for m in messages)
+        total_tokens = sum(self.count_tokens(m.get("content", "")) for m in messages)
         if total_tokens <= self.history_budget:
             return messages
-        drop_count = len(messages) // 3
+        drop_count = max(1, len(messages) // 3)
         return [self._SUMMARY_MESSAGE, *messages[drop_count:]]

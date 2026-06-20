@@ -33,12 +33,16 @@ try:
     from redis.exceptions import (  # type: ignore[reportAssignmentType]
         ConnectionError as RedisConnectionError,
         TimeoutError as RedisTimeoutError,
+        ResponseError,
     )
 except ImportError:  # pragma: no cover -- redis lib is in pyproject dependencies
     class RedisConnectionError(Exception):  # type: ignore[no-redef]
         pass
 
     class RedisTimeoutError(Exception):  # type: ignore[no-redef]
+        pass
+        
+    class ResponseError(Exception):  # type: ignore[no-redef]
         pass
 
 # FR-22 fail-open triggers: any Redis-side connection or timeout failure.
@@ -48,6 +52,7 @@ _FAIL_OPEN_EXCEPTIONS: tuple[type[BaseException], ...] = (
     RedisConnectionError,
     RedisTimeoutError,
     ConnectionError,
+    ResponseError,
 )
 
 
