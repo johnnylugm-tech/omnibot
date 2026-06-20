@@ -158,16 +158,16 @@ class ResponseGenerator:
             - SRS.md FR-51 -- "repeat_count > 0 且 negative → 抑制重複道歉" (line 114).
             - SRS.md FR-51 -- implementation_functions: "ResponseGenerator._apply_emotion_tone" (line 114).
         """
-        if emotion == "negative":
-            # Repeat-suppression takes priority: even at intensity > 0.7,
-            # a prior apology already landed on the user. Returning
-            # ``base_text`` unchanged guarantees "非常抱歉" is absent.
-            if repeat_count > 0:
-                return base_text
-            if intensity > 0.7:
-                return ResponseGenerator._NEGATIVE_APOLOGY_PREFIX + base_text
-            return base_text
+        # Three rules evaluated top-down; rarer prefix-applied cases
+        # short-circuit before the default pass-through that covers
+        # neutral labels, suppressed repeats, and low-intensity
+        # negatives alike.
+        if (
+            emotion == "negative"
+            and intensity > 0.7
+            and repeat_count == 0
+        ):
+            return ResponseGenerator._NEGATIVE_APOLOGY_PREFIX + base_text
         if emotion == "positive":
             return ResponseGenerator._POSITIVE_PREFIX + base_text
-        # "neutral" (or any unrecognised label) is a strict pass-through.
         return base_text
