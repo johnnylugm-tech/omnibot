@@ -53,8 +53,9 @@ from __future__ import annotations
 
 import csv
 import io
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Configuration constants — FR-101 canonical values.
@@ -106,8 +107,8 @@ class KnowledgeEntry:
 
     title: str = ""
     content: str = ""
-    keywords: List[str] = field(default_factory=list)
-    id: Optional[int] = None
+    keywords: list[str] = field(default_factory=list)
+    id: int | None = None
     embedding_status: str = EMBEDDING_STATUS_SYNCED
     embedding_chunks_synced: int = 0
     embedding_chunks_total: int = 0
@@ -126,7 +127,7 @@ class ImportResult:
 
     imported: int = 0
     skipped: int = 0
-    errors: List[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -162,7 +163,7 @@ class EmbeddingStatusProvider:
         self._synced = synced
         self._total = total
 
-    def get_status(self, entry_id: Optional[int] = None) -> Dict[str, Any]:
+    def get_status(self, entry_id: int | None = None) -> dict[str, Any]:
         """Return the canonical 4-key status dict for the WebUI."""
         synced = self._synced
         total = self._total
@@ -193,7 +194,7 @@ class _InMemoryStore:
     """
 
     def __init__(self) -> None:
-        self.rows: Dict[int, KnowledgeEntry] = {}
+        self.rows: dict[int, KnowledgeEntry] = {}
         self._next_id = 1
 
     def add(self, obj: KnowledgeEntry) -> KnowledgeEntry:
@@ -203,7 +204,7 @@ class _InMemoryStore:
         self.rows[obj.id] = obj
         return obj
 
-    def get(self, _id: int) -> Optional[KnowledgeEntry]:
+    def get(self, _id: int) -> KnowledgeEntry | None:
         return self.rows.get(_id)
 
     def delete(self, _id: int) -> bool:
@@ -242,8 +243,8 @@ class KnowledgeAdminAPI:
 
     def __init__(
         self,
-        db_session: Optional[Callable[[], Any]] = None,
-        embedding_status_provider: Optional[EmbeddingStatusProvider] = None,
+        db_session: Callable[[], Any] | None = None,
+        embedding_status_provider: EmbeddingStatusProvider | None = None,
     ) -> None:
         self._db_session = db_session
         self._default_store = _InMemoryStore()
@@ -275,7 +276,7 @@ class KnowledgeAdminAPI:
         self,
         title: str,
         content: str,
-        keywords: Optional[List[str]] = None,
+        keywords: list[str] | None = None,
     ) -> KnowledgeEntry:
         entry = KnowledgeEntry(
             title=title,
@@ -284,12 +285,12 @@ class KnowledgeAdminAPI:
         )
         return self._store().add(entry)
 
-    def read_entry(self, entry_id: int) -> Optional[KnowledgeEntry]:
+    def read_entry(self, entry_id: int) -> KnowledgeEntry | None:
         return self._store().get(entry_id)
 
     def update_entry(
         self, entry_id: int, **fields: Any
-    ) -> Optional[KnowledgeEntry]:
+    ) -> KnowledgeEntry | None:
         store = self._store()
         entry = store.get(entry_id)
         if entry is None:
@@ -306,8 +307,8 @@ class KnowledgeAdminAPI:
 
     @staticmethod
     def _crud_response(
-        entry: Optional[KnowledgeEntry],
-    ) -> Dict[str, Any]:
+        entry: KnowledgeEntry | None,
+    ) -> dict[str, Any]:
         """Build the canonical {status, entry, ok} dict for read/verb results."""
         return {
             "status": KNOWLEDGE_API_OK_STATUS,
@@ -315,7 +316,7 @@ class KnowledgeAdminAPI:
             "ok": entry is not None,
         }
 
-    def crud(self, action: str, **kwargs: Any) -> Dict[str, Any]:
+    def crud(self, action: str, **kwargs: Any) -> dict[str, Any]:
         """Single dispatcher for the WebUI's ``action`` parameter.
 
         Maps the FR-101 ``action`` string to the per-verb methods and
@@ -399,7 +400,7 @@ class KnowledgeAdminAPI:
                 )
                 store.add(entry)
                 result.imported += 1
-            except Exception as exc:  # noqa: BLE001 — per-row isolation
+            except Exception as exc:
                 result.skipped += 1
                 result.errors.append(str(exc))
         return result
@@ -407,8 +408,8 @@ class KnowledgeAdminAPI:
     # ---- embedding status ------------------------------------------------
 
     def get_embedding_status(
-        self, entry_id: Optional[int] = None
-    ) -> Dict[str, Any]:
+        self, entry_id: int | None = None
+    ) -> dict[str, Any]:
         """Delegate to the injected ``EmbeddingStatusProvider``."""
         return self._embedding_status_provider.get_status(entry_id=entry_id)
 
@@ -462,10 +463,10 @@ class DebuggerResult:
     """Single RAG Debugger invocation result with Tier 1+2 payload lists."""
 
     query: str = ""
-    ilike_results: List[Any] = field(default_factory=list)
-    cosine_scores: List[Any] = field(default_factory=list)
-    rrf_top3: List[Any] = field(default_factory=list)
-    sections: List[str] = field(
+    ilike_results: list[Any] = field(default_factory=list)
+    cosine_scores: list[Any] = field(default_factory=list)
+    rrf_top3: list[Any] = field(default_factory=list)
+    sections: list[str] = field(
         default_factory=lambda: list(RAG_REQUIRED_SECTIONS)
     )
 
@@ -473,13 +474,13 @@ class DebuggerResult:
 class _InMemoryKnowledgeProvider:
     """No-op Tier 1+2 seam — returns empty lists for all pipeline stages."""
 
-    def ilike_search(self, query: str) -> List[ILIKEMatch]:
+    def ilike_search(self, query: str) -> list[ILIKEMatch]:
         return []
 
-    def cosine_search(self, query: str, threshold: float) -> List[CosineHit]:
+    def cosine_search(self, query: str, threshold: float) -> list[CosineHit]:
         return []
 
-    def rrf_fuse(self, ilike: List[ILIKEMatch], cosine: List[CosineHit]) -> List[RRFEntry]:
+    def rrf_fuse(self, ilike: list[ILIKEMatch], cosine: list[CosineHit]) -> list[RRFEntry]:
         return []
 
 
@@ -488,15 +489,15 @@ class RAGDebugger:
 
     def __init__(
         self,
-        config_store: Optional[Any] = None,
-        knowledge_provider: Optional[Any] = None,
+        config_store: Any | None = None,
+        knowledge_provider: Any | None = None,
     ) -> None:
         self._config_store = config_store
         self._knowledge_provider = (
             knowledge_provider if knowledge_provider is not None
             else _InMemoryKnowledgeProvider()
         )
-        self._sandbox_threshold: Optional[float] = None
+        self._sandbox_threshold: float | None = None
 
     def _saved_threshold(self) -> float:
         # Resolution: injected store → app.infra module seam (monkeypatched in tests) → default
@@ -505,13 +506,13 @@ class RAGDebugger:
                 value = self._config_store.get("rag_cosine_threshold", RAG_DEFAULT_THRESHOLD)
                 if value is not None:
                     return float(value)
-            except Exception:  # noqa: BLE001
+            except Exception:
                 pass
         try:
             from app.infra import config_store as _cs_mod  # type: ignore
             store = _cs_mod.get_config_store()
             return float(store.get("rag_cosine_threshold", RAG_DEFAULT_THRESHOLD))
-        except Exception:  # noqa: BLE001
+        except Exception:
             return RAG_DEFAULT_THRESHOLD
 
     def _effective_threshold(self, requested: float) -> float:
@@ -538,3 +539,53 @@ class RAGDebugger:
     def get_saved_threshold(self) -> float:
         """Read persisted threshold from config_store; ignores sandbox slider."""
         return self._saved_threshold()
+
+
+# ---------------------------------------------------------------------------
+# FR-103: OperationsDashboard — FCR/p95/知識來源/成本 + 告警 + 時序切換
+# ---------------------------------------------------------------------------
+
+FCR_ALERT_THRESHOLD: float = 0.90   # SRS FR-103: FCR < 90% triggers yellow
+ALERT_COLOR_YELLOW: str = "yellow"
+ALERT_COLOR_GREEN: str = "green"
+VALID_TIME_RANGES: tuple = ("24hr", "7d", "30d")
+
+
+class OperationsDashboard:
+    """[FR-103] Operations Dashboard — FCR/p95/知識來源/成本 KPI + 告警 + 時序切換.
+
+    Spec source: 02-architecture/TEST_SPEC.md (FR-103)
+    SRS source : SRS.md FR-103 (Module 25: 管理 WebUI)
+
+    Citations:
+        test_fr103.py L58-87  — _isolate_dashboard_io autouse fixture
+        test_fr103.py L113-166 — test_fr103_fcr_below_90_triggers_yellow_alert
+        test_fr103.py L189-242 — test_fr103_time_range_switching_works
+    """
+
+    def get_fcr_alert_color(self, fcr: float) -> str:
+        """Return alert colour for the FCR KPI.
+
+        Returns ALERT_COLOR_YELLOW when fcr < FCR_ALERT_THRESHOLD (0.90),
+        otherwise ALERT_COLOR_GREEN.
+        """
+        if fcr < FCR_ALERT_THRESHOLD:
+            return ALERT_COLOR_YELLOW
+        return ALERT_COLOR_GREEN
+
+    def _fetch_metrics(self, time_range: str) -> dict:
+        """Injectable seam for DB metric queries — overridden by tests."""
+        return {
+            "fcr": 0.0,
+            "p95_latency_ms": 0,
+            "knowledge_distribution": {"tier1": 0, "tier2": 0, "tier3": 0, "tier4": 0},
+            "monthly_cost_usd": 0.0,
+            "time_range": time_range,
+        }
+
+    def get_dashboard_data(self, time_range: str) -> dict:
+        """Fetch and return dashboard metrics for the given time range.
+
+        Valid time_range values: "24hr", "7d", "30d" (VALID_TIME_RANGES).
+        """
+        return self._fetch_metrics(time_range)
