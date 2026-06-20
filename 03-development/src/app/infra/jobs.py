@@ -69,7 +69,7 @@ import random
 import time
 import uuid
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Literal
 
@@ -628,3 +628,75 @@ def batch_import_knowledge(
         sync_wait=not is_batch,
         per_entry_ms=per_entry_ms,
     )
+
+
+# ---------------------------------------------------------------------------
+# [FR-79] Embedding sync status UI + embedding_synced_at.
+#
+# SRS.md line 177 (FR-79):
+#     知識庫列表顯示 🟡同步中（x/n chunks 完成）/🟢已同步/🔴失敗；
+#     embedding_synced_at 欄位標記全部完成時間.
+#     UI 狀態標示正確；embedding_synced_at 在所有 chunks 完成後更新.
+#
+# SAD §Module: jobs.py line 827 + TEST_SPEC.md line 1601 pin:
+#   - ``app.infra.jobs`` MUST export ``EmbeddingSyncStatus``, a frozen
+#     dataclass with ``status`` (Literal["syncing","synced","failed"]),
+#     ``chunks_done``, ``chunks_total``, ``embedding_synced_at``.
+#   - ``app.infra.jobs`` MUST export ``compute_sync_status(chunks_done,
+#     chunks_total) -> str`` that returns the canonical status string.
+#   - ``EmbeddingSyncStatus.status`` MUST be computed automatically from
+#     ``chunks_done`` / ``chunks_total`` via ``__post_init__`` (frozen
+#     dataclass, ``init=False``, ``object.__setattr__``).
+#
+# Citations:
+# - SRS.md:177 (FR-79 description)
+# - SRS.md:1075 (FR-79 JSON spec — id, module, functions, verification)
+# - 02-architecture/TEST_SPEC.md:1601 (FR-79 test cases 1-2 + fr79-ok)
+# - 02-architecture/SAD.md:324 (SAD module mapping)
+# - 02-architecture/SAD.md:827 (FR-79 app.infra.jobs mapping)
+# ---------------------------------------------------------------------------
+
+
+def compute_sync_status(chunks_done: int, chunks_total: int) -> str:
+    """[FR-79] Return the canonical embedding sync status string.
+
+    Mapping (SRS line 177):
+      - ``chunks_done == chunks_total``       → ``"synced"``  (🟢)
+      - ``0 < chunks_done < chunks_total``    → ``"syncing"`` (🟡)
+      - ``chunks_done == 0`` or other states  → ``"failed"``  (🔴)
+
+    The caller is expected to combine this with the
+    ``embedding_synced_at`` timestamp from ``EmbeddingSyncStatus``
+    to render the full UI badge (🟡/🟢/🔴 + x/n progress).
+    """
+    if chunks_done == chunks_total:
+        return "synced"
+    if 0 < chunks_done < chunks_total:
+        return "syncing"
+    return "failed"
+
+
+@dataclass(frozen=True)
+class EmbeddingSyncStatus:
+    """[FR-79] Frozen snapshot of embedding sync progress for the WebUI.
+
+    Fields:
+        chunks_done         : number of chunks whose embedding is complete
+        chunks_total        : total number of chunks in the knowledge base
+        embedding_synced_at : UTC datetime when ALL chunks completed;
+                              ``None`` while still syncing (or failed)
+        status              : computed from chunks_done/chunks_total
+                              (``init=False`` — set in ``__post_init__``)
+    """
+
+    chunks_done: int
+    chunks_total: int
+    embedding_synced_at: datetime | None = None
+    status: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "status",
+            compute_sync_status(self.chunks_done, self.chunks_total),
+        )
