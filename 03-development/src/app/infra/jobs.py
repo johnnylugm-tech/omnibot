@@ -41,7 +41,7 @@ from __future__ import annotations
 
 import random
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Literal, Mapping
 
 
@@ -81,6 +81,11 @@ QUEUE_CONFIGS: Mapping[str, QueueConfig] = {
 
 # SRS FR-75 — SIGTERM grace window the worker honors at shutdown.
 STOP_GRACE_PERIOD_SECONDS: int = 30
+
+# FR-81 / FR-76 — exponential-backoff ceiling shared by the retry
+# formula. SRS FR-81 pins ``max_delay=30.0s`` and FR-76 re-uses the
+# same cap, so the value lives in one place to avoid drift.
+MAX_BACKOFF_SECONDS: float = 30.0
 
 
 def get_queue_config(name: str) -> QueueConfig:
@@ -157,17 +162,44 @@ class EmbeddingJobResult:
 def _compute_backoff(job: EmbeddingJob, attempt: int) -> float:
     """Return the (jittered) delay before the ``attempt``-th retry.
 
-    Implements ``min(base_delay * 2 ** attempt, max_delay) *
+    Implements ``min(base_delay * 2 ** attempt, MAX_BACKOFF_SECONDS) *
     uniform(0.5, 1.0)`` when ``job.jitter`` is True (FR-81 formula,
     re-stated in FR-76). With ``jitter`` False the multiplicative
     factor is exactly 1.0 so the result is deterministic for tests
     that pin the seed.
     """
     raw = job.base_delay * (2 ** attempt)
-    capped = min(raw, 30.0)  # FR-81 max_delay
+    capped = min(raw, MAX_BACKOFF_SECONDS)
     if job.jitter:
         return capped * random.uniform(0.5, 1.0)
     return capped
+
+
+def _result(
+    job: EmbeddingJob,
+    start: float,
+    *,
+    retried: bool,
+    failed: bool,
+    status: str,
+    backoff_seconds: float | None = None,
+    error: str | None = None,
+) -> EmbeddingJobResult:
+    """Build an ``EmbeddingJobResult`` with the standard context fields.
+
+    ``duration_seconds`` and ``chunk_id`` are derived from the call site
+    so every return path fills them in identically and the processor
+    cannot drift between branches.
+    """
+    return EmbeddingJobResult(
+        retried=retried,
+        failed=failed,
+        status=status,
+        backoff_seconds=backoff_seconds,
+        duration_seconds=time.perf_counter() - start,
+        chunk_id=job.chunk_id,
+        error=error,
+    )
 
 
 def process_embedding_job(
@@ -179,19 +211,20 @@ def process_embedding_job(
 
     Decision tree (matches FR-76 spec):
 
-    1. If ``queue_status == "unavailable"`` AND ``retry_count <
-       max_retries`` → schedule a retry with backoff, return
-       ``retried=True / failed=False / status="retrying"``. This is
-       a transient broker outage (Redis down, network partition) and
-       MUST NOT silently drop the job — FR-79 would leave the
-       knowledge_base row stuck at 🟡 forever.
+    1. Transient broker outage with retries left → re-enqueue with
+       backoff (``retried=True / failed=False / status="retrying"``).
+       A "queue unavailable" is a SAQ broker failure (Redis down,
+       network partition) and MUST NOT silently drop the job — FR-79
+       would leave the knowledge_base row stuck at 🟡 forever.
 
-    2. If ``retry_count >= max_retries`` → stop retrying, return
-       ``retried=False / failed=True / status="failed"`` so the caller
-       can mark the knowledge_base row 🔴 (FR-79).
+    2. Retry budget exhausted → permanent failure
+       (``retried=False / failed=True / status="failed"``) so the
+       caller can mark the knowledge_base row 🔴 (FR-79). The error
+       tag distinguishes "queue down AND retries spent" from
+       "plain retries spent" so observability can split the cause.
 
-    3. Otherwise → success path, return ``retried=False / failed=
-       False / status="completed"``.
+    3. Otherwise → success path
+       (``retried=False / failed=False / status="completed"``).
 
     Wall-clock duration is recorded via ``time.perf_counter`` so the
     p95 SLO (FR-76: < 30s) can be computed by the caller. The function
@@ -200,50 +233,29 @@ def process_embedding_job(
     hundreds of times without real wall-clock cost.
     """
     start = time.perf_counter()
+    retries_left = job.retry_count < job.max_retries
 
-    # --- transient broker outage → re-enqueue with backoff ---
-    if queue_status == "unavailable":
-        if job.retry_count < job.max_retries:
-            backoff = _compute_backoff(job, job.retry_count)
-            return EmbeddingJobResult(
-                retried=True,
-                failed=False,
-                status="retrying",
-                backoff_seconds=backoff,
-                duration_seconds=time.perf_counter() - start,
-                chunk_id=job.chunk_id,
-            )
-        # retries already exhausted — permanent failure
-        return EmbeddingJobResult(
-            retried=False,
-            failed=True,
-            status="failed",
-            backoff_seconds=None,
-            duration_seconds=time.perf_counter() - start,
-            chunk_id=job.chunk_id,
-            error="queue_unavailable_retries_exhausted",
+    if queue_status == "unavailable" and retries_left:
+        return _result(
+            job, start,
+            retried=True, failed=False, status="retrying",
+            backoff_seconds=_compute_backoff(job, job.retry_count),
         )
 
-    # --- retry budget exhausted → permanent failure ---
-    if job.retry_count >= job.max_retries:
-        return EmbeddingJobResult(
-            retried=False,
-            failed=True,
-            status="failed",
-            backoff_seconds=None,
-            duration_seconds=time.perf_counter() - start,
-            chunk_id=job.chunk_id,
-            error="max_retries_exhausted",
+    if not retries_left:
+        return _result(
+            job, start,
+            retried=False, failed=True, status="failed",
+            error=(
+                "queue_unavailable_retries_exhausted"
+                if queue_status == "unavailable"
+                else "max_retries_exhausted"
+            ),
         )
 
-    # --- success path ---
-    return EmbeddingJobResult(
-        retried=False,
-        failed=False,
-        status="completed",
-        backoff_seconds=None,
-        duration_seconds=time.perf_counter() - start,
-        chunk_id=job.chunk_id,
+    return _result(
+        job, start,
+        retried=False, failed=False, status="completed",
     )
 
 
