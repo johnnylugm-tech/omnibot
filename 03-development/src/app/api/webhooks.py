@@ -32,6 +32,13 @@ from app.core.unified_message import (
     UnifiedMessage,
 )
 
+# ------------------------------------------------------------------
+# Module-level constants
+# ------------------------------------------------------------------
+
+_BEARER_PREFIX = "Bearer "
+_UNKNOWN_AGENT = "unknown-agent"
+
 
 class A2AAuthError(Exception):
     """[FR-06] Raised when M2M token verification fails.
@@ -106,18 +113,14 @@ class A2AAdapter:
               parse "Bearer <token>", return True on valid, False on failure
             - SRS.md FR-06 — M2M OAuth2/JWT token verification
         """
-        if not authorization_header:
-            return False
-        if not authorization_header.startswith("Bearer "):
-            return False
-        token = authorization_header[len("Bearer "):]
+        token = self._extract_bearer_token(authorization_header)
         if not token:
             return False
 
-        # TODO(GREEN): fetch JWKS from self._jwks_url, find matching key,
-        # decode JWT, validate signature + exp + aud + iss claims.
-        # Current stub returns True for any non-empty Bearer token so the
-        # adapter structure is testable; real verification will replace this.
+        # TODO: fetch JWKS from self._jwks_url, find matching key, decode
+        # JWT, validate signature + exp + aud + iss claims.  Current stub
+        # returns True for any non-empty Bearer token so the adapter
+        # structure is testable; real verification will replace this.
         return True
 
     def handle_jsonrpc_call(
@@ -171,26 +174,42 @@ class A2AAdapter:
     # Internal helpers
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _extract_bearer_token(authorization_header: str) -> str | None:
+        """Extract the token portion from a Bearer Authorization header.
+
+        Returns the token string without the ``Bearer `` prefix, or None
+        if the header is missing, empty, or lacks the Bearer prefix.
+        """
+        if not authorization_header:
+            return None
+        if not authorization_header.startswith(_BEARER_PREFIX):
+            return None
+        token = authorization_header[len(_BEARER_PREFIX):]
+        return token if token else None
+
     def _extract_sub_from_token(self, authorization_header: str) -> str:
         """[FR-06] Extract the ``sub`` claim from a JWT Bearer token.
 
         Decodes the JWT payload (middle segment) without verifying the
         signature — signature verification is handled upstream by
-        ``verify_m2m_token``. Falls back to ``"unknown-agent"`` for any
+        ``verify_m2m_token``. Falls back to ``_UNKNOWN_AGENT`` for any
         decode failure (malformed token, non-JWT bearer value, etc.).
 
         Citations:
             - 02-architecture/TEST_SPEC.md FR-06 — platform_user_id comes
               from M2M JWT "sub" claim (the calling agent ID)
         """
+        token = self._extract_bearer_token(authorization_header)
+        if not token:
+            return _UNKNOWN_AGENT
         try:
-            token = authorization_header.removeprefix("Bearer ")
             # JWT structure: header.payload.signature
             payload_b64: str = token.split(".")[1]
             # Restore base64 padding stripped by JWT spec
             payload_b64 += "=" * (4 - len(payload_b64) % 4)
             payload_bytes = base64.urlsafe_b64decode(payload_b64)
             payload: dict[str, Any] = json.loads(payload_bytes)
-            return str(payload.get("sub", "unknown-agent"))
+            return str(payload.get("sub", _UNKNOWN_AGENT))
         except Exception:
-            return "unknown-agent"
+            return _UNKNOWN_AGENT
