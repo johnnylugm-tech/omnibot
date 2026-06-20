@@ -68,9 +68,6 @@ class WebJwtVerifier:
             payload_bytes = _b64url_decode(payload_b64)
             payload = json.loads(payload_bytes)
             exp = payload.get("exp", 0)
-            if time.time() > exp:
-                return False
-
-            return True
+            return time.time() <= exp
         except Exception:
             return False

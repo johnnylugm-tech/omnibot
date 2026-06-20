@@ -17,6 +17,8 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
+from app.admin.rbac import RBACEnforcer
+
 # ---------------------------------------------------------------------------
 # Source under test.
 #
@@ -55,7 +57,6 @@ from __future__ import annotations
 # behaviour to make every assertion hold.
 # ---------------------------------------------------------------------------
 from app.api.management import check_health, list_knowledge
-from app.admin.rbac import RBACEnforcer
 from app.core.api_response import PaginatedResponse
 
 
