@@ -196,17 +196,27 @@ class EscalationManager:
         """Public row accessor (alternative to ``manager.rows[id]``)."""
         return self.rows.get(escalation_id)
 
+    def _is_breached(self, row: dict[str, Any], cutoff: datetime) -> bool:
+        """SRS FR-55 breach predicate — single source of truth.
+
+        Mirrors the spec contract verbatim:
+            ``resolved_at IS NULL AND sla_deadline < NOW()``
+        """
+        deadline = row.get("sla_deadline")
+        return (
+            row.get("resolved_at") is None
+            and deadline is not None
+            and deadline < cutoff
+        )
+
     def get_sla_breaches(
         self, now: datetime | None = None
     ) -> list[dict[str, Any]]:
         """[FR-55] Return unresolved escalations past their SLA deadline.
 
-        Implements the SRS FR-55 breach predicate verbatim:
-            ``breach = resolved_at IS NULL AND sla_deadline < NOW()``
-
-        Each returned row is a reference to the live row dict in
-        ``self.rows`` (not a copy) so callers can update lifecycle
-        columns (e.g. ``resolved_at``) without a second lookup.
+        Delegates the breach predicate to ``_is_breached`` so the
+        ``resolved_at IS NULL AND sla_deadline < NOW()`` contract has a
+        single source of truth (reused by FR-73 SLABreach).
 
         Args:
             now: Reference timestamp for the ``< NOW()`` comparison.
@@ -225,10 +235,4 @@ class EscalationManager:
               includes "get_sla_breaches()".
         """
         cutoff = now if now is not None else self._utcnow()
-        return [
-            row
-            for row in self.rows.values()
-            if row.get("resolved_at") is None
-            and row.get("sla_deadline") is not None
-            and row["sla_deadline"] < cutoff
-        ]
+        return [row for row in self.rows.values() if self._is_breached(row, cutoff)]
