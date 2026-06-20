@@ -1,12 +1,12 @@
 {
   "summary": {
-    "total": 362,
+    "total": 370,
     "missing": 0,
     "incomplete": 0,
-    "orphaned": 362,
+    "orphaned": 370,
     "critical": 0,
     "major": 0,
-    "minor": 362
+    "minor": 370
   },
   "gaps": [
     {
@@ -302,6 +302,54 @@
       "severity": "minor",
       "reason": "'agent_card' has no corresponding specification in SPEC.md",
       "action": "Add spec for agent_card or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'check_health' has no corresponding specification in SPEC.md",
+      "action": "Add spec for check_health or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'list_knowledge' has no corresponding specification in SPEC.md",
+      "action": "Add spec for list_knowledge or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'create_knowledge' has no corresponding specification in SPEC.md",
+      "action": "Add spec for create_knowledge or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'update_knowledge' has no corresponding specification in SPEC.md",
+      "action": "Add spec for update_knowledge or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'delete_knowledge' has no corresponding specification in SPEC.md",
+      "action": "Add spec for delete_knowledge or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'bulk_create_knowledge' has no corresponding specification in SPEC.md",
+      "action": "Add spec for bulk_create_knowledge or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'list_conversations' has no corresponding specification in SPEC.md",
+      "action": "Add spec for list_conversations or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'create_experiment' has no corresponding specification in SPEC.md",
+      "action": "Add spec for create_experiment or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
