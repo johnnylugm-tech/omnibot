@@ -79,25 +79,19 @@ class Pipeline:
         (``True`` iff the emotion stage was skipped).
         """
         key = _normalise_platform(platform)
+        bypassed = key in _AGENT_PLATFORMS
 
-        if key in _AGENT_PLATFORMS:
-            # FR-49 bypass: AGENT 平台請求不執行情緒分析.
-            return {
-                "platform": key,
-                "text": text,
-                "emotion": None,
-                "bypassed": True,
-            }
-
-        # Non-AGENT platform: emotion analyzer MUST run exactly once so
-        # the FR-47/48 escalation paths can fire on negative input.
+        # Non-AGENT platforms pay the analysis cost exactly once so the
+        # FR-47/48 escalation paths can fire on negative input. AGENT
+        # requests skip the emotion stage entirely (SRS FR-49:
+        # "AGENT 平台請求不執行情緒分析；不觸發情緒轉接").
         emotion_result: Any = None
-        if self.emotion is not None:
+        if not bypassed and self.emotion is not None:
             emotion_result = self.emotion.analyze(text)
 
         return {
             "platform": key,
             "text": text,
             "emotion": emotion_result,
-            "bypassed": False,
+            "bypassed": bypassed,
         }
