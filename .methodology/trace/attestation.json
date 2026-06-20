@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "e6cc54d5033ee7d5a484ee28c268ea2f8d760d9b",
-  "content_sha256": "3bcf42540683e89438a3046fcbb7fb710cde97667fd9ee5facdc7b55ff9e3c58",
+  "git_sha": "ed6e03b0471a1c4ac7e17325aa8ce42c6e823e94",
+  "content_sha256": "19b4eac3af83cdeff18fe1ca262b78dc4461a3b97dd32a5d7f436f6da529fcd8",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,10 +11,10 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "55.6%",
-      "test_coverage": "57.4%",
-      "verification_rate": "55.6%",
-      "total_links": 245,
+      "code_coverage": "56.5%",
+      "test_coverage": "58.3%",
+      "verification_rate": "56.5%",
+      "total_links": 247,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -63,7 +63,6 @@
           "FR-92",
           "FR-93",
           "FR-94",
-          "FR-97",
           "FR-98",
           "FR-99"
         ],
@@ -83,7 +82,6 @@
           "FR-106",
           "FR-107",
           "FR-108",
-          "FR-54",
           "FR-55",
           "FR-56",
           "FR-57",
@@ -165,7 +163,6 @@
         "FR-92",
         "FR-93",
         "FR-94",
-        "FR-97",
         "FR-98",
         "FR-99"
       ],
@@ -185,7 +182,6 @@
         "FR-106",
         "FR-107",
         "FR-108",
-        "FR-54",
         "FR-55",
         "FR-56",
         "FR-57",
@@ -985,7 +981,9 @@
         "status": "pending",
         "srs_section": "SAD.md",
         "code_files": [],
-        "test_files": [],
+        "test_files": [
+          "tests/test_fr54.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
@@ -1423,9 +1421,11 @@
       },
       "FR-97": {
         "fr_id": "FR-97",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
+        "code_files": [
+          "03-development/src/app/infra/backup_strategy.py"
+        ],
         "test_files": [
           "tests/test_fr97.py"
         ],
