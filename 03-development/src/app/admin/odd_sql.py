@@ -30,85 +30,92 @@ TIER_COSTS: dict[int, float] = {1: 0.0, 2: 0.003, 3: 0.009}
 JUDGE_SAMPLE_RATE_DEFAULT: float = 0.20
 
 # ---------------------------------------------------------------------------
+# Shared SQL filter fragments — de-duplicated across all 10 ODD queries
+# ---------------------------------------------------------------------------
+
+_IN_SCOPE = "scope_type = 'in_scope'"
+_LAST_30_DAYS = "created_at >= NOW() - INTERVAL '30 days'"
+
+# ---------------------------------------------------------------------------
 # ODD SQL query definitions — the 10 queries required by FR-105
 # ---------------------------------------------------------------------------
 
 _ODD_SQL_QUERIES: dict[str, str] = {
-    "odd_fcr_rate": """
+    "odd_fcr_rate": f"""
         SELECT
             COUNT(*) FILTER (WHERE odd_resolved_on_first_contact = TRUE)::FLOAT
             / NULLIF(COUNT(*), 0) AS fcr_rate
         FROM odd_conversations
-        WHERE scope_type = 'in_scope'
-          AND created_at >= NOW() - INTERVAL '30 days'
+        WHERE {_IN_SCOPE}
+          AND {_LAST_30_DAYS}
     """,
-    "odd_resolution_time_p50": """
+    "odd_resolution_time_p50": f"""
         SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY resolution_time_seconds)
         FROM odd_conversations
-        WHERE scope_type = 'in_scope'
+        WHERE {_IN_SCOPE}
           AND resolved_at IS NOT NULL
     """,
-    "odd_resolution_time_p95": """
+    "odd_resolution_time_p95": f"""
         SELECT PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY resolution_time_seconds)
         FROM odd_conversations
-        WHERE scope_type = 'in_scope'
+        WHERE {_IN_SCOPE}
           AND resolved_at IS NOT NULL
     """,
-    "odd_escalation_rate": """
+    "odd_escalation_rate": f"""
         SELECT
             COUNT(*) FILTER (WHERE escalated = TRUE)::FLOAT
             / NULLIF(COUNT(*), 0) AS escalation_rate
         FROM odd_conversations
-        WHERE scope_type = 'in_scope'
+        WHERE {_IN_SCOPE}
     """,
-    "odd_avg_sentiment": """
+    "odd_avg_sentiment": f"""
         SELECT AVG(sentiment_score) AS avg_sentiment
         FROM odd_conversations
-        WHERE scope_type = 'in_scope'
+        WHERE {_IN_SCOPE}
           AND sentiment_score IS NOT NULL
     """,
-    "odd_tier_distribution": """
+    "odd_tier_distribution": f"""
         SELECT tier, COUNT(*) AS query_count
         FROM odd_queries
-        WHERE scope_type = 'in_scope'
+        WHERE {_IN_SCOPE}
         GROUP BY tier
         ORDER BY tier
     """,
-    "odd_daily_volume": """
+    "odd_daily_volume": f"""
         SELECT DATE(created_at) AS day, COUNT(*) AS volume
         FROM odd_conversations
-        WHERE scope_type = 'in_scope'
-          AND created_at >= NOW() - INTERVAL '30 days'
+        WHERE {_IN_SCOPE}
+          AND {_LAST_30_DAYS}
         GROUP BY DATE(created_at)
         ORDER BY day
     """,
-    "odd_top_intents": """
+    "odd_top_intents": f"""
         SELECT intent, COUNT(*) AS count
         FROM odd_conversations
-        WHERE scope_type = 'in_scope'
+        WHERE {_IN_SCOPE}
           AND intent IS NOT NULL
         GROUP BY intent
         ORDER BY count DESC
         LIMIT 10
     """,
-    "odd_csat_distribution": """
+    "odd_csat_distribution": f"""
         SELECT csat_score, COUNT(*) AS count
         FROM odd_conversations
-        WHERE scope_type = 'in_scope'
+        WHERE {_IN_SCOPE}
           AND csat_score IS NOT NULL
         GROUP BY csat_score
         ORDER BY csat_score
     """,
-    "odd_judge_sample_queries": """
+    "odd_judge_sample_queries": f"""
         SELECT *
         FROM odd_queries
-        WHERE scope_type = 'in_scope'
-          AND created_at >= NOW() - INTERVAL '30 days'
+        WHERE {_IN_SCOPE}
+          AND {_LAST_30_DAYS}
         ORDER BY RANDOM()
-        LIMIT (SELECT COUNT(*) * {judge_sample_rate}
+        LIMIT (SELECT COUNT(*) * {JUDGE_SAMPLE_RATE_DEFAULT}
                FROM odd_queries
-               WHERE scope_type = 'in_scope'
-                 AND created_at >= NOW() - INTERVAL '30 days')
+               WHERE {_IN_SCOPE}
+                 AND {_LAST_30_DAYS})
     """,
 }
 
@@ -127,13 +134,7 @@ class ODDSqlRunner:
         """Execute all 10 ODD SQL queries and return results keyed by query name."""
         results: dict[str, Any] = {}
         for name, sql in _ODD_SQL_QUERIES.items():
-            # Inject the sample rate into the judge-sample query if needed.
-            query_sql = sql
-            if "{judge_sample_rate}" in query_sql:
-                query_sql = query_sql.replace(
-                    "{judge_sample_rate}", str(JUDGE_SAMPLE_RATE_DEFAULT)
-                )
-            results[name] = self.db.execute(query_sql)
+            results[name] = self.db.execute(sql)
         return results
 
     def build_fcr_query(self, scope_type: str, days: int) -> str:
@@ -142,15 +143,13 @@ class ODDSqlRunner:
         Filters on the given ``scope_type`` column value and includes a
         ``days``-day time window via INTERVAL.
         """
-        return (
-            "SELECT\n"
-            "    COUNT(*) FILTER (WHERE fcr_achieved = TRUE)::FLOAT\n"
-            "    / NULLIF(COUNT(*), 0) AS fcr_rate\n"
-            "FROM odd_conversations\n"
-            f"WHERE scope_type = '{scope_type}'\n"
-            f"  AND created_at >= NOW() - INTERVAL '{days} days'\n"
-            "  AND fcr_achieved IS NOT NULL"
-        )
+        return f"""SELECT
+    COUNT(*) FILTER (WHERE fcr_achieved = TRUE)::FLOAT
+    / NULLIF(COUNT(*), 0) AS fcr_rate
+FROM odd_conversations
+WHERE scope_type = '{scope_type}'
+  AND created_at >= NOW() - INTERVAL '{days} days'
+  AND fcr_achieved IS NOT NULL"""
 
     def calculate_cost(self, query_counts: dict[int, int]) -> dict[str, Any]:
         """Return total cost and per-tier cost breakdown.
