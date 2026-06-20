@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "e6cc54d5033ee7d5a484ee28c268ea2f8d760d9b",
-  "content_sha256": "3bcf42540683e89438a3046fcbb7fb710cde97667fd9ee5facdc7b55ff9e3c58",
+  "git_sha": "a03f3c9b004cb36c76ee38fe235d224b7b2535b8",
+  "content_sha256": "31199f37e8285ea6d4e5e5c444458a99edc24d41ebe04ff483a39fe0a8826cb1",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,10 +11,10 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "55.6%",
-      "test_coverage": "57.4%",
-      "verification_rate": "55.6%",
-      "total_links": 245,
+      "code_coverage": "71.3%",
+      "test_coverage": "75.0%",
+      "verification_rate": "71.3%",
+      "total_links": 281,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -24,31 +24,16 @@
           "FR-04",
           "FR-05",
           "FR-06",
-          "FR-100",
-          "FR-101",
-          "FR-102",
-          "FR-103",
           "FR-104",
           "FR-105",
           "FR-106",
           "FR-107",
           "FR-108",
           "FR-54",
-          "FR-55",
-          "FR-56",
-          "FR-57",
-          "FR-58",
-          "FR-59",
           "FR-60",
           "FR-61",
           "FR-62",
           "FR-63",
-          "FR-64",
-          "FR-65",
-          "FR-66",
-          "FR-67",
-          "FR-68",
-          "FR-69",
           "FR-75",
           "FR-76",
           "FR-77",
@@ -63,8 +48,6 @@
           "FR-92",
           "FR-93",
           "FR-94",
-          "FR-97",
-          "FR-98",
           "FR-99"
         ],
         "fr_without_test": [
@@ -74,31 +57,13 @@
           "FR-04",
           "FR-05",
           "FR-06",
-          "FR-100",
-          "FR-101",
-          "FR-102",
-          "FR-103",
-          "FR-104",
           "FR-105",
           "FR-106",
           "FR-107",
           "FR-108",
-          "FR-54",
-          "FR-55",
-          "FR-56",
-          "FR-57",
-          "FR-58",
-          "FR-59",
           "FR-60",
           "FR-61",
           "FR-62",
-          "FR-63",
-          "FR-64",
-          "FR-65",
-          "FR-66",
-          "FR-67",
-          "FR-68",
-          "FR-69",
           "FR-75",
           "FR-76",
           "FR-77",
@@ -112,7 +77,6 @@
           "FR-92",
           "FR-93",
           "FR-94",
-          "FR-98",
           "FR-99"
         ]
       }
@@ -126,31 +90,16 @@
         "FR-04",
         "FR-05",
         "FR-06",
-        "FR-100",
-        "FR-101",
-        "FR-102",
-        "FR-103",
         "FR-104",
         "FR-105",
         "FR-106",
         "FR-107",
         "FR-108",
         "FR-54",
-        "FR-55",
-        "FR-56",
-        "FR-57",
-        "FR-58",
-        "FR-59",
         "FR-60",
         "FR-61",
         "FR-62",
         "FR-63",
-        "FR-64",
-        "FR-65",
-        "FR-66",
-        "FR-67",
-        "FR-68",
-        "FR-69",
         "FR-75",
         "FR-76",
         "FR-77",
@@ -165,8 +114,6 @@
         "FR-92",
         "FR-93",
         "FR-94",
-        "FR-97",
-        "FR-98",
         "FR-99"
       ],
       "fr_without_test": [
@@ -176,31 +123,13 @@
         "FR-04",
         "FR-05",
         "FR-06",
-        "FR-100",
-        "FR-101",
-        "FR-102",
-        "FR-103",
-        "FR-104",
         "FR-105",
         "FR-106",
         "FR-107",
         "FR-108",
-        "FR-54",
-        "FR-55",
-        "FR-56",
-        "FR-57",
-        "FR-58",
-        "FR-59",
         "FR-60",
         "FR-61",
         "FR-62",
-        "FR-63",
-        "FR-64",
-        "FR-65",
-        "FR-66",
-        "FR-67",
-        "FR-68",
-        "FR-69",
         "FR-75",
         "FR-76",
         "FR-77",
@@ -214,7 +143,6 @@
         "FR-92",
         "FR-93",
         "FR-94",
-        "FR-98",
         "FR-99"
       ]
     },
@@ -329,37 +257,53 @@
       },
       "FR-100": {
         "fr_id": "FR-100",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/services/media.py"
+        ],
+        "test_files": [
+          "tests/test_fr100.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-101": {
         "fr_id": "FR-101",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/admin/webui.py"
+        ],
+        "test_files": [
+          "tests/test_fr101.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-102": {
         "fr_id": "FR-102",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/infra/config_store.py"
+        ],
+        "test_files": [
+          "tests/test_fr102.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-103": {
         "fr_id": "FR-103",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/admin/webui.py"
+        ],
+        "test_files": [
+          "tests/test_fr103.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
@@ -368,7 +312,9 @@
         "status": "pending",
         "srs_section": "SAD.md",
         "code_files": [],
-        "test_files": [],
+        "test_files": [
+          "tests/test_fr104.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
@@ -958,8 +904,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/core/response_generator.py",
-          "03-development/src/app/services/ab_testing.py"
+          "03-development/src/app/core/response_generator.py"
         ],
         "test_files": [
           "tests/test_fr52.py"
@@ -985,52 +930,75 @@
         "status": "pending",
         "srs_section": "SAD.md",
         "code_files": [],
-        "test_files": [],
+        "test_files": [
+          "tests/test_fr54.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-55": {
         "fr_id": "FR-55",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/services/escalation.py"
+        ],
+        "test_files": [
+          "tests/test_fr55.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-56": {
         "fr_id": "FR-56",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/services/escalation.py",
+          "03-development/tests/test_fr56.py"
+        ],
+        "test_files": [
+          "tests/test_fr56.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-57": {
         "fr_id": "FR-57",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/api/websocket.py"
+        ],
+        "test_files": [
+          "tests/test_fr57.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-58": {
         "fr_id": "FR-58",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/api/websocket.py"
+        ],
+        "test_files": [
+          "tests/test_fr58.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-59": {
         "fr_id": "FR-59",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/api/websocket.py"
+        ],
+        "test_files": [
+          "tests/test_fr59.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
@@ -1066,61 +1034,87 @@
         "status": "pending",
         "srs_section": "SAD.md",
         "code_files": [],
-        "test_files": [],
+        "test_files": [
+          "tests/test_fr63.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-64": {
         "fr_id": "FR-64",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/services/ab_testing.py"
+        ],
+        "test_files": [
+          "tests/test_fr64.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-65": {
         "fr_id": "FR-65",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/services/llm_judge.py"
+        ],
+        "test_files": [
+          "tests/test_fr65.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-66": {
         "fr_id": "FR-66",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/services/llm_judge.py"
+        ],
+        "test_files": [
+          "tests/test_fr66.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-67": {
         "fr_id": "FR-67",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/services/llm_judge.py"
+        ],
+        "test_files": [
+          "tests/test_fr67.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-68": {
         "fr_id": "FR-68",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/services/llm_judge.py"
+        ],
+        "test_files": [
+          "tests/test_fr68.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-69": {
         "fr_id": "FR-69",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/services/llm_judge.py"
+        ],
+        "test_files": [
+          "tests/test_fr69.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
@@ -1423,9 +1417,11 @@
       },
       "FR-97": {
         "fr_id": "FR-97",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
+        "code_files": [
+          "03-development/src/app/infra/backup_strategy.py"
+        ],
         "test_files": [
           "tests/test_fr97.py"
         ],
@@ -1434,10 +1430,14 @@
       },
       "FR-98": {
         "fr_id": "FR-98",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/infra/rollback_strategy.py"
+        ],
+        "test_files": [
+          "tests/test_fr98.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
