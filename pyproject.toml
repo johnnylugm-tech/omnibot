@@ -87,11 +87,28 @@ ignore = [
 # is intentional Chinese typography within the quoted Chinese sentence and
 # is NOT ambiguous with ASCII `:` / `;` in that context — RUF002 is a false
 # positive here.
-"03-development/src/app/core/knowledge.py" = ["RUF002"]
+"03-development/src/app/core/knowledge.py" = ["RUF001", "RUF002", "RUF003"]
 # FR-49: pipeline.py docstring quotes the SRS FR-49 acceptance criteria
 # verbatim; the fullwidth `：` / `；` are part of the original Chinese
 # text and are intentional in the citation.
-"03-development/src/app/core/pipeline.py" = ["RUF002"]
+"03-development/src/app/core/pipeline.py" = ["RUF001", "RUF002", "RUF003"]
+# FR-17/18/19/50-58: SRS-citation docstrings + Chinese template strings
+# in response_generator, pii, emotion, escalation, ab_testing, and the
+# AEE adapters. All fullwidth chars (`：；，。！？「」（）`) are
+# intentional Chinese typography / SRS-verbatim quotations — the
+# RUF001/002/003 lint is a false positive for these contexts.
+"03-development/src/app/core/response_generator.py" = ["RUF001", "RUF002", "RUF003"]
+"03-development/src/app/core/pii.py" = ["RUF001", "RUF002", "RUF003"]
+"03-development/src/app/core/emotion.py" = ["RUF001", "RUF002", "RUF003"]
+"03-development/src/app/core/dst.py" = ["RUF001", "RUF002", "RUF003"]
+"03-development/src/app/services/escalation.py" = ["RUF001", "RUF002", "RUF003"]
+"03-development/src/app/services/ab_testing.py" = ["RUF001", "RUF002", "RUF003"]
+"03-development/src/app/services/aee/__init__.py" = ["RUF001", "RUF002", "RUF003"]
+"03-development/src/app/services/aee/adapter.py" = ["RUF001", "RUF002", "RUF003"]
+"03-development/src/app/services/aee/mcp_adapter.py" = ["RUF001", "RUF002", "RUF003"]
+"03-development/src/app/services/aee/cli_adapter.py" = ["RUF001", "RUF002", "RUF003"]
+"03-development/src/app/services/aee/a2a_adapter.py" = ["RUF001", "RUF002", "RUF003"]
+"03-development/src/app/services/aee/tool_executor.py" = ["RUF001", "RUF002", "RUF003"]
 
 [tool.pyright]
 include = ["03-development/src/app", "03-development/tests"]
@@ -108,6 +125,7 @@ follow_imports = "silent"
 exclude = ["harness/", ".sessi-work/"]
 
 [tool.pytest.ini_options]
+pythonpath = ["03-development/src"]
 testpaths = ["03-development/tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]

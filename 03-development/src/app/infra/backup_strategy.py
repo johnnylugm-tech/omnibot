@@ -121,11 +121,11 @@ class BackupStrategy:
 __all__ = [
     "BACKUP_TYPE_PG_BASEBACKUP",
     "BACKUP_TYPE_REDIS_RDB",
+    "BackupResult",
+    "BackupStrategy",
     "DR_RESTORE_TARGET_MINUTES",
     "PG_RETENTION_DAYS",
     "REDIS_RETENTION_DAYS",
-    "SIMULATED_RESTORE_MINUTES",
     "SCHEDULED_BACKUP_TYPES",
-    "BackupResult",
-    "BackupStrategy",
+    "SIMULATED_RESTORE_MINUTES",
 ]

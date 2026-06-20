@@ -2,10 +2,10 @@
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-104)
 SRS source : SRS.md FR-104 (Module 25: Agent Portal UI)
-            "Agent Portal：轉接收件匣（Unassigned/My Chats/Resolved）+
-             WebSocket 即時連動；優先級色彩（urgent=紅/high=橙/normal=藍）；
-             智慧接管面板（情緒歷史軌跡、對話時間軸、DST Slot 側邊欄、
-             Grounding 知識背景高亮）；1 秒掌握背景"
+            "Agent Portal: 轉接收件匣 (Unassigned/My Chats/Resolved) +
+             WebSocket 即時連動; 優先級色彩 (urgent=紅/high=橙/normal=藍);
+             智慧接管面板 (情緒歷史軌跡, 對話時間軸, DST Slot 側邊欄,
+             Grounding 知識背景高亮); 1 秒掌握背景"
 
 Public surface pinned by ``03-development/tests/test_fr104.py``:
 
@@ -45,7 +45,7 @@ PRIORITY_NORMAL_COLOR: str = "blue"      # [FR-104] normal=藍
 INBOX_SECTIONS: tuple[str, ...] = ("Unassigned", "My Chats", "Resolved")
 
 # ---------------------------------------------------------------------------
-# Takeover panel keys (SRS FR-104: 情緒歷史軌跡、對話時間軸、DST Slot 側邊欄、
+# Takeover panel keys (SRS FR-104: 情緒歷史軌跡, 對話時間軸, DST Slot 側邊欄,
 # Grounding 知識背景高亮)
 # ---------------------------------------------------------------------------
 TAKEOVER_PANELS: tuple[str, ...] = (

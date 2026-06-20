@@ -4,7 +4,7 @@ Spec source: 02-architecture/TEST_SPEC.md (FR-65)
 SRS source : SRS.md FR-65 (Module 14: LLM Judge)
 SAD mapping: app.services.llm_judge — "LLM-as-a-Judge ensemble (FR-65–69)"
 
-FR-65 -- LLMJudge.evaluate：
+FR-65 -- LLMJudge.evaluate:
     primary judge = gpt-4o-mini, secondary judge = claude-3-5-haiku.
     Both judges configured with temperature=0 (deterministic scoring).
     Both judges called CONCURRENTLY (parallel) — not sequentially.
@@ -34,16 +34,16 @@ Public surface pinned by this module:
       deterministic-scoring config (SRS FR-65: "temperature=0 確保確定性").
 
 Citations:
-    - SRS.md FR-65 -- "Ensemble Judge：primary=gpt-4o-mini (temp=0) +
-      secondary=claude-3-5-haiku (temp=0)；平行呼叫兩個 judge；各 judge
+    - SRS.md FR-65 -- "Ensemble Judge: primary=gpt-4o-mini (temp=0) +
+      secondary=claude-3-5-haiku (temp=0); 平行呼叫兩個 judge; 各 judge
       分別評測 politeness + accuracy" (line 153).
-    - SRS.md FR-65 -- acceptance "兩個 judge 並行呼叫；temperature=0
-      確保確定性；各 judge 回傳 JudgeResult" (line 153).
+    - SRS.md FR-65 -- acceptance "兩個 judge 並行呼叫; temperature=0
+      確保確定性; 各 judge 回傳 JudgeResult" (line 153).
     - SRS.md FR-65 -- implementation_functions: "LLMJudge.evaluate()" (line 153).
-    - SRS.md FR-66 -- "Politeness 聚合：max(primary_score, secondary_score)
-      （寬鬆評分，情感支持寧可寬容）" (line 154).
-    - SRS.md FR-67 -- "Accuracy 聚合：min(primary_score, secondary_score)
-      （保守評分，幻覺不可接受）" (line 155).
+    - SRS.md FR-66 -- "Politeness 聚合: max(primary_score, secondary_score)
+      (寬鬆評分, 情感支持寧可寬容)" (line 154).
+    - SRS.md FR-67 -- "Accuracy 聚合: min(primary_score, secondary_score)
+      (保守評分, 幻覺不可接受)" (line 155).
     - SAD.md -- "Module: llm_judge.py" (line 266).
     - SAD.md -- "LLMJudge.evaluate() (gpt-4o-mini + claude-3-5-haiku,
       temp=0, parallel) → FR-65" (line 267).
@@ -284,13 +284,13 @@ class LLMJudge:
               valid JudgeResult; the max/min rules are FR-66/FR-67.
 
         Citations:
-            - SRS.md FR-66 — "Politeness 聚合：max(primary_score,
-              secondary_score)（寬鬆評分，情感支持寧可寬容）" (line 154).
+            - SRS.md FR-66 — "Politeness 聚合: max(primary_score,
+              secondary_score) (寬鬆評分, 情感支持寧可寬容)" (line 154).
             - SRS.md FR-66 — acceptance "politeness = max(two scores)"
               (line 154).
             - SRS.md FR-66 — "情感支持寧可寬容" rationale (line 154).
-            - SRS.md FR-67 — "Accuracy 聚合：min(primary_score,
-              secondary_score)（保守評分，幻覺不可接受）" (line 155).
+            - SRS.md FR-67 — "Accuracy 聚合: min(primary_score,
+              secondary_score) (保守評分, 幻覺不可接受)" (line 155).
             - SRS.md FR-67 — acceptance "accuracy = min(two scores)"
               (line 155).
             - SRS.md FR-67 — "幻覺不可接受" rationale (line 155).
@@ -384,8 +384,8 @@ class CalibrationResult:
 class CalibrationPipeline:
     """[FR-69] Monthly calibration pipeline for the LLM judge ensemble.
 
-    Runs the monthly calibration cycle mandated by SRS FR-69 ("月度校準：
-    golden set 500 筆；Cohen's Kappa ≥ 0.7；觸發條件：CSAT 人工回饋與
+    Runs the monthly calibration cycle mandated by SRS FR-69 ("月度校準:
+    golden set 500 筆; Cohen's Kappa >= 0.7; 觸發條件: CSAT 人工回饋與
     judge 評分絕對偏差 > 15%"). The pipeline is constructed with three
     injectable collaborators so unit tests can pin each fault branch
     without real network I/O:
@@ -489,8 +489,8 @@ class CalibrationPipeline:
             A CalibrationResult. NEVER raises; NEVER returns None.
 
         Citations:
-            - SRS.md FR-69 — "月度校準：golden set 500 筆；Cohen's
-              Kappa ≥ 0.7（judge vs 人工標注）；觸發條件：CSAT 人工
+            - SRS.md FR-69 — "月度校準: golden set 500 筆; Cohen's
+              Kappa >= 0.7 (judge vs 人工標注); 觸發條件: CSAT 人工
               回饋與 judge 評分絕對偏差 > 15%" (line 157).
             - SRS.md FR-69 — acceptance "Kappa ≥ 0.7" (line 157).
             - SRS.md FR-69 — trigger "偏差 > 15% 觸發緊急
@@ -661,10 +661,10 @@ def aggregate_csat(
         mandated by SRS FR-68.
 
     Citations:
-        - SRS.md FR-68 — "CSAT = 0.4×速度 + 0.2×擬人化 + 0.2×禮貌度 +
-          0.2×準確度；aggregate_csat 以正規化公式計算；目標 CSAT 4.8
-          （2025Q4 基準 3.2，+50%）" (line 156).
-        - SRS.md FR-68 — acceptance "CSAT 公式計算正確；score 正規化至
+        - SRS.md FR-68 — "CSAT = 0.4x速度 + 0.2x擬人化 + 0.2x禮貌度 +
+          0.2x準確度; aggregate_csat 以正規化公式計算; 目標 CSAT 4.8
+          (2025Q4 基準 3.2, +50%)" (line 156).
+        - SRS.md FR-68 — acceptance "CSAT 公式計算正確; score 正規化至
           0-5 範圍" (line 156).
         - TEST_SPEC.md FR-68 — canonical formula spec.
         - SAD.md — "app.services.llm_judge — CSAT = 0.4×speed +

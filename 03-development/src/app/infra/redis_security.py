@@ -131,12 +131,12 @@ class RedisACLConfig:
 
 
 __all__ = [
-    "DEFAULT_TLS_PORT",
-    "DEFAULT_PLAINTEXT_PORT",
-    "DEFAULT_PASSWORD_ENV",
     "DEFAULT_ACL_USER",
+    "DEFAULT_PASSWORD_ENV",
+    "DEFAULT_PLAINTEXT_PORT",
+    "DEFAULT_TLS_PORT",
+    "RedisACLConfig",
+    "RedisAuthConfig",
     "RedisAuthError",
     "RedisTLSConfig",
-    "RedisAuthConfig",
-    "RedisACLConfig",
 ]

@@ -44,7 +44,7 @@ from typing import Any, Dict, Optional
 # ---------------------------------------------------------------------------
 
 #: Canonical default for the RAG cosine threshold. SRS FR-102: "相似度
-#: 閾值滑桿（預設 0.75）".
+#: 閾值滑桿 (預設 0.75)".
 DEFAULT_RAG_COSINE_THRESHOLD: float = 0.75
 
 

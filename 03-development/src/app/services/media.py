@@ -4,7 +4,7 @@ Spec source: 02-architecture/TEST_SPEC.md (FR-100)
 SRS source : SRS.md FR-100 (Module 24: 多媒體處理 — image/sticker/location/file)
 
 Acceptance criteria (from SRS FR-100):
-    image     : Image → auto_escalate（不支援圖片理解）.
+    image     : Image -> auto_escalate (不支援圖片理解).
     sticker   : Sticker → ignore + 固定回覆「請用文字描述您的問題」+ log.
     location  : Location → 解析經緯度，附帶於 conversation context.
     file      : File → malware scan (ClamAV) + size_limit 10MB +

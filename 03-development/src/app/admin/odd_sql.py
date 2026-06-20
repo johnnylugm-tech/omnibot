@@ -8,7 +8,7 @@ Acceptance criteria:
     - 10 ODD SQL queries execute correctly on staging
     - FCR calculation: scope_type='in_scope' only, within 30 days, non-NULL
     - Cost per tier: Tier 1=$0/Tier 2=$0.003/Tier 3=$0.009
-    - Judge sampling default 0.20, valid range 0.01–1.0
+    - Judge sampling default 0.20, valid range 0.01-1.0
 
 Citations:
     test_fr105.py L53-57  — canonical imports / public surface

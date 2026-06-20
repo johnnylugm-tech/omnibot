@@ -251,9 +251,9 @@ class AsyncMessageProcessor:
 
 
 __all__ = [
+    "_FR80_KNOWN_FIELDS",
     "AsyncMessageProcessor",
     "BusyGroupError",
     "Message",
     "ParsedMessage",
-    "_FR80_KNOWN_FIELDS",
 ]
