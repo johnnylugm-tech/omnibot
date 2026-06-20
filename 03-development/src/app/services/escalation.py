@@ -1,7 +1,7 @@
-"""[FR-54] EscalationManager — create/assign/resolve escalation_queue 完整生命週期.
+"""[FR-54, FR-55] EscalationManager — create/assign/resolve lifecycle + SLA.
 
-Spec source: 02-architecture/TEST_SPEC.md (FR-54)
-SRS source : SRS.md FR-54 (Module 10: Human Escalation)
+Spec source: 02-architecture/TEST_SPEC.md (FR-54, FR-55)
+SRS source : SRS.md FR-54 / FR-55 (Module 10: Human Escalation)
 
 FR-54 — EscalationManager：create/assign/resolve 完整生命週期
     EscalationManager：
@@ -11,6 +11,12 @@ FR-54 — EscalationManager：create/assign/resolve 完整生命週期
       - resolve(escalation_id) → 更新 resolved_at
     Acceptance: 建立轉接記錄成功；assign 更新 assigned_agent + picked_at；
                 resolve 更新 resolved_at。
+
+FR-55 — SLA 定義：normal(priority=0) 30 分鐘；high(priority=1) 15 分鐘；
+    urgent(priority=2) 5 分鐘（emotion_trigger）；
+    get_sla_breaches() 查詢超 SLA 未解決案件。
+    sla_deadline = queued_at + SLA 分鐘；
+    breach = resolved_at IS NULL AND sla_deadline < NOW()
 
 Public surface pinned by this module:
 
@@ -31,6 +37,11 @@ Public surface pinned by this module:
     - ``EscalationManager.resolve(escalation_id)`` — sets
       ``resolved_at`` so the case is closed. SRS FR-54: "resolve 更新
       resolved_at".
+    - ``EscalationManager.SLA_BY_PRIORITY`` — class-level dict mapping
+      priority -> SLA minutes (SRS FR-55: 0->30, 1->15, 2->5).
+    - ``EscalationManager.get_sla_breaches(now=None)`` — returns rows
+      where ``resolved_at IS NULL`` AND ``sla_deadline < now``
+      (SRS FR-55 breach predicate).
 
 Upsert behaviour: ``assign`` / ``resolve`` create a stub row if the
 escalation_id is not present (TEST_SPEC test 2 / 3 use a pinned
@@ -48,6 +59,10 @@ Citations:
       priority, sla_deadline".
     - SRS.md FR-55 SLA table (line 123): "normal(priority=0) 30 分鐘；
       high(priority=1) 15 分鐘；urgent(priority=2) 5 分鐘".
+    - SRS.md FR-55 breach predicate (line 123): "breach = resolved_at
+      IS NULL AND sla_deadline < NOW()".
+    - SRS.md FR-55 implementation_functions (line 880-883):
+      ["EscalationManager.SLA_BY_PRIORITY", "get_sla_breaches()"].
     - SAD.md (line 257-260): "EscalationManager.create(), .assign(),
       .resolve() → FR-54".
 """
@@ -180,3 +195,40 @@ class EscalationManager:
     def get(self, escalation_id: str) -> dict[str, Any] | None:
         """Public row accessor (alternative to ``manager.rows[id]``)."""
         return self.rows.get(escalation_id)
+
+    def get_sla_breaches(
+        self, now: datetime | None = None
+    ) -> list[dict[str, Any]]:
+        """[FR-55] Return unresolved escalations past their SLA deadline.
+
+        Implements the SRS FR-55 breach predicate verbatim:
+            ``breach = resolved_at IS NULL AND sla_deadline < NOW()``
+
+        Each returned row is a reference to the live row dict in
+        ``self.rows`` (not a copy) so callers can update lifecycle
+        columns (e.g. ``resolved_at``) without a second lookup.
+
+        Args:
+            now: Reference timestamp for the ``< NOW()`` comparison.
+                Defaults to ``datetime.now(timezone.utc)``. Injectable
+                for deterministic tests.
+
+        Returns:
+            A list of row dicts (possibly empty) where
+            ``row["resolved_at"] is None`` and
+            ``row["sla_deadline"] < now``.
+
+        Citations:
+            - SRS.md FR-55 (line 123): breach predicate
+              "resolved_at IS NULL AND sla_deadline < NOW()".
+            - SRS.md FR-55 (line 880-883): implementation_functions
+              includes "get_sla_breaches()".
+        """
+        cutoff = now if now is not None else self._utcnow()
+        return [
+            row
+            for row in self.rows.values()
+            if row.get("resolved_at") is None
+            and row.get("sla_deadline") is not None
+            and row["sla_deadline"] < cutoff
+        ]
