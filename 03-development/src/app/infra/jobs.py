@@ -70,7 +70,7 @@ import time
 import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 
 # ---------------------------------------------------------------------------
@@ -512,7 +512,7 @@ async def create_knowledge_with_chunks(
         )
     else:
         embedding_synced = True
-        embedding_synced_at = datetime.now(tz=timezone.utc)
+        embedding_synced_at = datetime.now(tz=UTC)
 
     elapsed = time.perf_counter() - start
 

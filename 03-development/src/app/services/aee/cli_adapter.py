@@ -220,11 +220,8 @@ class CLIAdapter(ActionAdapter):
         # thread so it never blocks process exit.
         def _send_signal() -> None:
             time.sleep(_KILL_SIGNAL_GRACE_SECONDS)
-            try:
+            with contextlib.suppress(ProcessLookupError, OSError):
                 proc.send_signal(sig)
-            except (ProcessLookupError, OSError):
-                # Process may have already exited; nothing to do.
-                pass
 
         killer = threading.Thread(target=_send_signal, daemon=True)
         killer.start()

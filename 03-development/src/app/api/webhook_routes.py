@@ -41,60 +41,43 @@ WEBHOOK_ERROR_CODES: tuple[str, ...] = (
 
 
 # ==================================================================
-# Route handlers (stubs — real logic gated behind factory per test
-# isolation contract so module-level ``router`` is side-effect-free)
+# Route registration — declarative table drives all 9 stub handlers.
+# Each stub returns {"status": "ok"}; real logic is gated behind a
+# factory per the test-isolation contract so the module-level
+# ``router`` remains side-effect-free.
 # ==================================================================
 
-
-@router.post("/api/v1/webhook/telegram")
-async def webhook_telegram_post() -> dict[str, str]:
-    """[FR-84] POST /api/v1/webhook/telegram — Telegram bot webhook."""
-    return {"status": "ok"}
-
-
-@router.post("/api/v1/webhook/line")
-async def webhook_line_post() -> dict[str, str]:
-    """[FR-84] POST /api/v1/webhook/line — LINE bot webhook."""
-    return {"status": "ok"}
-
-
-@router.get("/api/v1/webhook/messenger")
-async def webhook_messenger_get() -> dict[str, str]:
-    """[FR-84] GET /api/v1/webhook/messenger — Messenger webhook verification."""
-    return {"status": "ok"}
+_WEBHOOK_ROUTES: list[tuple[str, str]] = [
+    ("POST", "/api/v1/webhook/telegram"),
+    ("POST", "/api/v1/webhook/line"),
+    ("GET", "/api/v1/webhook/messenger"),
+    ("POST", "/api/v1/webhook/messenger"),
+    ("GET", "/api/v1/webhook/whatsapp"),
+    ("POST", "/api/v1/webhook/whatsapp"),
+    ("POST", "/api/v1/web/guest-session"),
+    ("POST", "/api/v1/web/message"),
+    ("POST", "/api/v1/a2a/rpc"),
+]
 
 
-@router.post("/api/v1/webhook/messenger")
-async def webhook_messenger_post() -> dict[str, str]:
-    """[FR-84] POST /api/v1/webhook/messenger — Messenger webhook event."""
-    return {"status": "ok"}
+def _register_webhook_routes(router: APIRouter) -> None:
+    """Register every webhook stub route declared in ``_WEBHOOK_ROUTES``."""
+    for method, path in _WEBHOOK_ROUTES:
+        _add_stub_route(router, method, path)
 
 
-@router.get("/api/v1/webhook/whatsapp")
-async def webhook_whatsapp_get() -> dict[str, str]:
-    """[FR-84] GET /api/v1/webhook/whatsapp — WhatsApp webhook verification."""
-    return {"status": "ok"}
+def _add_stub_route(router: APIRouter, method: str, path: str) -> None:
+    """Register a single stub route that returns ``{"status": "ok"}``."""
+    _register = router.get if method == "GET" else router.post
+
+    @_register(path)
+    async def _stub() -> dict[str, str]:
+        return {"status": "ok"}
+
+    # Preserve descriptive metadata for OpenAPI / route inspection.
+    slug = path.rsplit("/", 1)[-1].replace("-", "_")
+    _stub.__name__ = f"webhook_{slug}_{method.lower()}"
+    _stub.__doc__ = f"[FR-84] {method} {path}"
 
 
-@router.post("/api/v1/webhook/whatsapp")
-async def webhook_whatsapp_post() -> dict[str, str]:
-    """[FR-84] POST /api/v1/webhook/whatsapp — WhatsApp webhook event."""
-    return {"status": "ok"}
-
-
-@router.post("/api/v1/web/guest-session")
-async def web_guest_session_post() -> dict[str, str]:
-    """[FR-84] POST /api/v1/web/guest-session — Create web chat guest session."""
-    return {"status": "ok"}
-
-
-@router.post("/api/v1/web/message")
-async def web_message_post() -> dict[str, str]:
-    """[FR-84] POST /api/v1/web/message — Web chat message."""
-    return {"status": "ok"}
-
-
-@router.post("/api/v1/a2a/rpc")
-async def a2a_rpc_post() -> dict[str, str]:
-    """[FR-84] POST /api/v1/a2a/rpc — A2A JSON-RPC endpoint."""
-    return {"status": "ok"}
+_register_webhook_routes(router)
