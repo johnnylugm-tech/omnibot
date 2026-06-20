@@ -472,14 +472,17 @@ async def create_knowledge_with_chunks(
         """
         nonlocal fallback, enqueued_job
         fallback = "async_queue"
-        enqueued_job = enqueue_embedding_job(
-            EmbeddingJob(
-                chunk_id=first_chunk_id,
-                knowledge_id=knowledge_id,
-                content=first_chunk_text,
-                model=model,
+        try:
+            enqueued_job = enqueue_embedding_job(
+                EmbeddingJob(
+                    chunk_id=first_chunk_id,
+                    knowledge_id=knowledge_id,
+                    content=first_chunk_text,
+                    model=model,
+                )
             )
-        )
+        except Exception as exc:
+            _logger.error("Failed to enqueue fallback embedding job: %s", exc)
         _logger.warning(log_msg, *log_args)
 
     try:
@@ -625,7 +628,7 @@ def batch_import_knowledge(
     return BatchImportResult(
         entry_count=count,
         enqueued_count=enqueued,
-        sync_wait=not is_batch,
+        sync_wait=False,
         per_entry_ms=per_entry_ms,
     )
 
@@ -669,6 +672,8 @@ def compute_sync_status(chunks_done: int, chunks_total: int) -> str:
     ``embedding_synced_at`` timestamp from ``EmbeddingSyncStatus``
     to render the full UI badge (🟡/🟢/🔴 + x/n progress).
     """
+    if chunks_total == 0:
+        return "failed"
     if chunks_done == chunks_total:
         return "synced"
     if 0 < chunks_done < chunks_total:

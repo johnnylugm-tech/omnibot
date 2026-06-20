@@ -60,7 +60,7 @@ Citations:
 # ``mask_count``. With ``\\b``, the regex only fires when the digit run
 # is exactly 10 or 11 characters long (so a 16-digit tracking number
 # never matches as a phone).
-_PHONE_RE = re.compile(r"\b\d{10,11}\b")
+_PHONE_RE = re.compile(r"(?<!\d)(?:0\d{1,3}[-\s]?\d{3,4}[-\s]?\d{4}|\(0\d{1,2}\)[-\s]?\d{3,4}[-\s]?\d{4})(?!\d)")
 
 # Credit card: 16 consecutive digits, word-bounded. A Luhn check gates
 # the actual replacement so Luhn-invalid 16-digit strings (order IDs,
@@ -85,7 +85,7 @@ _ADDRESS_RE = re.compile(
     r"[0-9一-鿿]*?"
     r"[路街巷]"
     r"[0-9一-鿿]*?"
-    r"[號樓]"
+    r"(?:[號][0-9一-鿿]*[樓]?|[樓])"
 )
 
 
@@ -263,6 +263,8 @@ class PIIMasking:
                 performed_by=performed_by,
             )
         )
+        if len(PIIMasking._audit_log) > 10000:
+            PIIMasking._audit_log = PIIMasking._audit_log[-10000:]
 
     @classmethod
     def read_audit_log(cls) -> list[AuditEntry]:

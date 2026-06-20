@@ -37,13 +37,13 @@ from app.services.aee.adapter import (
 # match, the payload is treated as Bash. Callers may also force the
 # language via the ``language`` kwarg on ``run_script``.
 # ---------------------------------------------------------------------------
-_PYTHON_MARKERS = ("\n    ", "\n\t", "def ", "class ", "import ", "print(", "from ")
+_PYTHON_MARKERS = ("def ", "class ", "import ", "print(", "from ")
 
 
 def _detect_language(script: str) -> str:
     """Return ``"python"`` or ``"bash"`` for a script payload."""
     if any(marker in script for marker in _PYTHON_MARKERS):
-        return "python"
+        return "python3"
     return "bash"
 
 
@@ -215,16 +215,14 @@ class CLIAdapter(ActionAdapter):
         except Exception as exc:
             return fail(f"subprocess error: {exc}")
 
-        # Watchdog: send the requested signal after a short grace period so
-        # the interpreter is actually running before we kill it. Daemon
-        # thread so it never blocks process exit.
-        def _send_signal() -> None:
-            time.sleep(_KILL_SIGNAL_GRACE_SECONDS)
+        # Synchronous wait for the grace period before sending the signal.
+        # Fixes M-8 (TOCTOU / thread race) and L-2 (silent success if finished).
+        time.sleep(_KILL_SIGNAL_GRACE_SECONDS)
+        if proc.poll() is None:
             with contextlib.suppress(ProcessLookupError, OSError):
                 proc.send_signal(sig)
-
-        killer = threading.Thread(target=_send_signal, daemon=True)
-        killer.start()
+        else:
+            return fail("process completed before kill signal could be sent")
 
         try:
             stdout, stderr = proc.communicate(timeout=timeout_seconds)
@@ -233,7 +231,10 @@ class CLIAdapter(ActionAdapter):
             # and report the timeout.
             with contextlib.suppress(ProcessLookupError, OSError):
                 proc.kill()
-            proc.communicate()
+            try:
+                proc.communicate(timeout=5)
+            except subprocess.TimeoutExpired:
+                pass
             return fail(
                 f"timeout: process exceeded {timeout_seconds}s and was terminated"
             )

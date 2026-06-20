@@ -87,10 +87,10 @@ class WhatsAppWebhookAdapter:
 
         Navigates ``payload["entry"][i]["changes"][j]["value"]["messages"]``.
         """
-        for entry in payload.get("entry", []):
-            for change in entry.get("changes", []):
-                value = change.get("value", {})
-                yield from value.get("messages", [])
+        for entry in payload.get("entry") or []:
+            for change in entry.get("changes") or []:
+                value = change.get("value") or {}
+                yield from value.get("messages") or []
 
     @staticmethod
     def _build_unified_message(message: dict) -> UnifiedMessage:
@@ -105,12 +105,16 @@ class WhatsAppWebhookAdapter:
             - ``received_at`` = message timestamp (epoch string → datetime UTC)
             - ``reply_token`` = ``None`` (WhatsApp has no reply_token concept)
         """
-        platform_user_id = message["from"]
+        platform_user_id = message.get("from", "")
         content = message.get("text", {}).get("body", "")
         msg_type_str = message.get("type", "text")
         message_type = _WHATSAPP_TYPE_MAP.get(msg_type_str, MessageType.TEXT)
         timestamp_str = message.get("timestamp", "0")
-        received_at = datetime.fromtimestamp(int(timestamp_str), tz=UTC)
+        try:
+            ts = int(timestamp_str)
+        except ValueError:
+            ts = 0
+        received_at = datetime.fromtimestamp(ts, tz=UTC)
 
         return UnifiedMessage(
             platform=Platform.WHATSAPP,

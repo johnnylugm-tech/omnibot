@@ -768,6 +768,13 @@
         "rounds_used": 1,
         "open_critical": 0,
         "open_high": 0
+      },
+      "FR-84": {
+        "score": 58.4,
+        "quality_complete": false,
+        "rounds_used": 1,
+        "open_critical": 0,
+        "open_high": 0
       }
     },
     "gate2": null,

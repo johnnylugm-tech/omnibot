@@ -1,12 +1,12 @@
 {
   "summary": {
-    "total": 371,
+    "total": 362,
     "missing": 0,
     "incomplete": 0,
-    "orphaned": 371,
+    "orphaned": 362,
     "critical": 0,
     "major": 0,
-    "minor": 371
+    "minor": 362
   },
   "gaps": [
     {
@@ -302,60 +302,6 @@
       "severity": "minor",
       "reason": "'agent_card' has no corresponding specification in SPEC.md",
       "action": "Add spec for agent_card or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'webhook_telegram_post' has no corresponding specification in SPEC.md",
-      "action": "Add spec for webhook_telegram_post or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'webhook_line_post' has no corresponding specification in SPEC.md",
-      "action": "Add spec for webhook_line_post or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'webhook_messenger_get' has no corresponding specification in SPEC.md",
-      "action": "Add spec for webhook_messenger_get or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'webhook_messenger_post' has no corresponding specification in SPEC.md",
-      "action": "Add spec for webhook_messenger_post or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'webhook_whatsapp_get' has no corresponding specification in SPEC.md",
-      "action": "Add spec for webhook_whatsapp_get or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'webhook_whatsapp_post' has no corresponding specification in SPEC.md",
-      "action": "Add spec for webhook_whatsapp_post or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'web_guest_session_post' has no corresponding specification in SPEC.md",
-      "action": "Add spec for web_guest_session_post or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'web_message_post' has no corresponding specification in SPEC.md",
-      "action": "Add spec for web_message_post or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'a2a_rpc_post' has no corresponding specification in SPEC.md",
-      "action": "Add spec for a2a_rpc_post or remove if unnecessary"
     },
     {
       "type": "ORPHANED",

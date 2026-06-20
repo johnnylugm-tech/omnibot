@@ -172,7 +172,6 @@ class MCPAdapter(ActionAdapter):
         """
         if self.transport == "stdio" and self.command and "down" in self.command.lower():
             return True
-        if self.transport == "sse" and self.url:
-            if "down" in self.url.lower() or "65535" in self.url:
-                return True
+        if self.transport == "sse" and self.url and ("down" in self.url.lower() or "65535" in self.url):
+            return True
         return False

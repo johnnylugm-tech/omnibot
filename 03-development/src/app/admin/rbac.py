@@ -19,6 +19,7 @@ Citations:
 from __future__ import annotations
 
 import functools
+import os
 from collections.abc import Callable
 from typing import Any
 
@@ -167,8 +168,10 @@ def _resolve_role(args: tuple[Any, ...], kwargs: dict[str, Any]) -> str:
            ``knowledge:read`` so any undeclared privilege still maps
            to 403).
     """
-    if "role" in kwargs and kwargs["role"] is not None:
-        return str(kwargs["role"])
+    if "role" in kwargs:
+        override = kwargs.pop("role")
+        if override is not None and os.environ.get("TESTING") == "1":
+            return str(override)
     request = kwargs.get("request")
     if request is not None and getattr(request, "user_role", None) is not None:
         return str(request.user_role)

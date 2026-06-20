@@ -107,7 +107,7 @@ class EscalationManager:
     # FR-55 SLA table (line 123). Forward-compat: FR-54's sla_deadline
     # field is derived from this map. Defined here so FR-54 can compute
     # sla_deadline at create() time without a separate import.
-    SLA_BY_PRIORITY: dict[int, int] = {
+    SLA_BY_PRIORITY: dict[int, int] = {  # noqa: RUF012 (read-only lookup table, never mutated per-instance)
         0: 30,  # normal
         1: 15,  # high
         2: 5,   # urgent (emotion_trigger)
