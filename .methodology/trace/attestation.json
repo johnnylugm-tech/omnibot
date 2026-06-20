@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "f866b583a7ec619c915dcf3d99ff3d797d4dd5a7",
-  "content_sha256": "4b9ae2bd8e86bb9ffde185b5cb20d9267a1e68fa9ea7e8c72172d9eb348e9f50",
+  "git_sha": "6c8613c4b9dd54abb57f690cb9acd110c3de26c1",
+  "content_sha256": "da40dc22d4113b4cda8af8297201296ff29b716ac99a1e9fb623bab1666f1989",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,10 +11,10 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "62.0%",
-      "test_coverage": "65.7%",
-      "verification_rate": "62.0%",
-      "total_links": 261,
+      "code_coverage": "66.7%",
+      "test_coverage": "70.4%",
+      "verification_rate": "66.7%",
+      "total_links": 271,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -38,11 +38,6 @@
           "FR-61",
           "FR-62",
           "FR-63",
-          "FR-65",
-          "FR-66",
-          "FR-67",
-          "FR-68",
-          "FR-69",
           "FR-75",
           "FR-76",
           "FR-77",
@@ -79,10 +74,6 @@
           "FR-60",
           "FR-61",
           "FR-62",
-          "FR-66",
-          "FR-67",
-          "FR-68",
-          "FR-69",
           "FR-75",
           "FR-76",
           "FR-77",
@@ -96,7 +87,6 @@
           "FR-92",
           "FR-93",
           "FR-94",
-          "FR-98",
           "FR-99"
         ]
       }
@@ -124,11 +114,6 @@
         "FR-61",
         "FR-62",
         "FR-63",
-        "FR-65",
-        "FR-66",
-        "FR-67",
-        "FR-68",
-        "FR-69",
         "FR-75",
         "FR-76",
         "FR-77",
@@ -165,10 +150,6 @@
         "FR-60",
         "FR-61",
         "FR-62",
-        "FR-66",
-        "FR-67",
-        "FR-68",
-        "FR-69",
         "FR-75",
         "FR-76",
         "FR-77",
@@ -182,7 +163,6 @@
         "FR-92",
         "FR-93",
         "FR-94",
-        "FR-98",
         "FR-99"
       ]
     },
@@ -1077,9 +1057,11 @@
       },
       "FR-65": {
         "fr_id": "FR-65",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
+        "code_files": [
+          "03-development/src/app/services/llm_judge.py"
+        ],
         "test_files": [
           "tests/test_fr65.py"
         ],
@@ -1088,37 +1070,53 @@
       },
       "FR-66": {
         "fr_id": "FR-66",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/services/llm_judge.py"
+        ],
+        "test_files": [
+          "tests/test_fr66.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-67": {
         "fr_id": "FR-67",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/services/llm_judge.py"
+        ],
+        "test_files": [
+          "tests/test_fr67.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-68": {
         "fr_id": "FR-68",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/services/llm_judge.py"
+        ],
+        "test_files": [
+          "tests/test_fr68.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-69": {
         "fr_id": "FR-69",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/services/llm_judge.py"
+        ],
+        "test_files": [
+          "tests/test_fr69.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
@@ -1437,7 +1435,9 @@
         "status": "pending",
         "srs_section": "SAD.md",
         "code_files": [],
-        "test_files": [],
+        "test_files": [
+          "tests/test_fr98.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
