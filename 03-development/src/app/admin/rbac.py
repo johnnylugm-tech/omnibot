@@ -1,17 +1,25 @@
-"""[FR-60] [FR-61] 7-role RBAC role-permission matrix and enforcement.
+"""[FR-60] [FR-61] [FR-62] 7-role RBAC role-permission matrix and
+enforcement, plus the ``RBACEnforcer`` decorator middleware.
 
 Citations:
     SRS.md line 138 — FR-60 acceptance: 7 角色 ROLE_PERMISSIONS 完整;
         dpo 有 pii:decrypt; auditor 無 pii:decrypt.
     SRS.md line 139 — FR-61 acceptance: 各角色權限按規格;
         auditor 嘗試 pii:decrypt 回 403; 越界操作被拒絕;
-        Explicit pii:none 必須在 ROLE_PERMISSIONS 中顯式定義（不隱含）,
+        Explicit pii:none 必須在 ROLE_PERMISSIONS 中顯式定義(不隱含),
         確保 auditor 嘗試 pii:decrypt 時回傳 403.
-    TEST_SPEC.md FR-60 / FR-61 — function contracts pinned by
-        test_fr60.py / test_fr61.py.
+    SRS.md line 140 — FR-62 acceptance: ``@rbac.require(resource,
+        action)`` 套用於管理 API endpoint; ``user_role`` 從 request 取得;
+        無權限拋 ``PermissionError`` → HTTP 403
+        ``AUTHZ_INSUFFICIENT_ROLE``; 有權限請求通過; 裝飾器正確注入.
+    TEST_SPEC.md FR-60 / FR-61 / FR-62 — function contracts pinned by
+        test_fr60.py / test_fr61.py / test_fr62.py.
 """
 
 from __future__ import annotations
+
+import functools
+from typing import Any, Callable
 
 # HTTP-style status codes returned by ``enforce``. Mirrors the
 # canonical REST semantics: 200 = grant, 403 = authz denial
@@ -51,7 +59,7 @@ def _role(grants: dict[str, frozenset[str]]) -> dict[str, frozenset[str]]:
 
     The fill step makes the matrix self-describing: every role entry
     carries an explicit key for every resource, so the FR-61 "Explicit
-    pii:none 必須在 ROLE_PERMISSIONS 中顯式定義（不隱含）" contract is
+    pii:none 必須在 ROLE_PERMISSIONS 中顯式定義(不隱含)" contract is
     upheld mechanically (e.g. ``auditor['pii']`` is ``_NONE``, not a
     missing key that ``enforce`` would have to special-case).
     """
@@ -104,7 +112,7 @@ ROLE_PERMISSIONS: dict[str, dict[str, frozenset[str]]] = {
 
     # auditor: read-only across knowledge/escalate/audit/experiment/system
     # with EXPLICIT pii:none (empty frozenset) per FR-61 "Explicit
-    # pii:none 必須在 ROLE_PERMISSIONS 中顯式定義（不隱含）".
+    # pii:none 必須在 ROLE_PERMISSIONS 中顯式定義(不隱含)".
     # The empty ``pii`` grant is what makes ``enforce('auditor', 'pii',
     # 'decrypt')`` return 403 — privacy boundary.
     "auditor": _role({
@@ -147,4 +155,87 @@ def enforce(role: str, resource: str, action: str) -> int:
     return _HTTP_OK if action in resource_grants else _HTTP_FORBIDDEN
 
 
-__all__ = ["ROLE_PERMISSIONS", "RESOURCES", "enforce"]
+def _resolve_role(args: tuple[Any, ...], kwargs: dict[str, Any]) -> str:
+    """Return the caller's role for ``RBACEnforcer.require`` dispatch.
+
+    Lookup order (SRS FR-62 "``user_role`` 從 request 取得"):
+        1. ``kwargs["role"]`` — explicit role override (test hook).
+        2. ``kwargs["request"].user_role`` — Flask-style request.
+        3. ``args[0].user_role`` — first positional request object.
+        4. ``"anonymous"`` — safe default (FR-61 anonymous only holds
+           ``knowledge:read`` so any undeclared privilege still maps
+           to 403).
+    """
+    if "role" in kwargs and kwargs["role"] is not None:
+        return str(kwargs["role"])
+    request = kwargs.get("request")
+    if request is not None and getattr(request, "user_role", None) is not None:
+        return str(request.user_role)
+    if args:
+        first = args[0]
+        if first is not None and getattr(first, "user_role", None) is not None:
+            return str(first.user_role)
+    return "anonymous"
+
+
+class RBACEnforcer:
+    """[FR-62] RBAC enforcer middleware exposing ``check`` and ``require``.
+
+    Citations:
+        SRS.md line 140 — FR-62 acceptance: ``@rbac.require(resource,
+            action)`` decorator applied to admin API endpoints;
+            ``user_role`` resolved from the request; insufficient role
+            raises ``PermissionError`` → HTTP 403
+            ``AUTHZ_INSUFFICIENT_ROLE``; authorised requests pass
+            through; decorator is correctly injected.
+
+    The class is a thin façade over the module-level ``enforce`` so the
+    HTTP middleware can dispatch on a stable sentinel
+    (``ERROR_AUTHZ_INSUFFICIENT_ROLE``) and on a stable status code
+    (``200`` / ``403``) without coupling to the underlying grant
+    matrix.
+    """
+
+    # Canonical denial error code. HTTP middleware matches on this
+    # exact string to map a ``PermissionError`` to HTTP 403
+    # ``AUTHZ_INSUFFICIENT_ROLE`` (SRS FR-62).
+    ERROR_AUTHZ_INSUFFICIENT_ROLE: str = "AUTHZ_INSUFFICIENT_ROLE"
+
+    @classmethod
+    def check(cls, role: str, resource: str, action: str) -> int:
+        """Return ``200`` for granted ``(resource, action)`` else ``403``.
+
+        Mirrors the module-level ``enforce`` so the class is a stable
+        entry point for both programmatic checks and the
+        ``require`` decorator.
+        """
+        return enforce(role, resource, action)
+
+    @classmethod
+    def require(cls, resource: str, action: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+        """Return a decorator that gates ``func`` on the
+        ``(resource, action)`` grant for the caller's role.
+
+        The caller's role is resolved from the wrapped invocation's
+        arguments via ``_resolve_role`` (kwargs ``role`` /
+        ``request.user_role`` / first-positional ``user_role``;
+        defaults to ``"anonymous"``). On denial the decorator raises
+        ``PermissionError(cls.ERROR_AUTHZ_INSUFFICIENT_ROLE)`` so
+        HTTP middleware can map the failure to a 403
+        ``AUTHZ_INSUFFICIENT_ROLE`` response (SRS FR-62).
+        """
+
+        def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+            @functools.wraps(func)
+            def wrapper(*args: Any, **kwargs: Any) -> Any:
+                role = _resolve_role(args, kwargs)
+                if cls.check(role, resource, action) != _HTTP_OK:
+                    raise PermissionError(cls.ERROR_AUTHZ_INSUFFICIENT_ROLE)
+                return func(*args, **kwargs)
+
+            return wrapper
+
+        return decorator
+
+
+__all__ = ["ROLE_PERMISSIONS", "RESOURCES", "enforce", "RBACEnforcer"]
