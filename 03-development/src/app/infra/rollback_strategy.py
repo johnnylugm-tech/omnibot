@@ -25,7 +25,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-
 # ---------------------------------------------------------------------------
 # Canonical FR-98 configuration constants. Exposed at module scope so the
 # test surface can assert against the same identifiers the production
@@ -178,16 +177,16 @@ class RollbackStrategy:
 
 
 __all__ = [
-    "KNOWLEDGE_VERSION_FIELD",
-    "KNOWLEDGE_IS_ACTIVE_FIELD",
-    "MIGRATION_DOWNGRADE",
+    "AB_ROLLBACK_THRESHOLD_PCT",
+    "AB_TEST_STAGES",
     "EXPERIMENT_STATUS_ABORTED",
     "EXPERIMENT_TRAFFIC_CONTROL",
-    "AB_TEST_STAGES",
-    "AB_ROLLBACK_THRESHOLD_PCT",
-    "KnowledgeRollbackResult",
-    "SchemaMigrationResult",
+    "KNOWLEDGE_IS_ACTIVE_FIELD",
+    "KNOWLEDGE_VERSION_FIELD",
+    "MIGRATION_DOWNGRADE",
     "ExperimentAbortResult",
+    "KnowledgeRollbackResult",
     "ModelSwitchResult",
     "RollbackStrategy",
+    "SchemaMigrationResult",
 ]
