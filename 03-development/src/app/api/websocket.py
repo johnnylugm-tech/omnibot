@@ -1,20 +1,28 @@
-"""[FR-57/FR-58] /ws/agent + /ws/user WebSocket — JWT Bearer + event dispatch.
+"""[FR-57/FR-58/FR-59] /ws/agent + /ws/user WebSocket — JWT Bearer,
+event dispatch, heartbeat + subscribe flow.
 
-Spec source: 02-architecture/TEST_SPEC.md (FR-57, FR-58)
-SRS source : SRS.md FR-57 + FR-58 (Module 11: WebSocket 端點)
+Spec source: 02-architecture/TEST_SPEC.md (FR-57, FR-58, FR-59)
+SRS source : SRS.md FR-57 + FR-58 + FR-59 (Module 11: WebSocket 端點)
 
 FR-57 — /ws/agent WebSocket: 客服工作台;
     Server→Client 事件: escalation.new, escalation.claimed,
         escalation.resolved, conversation.message;
     Client→Server 事件: agent.typing, agent.takeover;
     JWT Bearer 驗證(query param 或 initial message).
-    Acceptance: 事件格式正確；JWT 驗證失敗拒絕連線；
+    Acceptance: 事件格式正確; JWT 驗證失敗拒絕連線;
     各事件 payload 欄位完整.
 
 FR-58 — /ws/user WebSocket: Web 前端用戶;
     Server→Client: message.reply (message_id, content, source, timestamp);
     JWT BearerAuth.
     Acceptance: message.reply 即時推送; JWT 驗證; 避免輪詢.
+
+FR-59 — WebSocket 心跳 + channel 訂閱:
+    Server 30s 發送 ping; Client 10s 未回 pong → Server 發送
+        disconnect(reason: timeout); 支援 subscribe/subscribed
+        channel 訂閱流程.
+    Acceptance: 30s ping; 10s timeout disconnect; channel 訂閱回
+        subscribed.
 
 Public surface pinned by this module:
 
@@ -43,6 +51,18 @@ Public surface pinned by this module:
       source, timestamp) field set (SRS FR-58 acceptance: "各事件
       payload 欄位完整"). Server pushes proactively; client does not
       poll (SRS FR-58 acceptance: "避免輪詢").
+    - ``PING_INTERVAL_SECONDS`` — ``30``; heartbeat cadence (SRS
+      FR-59 acceptance: "30s ping").
+    - ``PONG_TIMEOUT_SECONDS`` — ``10``; pong-wait window (SRS
+      FR-59 acceptance: "10s timeout disconnect").
+    - ``build_ping_message()`` — builder for the heartbeat frame
+      payload (``type == "ping"``).
+    - ``pong_timeout_action()`` — builder for the timeout
+      disconnect payload (``action == "disconnect"``,
+      ``reason == "timeout"``).
+    - ``handle_subscribe(message: dict) -> dict`` — channel subscribe
+      handler; returns ``{"event": "subscribed", "channel": ...}``
+      (SRS FR-59 acceptance: "channel 訂閱回 subscribed").
 
 Citations:
     - SRS.md FR-57 (line 130): /ws/agent WebSocket event set
@@ -53,6 +73,9 @@ Citations:
       (server→client message.reply) + JWT Bearer contract.
     - SRS.md FR-58 acceptance: "message.reply 即時推送"; "JWT 驗證";
       "避免輪詢".
+    - SRS.md FR-59 (line 132): heartbeat + subscribe flow contract.
+    - SRS.md FR-59 acceptance: "30s ping"; "10s timeout disconnect";
+      "channel 訂閱回 subscribed".
     - SAD.md §2.2 Module: websocket.py — file location for the
       /ws/agent + /ws/user handlers.
 """
@@ -190,6 +213,129 @@ def handle_agent_takeover(message: dict) -> dict:
         "event": message.get("event", "agent.takeover"),
         "escalation_id": escalation_id,
         "status": "claimed",
+    }
+
+
+# ---------------------------------------------------------------------------
+# [FR-59] WebSocket heartbeat (30s ping / 10s pong-timeout) and
+# subscribe/subscribed channel flow.
+#
+# Spec source: 02-architecture/TEST_SPEC.md (FR-59)
+# SRS source : SRS.md FR-59 (Module 11: WebSocket 端點)
+#
+# FR-59 — WebSocket lifecycle:
+#     Server 30s 發送 ping; Client 10s 未回 pong → Server 發送
+#     disconnect(reason: timeout); 支援 subscribe/subscribed channel
+#     訂閱流程.
+#     Acceptance: 30s ping; 10s timeout disconnect; channel 訂閱回
+#     subscribed.
+#
+# Public surface pinned by this section:
+#
+#   - ``PING_INTERVAL_SECONDS`` — int constant equal to ``30``; the
+#     cadence at which the WS scheduler emits a ``ping`` frame (SRS
+#     FR-59 acceptance: "30s ping").
+#   - ``PONG_TIMEOUT_SECONDS`` — int constant equal to ``10``; the
+#     pong-wait window after which the WS scheduler MUST emit a
+#     ``disconnect`` action with ``reason="timeout"`` (SRS FR-59
+#     acceptance: "10s timeout disconnect").
+#   - ``build_ping_message()`` — builder for the heartbeat frame
+#     payload; returns a dict with ``type == "ping"`` (plus a
+#     ``timestamp`` snapshot) so the client can dispatch the heartbeat
+#     to its keep-alive handler.
+#   - ``pong_timeout_action()`` — builder for the timeout disconnect
+#     payload; returns ``{"action": "disconnect", "reason":
+#     "timeout"}`` (SRS FR-59: "Server 發送 disconnect(reason:
+#     timeout)").
+#   - ``handle_subscribe(message)`` — channel subscribe handler;
+#     accepts a request dict ``{"action": "subscribe", "channel":
+#     "..."}`` and returns a ``{"event": "subscribed", "channel":
+#     "..."}`` response (SRS FR-59 acceptance: "channel 訂閱回
+#     subscribed").
+# ---------------------------------------------------------------------------
+
+# [FR-59] Heartbeat cadence — 30s ping (SRS FR-59 acceptance: "30s
+# ping"). ``int`` rather than ``float`` so the WS scheduler can use
+# it directly as a sleep / tick interval without rounding.
+PING_INTERVAL_SECONDS: int = 30
+
+# [FR-59] Pong-wait window — 10s (SRS FR-59 acceptance: "10s
+# timeout disconnect"). When the client fails to reply with a pong
+# within this window the server MUST emit
+# ``pong_timeout_action()``.
+PONG_TIMEOUT_SECONDS: int = 10
+
+
+def build_ping_message() -> dict:
+    """[FR-59] Build the 30s heartbeat ``ping`` frame.
+
+    Returns a dict whose ``type`` is ``"ping"`` so the client can
+    distinguish heartbeat frames from data events (SRS FR-59: "Server
+    每 30s 發送 ping"). A ``timestamp`` float (seconds-since-epoch)
+    is included so the client can compute the round-trip latency of
+    the pong reply.
+
+    Returns:
+        Dict with ``type == "ping"`` and ``timestamp == time.time()``
+        — the WS layer can serialise this directly as a frame.
+
+    Citations:
+        - SRS.md FR-59 (line 132): "Server 每 30s 發送 ping".
+        - SRS.md FR-59 acceptance: "30s ping".
+    """
+    return {"type": "ping", "timestamp": time.time()}
+
+
+def pong_timeout_action() -> dict:
+    """[FR-59] Build the pong-timeout ``disconnect`` action payload.
+
+    Invoked when the client fails to reply with a pong within
+    ``PONG_TIMEOUT_SECONDS`` (SRS FR-59: "Client 10s 內未回 pong →
+    Server 發送 disconnect"). The returned dict's ``action`` is
+    ``"disconnect"`` and ``reason`` is ``"timeout"`` so the client
+    can render a reconnect prompt that distinguishes network loss
+    from server shutdown.
+
+    Returns:
+        ``{"action": "disconnect", "reason": "timeout"}`` — the
+        WS layer closes the socket on receipt of this frame.
+
+    Citations:
+        - SRS.md FR-59 (line 132): "Client 10s 內未回 pong → Server
+          發送 disconnect(reason: timeout)".
+        - SRS.md FR-59 acceptance: "10s timeout disconnect".
+    """
+    return {"action": "disconnect", "reason": "timeout"}
+
+
+def handle_subscribe(message: dict) -> dict:
+    """[FR-59] Dispatch a channel ``subscribe`` request.
+
+    Accepts a subscribe request dict ``{"action": "subscribe",
+    "channel": "..."}`` and returns a well-formed response whose
+    event name is ``"subscribed"`` and which references the
+    requested channel (SRS FR-59 acceptance: "channel 訂閱回
+    subscribed"). The handler is the WS router's dispatch target
+    for ``action == "subscribe"``.
+
+    Args:
+        message: Subscribe request dict. Recognised keys:
+            ``action`` (the action name, default ``"subscribe"``)
+            and ``channel`` (the channel name to subscribe to).
+
+    Returns:
+        ``{"event": "subscribed", "channel": <channel>}`` — the WS
+        layer pushes this back to the client so the client can join
+        the response to its subscription request.
+
+    Citations:
+        - SRS.md FR-59 (line 132): "支援 subscribe/subscribed
+          channel 訂閱流程".
+        - SRS.md FR-59 acceptance: "channel 訂閱回 subscribed".
+    """
+    return {
+        "event": "subscribed",
+        "channel": message.get("channel"),
     }
 
 
