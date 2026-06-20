@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "41f8deb62ad661bf0261945e8834f019419d11e8",
-  "content_sha256": "a89a46a423e96a6c4e1bdecba90cb30c652d0fedab69e05bd0d7a74d70c91e37",
+  "git_sha": "b7f27a18bf209398d914d10a6dcaab034aad6559",
+  "content_sha256": "457ed63070dec701d9df20349d2adce477feaae3376f1d06f739919acac41c6b",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,16 +11,15 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "80.6%",
-      "test_coverage": "84.3%",
-      "verification_rate": "80.6%",
-      "total_links": 307,
+      "code_coverage": "81.5%",
+      "test_coverage": "85.2%",
+      "verification_rate": "81.5%",
+      "total_links": 309,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
           "FR-108",
           "FR-54",
-          "FR-60",
           "FR-61",
           "FR-62",
           "FR-63",
@@ -42,7 +41,6 @@
         ],
         "fr_without_test": [
           "FR-108",
-          "FR-61",
           "FR-62",
           "FR-75",
           "FR-76",
@@ -66,7 +64,6 @@
       "fr_without_code": [
         "FR-108",
         "FR-54",
-        "FR-60",
         "FR-61",
         "FR-62",
         "FR-63",
@@ -88,7 +85,6 @@
       ],
       "fr_without_test": [
         "FR-108",
-        "FR-61",
         "FR-62",
         "FR-75",
         "FR-76",
@@ -1008,9 +1004,11 @@
       },
       "FR-60": {
         "fr_id": "FR-60",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
+        "code_files": [
+          "03-development/src/app/admin/rbac.py"
+        ],
         "test_files": [
           "tests/test_fr60.py"
         ],
@@ -1022,7 +1020,9 @@
         "status": "pending",
         "srs_section": "SAD.md",
         "code_files": [],
-        "test_files": [],
+        "test_files": [
+          "tests/test_fr61.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
