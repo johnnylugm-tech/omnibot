@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "d6b97f15c792841b6648d8d4e7e350674e7289c0",
-  "content_sha256": "5396393276a0e83d46e4d99ab53283689b8d98e0ffb0914fd06cdae83d64a09d",
+  "git_sha": "550fdcd0de6c5b02689248047d0fdf5283e2dec6",
+  "content_sha256": "1db8bfa23ec944fbebd174f8aab5024eef6ae7103a3cf712141def4f401218b0",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -12,9 +12,9 @@
       "total_requirements": 108,
       "srs_coverage": "100.0%",
       "code_coverage": "86.1%",
-      "test_coverage": "88.9%",
+      "test_coverage": "89.8%",
       "verification_rate": "86.1%",
-      "total_links": 318,
+      "total_links": 319,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -36,7 +36,6 @@
         ],
         "fr_without_test": [
           "FR-108",
-          "FR-78",
           "FR-79",
           "FR-84",
           "FR-85",
@@ -71,7 +70,6 @@
       ],
       "fr_without_test": [
         "FR-108",
-        "FR-78",
         "FR-79",
         "FR-84",
         "FR-85",
@@ -1221,7 +1219,9 @@
         "status": "pending",
         "srs_section": "SAD.md",
         "code_files": [],
-        "test_files": [],
+        "test_files": [
+          "tests/test_fr78.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
