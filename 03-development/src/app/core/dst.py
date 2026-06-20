@@ -453,7 +453,7 @@ class DialogueState:
 # ---------------------------------------------------------------------------
 # FR-38 — context-window manager (sliding-window + summarization).
 #
-# SRS FR-38: "對話 Context Window 管理：sliding_window_with_summarization
+# SRS FR-38: "對話 Context Window 管理: sliding_window_with_summarization
 # 策略". The class owns three things:
 #   1. The tokenizer (cl100k_base via tiktoken) — used for BOTH the
 #      gpt-4o primary path and the gemini fallback path so the budget
