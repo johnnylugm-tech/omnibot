@@ -1,8 +1,9 @@
 """[FR-50] ResponseGenerator — pre-canned reply templates + render helper.
 [FR-51] ResponseGenerator._apply_emotion_tone — emotion-tone prefix modulation.
+[FR-52] ResponseGenerator._apply_ab_variant — A/B variant suffix injection.
 
-Spec source: 02-architecture/TEST_SPEC.md (FR-50, FR-51)
-SRS source : SRS.md FR-50, FR-51 (Module 9: Response Generator)
+Spec source: 02-architecture/TEST_SPEC.md (FR-50, FR-51, FR-52)
+SRS source : SRS.md FR-50, FR-51, FR-52 (Module 9: Response Generator)
 
 FR-50 -- Template System：
     ``ResponseTemplate（name, platform, emotion_tone, template）`` 預設
@@ -19,6 +20,12 @@ FR-51 -- Emotion Tone Modulation：
     - ``emotion == "neutral"`` (or any other unrecognised label) →
       pass-through, ``base_text`` returned unchanged.
 
+FR-52 -- A/B Variant Injection：
+    - ``variant == "a"`` → append 「還有其他問題嗎？」 to base_text.
+    - ``variant == "b"`` → append 「需要進一步說明嗎？」 to base_text.
+    - ``variant == "control"`` (or any unrecognised label) → return
+      ``base_text`` unchanged with no suffix injected.
+
 Public surface pinned by this module:
 
     - ``ResponseTemplate`` — frozen dataclass with the four fields named
@@ -33,6 +40,9 @@ Public surface pinned by this module:
       repeat_count, base_text="") -> str`` — prepends the SRS-mandated
       tone prefix per FR-51 above and returns ``base_text`` (possibly
       with prefix) unchanged for the neutral pass-through.
+    - ``ResponseGenerator._apply_ab_variant(variant, base_text) -> str``
+      — appends the SRS-mandated CTA suffix per FR-52 above and
+      returns ``base_text`` unchanged for the control pass-through.
 
 Citations:
     - SRS.md FR-50 -- "Template System：ResponseTemplate（name, platform, emotion_tone, template）" (line 113).
@@ -43,6 +53,10 @@ Citations:
     - SRS.md FR-51 -- "positive → 前綴「太好了！」" (line 114).
     - SRS.md FR-51 -- "repeat_count > 0 且 negative → 抑制重複道歉" (line 114).
     - SRS.md FR-51 -- implementation_functions: "ResponseGenerator._apply_emotion_tone" (line 114).
+    - SRS.md FR-52 -- "variant_a → 結尾 \"還有其他問題嗎？\"" (line 115).
+    - SRS.md FR-52 -- "variant_b → 結尾 \"需要進一步說明嗎？\"" (line 115).
+    - SRS.md FR-52 -- "control → 不注入" (line 115).
+    - SRS.md FR-52 -- implementation_functions: "ResponseGenerator._apply_ab_variant()" (line 115).
 """
 
 from __future__ import annotations
@@ -111,6 +125,12 @@ class ResponseGenerator:
     _NEGATIVE_APOLOGY_PREFIX: str = "非常抱歉造成您的困擾。"
     _POSITIVE_PREFIX: str = "太好了！"
 
+    # A/B variant suffixes are SRS FR-52-mandated literals. Kept as module
+    # constants so the experiment owner can later tune the CTA copy from a
+    # single place without re-deriving the dispatch logic.
+    _VARIANT_A_SUFFIX: str = "還有其他問題嗎？"
+    _VARIANT_B_SUFFIX: str = "需要進一步說明嗎？"
+
     @staticmethod
     def _apply_emotion_tone(
         emotion: str,
@@ -170,4 +190,48 @@ class ResponseGenerator:
             return ResponseGenerator._NEGATIVE_APOLOGY_PREFIX + base_text
         if emotion == "positive":
             return ResponseGenerator._POSITIVE_PREFIX + base_text
+        return base_text
+
+    @staticmethod
+    def _apply_ab_variant(variant: str, base_text: str) -> str:
+        """[FR-52] Append the SRS-mandated A/B CTA suffix to ``base_text``.
+
+        Dispatch per SRS FR-52 acceptance criteria:
+
+        - ``variant == "a"`` → append 「還有其他問題嗎？」 so the
+          treatment arm closes the conversation with a follow-up prompt.
+        - ``variant == "b"`` → append 「需要進一步說明嗎？」 so the
+          alternate treatment arm closes with its distinct CTA.
+        - ``variant == "control"`` (or any other unrecognised label) →
+          strict pass-through; ``base_text`` is returned unchanged so
+          the control group receives the bare reply with no suffix
+          injected. SRS FR-52 acceptance: "control → 不注入".
+
+        The ``variant`` label is produced upstream by
+        ``ABTestManager.get_variant()`` (see ``app.services.ab_testing``)
+        which uses SHA-256 over ``(user_id, experiment_id)`` so the same
+        user always lands on the same arm across processes.
+
+        Args:
+            variant: The variant label assigned to this user by
+                ``ABTestManager``. Recognised labels are ``"a"``,
+                ``"b"`` and ``"control"``; any other label is treated
+                as the no-injection baseline.
+            base_text: Reply body the suffix will be appended to.
+
+        Returns:
+            ``base_text`` with the appropriate CTA suffix appended, or
+            ``base_text`` unchanged for the control pass-through.
+
+        Citations:
+            - SRS.md FR-52 -- "variant_a → 結尾 \"還有其他問題嗎？\"" (line 115).
+            - SRS.md FR-52 -- "variant_b → 結尾 \"需要進一步說明嗎？\"" (line 115).
+            - SRS.md FR-52 -- "control → 不注入" (line 115).
+            - SRS.md FR-52 -- implementation_functions:
+              "ResponseGenerator._apply_ab_variant()" (line 115).
+        """
+        if variant == "a":
+            return base_text + ResponseGenerator._VARIANT_A_SUFFIX
+        if variant == "b":
+            return base_text + ResponseGenerator._VARIANT_B_SUFFIX
         return base_text
