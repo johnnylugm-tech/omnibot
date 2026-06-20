@@ -29,6 +29,10 @@ import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
 
+# Token format: m2m_ prefix + 32 bytes random → 64 lowercase hex chars.
+_TOKEN_BYTES = 32
+# Client ID suffix length in bytes (random hex).
+_CLIENT_ID_BYTES = 8
 
 # In-memory token store keyed by client_id. Each entry holds the
 # SHA-256 hash of the raw token (never the plaintext), the creation
@@ -38,6 +42,11 @@ _TOKEN_STORE: dict[str, dict] = {}
 # Reverse lookup from SHA-256 hash back to client_id so
 # validate_token() can check validity without iterating the store.
 _HASH_LOOKUP: dict[str, str] = {}
+
+
+def _hash_token(token: str) -> str:
+    """Return the SHA-256 hex digest of *token*."""
+    return hashlib.sha256(token.encode()).hexdigest()
 
 
 def create_token(
@@ -73,15 +82,14 @@ def create_token(
         03-development/tests/test_fr87.py:69-171 (case 1).
     """
     # Token: m2m_ prefix + 32 bytes random → 64 lowercase hex chars.
-    raw_bytes = secrets.token_bytes(32)
-    hex_part = raw_bytes.hex()
+    hex_part = secrets.token_hex(_TOKEN_BYTES)
     token = f"m2m_{hex_part}"
 
     # Store only the SHA-256 hash (never the plaintext).
-    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    token_hash = _hash_token(token)
 
     # Unique client_id.
-    client_id = f"client-{secrets.token_hex(8)}"
+    client_id = f"client-{secrets.token_hex(_CLIENT_ID_BYTES)}"
 
     # Expiry as ISO 8601 with timezone.
     expires_at_dt = datetime.now(timezone.utc) + timedelta(days=expires_in_days)
@@ -177,7 +185,7 @@ def validate_token(token: str) -> bool:
         03-development/tests/test_fr87.py:299-316 (case 3 validate
             before/after revoke).
     """
-    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    token_hash = _hash_token(token)
     client_id = _HASH_LOOKUP.get(token_hash)
     if client_id is None:
         return False
