@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "0b46374970056406a926bed86f64fd31c7c8e695",
-  "content_sha256": "e9e67307d4daade77847d0b55cfe43e5a25d503534da2eff4e7e20e5da130099",
+  "git_sha": "41f8deb62ad661bf0261945e8834f019419d11e8",
+  "content_sha256": "a89a46a423e96a6c4e1bdecba90cb30c652d0fedab69e05bd0d7a74d70c91e37",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,15 +11,13 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "78.7%",
-      "test_coverage": "81.5%",
-      "verification_rate": "78.7%",
-      "total_links": 300,
+      "code_coverage": "80.6%",
+      "test_coverage": "84.3%",
+      "verification_rate": "80.6%",
+      "total_links": 307,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
-          "FR-05",
-          "FR-06",
           "FR-108",
           "FR-54",
           "FR-60",
@@ -43,10 +41,7 @@
           "FR-99"
         ],
         "fr_without_test": [
-          "FR-05",
-          "FR-06",
           "FR-108",
-          "FR-60",
           "FR-61",
           "FR-62",
           "FR-75",
@@ -69,8 +64,6 @@
     "missing": {
       "fr_without_srs": [],
       "fr_without_code": [
-        "FR-05",
-        "FR-06",
         "FR-108",
         "FR-54",
         "FR-60",
@@ -94,10 +87,7 @@
         "FR-99"
       ],
       "fr_without_test": [
-        "FR-05",
-        "FR-06",
         "FR-108",
-        "FR-60",
         "FR-61",
         "FR-62",
         "FR-75",
@@ -175,19 +165,29 @@
       },
       "FR-05": {
         "fr_id": "FR-05",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/services/_jwt_utils.py",
+          "03-development/src/app/services/web_adapter.py",
+          "03-development/src/app/services/web_verifier.py"
+        ],
+        "test_files": [
+          "tests/test_fr05.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-06": {
         "fr_id": "FR-06",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/api/webhooks.py"
+        ],
+        "test_files": [
+          "tests/test_fr06.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
@@ -1011,7 +1011,9 @@
         "status": "pending",
         "srs_section": "SAD.md",
         "code_files": [],
-        "test_files": [],
+        "test_files": [
+          "tests/test_fr60.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
