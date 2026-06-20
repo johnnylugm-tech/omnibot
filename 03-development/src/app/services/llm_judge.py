@@ -409,6 +409,10 @@ class CalibrationPipeline:
     retry next month" semantics for a periodic cron-style job.
     """
 
+    # Stable cache key for the last-good Kappa measurement. Module-scope
+    # so production wiring and test stubs reference the same sentinel.
+    CACHE_KEY_LAST_KAPPA: str = "last_kappa"
+
     def __init__(self, judge_llm, kappa_cache, timeout_s: float) -> None:
         """Wire the pipeline with its three collaborators.
 
@@ -509,8 +513,6 @@ class CalibrationPipeline:
                     fallback=None,
                 )
 
-        golden_set = golden_set or []
-
         try:
             if golden_set:
                 # Branch 2: golden-set pass/fail. The golden_set
@@ -518,7 +520,7 @@ class CalibrationPipeline:
                 # tests pass precomputed pairs so the LLM is not
                 # consulted here (the LLM scoring step is part of
                 # production wiring but is not under test).
-                kappa = self._compute_agreement(golden_set)
+                kappa = self._agreement_rate(golden_set)
                 action = "pass" if (kappa is not None and kappa >= 0.7) else "recalibration"
                 return CalibrationResult(
                     kappa=kappa,
@@ -561,7 +563,7 @@ class CalibrationPipeline:
                 fallback="cached_kappa",
             )
 
-    def _compute_agreement(self, golden_set: list) -> float | None:
+    def _agreement_rate(self, golden_set: list) -> float | None:
         """Compute the agreement rate on the golden-set pairs.
 
         Returns the proportion of pairs where ``human_label ==
@@ -603,7 +605,7 @@ class CalibrationPipeline:
         if self.kappa_cache is None:
             return None
         try:
-            return self.kappa_cache.get("last_kappa")
+            return self.kappa_cache.get(self.CACHE_KEY_LAST_KAPPA)
         except Exception:  # noqa: BLE001  -- defensive: cache miss is non-fatal
             return None
 
