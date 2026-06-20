@@ -117,9 +117,8 @@ def handle_agent_takeover(message: dict) -> dict:
     # Envelope vs raw payload: when the caller passes an envelope,
     # the field set lives under ``payload``; otherwise it lives on
     # the message itself. Accepting both keeps the WS router flexible.
-    payload = message.get("payload") if "payload" in message else message
-    if not isinstance(payload, dict):
-        payload = {}
+    inner = message.get("payload")
+    payload = inner if isinstance(inner, dict) else message
     escalation_id = payload.get("escalation_id") or message.get("escalation_id")
     return {
         "event": message.get("event", "agent.takeover"),
