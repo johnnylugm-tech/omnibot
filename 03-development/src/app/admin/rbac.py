@@ -69,9 +69,12 @@ def _role(grants: dict[str, frozenset[str]]) -> dict[str, frozenset[str]]:
 
 
 ROLE_PERMISSIONS: dict[str, dict[str, frozenset[str]]] = {
-    # anonymous: knowledge:read only (SRS FR-61 "anonymous=knowledge:read").
+    # anonymous: no management grants (SRS FR-85 "各端點 RBAC 保護正確").
+    # The management API endpoints require a higher-privilege role;
+    # anonymous receives HTTP 403 AUTHZ_INSUFFICIENT_ROLE for every
+    # management resource (including knowledge:read per FR-85).
     "anonymous": _role({
-        "knowledge": _READ_ONLY,
+        "knowledge": _NONE,
     }),
 
     # customer: read public knowledge, raise escalations (their own).
