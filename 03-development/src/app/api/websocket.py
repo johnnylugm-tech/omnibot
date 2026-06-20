@@ -62,6 +62,23 @@ from __future__ import annotations
 import time
 
 
+def _resolve_payload(message: dict) -> dict:
+    """[FR-57/FR-58] Unwrap the optional event envelope.
+
+    The WS router accepts events in two shapes:
+
+    - full envelope: ``{"event": "...", "payload": {"field": ...}}``
+    - raw payload:  ``{"event": "...", "field": ...}``
+
+    Returns the inner ``payload`` dict when the caller sent an envelope
+    (the nested ``payload`` key is a dict), otherwise returns ``message``
+    unchanged. Single source of truth so ``handle_agent_takeover`` and
+    ``handle_message_reply`` share the same dispatch shape.
+    """
+    inner = message.get("payload")
+    return inner if isinstance(inner, dict) else message
+
+
 # [FR-57] The 6 SRS FR-57 event names — single source of truth used
 # by the WS router to whitelist dispatch. frozenset gives O(1)
 # membership and an immutable surface; iteration order is irrelevant
@@ -166,11 +183,8 @@ def handle_agent_takeover(message: dict) -> dict:
         - SRS.md FR-57 acceptance: "事件格式正確"; "各事件 payload
           欄位完整".
     """
-    # Envelope vs raw payload: when the caller passes an envelope,
-    # the field set lives under ``payload``; otherwise it lives on
-    # the message itself. Accepting both keeps the WS router flexible.
-    inner = message.get("payload")
-    payload = inner if isinstance(inner, dict) else message
+    # Envelope vs raw payload — see ``_resolve_payload``.
+    payload = _resolve_payload(message)
     escalation_id = payload.get("escalation_id") or message.get("escalation_id")
     return {
         "event": message.get("event", "agent.takeover"),
@@ -211,12 +225,8 @@ def handle_message_reply(message: dict) -> dict:
         - SRS.md FR-58 acceptance: "message.reply 即時推送"; "各事件
           payload 欄位完整"; "避免輪詢".
     """
-    # Envelope vs raw payload: when the caller passes an envelope,
-    # the field set lives under ``payload``; otherwise it lives on
-    # the message itself. Mirrors handle_agent_takeover so the WS
-    # router has a single dispatch shape.
-    inner = message.get("payload")
-    payload = inner if isinstance(inner, dict) else message
+    # Envelope vs raw payload — see ``_resolve_payload``.
+    payload = _resolve_payload(message)
 
     event = message.get("event", "message.reply")
     message_id = payload.get("message_id") or message.get("message_id")
