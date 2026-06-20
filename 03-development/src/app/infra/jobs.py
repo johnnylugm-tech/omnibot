@@ -556,9 +556,6 @@ async def create_knowledge_with_chunks(
 # - 02-architecture/SAD.md:323 (Module: jobs.py contract)
 # ---------------------------------------------------------------------------
 
-_FR78_BATCH_THRESHOLD: int = 10  # SRS: > 10 entries → batch mode
-
-
 @dataclass
 class BatchImportResult:
     """Structured result returned by ``batch_import_knowledge``.
