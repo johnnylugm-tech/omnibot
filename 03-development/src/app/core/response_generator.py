@@ -248,14 +248,16 @@ class ResponseGenerator:
         return base_text
 
     # Per-platform character limits (SRS FR-53 / SPEC.md §Platform Format
-    # Adapter). Kept as class constants so future tests / callers can
-    # reference the same canonical values instead of hard-coding magic
-    # numbers — a single source of truth for "what is the Telegram
-    # limit today?".
-    _TELEGRAM_MAX_CHARS: int = 4096
-    _LINE_MAX_CHARS: int = 5000
-    _MESSENGER_MAX_CHARS: int = 2000
-    _WHATSAPP_MAX_CHARS: int = 4096
+    # Adapter). Consolidated into a single lookup table so the dispatch
+    # below is one ``.get()`` call rather than four near-identical
+    # ``content[:N]`` branches — a single source of truth for "what is
+    # <platform>'s limit today?".
+    _PLATFORM_MAX_CHARS: dict[str, int] = {
+        "telegram": 4096,
+        "line": 5000,
+        "messenger": 2000,
+        "whatsapp": 4096,
+    }
 
     @staticmethod
     def format_for_platform(platform: str, content: str) -> str:
@@ -305,18 +307,11 @@ class ResponseGenerator:
             - SRS.md FR-53 -- acceptance "各平台輸出格式符合限制；長訊息正確截斷或分段" (line 116).
             - SRS.md FR-53 -- implementation_functions: "platform format adapters" (line 116).
         """
-        # Per-platform dispatch — truncation is a simple slice (Python
-        # slices are forgiving on over-long input and exact-length on
-        # under-limit input, so the same code covers both boundary and
-        # pass-through cases).
-        if platform == "telegram":
-            return content[: ResponseGenerator._TELEGRAM_MAX_CHARS]
-        if platform == "line":
-            return content[: ResponseGenerator._LINE_MAX_CHARS]
-        if platform == "messenger":
-            return content[: ResponseGenerator._MESSENGER_MAX_CHARS]
-        if platform == "whatsapp":
-            return content[: ResponseGenerator._WHATSAPP_MAX_CHARS]
+        # Per-platform dispatch. The four character-limited platforms
+        # share a single ``content[:max_chars]`` shape and are handled
+        # via the ``_PLATFORM_MAX_CHARS`` table; ``web`` and ``agent``
+        # need their own branches because their formatting rules
+        # (pass-through / JSON envelope) are not simple truncation.
         if platform == "web":
             # Pass-through: Web has no character limit and supports
             # full Markdown. ``expected_truncated="false"`` per
@@ -329,6 +324,12 @@ class ResponseGenerator:
             # the test fixture uses "您好，這裡是客服中心。" and asserts
             # ``parsed["content"] == content`` byte-for-byte.
             return json.dumps({"content": content}, ensure_ascii=False)
+        max_chars = ResponseGenerator._PLATFORM_MAX_CHARS.get(platform)
+        if max_chars is not None:
+            # Python slices are forgiving on over-long input and exact
+            # on under-limit input, so the same slice covers both
+            # boundary and pass-through cases.
+            return content[:max_chars]
         # Unrecognised platform — be conservative and pass the content
         # through rather than silently dropping characters.
         return content
