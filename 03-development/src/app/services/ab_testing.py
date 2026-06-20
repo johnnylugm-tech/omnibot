@@ -236,7 +236,42 @@ class ABTestManager:
             size is below the minimum or the diff is below the
             threshold.
         """
-        # 1. Per-variant mean metric + total sample size.
+        means, total_sample = self._collect_variant_means(results)
+
+        # Below-minimum sample size guard — short-circuit to None
+        # BEFORE any diff comparison runs (SRS FR-64: "樣本 < 100 不
+        # 判定勝負").
+        if total_sample < self._MIN_SAMPLE_SIZE:
+            return None
+
+        best_label, diff = self._top_variant_gap(means)
+
+        # Below-threshold diff: no promotion even at sufficient
+        # sample size (SRS FR-64 acceptance — the < 0.05 branch does
+        # not end the experiment).
+        if diff < self._PROMOTION_DIFF_THRESHOLD:
+            return None
+
+        # Promote the winner and persist the "completed" status
+        # via the injected DB adapter. Both strategies the test
+        # accepts (mutate fetched record / call update_experiment_status)
+        # leave the same end state — calling the persistence method
+        # is the canonical contract from SRS FR-64.
+        self._mark_experiment_completed(experiment_id)
+        return best_label
+
+    @staticmethod
+    def _collect_variant_means(
+        results: dict[str, list[float]],
+    ) -> tuple[list[tuple[str, float]], int]:
+        """Compute per-variant mean metric and total observation count.
+
+        Returns:
+            A ``(means, total_sample)`` tuple where ``means`` is a list
+            of ``(variant_label, mean)`` pairs in insertion order, and
+            ``total_sample`` is the sum of observation counts across
+            all variants. Variants with no observations get mean 0.0.
+        """
         means: list[tuple[str, float]] = []
         total_sample = 0
         for variant, scores in results.items():
@@ -246,40 +281,34 @@ class ABTestManager:
             if count == 0:
                 means.append((str(variant), 0.0))
                 continue
-            mean = sum(scores_list) / count
-            means.append((str(variant), mean))
+            means.append((str(variant), sum(scores_list) / count))
+        return means, total_sample
 
-        # 2. Below-minimum sample size guard — short-circuit to None
-        # BEFORE any diff comparison runs (SRS FR-64: "樣本 < 100 不
-        # 判定勝負").
-        if total_sample < self._MIN_SAMPLE_SIZE:
-            return None
+    @staticmethod
+    def _top_variant_gap(
+        means: list[tuple[str, float]],
+    ) -> tuple[str, float]:
+        """Identify the leading variant and its gap over the runner-up.
 
-        # 3. Sort by mean descending; the best and second-best give
-        # us the diff used in the promotion gate.
+        Sorts ``means`` in place by metric descending, then returns
+        ``(best_label, best_mean - second_mean)``. A single-variant
+        input yields diff = ∞ (treated as ``-inf`` second-mean) so
+        the promotion gate defers solely to the sample-size check.
+        """
         means.sort(key=lambda item: item[1], reverse=True)
         best_label, best_mean = means[0]
-        if len(means) == 1:
-            # Single-variant experiment: no second-best to compare
-            # against, so the diff is implicitly "infinite" and the
-            # sample-size gate alone qualifies for promotion.
-            second_mean = float("-inf")
-        else:
-            second_mean = means[1][1]
-        diff = best_mean - second_mean
+        second_mean = means[1][1] if len(means) > 1 else float("-inf")
+        return best_label, best_mean - second_mean
 
-        # 4. Below-threshold diff: no promotion even at sufficient
-        # sample size (SRS FR-64 acceptance — the < 0.05 branch does
-        # not end the experiment).
-        if diff < self._PROMOTION_DIFF_THRESHOLD:
-            return None
+    def _mark_experiment_completed(self, experiment_id: str) -> None:
+        """Persist ``experiment.status = "completed"`` via the DB adapter.
 
-        # 5. Promote the winner and persist the "completed" status
-        # via the injected DB adapter. Both strategies the test
-        # accepts (mutate fetched record / call update_experiment_status)
-        # leave the same end state — calling the persistence method
-        # is the canonical contract from SRS FR-64.
+        No-op when the DB adapter does not expose
+        ``update_experiment_status`` — the canonical contract from
+        SRS FR-64 ("實驗 status 設 'completed'") is preserved when
+        the method is present, and gracefully skipped otherwise so
+        test stubs without the method do not crash the request path.
+        """
         update = getattr(self._db, "update_experiment_status", None)
         if callable(update):
             update(experiment_id, self._COMPLETED_STATUS)
-        return best_label
