@@ -252,7 +252,7 @@ class LLMJudge:
         primary: JudgeResult | None,
         secondary: JudgeResult | None,
     ) -> JudgeResult:
-        """[FR-66] Aggregate two per-judge results into a final JudgeResult.
+        """[FR-66][FR-67] Aggregate two per-judge results into a final JudgeResult.
 
         FR-66 — Politeness aggregation (max):
             When BOTH judges succeed, the aggregated ``politeness`` MUST
@@ -261,10 +261,15 @@ class LLMJudge:
             支持寧可寬容"; we take the kinder judge so a single stricter
             judge cannot drag a kind response down).
 
-        FR-67 — Accuracy aggregation (min, companion rule):
-            The aggregated ``accuracy`` is ``min(primary.accuracy,
-            secondary.accuracy)`` (SRS FR-67: "保守評分，幻覺不可接受";
-            FR-67 scope, not pinned here).
+        FR-67 — Accuracy aggregation (min, 保守評分):
+            When BOTH judges succeed, the aggregated ``accuracy`` MUST
+            equal ``min(primary.accuracy, secondary.accuracy)`` — the
+            STRICTER of the two scores (SRS FR-67: "保守評分，幻覺不可
+            接受"). Rationale: a hallucination is never acceptable, so
+            we take the harsher judge; a single lenient judge cannot
+            mask a hallucination. This is the opposite axis of FR-66
+            (which is generous on politeness because emotional-support
+            scoring rewards kindness).
 
         Aggregation cases:
             - Both None (both judges failed) → zero default JudgeResult
@@ -272,7 +277,7 @@ class LLMJudge:
             - Exactly one survivor → return the survivor's raw scores
               verbatim. This is the NP-07 / NP-15 partial-result
               contract; with a single survivor, max/min collapse to the
-              survivor's own score (so FR-66's rule is trivially
+              survivor's own score (so FR-66/FR-67 rules are trivially
               satisfied).
             - Both survivors → politeness = max (FR-66), accuracy = min
               (FR-67). FR-65 only mandates the aggregated shape is a
@@ -286,7 +291,11 @@ class LLMJudge:
             - SRS.md FR-66 — "情感支持寧可寬容" rationale (line 154).
             - SRS.md FR-67 — "Accuracy 聚合：min(primary_score,
               secondary_score)（保守評分，幻覺不可接受）" (line 155).
+            - SRS.md FR-67 — acceptance "accuracy = min(two scores)"
+              (line 155).
+            - SRS.md FR-67 — "幻覺不可接受" rationale (line 155).
             - TEST_SPEC.md FR-66 — "Politeness 聚合 max(primary, secondary)".
+            - TEST_SPEC.md FR-67 — "Accuracy 聚合 min(primary, secondary)".
             - SAD.md — module→FR mapping "app.services.llm_judge →
               FR-65" (line 813); FR-66/67 ride on the same evaluate().
         """
