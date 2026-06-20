@@ -119,48 +119,39 @@ class ABTestManager:
             experiment's ``traffic_split`` dict, or the literal
             ``"control"`` fallback when the experiment cannot be
             resolved.
-
-        Citations:
-            - SRS.md FR-52 -- "SHA-256 確定性分配（非 Python hash()）" (line 115).
-            - SRS.md FR-52 -- acceptance "SHA-256 分配跨進程一致" (line 115).
-            - SRS.md FR-52 -- implementation_functions:
-              "ABTestManager.get_variant()" (line 115).
-            - SRS.md FR-63 -- "get_variant(user_id, experiment_id) 使用 SHA-256（hashlib.sha256，非 Python hash()）確定性分配 variant" (line 146).
-            - SRS.md FR-63 -- acceptance "同 user_id + experiment_id 跨進程回傳相同 variant；SHA-256 hash 計算正確" (line 146).
-            - SRS.md FR-63 -- implementation_functions:
-              "ABTestManager.get_variant()" (line 146).
         """
-        # Hash contract pinned by SPEC.md: SHA-256 over the joined key,
-        # truncated to the first 8 hex digits, mapped to [0, 99].
-        # SHA-256 (not Python's hash()) is what makes the assignment
-        # cross-process consistent — a hard SRS FR-52 acceptance.
+        # SHA-256 over the joined key, truncated to the first 8 hex digits,
+        # mapped to [0, 99]. SHA-256 (not Python's hash()) is what makes the
+        # assignment cross-process consistent — SRS FR-52 / FR-63 mandate.
         key = f"{user_id}:{experiment_id}".encode()
         digest = hashlib.sha256(key).hexdigest()
-        variant_hash = (
-            int(digest[: self._DIGEST_PREFIX_LEN], 16) % self._BUCKET_MODULUS
-        )
+        bucket = int(digest[: self._DIGEST_PREFIX_LEN], 16) % self._BUCKET_MODULUS
 
         experiment = self._fetch_experiment(experiment_id)
-        if experiment is None:
-            return self._CONTROL_FALLBACK
-
-        traffic_split = experiment.get("traffic_split")
+        traffic_split = experiment.get("traffic_split") if experiment else None
         if not isinstance(traffic_split, dict) or not traffic_split:
             return self._CONTROL_FALLBACK
+        return self._route_bucket(bucket, traffic_split)
 
-        # Cumulative-range routing: walk the split in declaration order
-        # and pick the first bucket whose cumulative upper bound covers
-        # ``variant_hash``. Defensive against non-integer or negative
-        # bucket weights — a malformed weight degrades to control
-        # rather than crashing the request path.
+    @staticmethod
+    def _route_bucket(bucket: int, traffic_split: dict) -> str:
+        """Route ``bucket`` through ``traffic_split`` cumulative ranges.
+
+        Walks the split in declaration order and returns the first
+        variant whose cumulative upper bound covers ``bucket``.
+        Malformed weights (non-numeric or negative) are skipped
+        silently; if no bucket covers ``bucket``, returns the
+        ``_CONTROL_FALLBACK`` sentinel rather than crashing the
+        request path.
+        """
         cumulative = 0
         for variant, weight in traffic_split.items():
             if not isinstance(weight, (int, float)) or weight < 0:
                 continue
             cumulative += int(weight)
-            if variant_hash < cumulative:
+            if bucket < cumulative:
                 return str(variant)
-        return self._CONTROL_FALLBACK
+        return ABTestManager._CONTROL_FALLBACK
 
     def _fetch_experiment(self, experiment_id: str) -> dict | None:
         """Look up the experiment config via the injected DB adapter.
