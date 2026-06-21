@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-86 — Auth & User API (JWT login + refresh
 + role management).
 
@@ -14,7 +15,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 import pytest
 from app.admin.rbac import RBACEnforcer, enforce
@@ -52,7 +52,7 @@ from app.admin.rbac import RBACEnforcer, enforce
 # make every assertion hold.
 # ---------------------------------------------------------------------------
 from app.api.auth import assign_role_to_user, login
-from app.services._jwt_utils import _b64url_decode, _b64url_encode
+from app.api.webhooks import _b64url_decode, _b64url_encode
 
 
 # ============================================================================

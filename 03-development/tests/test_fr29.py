@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-29 — HNSW vector index (m=16, ef_construction=64, partial).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-29)
@@ -13,7 +14,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — ``HNSWIndexSpec`` is intentionally NOT YET exported by
@@ -27,7 +27,7 @@ from __future__ import annotations
 # HNSW DDL and the row-level "is this row included by the partial WHERE?"
 # check both live behind one typed object.
 # ---------------------------------------------------------------------------
-from app.infra.vector_index import HNSWIndexSpec
+from app.infra.database import HNSWIndexSpec
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):

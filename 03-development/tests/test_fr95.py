@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-95 — Docker Compose 開發環境 (7 services
 healthy, health endpoint 200, unhealthy service → degraded status).
 
@@ -36,7 +37,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — ``ComposeHealth`` is intentionally NOT YET exported by
@@ -83,7 +83,7 @@ from __future__ import annotations
 # I/O — they exercise the ComposeHealth abstraction in isolation, which is
 # the canonical unit-test shape for FR-95.
 # ---------------------------------------------------------------------------
-from app.infra.compose import (
+from app.infra.deployment import (
     REQUIRED_SERVICES,
     ComposeHealth,
 )

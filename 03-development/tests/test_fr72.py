@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-72 — OpenTelemetry Tracing (span tree + trace_id).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-72)
@@ -16,7 +17,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 import pytest
 
@@ -56,7 +56,7 @@ import pytest
 #   - SpanRecord : dataclass with fields
 #       (name, trace_id, parent_span_id, attributes)
 # ---------------------------------------------------------------------------
-from app.infra.tracing import (
+from app.infra.observability import (
     TRACE_ID_HEADER,
     get_current_trace_id,
     get_recorded_spans,

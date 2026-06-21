@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-26 — Knowledge Tier 1 rule matching.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-26)
@@ -16,7 +17,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 import pytest
 

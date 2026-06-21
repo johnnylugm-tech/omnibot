@@ -1,3 +1,4 @@
+from __future__ import annotations
 """[FR-101] KnowledgeAdminAPI + EmbeddingStatusProvider — Knowledge 管理 WebUI.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-101)
@@ -49,7 +50,6 @@ Citations:
     test_fr101.py L437-550 — FR-101 embedding status "同步中" (5/10)
 """
 
-from __future__ import annotations
 
 import csv
 import io

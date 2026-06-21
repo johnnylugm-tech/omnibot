@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-43 — ToolExecutor register/execute + default
 shipping tools (get_shipping_status / update_shipping_address).
 
@@ -18,7 +19,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test.

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-28 — Parent-Child Chunking (500/150 tokens).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-28)
@@ -12,7 +13,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — ``Chunker`` / ``ChunkSpec`` / ``ParentChildIndex`` are
@@ -40,7 +40,7 @@ from __future__ import annotations
 #     child hit. Also needs a seed method (e.g. ``add_link``) so unit
 #     tests can wire child_id → parent_id without standing up PostgreSQL.
 # ---------------------------------------------------------------------------
-from app.core.chunking import (
+from app.core.knowledge import (
     CHILD_TOKEN_SIZE,
     OVERLAP_TOKENS,
     PARENT_TOKEN_SIZE,

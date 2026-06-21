@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-55 — SLA 定義 normal 30m / high 15m / urgent 5m.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-55)
@@ -19,7 +20,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 

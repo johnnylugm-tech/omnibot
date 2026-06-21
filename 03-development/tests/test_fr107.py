@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-107 — Test Pyramid (Unit 70% / Integration 20% / E2E 10%).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-107)
@@ -44,7 +45,6 @@ Sub-assertion (per TEST_SPEC):
     fr107-ok: result is not None   (applies_to case 1)
 """
 
-from __future__ import annotations
 
 import pytest
 

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-39 — ActionAdapter 抽象介面:
 list_tools() + execute() + ToolExecutionResult (success / output /
 error_message).
@@ -17,7 +18,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — the ActionAdapter surface from FR-39 does NOT

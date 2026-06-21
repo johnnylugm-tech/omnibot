@@ -1,3 +1,4 @@
+from __future__ import annotations
 """[FR-86] Auth & User API — JWT login, refresh, and role management endpoints.
 
 Citations:
@@ -10,7 +11,6 @@ Citations:
         assign_role_to_user(user_id, role, caller_role) -> int.
 """
 
-from __future__ import annotations
 
 import hmac
 import json
@@ -19,7 +19,7 @@ import secrets
 import time
 
 from app.admin.rbac import RBACEnforcer
-from app.services._jwt_utils import _b64url_encode
+from app.api.webhooks import _b64url_encode
 
 
 def _make_jwt(username: str) -> str:

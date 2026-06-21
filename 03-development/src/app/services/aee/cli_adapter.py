@@ -1,3 +1,4 @@
+from __future__ import annotations
 """[FR-39] [FR-42] ``CLIAdapter`` — 子進程 / shell adapter 子類.
 
 Citations:
@@ -12,7 +13,6 @@ Citations:
 - 02-architecture/TEST_SPEC.md FR-42 cases 1-4.
 """
 
-from __future__ import annotations
 
 import contextlib
 import signal

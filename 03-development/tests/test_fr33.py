@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-33 — HybridKnowledge query orchestrator
 (Tier 1 → Tier 4 sequential) and EMBEDDING_DIM=1536 / EMBEDDING_MODEL
 constants.
@@ -16,7 +17,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):

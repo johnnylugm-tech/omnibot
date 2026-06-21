@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-74 — Grafana Dashboard (4 panels + Prometheus wiring).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-74)
@@ -13,7 +14,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — ``GRAFANA_DASHBOARD`` is intentionally NOT YET exported
@@ -46,7 +46,7 @@ from __future__ import annotations
 #   - SUPPORTED_TIME_RANGES : tuple[str, ...]  = ("24hr", "7d", "30d")
 #       The three refresh intervals required by the spec.
 # ---------------------------------------------------------------------------
-from app.infra.grafana_dashboard import (
+from app.infra.observability import (
     GRAFANA_DASHBOARD,
     SUPPORTED_TIME_RANGES,
     get_panel,

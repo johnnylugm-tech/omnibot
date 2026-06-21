@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-69 — 月度校準 Cohen's Kappa ≥0.7 / 偏差 >15% 觸發 recalibration.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-69)
@@ -35,7 +36,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 import inspect
 from unittest.mock import MagicMock

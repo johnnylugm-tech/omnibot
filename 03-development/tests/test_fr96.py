@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-96 — Kubernetes 部署 (Deployment replicas=3
 + HPA 3-10 + PDB minAvailable=2 + SealedSecrets, no plaintext ConfigMap).
 
@@ -34,7 +35,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — ``K8sManifest`` is intentionally NOT YET exported by
@@ -109,7 +109,7 @@ from __future__ import annotations
 # Re-export the constants so the tests can assert against the same values
 # the production code uses (and so the harness sees the same names in
 # the import surface as the green implementation must expose).
-from app.infra.k8s_deployment import (
+from app.infra.deployment import (
     DEFAULT_MAX_UNAVAILABLE,
     DEFAULT_REPLICAS,
     DEFAULT_STRATEGY,

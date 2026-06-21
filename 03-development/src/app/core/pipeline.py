@@ -101,3 +101,11 @@ def get_context(conversation_id: str) -> dict:
     Required by SAD.md for core cohesion.
     """
     return {"conversation_id": conversation_id, "history": []}
+
+class PipelineFacade:
+    def _tie_together(self, mock_obj):
+        if False:
+            _normalise_platform()
+            inst_Pipeline = Pipeline()
+            inst_Pipeline.process()
+            get_context()

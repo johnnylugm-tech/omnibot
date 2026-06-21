@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-81 — Exponential backoff retry.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-81)
@@ -12,7 +13,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 import threading
 from typing import Any
@@ -44,7 +44,7 @@ import pytest
 #           The attempt counter starts at 0; ``max_retries=3`` therefore
 #           allows at most 3 invocations of ``fn`` before giving up.
 # ---------------------------------------------------------------------------
-from app.infra.retry import RetryStrategy
+from app.infra.circuit_breaker import RetryStrategy
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):
@@ -118,7 +118,7 @@ def test_fr81_3_retries_then_stop(monkeypatch):
     # Same for app.infra.retry.time.sleep if GREEN imports ``time``
     # directly into the module namespace.
     try:
-        import app.infra.retry as _retry_mod
+        import app.infra.circuit_breaker as _retry_mod
         monkeypatch.setattr(_retry_mod.time, "sleep",
                             lambda *_a, **_k: None, raising=False)
     except Exception:
@@ -350,7 +350,7 @@ def test_fr81_must_not_thundering_herd_without_jitter(monkeypatch):
     # GREEN adds.
     monkeypatch.setattr("time.sleep", _recording_sleep, raising=False)
     try:
-        import app.infra.retry as _retry_mod
+        import app.infra.circuit_breaker as _retry_mod
         monkeypatch.setattr(_retry_mod.time, "sleep",
                             _recording_sleep, raising=False)
     except Exception:

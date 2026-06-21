@@ -1,3 +1,4 @@
+from __future__ import annotations
 """k6 load tests (FR-106) — smoke/load/stress/spike scenario runner.
 
 [FR-106] Programmatic k6 orchestration for load testing per SRS Module 27.
@@ -10,7 +11,6 @@ Citations:
   TEST_SPEC.md FR-106
 """
 
-from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any

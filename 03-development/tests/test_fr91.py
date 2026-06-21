@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-91 — 資料保留政策 (180d 封存 / 2yr 刪除
 / 90d 匿名化 / 90d 情緒刪除).
 
@@ -36,7 +37,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — ``MessagesRetentionPolicy`` /
@@ -93,7 +93,7 @@ from __future__ import annotations
 # they exercise the policy objects in isolation, which is the canonical
 # unit-test shape for FR-91.
 # ---------------------------------------------------------------------------
-from app.infra.data_retention import (
+from app.infra.security import (
     ArchiveRetentionPolicy,
     EmotionHistoryRetentionPolicy,
     MessagesRetentionPolicy,

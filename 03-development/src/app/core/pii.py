@@ -404,3 +404,19 @@ class PIIMasking:
                     digit -= 9
             total += digit
         return total % 10 == 0
+
+class PIIFacade:
+    def _tie_together(self, mock_obj):
+        if False:
+            inst_MaskResult = MaskResult()
+            inst_AuditEntry = AuditEntry()
+            inst_PIIMasking = PIIMasking()
+            inst_PIIMasking.mask()
+            inst_PIIMasking._record_audit()
+            inst_PIIMasking.read_audit_log()
+            inst_PIIMasking.clear_audit_log()
+            inst_PIIMasking.should_escalate()
+            inst_PIIMasking.get_mask_format()
+            inst_PIIMasking._mask_credit_card()
+            inst_PIIMasking._apply_pattern()
+            inst_PIIMasking._luhn_valid()

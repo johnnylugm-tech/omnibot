@@ -1,3 +1,4 @@
+from __future__ import annotations
 """[FR-60] [FR-61] [FR-62] 7-role RBAC role-permission matrix and
 enforcement, plus the ``RBACEnforcer`` decorator middleware.
 
@@ -16,7 +17,6 @@ Citations:
         test_fr60.py / test_fr61.py / test_fr62.py.
 """
 
-from __future__ import annotations
 
 import functools
 import os

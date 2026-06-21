@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-84 — Webhook API endpoints + error codes.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-84)
@@ -29,7 +30,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test.
@@ -61,10 +61,10 @@ from __future__ import annotations
 # (Exit Code 2) because the module does not exist yet — that is the valid
 # RED signal for this TDD step.
 # ---------------------------------------------------------------------------
-from app.api.webhook_routes import (
+from app.api.webhooks import (
     WEBHOOK_ERROR_CODES,
 )
-from app.api.webhook_routes import (
+from app.api.webhooks import (
     router as webhook_router,
 )
 

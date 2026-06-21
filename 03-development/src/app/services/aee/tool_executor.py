@@ -1,3 +1,4 @@
+from __future__ import annotations
 """[FR-43] ToolExecutor — 工具註冊與分派層 + 預設物流工具.
 
 Citations:
@@ -13,7 +14,6 @@ Citations:
   / ToolExecutionResult 自 ``app.services.aee.adapter``，不重複定義。
 """
 
-from __future__ import annotations
 
 import inspect
 import json

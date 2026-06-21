@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-108 — Golden Dataset (500 edge cases, 6 categories, regression automation).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-108 + 4 cross-cutting groups)
@@ -25,11 +26,10 @@ TEST_SPEC cases (41 total — function names MUST match exactly):
   Backward    (1): backward_compat_phase1_tests_pass_in_phase2_env
 """
 
-from __future__ import annotations
 
 import pytest
 from app.admin.rbac import RBACEnforcer
-from app.api.m2m import validate_token
+from app.api.webhooks import validate_token
 
 # ===========================================================================
 # Imports — unguarded on purpose.
@@ -54,18 +54,18 @@ from app.core.paladin import (
 )
 from app.core.pii import PIIMasking
 from app.core.pipeline import Pipeline
-from app.infra.backup_strategy import BackupStrategy
-from app.infra.compose import ComposeHealth
-from app.infra.k8s_deployment import K8sManifest
+from app.infra.deployment import BackupStrategy
+from app.infra.deployment import ComposeHealth
+from app.infra.deployment import K8sManifest
 from app.infra.rate_limit import RateLimiter
 from app.middleware.ip_whitelist import IPWhitelist
 from app.services.escalation import EscalationManager
-from app.services.line_verifier import LineWebhookVerifier
+from app.api.webhooks import LineWebhookVerifier
 from app.services.llm_judge import CalibrationPipeline, LLMJudge
-from app.services.messenger_verifier import MessengerWebhookVerifier
-from app.services.telegram_verifier import TelegramWebhookVerifier
-from app.services.web_verifier import WebJwtVerifier
-from app.services.whatsapp_verifier import WhatsAppWebhookVerifier
+from app.api.webhooks import MessengerWebhookVerifier
+from app.api.webhooks import TelegramWebhookVerifier
+from app.api.webhooks import WebJwtVerifier
+from app.api.webhooks import WhatsAppWebhookVerifier
 
 
 # ===========================================================================

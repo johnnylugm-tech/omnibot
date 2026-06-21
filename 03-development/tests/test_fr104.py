@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-104 — Agent Portal
 (轉接收件匣 + WebSocket + 智慧接管面板).
 
@@ -28,7 +29,6 @@ Sub-assertion (per TEST_SPEC):
     fr104-ok: result is not None   (applies_to case 1)
 """
 
-from __future__ import annotations
 
 import time
 from typing import Any

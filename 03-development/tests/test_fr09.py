@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-09 — Unified response wrappers.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-09)
@@ -13,7 +14,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — ``ApiResponse`` and ``PaginatedResponse`` are
@@ -35,7 +35,7 @@ from __future__ import annotations
 #                       be computed as ``page * limit < total`` so the
 #                       flag never disagrees with the underlying totals.
 # ---------------------------------------------------------------------------
-from app.api.api_response import ApiResponse, PaginatedResponse
+from app.api.common import ApiResponse, PaginatedResponse
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):

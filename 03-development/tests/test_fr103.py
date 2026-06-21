@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-103 — Operations Dashboard
 (FCR/p95/知識來源/成本 + 告警 + 24hr/7d/30d 時序切換).
 
@@ -27,7 +28,6 @@ Sub-assertion (per TEST_SPEC):
     fr103-ok: result is not None   (applies_to case 1)
 """
 
-from __future__ import annotations
 
 import pytest
 

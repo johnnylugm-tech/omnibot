@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-03 — Messenger Webhook Adapter.
 
 FR-03 requires GET hub.challenge verification + POST HMAC-SHA256 signature
@@ -32,7 +33,6 @@ Sub-assertion (per TEST_SPEC):
     fr03-ok: result is not None   (applies_to case 1)
 """
 
-from __future__ import annotations
 
 import json
 
@@ -49,15 +49,15 @@ import pytest
 # ``app.core.unified_message`` already exist and provide the contracts that
 # GREEN must wire together.
 # ---------------------------------------------------------------------------
-from app.core.unified_message import (
+from app.core.pipeline import (
     MessageType,
     Platform,
     UnifiedMessage,
 )
-from app.services.messenger_adapter import (
+from app.api.webhooks import (
     MessengerWebhookAdapter,
 )
-from app.services.messenger_verifier import (
+from app.api.webhooks import (
     MessengerWebhookVerifier,
 )
 

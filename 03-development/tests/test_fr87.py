@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-87 — M2M Token API (create, list, revoke).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-87)
@@ -13,7 +14,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test.
@@ -50,7 +50,7 @@ from __future__ import annotations
 # valid RED signal — GREEN adds the module and tightens the behaviour to
 # make every assertion hold.
 # ---------------------------------------------------------------------------
-from app.api.m2m import create_token, list_tokens, revoke_token
+from app.api.webhooks import create_token, list_tokens, revoke_token
 
 
 # ============================================================================
@@ -286,7 +286,7 @@ def test_fr87_revoke_invalidates_immediately():
     #
     # First, create a token to get a token value, then revoke it, then
     # validate.
-    from app.api.m2m import create_token, validate_token
+    from app.api.webhooks import create_token, validate_token
 
     created = create_token(client_name="test-revoke", scopes="read")
     token_to_revoke = created["token"]

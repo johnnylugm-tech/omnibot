@@ -1,3 +1,4 @@
+from __future__ import annotations
 """[FR-75][FR-76][FR-77][FR-78] SAQ Worker configuration + EmbeddingJob retry/backoff + Sync first-chunk embedding + Batch import mode.
 
 Module 16 (Background Job System) — declares the three production queues,
@@ -61,7 +62,6 @@ Citations:
   ``min(base * 2^attempt, max) * uniform(0.5, 1.0)``)
 """
 
-from __future__ import annotations
 
 import asyncio
 import logging

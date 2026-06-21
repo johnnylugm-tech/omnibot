@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-56 — WebSocket 轉接推送：escalation.new 事件 payload.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-56)
@@ -18,7 +19,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 from typing import Any
 

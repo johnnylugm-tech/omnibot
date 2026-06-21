@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-17 — Per-Platform L4 Retraction + fail-secure.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-17)
@@ -27,7 +28,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -108,7 +108,7 @@ from typing import Any
 #   module constants GREEN may name ``TELEGRAM_RETRACTION_WINDOW``
 #   / ``MESSENGER_RETRACTION_WINDOW``. Tests import the function only.
 # ---------------------------------------------------------------------------
-from app.core.retraction import retract
+from app.core.response import retract
 
 
 # ---------------------------------------------------------------------------
@@ -271,7 +271,7 @@ def _call_retract_with_frozen_now(
     """Invoke ``retract`` with ``datetime.now`` frozen to ``fixed_now``."""
     from datetime import datetime as _dt
 
-    import app.core.retraction as retraction_mod
+    import app.core.response as retraction_mod
 
 
     class _FrozenDateTime(_dt):

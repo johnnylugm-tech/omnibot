@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-30 — Knowledge Tier 3 LLM generation.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-30)
@@ -12,7 +13,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 import time
 

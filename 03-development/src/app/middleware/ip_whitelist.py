@@ -1,3 +1,4 @@
+from __future__ import annotations
 """[FR-23][FR-25] CIDR-based IP whitelist with X-Forwarded-For support
 and fail-secure error handling.
 
@@ -27,7 +28,6 @@ Citations:
    test_fr25_invalid_ip_returns_false_no_exception)
 """
 
-from __future__ import annotations
 
 import ipaddress
 import logging

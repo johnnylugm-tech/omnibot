@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-52 — A/B Variant Injection (SHA-256 確定性分配).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-52)
@@ -17,7 +18,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test.
@@ -48,7 +48,7 @@ from __future__ import annotations
 # Error (Exit Code 2), which is the valid RED signal — GREEN adds the
 # ``ab_testing`` module.
 # ---------------------------------------------------------------------------
-from app.core.response_generator import (
+from app.core.response import (
     ResponseGenerator,
 )
 from app.services.ab_testing import (

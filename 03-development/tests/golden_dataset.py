@@ -1,3 +1,4 @@
+from __future__ import annotations
 """[FR-108] Golden Dataset — 500 edge cases across 6 categories for
 regression automation.
 
@@ -19,7 +20,6 @@ Citations:
     - 03-development/tests/test_fr108.py:203-230 (auto-executable)
 """
 
-from __future__ import annotations
 
 import enum
 from dataclasses import dataclass, field

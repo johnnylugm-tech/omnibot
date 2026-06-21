@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-73 — Alert Rules (4 named Prometheus alerts).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-73)
@@ -16,7 +17,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — ``ALERT_RULES`` is intentionally NOT YET exported by
@@ -44,7 +44,7 @@ from __future__ import annotations
 #   - get_alert_rule(name: str) -> AlertRule | None
 #       Lookup helper returning the named rule, or None if absent.
 # ---------------------------------------------------------------------------
-from app.infra.alert_rules import (
+from app.infra.observability import (
     ALERT_RULES,
     get_alert_rule,
 )

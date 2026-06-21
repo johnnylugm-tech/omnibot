@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-89 — PostgreSQL TDE 加密 + 90 天金鑰輪換
 + pii_vault DBA 無法裸讀.
 
@@ -27,7 +28,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — ``TDEConfig`` / ``KeyRotationSchedule`` /
@@ -67,7 +67,7 @@ from __future__ import annotations
 # exercise the policy and config objects in isolation, which is the
 # canonical unit-test shape for FR-89.
 # ---------------------------------------------------------------------------
-from app.infra.tde import (
+from app.infra.security import (
     KeyRotationSchedule,
     PiiVaultAccessPolicy,
     TDEConfig,

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-36 — Auto-escalation triggers:
 3-round slot filling / confidence < 0.65.
 
@@ -14,7 +15,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — the auto-escalation surface of ``app.core.dst`` does

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """[FR-100] MediaPipeline + ClamAVScanner — 多媒體處理 (image/sticker/location/file).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-100)
@@ -69,7 +70,6 @@ Citations:
     test_fr100.py L717-806 — FR-100 is_file_allowed() negative constraint
 """
 
-from __future__ import annotations
 
 import subprocess
 import threading

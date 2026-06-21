@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-97 — 備份策略 pg_basebackup+WAL / Redis RDB
 (DR <5min).
 
@@ -30,7 +31,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — ``BackupStrategy`` is intentionally NOT YET exported by
@@ -98,7 +98,7 @@ from __future__ import annotations
 # Re-export the constants so the tests can assert against the same values
 # the production code uses (and so the harness sees the same names in
 # the import surface as the green implementation must expose).
-from app.infra.backup_strategy import (  # noqa: F401
+from app.infra.deployment import (  # noqa: F401
     BACKUP_TYPE_PG_BASEBACKUP,
     BACKUP_TYPE_REDIS_RDB,
     DR_RESTORE_TARGET_MINUTES,

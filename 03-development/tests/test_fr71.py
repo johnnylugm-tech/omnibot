@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-71 — Prometheus Metrics (9 metrics, labels).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-71)
@@ -23,7 +24,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — ``PROMETHEUS_METRICS`` is intentionally NOT YET
@@ -38,7 +38,7 @@ from __future__ import annotations
 # returns the Prometheus text-exposition payload for the registered
 # metrics.
 # ---------------------------------------------------------------------------
-from app.infra.prometheus_metrics import PROMETHEUS_METRICS
+from app.infra.observability import PROMETHEUS_METRICS
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):
@@ -124,7 +124,7 @@ def _scrape_payload() -> str:
     imported ``prometheus_client`` at module load time — which it will
     because the GREEN module defines the metric objects directly.
     """
-    from app.infra.prometheus_metrics import scrape_metrics
+    from app.infra.observability import scrape_metrics
 
     raw = scrape_metrics()
     return raw.decode("utf-8") if isinstance(raw, (bytes, bytearray)) else raw

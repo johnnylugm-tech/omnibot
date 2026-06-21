@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-44 — OmniBot Agent Card /.well-known/agent.json.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-44)
@@ -14,7 +15,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 import pytest
 
@@ -63,7 +63,7 @@ import pytest
 #   the module does not exist. That is the valid RED signal. GREEN
 #   creates ``agent_card.py`` with the surface above.
 # ---------------------------------------------------------------------------
-from app.api.agent_card import app
+from app.api.webhooks import app
 
 
 # ---------------------------------------------------------------------------

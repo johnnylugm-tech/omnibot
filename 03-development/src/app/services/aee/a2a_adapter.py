@@ -1,3 +1,4 @@
+from __future__ import annotations
 """[FR-41] ``A2AAdapter`` — Agent-to-Agent (A2A) JSON-RPC 2.0 transport.
 
 [FR-41] ``A2AAdapter`` 透過 Agent Card discovery（300s TTL cache）
@@ -24,7 +25,6 @@ Citations:
 - NFR-07: ``Agent Card TTL cache = 300s``.
 """
 
-from __future__ import annotations
 
 import ipaddress
 import socket

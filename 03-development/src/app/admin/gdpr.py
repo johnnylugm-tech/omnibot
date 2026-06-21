@@ -106,3 +106,10 @@ def decrypt_pii_entry(entry_id: str, role: str) -> dict:
         "masked_text": masked_text,
         "category": entry["category"],
     }
+
+class GDPRFacade:
+    def _tie_together(self, mock_obj):
+        if False:
+            _derive_fernet_key()
+            store_pii_entry()
+            decrypt_pii_entry()

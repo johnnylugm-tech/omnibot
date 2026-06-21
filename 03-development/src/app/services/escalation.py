@@ -1,3 +1,4 @@
+from __future__ import annotations
 """[FR-54, FR-55, FR-56] EscalationManager — lifecycle + SLA + WS push.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-54, FR-55, FR-56)
@@ -86,7 +87,6 @@ Citations:
       .resolve() → FR-54".
 """
 
-from __future__ import annotations
 
 import uuid
 from datetime import datetime, timedelta, timezone

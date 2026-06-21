@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-50 — Template System (rule_default / rag_default / escalate).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-50)
@@ -14,7 +15,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test.
@@ -56,7 +56,7 @@ from __future__ import annotations
 # ``app.core.response_generator`` does not yet export ``ResponseGenerator``.
 # That is the valid RED signal — GREEN adds the module.
 # ---------------------------------------------------------------------------
-from app.core.response_generator import (
+from app.core.response import (
     ResponseGenerator,
 )
 

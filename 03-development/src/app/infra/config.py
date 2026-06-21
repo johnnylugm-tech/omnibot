@@ -1,3 +1,4 @@
+from __future__ import annotations
 """[FR-102] ``app.infra.config_store`` — platform_configs reader/writer seam.
 
 SRS source : SRS.md FR-102 (Module 25: 管理 WebUI)
@@ -34,7 +35,6 @@ Citations:
         ``RAG_DEFAULT_THRESHOLD`` (0.75).
 """
 
-from __future__ import annotations
 
 from typing import Any
 

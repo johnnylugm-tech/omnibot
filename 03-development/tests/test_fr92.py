@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-92 — 刪除權（Right to Erasure）:
 users.profile=NULL + messages=[REDACTED] + 30d SLA.
 
@@ -30,7 +31,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — ``execute_data_deletion`` (standalone function) and
@@ -71,7 +71,7 @@ from __future__ import annotations
 # exercise the deletion function in isolation, which is the canonical
 # unit-test shape for FR-92.
 # ---------------------------------------------------------------------------
-from app.infra.data_deletion import execute_data_deletion
+from app.infra.security import execute_data_deletion
 
 
 # ---------------------------------------------------------------------------

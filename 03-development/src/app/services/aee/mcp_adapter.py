@@ -1,3 +1,4 @@
+from __future__ import annotations
 """[FR-40] ``MCPAdapter`` — Model Context Protocol transport (stdio / SSE).
 
 [FR-40] ``MCPAdapter`` 透過 stdio 或 SSE 連線至外部 MCP Server；
@@ -20,7 +21,6 @@ Citations:
   connect, tool-call success, server-down NP-07, timeout NP-15).
 """
 
-from __future__ import annotations
 
 import contextlib
 import json

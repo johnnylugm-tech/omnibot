@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-79 — Embedding sync status UI + embedding_synced_at.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-79)
@@ -25,7 +26,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Test isolation — embedding sync status may involve background job state

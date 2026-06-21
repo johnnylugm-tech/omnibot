@@ -1,3 +1,4 @@
+from __future__ import annotations
 """FR-107 Test Pyramid Validator and E2E Pipeline Runner.
 
 [FR-107] Validates testing pyramid ratios (unit 70%, integration 20%, e2e 10%)
@@ -8,7 +9,6 @@ Citations:
   02-architecture/TEST_SPEC.md FR-107 — test case definitions and sub-assertions
 """
 
-from __future__ import annotations
 
 import os
 from dataclasses import dataclass

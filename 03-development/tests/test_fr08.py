@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-08 — UnifiedResponse immutable dataclass.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-08)
@@ -13,7 +14,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 import pytest
 
@@ -36,7 +36,7 @@ import pytest
 #                       attempts to mutate raise
 #                       ``dataclasses.FrozenInstanceError``.
 # ---------------------------------------------------------------------------
-from app.core.unified_response import ResponseSource, UnifiedResponse
+from app.core.response import ResponseSource, UnifiedResponse
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):

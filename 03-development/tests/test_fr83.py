@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-83 — Alembic Schema 遷移 (upgrade/downgrade 雙向測試).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-83)
@@ -23,7 +24,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — ``MigrationRunner`` / ``MigrationConfig`` /
@@ -75,7 +75,7 @@ from __future__ import annotations
 # both the global ``alembic.command`` module and the
 # ``app.infra.migrations`` module that GREEN must create.
 # ---------------------------------------------------------------------------
-from app.infra.migrations import (
+from app.infra.database import (
     MigrationConfig,
     MigrationRunner,
 )
@@ -117,7 +117,7 @@ def _patch_alembic_commands(monkeypatch, recorder: dict) -> None:
     # module so GREEN can call ``migrations.command.upgrade(...)``
     # without breaking the test isolation.
     try:
-        import app.infra.migrations as _mig_mod
+        import app.infra.database as _mig_mod
     except Exception:
         # Module does not exist yet — that IS the RED state we want to
         # surface at collection time. We do not silence it; the import

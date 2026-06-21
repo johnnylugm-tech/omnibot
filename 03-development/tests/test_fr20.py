@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-20 — PII 稽核日誌 (pii_audit_log + 90天自動匿名化).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-20)
@@ -30,7 +31,6 @@ Sub-assertion rule:
     fr20-ok: `result is not None` applies_to case 1.
 """
 
-from __future__ import annotations
 
 from dataclasses import dataclass
 
@@ -249,7 +249,7 @@ def test_fr20_90day_anonymize_scheduled():
     #      has ``.table_name``, ``.retention_days``, ``.action`` fields.
     #   2. ``find_policy(table_name="pii_audit_log") -> RetentionPolicy|None``
     # The test below uses interface (1) — the GREEN agent may add either.
-    from app.infra.data_retention import RETENTION_POLICIES
+    from app.infra.security import RETENTION_POLICIES
 
     policies = RETENTION_POLICIES
     assert isinstance(policies, (list, tuple)), (

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """[FR-09] Unified response wrappers for the management API.
 
 SRS FR-09: 統一回應格式 — ``ApiResponse[T]`` (success, data, error,
@@ -13,7 +15,6 @@ Citations:
     - 03-development/tests/test_fr09.py (test_fr09_* — contract source)
 """
 
-from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Generic, TypeVar
@@ -77,3 +78,4 @@ class PaginatedResponse(Generic[T]):
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "has_next", self.page * self.limit < self.total)
+

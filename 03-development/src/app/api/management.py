@@ -1,3 +1,4 @@
+from __future__ import annotations
 """[FR-85] Management API endpoints — 8 endpoints + RBAC + PaginatedResponse + health.
 
 SRS FR-85:
@@ -15,12 +16,11 @@ Citations:
     03-development/tests/test_fr85.py::test_fr85_paginated_response_has_next — line 260
 """
 
-from __future__ import annotations
 
 import time
 
 from app.admin.rbac import RBACEnforcer
-from app.api.api_response import PaginatedResponse
+from app.api.common import PaginatedResponse
 
 # HTTP status codes used across management endpoints.
 _HTTP_OK: int = 200

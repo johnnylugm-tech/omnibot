@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-99 — 階梯式降級策略 (9-level Circuit Breaker
 with tsvector fallback).
 
@@ -39,7 +40,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 import threading
 

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-07 — UnifiedMessage immutable dataclass.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-07)
@@ -15,7 +16,6 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
-from __future__ import annotations
 
 from datetime import datetime, timezone
 
@@ -38,7 +38,7 @@ import pytest
 #                      frozen-dataclass behaviour so attempts to mutate
 #                      raise ``dataclasses.FrozenInstanceError``.
 # ---------------------------------------------------------------------------
-from app.core.unified_message import MessageType, Platform, UnifiedMessage
+from app.core.pipeline import MessageType, Platform, UnifiedMessage
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):
@@ -330,7 +330,7 @@ def test_fr07_must_not_mutate_frozen_dataclass():
 def test_fr07_nfr36_m2m_token_90day_default_expiry():
     # NFR-36: M2M token 90-day expiry — verify actual token lifetime from returned expires_at
     from datetime import datetime, timedelta, timezone
-    from app.api.m2m import create_token
+    from app.api.webhooks import create_token
     result = create_token("nfr36_test_client", ["read"])
     assert "expires_at" in result, "NFR-36: create_token must return 'expires_at' field"
     expires_at = datetime.fromisoformat(result["expires_at"])

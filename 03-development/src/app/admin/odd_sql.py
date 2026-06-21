@@ -1,3 +1,4 @@
+from __future__ import annotations
 """[FR-105] ODD SQL analytics queries + judge sampling config.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-105)
@@ -18,7 +19,6 @@ Citations:
     test_fr105.py L126-150 — FR-105 judge sample rate default 0.20
 """
 
-from __future__ import annotations
 
 from typing import Any
 

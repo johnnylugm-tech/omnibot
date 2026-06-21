@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-06 — A2A Platform Adapter.
 
 FR-06 requires M2M OAuth2/JWT token verification for inbound A2A JSON-RPC 2.0
@@ -30,7 +31,6 @@ Sub-assertion (per TEST_SPEC):
     fr06-ok: result is not None   (applies_to case 1)
 """
 
-from __future__ import annotations
 
 import pytest
 
@@ -46,7 +46,7 @@ import pytest
 # GREEN must wire together.
 # ---------------------------------------------------------------------------
 from app.api.webhooks import A2AAdapter
-from app.core.unified_message import (
+from app.core.pipeline import (
     MessageType,
     Platform,
     UnifiedMessage,

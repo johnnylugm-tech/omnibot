@@ -1,3 +1,4 @@
+from __future__ import annotations
 """TDD-RED: failing tests for FR-05 — Web Platform Adapter.
 
 FR-05 requires POST /api/v1/web/guest-session returning a Guest JWT
@@ -33,7 +34,6 @@ Sub-assertion (per TEST_SPEC):
     fr05-ok: result is not None   (applies_to case 1)
 """
 
-from __future__ import annotations
 
 import pytest
 
@@ -47,14 +47,14 @@ import pytest
 # ``RateLimiter`` at ``app.infra.rate_limit`` already exists and provides
 # the sliding-window rate-limit contract that GREEN must wire together.
 # ---------------------------------------------------------------------------
-from app.core.unified_message import (
+from app.core.pipeline import (
     MessageType,
     Platform,
     UnifiedMessage,
 )
 from app.infra.rate_limit import RateLimiter
-from app.services.web_adapter import WebAdapter
-from app.services.web_verifier import WebJwtVerifier
+from app.api.webhooks import WebAdapter
+from app.api.webhooks import WebJwtVerifier
 
 
 # ===========================================================================
