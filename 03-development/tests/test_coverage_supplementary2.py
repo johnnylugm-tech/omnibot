@@ -1404,3 +1404,233 @@ def test_knowledge_parent_child_add_parent_success():
     assert "p1" in idx._parents
 
 
+
+# =====================================================================
+# Batch 3: remaining missing lines (2026-06-22 post-arch-refactor)
+# =====================================================================
+
+# --- app.core.knowledge.py:239 ---
+
+
+def test_knowledge_score_exact_match_type():
+    """_score returns CONFIDENCE_EXACT when match_type='exact'."""
+    from app.core.knowledge import HybridKnowledge
+
+    class Row:
+        match_type = "exact"
+        content = "anything"
+    assert HybridKnowledge._score(Row(), "whatever") == HybridKnowledge.CONFIDENCE_EXACT
+
+
+def test_knowledge_score_partial_match_type():
+    """_score returns CONFIDENCE_PARTIAL when match_type='partial'."""
+    from app.core.knowledge import HybridKnowledge
+
+    class Row:
+        match_type = "partial"
+        content = "anything"
+    assert HybridKnowledge._score(Row(), "whatever") == HybridKnowledge.CONFIDENCE_PARTIAL
+
+
+# --- app.core.knowledge.py:297 ---
+
+
+def test_knowledge_rag_search_low_confidence_returns_none():
+    """_rag_search returns None when confidence < RAG_CONFIDENCE_THRESHOLD."""
+    from app.core.knowledge import HybridKnowledge
+
+    hk = HybridKnowledge()
+    assert hk._rag_search("q", confidence=0.01) is None
+
+
+# --- app.core.knowledge.py:393-396 ---
+
+
+def test_knowledge_embedding_api_available_with_client_available():
+    """_embedding_api_available returns client.available when client exists."""
+    from app.core.knowledge import HybridKnowledge
+
+    hk = HybridKnowledge()
+    hk._embedding_client = type("obj", (), {"available": False})()
+    assert hk._embedding_api_available() is False
+    hk._embedding_client = type("obj", (), {"available": True})()
+    assert hk._embedding_api_available() is True
+
+
+# --- app.core.knowledge.py:445-446, 486, 498, 509, 517 ---
+
+
+def test_knowledge_record_tier_hit_sufficient_confidence():
+    """_record_tier_hit assigns tier_sequence and returns result when confident."""
+    from app.core.knowledge import HybridKnowledge, KnowledgeResult
+
+    hk = HybridKnowledge()
+    seq = []
+    kr = KnowledgeResult(id=1, content="ctx", confidence=0.9, source="rule", knowledge_id=1)
+    result = hk._record_tier_hit(seq, "t1", kr, HybridKnowledge.CONFIDENCE_THRESHOLD)
+    assert result is kr
+    assert kr.tier_sequence == ["t1"]
+
+
+# --- app.core.knowledge.py:911, 916, 918, 928 ---
+
+
+def test_slice_tokens_normal():
+    """_slice_tokens produces chunks for valid inputs."""
+    from app.core.knowledge import _slice_tokens
+
+    tokens = ["hello", " ", "world", " ", "test", " ", "more", " ", "words"]
+    chunks = _slice_tokens(tokens, size=3, prefix="p", chunk_type="child", parent_id_for=lambda i, s: None)
+    assert len(chunks) >= 2
+
+
+# --- app.core.paladin.py:758-763, 1088 ---
+
+
+def test_grounding_checker_with_response_text_based():
+    """GroundingChecker.check returns grounded=True stub when response is given."""
+    from app.core.paladin import GroundingChecker, GroundingResult
+
+    checker = GroundingChecker()
+    result = checker.check(response="some answer", sources=["text1", "text2"])
+    assert isinstance(result, GroundingResult)
+    assert result.grounded is True
+
+
+def test_paladin_pipeline_process_unknown_risk():
+    """PALADINPipeline raises ValueError for unknown risk_level."""
+    from app.core.paladin import PALADINPipeline
+
+    import asyncio
+    pipeline = PALADINPipeline()
+    with pytest.raises(ValueError, match="unknown risk_level"):
+        asyncio.run(pipeline.process("hello", risk_level="not_a_real_level"))
+
+
+# --- app.infra.deployment.py:703-706 ---
+
+
+def test_deployment_rollback_ab_test_above_threshold():
+    """RollbackStrategy.ab_test_progress rolls back when metric_drop > threshold."""
+    from app.infra.deployment import RollbackStrategy
+
+    rs = RollbackStrategy()
+    result = rs.ab_test_progress(metric_drop_pct=99.0)
+    assert result.rolled_back is True
+
+
+def test_deployment_rollback_ab_test_below_threshold():
+    """RollbackStrategy.ab_test_progress does not roll back when metric_drop <= threshold."""
+    from app.infra.deployment import RollbackStrategy
+
+    rs = RollbackStrategy()
+    result = rs.ab_test_progress(metric_drop_pct=1.0)
+    assert result.rolled_back is False
+
+
+# --- app.services.ab_testing.py:298 ---
+
+
+def test_collect_variant_means_skip_empty_variant():
+    """_collect_variant_means skips (continues past) zero-observation variants."""
+    from app.services.ab_testing import ABTestManager
+
+    means, total = ABTestManager._collect_variant_means(
+        {"A": [], "B": [0.5, 0.6], "C": []}
+    )
+    assert total == 2
+    variant_names = {v for v, _ in means}
+    assert "A" not in variant_names
+    assert "C" not in variant_names
+    assert "B" in variant_names
+
+
+# --- app.services.aee.tool_executor.py:71 ---
+
+
+def test_validate_handler_callable_class_instance_raises():
+    """_validate_handler raises TypeError for callable non-function/method."""
+    from app.services.aee.tool_executor import _validate_handler
+
+    class CallMe:
+        def __call__(self):
+            pass
+
+    with pytest.raises(TypeError, match="safety whitelist"):
+        _validate_handler(CallMe(), context="test")
+
+
+# --- app.services.aee.tool_executor.py:144 ---
+
+
+def test_update_shipping_address_handler_blocked_status():
+    """_update_shipping_address_handler returns fail for shipped/delivered status."""
+    from app.services.aee.tool_executor import _update_shipping_address_handler
+
+    result = _update_shipping_address_handler("o1", "addr", status="shipped")
+    assert result.success is False
+
+
+def test_update_shipping_address_handler_ok():
+    """_update_shipping_address_handler returns ok for allowed status."""
+    from app.services.aee.tool_executor import _update_shipping_address_handler
+
+    result = _update_shipping_address_handler("o1", "addr", status="processing")
+    assert result.success is True
+
+
+# --- app.services.llm_judge.py:324, 581, 625 ---
+
+
+@pytest.mark.asyncio
+async def test_llm_judge_evaluate_both_safely_none():
+    """evaluate returns degraded JudgeResult when both judges return None."""
+    from app.services.llm_judge import LLMJudge, JudgeResult
+
+    judge = LLMJudge()
+    with patch.object(judge, "_invoke_safely", new=AsyncMock(return_value=None)):
+        result = await judge.evaluate("msg", "resp")
+    assert isinstance(result, JudgeResult)
+    assert result.judge_name == "degraded"
+
+
+def test_calibration_agreement_rate_empty():
+    """_agreement_rate returns None for empty golden_set."""
+    from app.services.llm_judge import CalibrationPipeline
+
+    cp = CalibrationPipeline(judge_llm=AsyncMock(), kappa_cache=None, timeout_s=5)
+    assert cp._agreement_rate([]) is None
+
+
+# --- app.services.media.py:210, 230-235, 365-372 ---
+
+
+def test_media_pipeline_process_file_clamav_ok():
+    """process_file returns AUTO_ESCALATE when ClamAV scan returns OK."""
+    from app.services.media import MediaPipeline, ClamAVScanResult, CLAMAV_STATUS_OK, MEDIA_ACTION_AUTO_ESCALATE
+
+    pipeline = MediaPipeline()
+    fake = ClamAVScanResult(status=CLAMAV_STATUS_OK, terminated=False, p95_ms=1.0)
+    with patch.object(pipeline.scanner, "scan", return_value=fake):
+        result = pipeline.process_file(0.5, "txt", b"x")
+    assert result.action == MEDIA_ACTION_AUTO_ESCALATE
+
+
+def test_clamav_scanner_scan_holder_error():
+    """ClamAVScanner.scan returns UNAVAILABLE when _runner raises Exception."""
+    from app.services.media import ClamAVScanner, CLAMAV_STATUS_UNAVAILABLE
+
+    scanner = ClamAVScanner()
+    # Force the runner to raise
+    scanner._runner = MagicMock(side_effect=RuntimeError("boom"))
+    result = scanner.scan(b"x", "txt")
+    assert result.status == CLAMAV_STATUS_UNAVAILABLE
+
+
+# --- app.api.websocket.py:584-585 ---
+
+
+def test_websocket_dummy_api_cohesion():
+    """_dummy_api_cohesion calls imports without error."""
+    from app.api.websocket import _dummy_api_cohesion
+    _dummy_api_cohesion()
