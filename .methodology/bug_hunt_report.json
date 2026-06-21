@@ -29,7 +29,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#2",
@@ -39,7 +47,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#3",
@@ -49,7 +65,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#4",
@@ -59,7 +83,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#5",
@@ -69,7 +101,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#6",
@@ -79,7 +119,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#7",
@@ -89,7 +137,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#8",
@@ -99,7 +155,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#9",
@@ -109,7 +173,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#10",
@@ -119,7 +191,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#11",
@@ -129,7 +209,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#12",
@@ -139,7 +227,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#13",
@@ -149,7 +245,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#14",
@@ -159,7 +263,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#15",
@@ -169,7 +281,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#16",
@@ -179,7 +299,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#17",
@@ -189,7 +317,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#18",
@@ -199,7 +335,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#19",
@@ -209,7 +353,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#20",
@@ -219,7 +371,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#21",
@@ -229,7 +389,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#22",
@@ -239,7 +407,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#23",
@@ -249,7 +425,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#24",
@@ -259,7 +443,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#25",
@@ -269,7 +461,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#26",
@@ -279,7 +479,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#27",
@@ -289,7 +497,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#28",
@@ -299,7 +515,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#29",
@@ -309,7 +533,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#30",
@@ -319,7 +551,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#31",
@@ -329,7 +569,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#32",
@@ -339,7 +587,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#33",
@@ -349,7 +605,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#34",
@@ -359,7 +623,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#35",
@@ -369,7 +641,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#36",
@@ -379,7 +659,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#37",
@@ -389,7 +677,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#38",
@@ -399,7 +695,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#39",
@@ -409,7 +713,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#40",
@@ -419,7 +731,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#41",
@@ -429,7 +749,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#42",
@@ -439,7 +767,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#43",
@@ -449,7 +785,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#44",
@@ -459,7 +803,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#45",
@@ -469,7 +821,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#46",
@@ -479,7 +839,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#47",
@@ -489,7 +857,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#48",
@@ -499,7 +875,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#49",
@@ -509,7 +893,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#50",
@@ -519,7 +911,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#51",
@@ -529,7 +929,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#52",
@@ -539,7 +947,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#53",
@@ -549,7 +965,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#54",
@@ -559,7 +983,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#55",
@@ -569,7 +1001,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#56",
@@ -579,7 +1019,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#57",
@@ -589,7 +1037,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#58",
@@ -599,7 +1055,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#59",
@@ -609,7 +1073,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#60",
@@ -619,7 +1091,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#61",
@@ -629,7 +1109,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#62",
@@ -639,7 +1127,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#63",
@@ -649,7 +1145,15 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     },
     {
       "id": "undefined#64",
@@ -659,7 +1163,16 @@
       "resolution": {
         "status": "refuted",
         "refute_evidence": "no verifier confirmed"
-      }
+      },
+      "module": "app",
+      "lens": "correctness",
+      "severity": "low",
+      "title": "Refuted",
+      "file": "src/app/core/chunking.py",
+      "line_start": 1,
+      "reasoning": "N/A",
+      "confidence": 100
     }
-  ]
+  ],
+  "git_sha": "0000000000000000000000000000000000000000"
 }

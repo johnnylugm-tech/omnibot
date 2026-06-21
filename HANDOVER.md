@@ -1,8 +1,8 @@
 # Harness Methodology — Session Handover
 
-**Checkpoint**: `P3-gate2-20260621`  
-**Phase**: P3 — Implementation  
-**Generated**: 2026-06-21T10:07:02Z
+**Checkpoint**: `P4-gate3-20260621`  
+**Phase**: P4 — Testing  
+**Generated**: 2026-06-21T10:36:50Z
 
 > ⚠️  **開始下一個工作階段前，請先執行 `/compact` 壓縮上下文**，再從「接下來的工作」繼續。
 
@@ -14,9 +14,9 @@
 # 1. Clone (if working directory cleared)
 git clone --recurse-submodules https://github.com/johnnylugm-tech/omnibot.git && cd omnibot
 
-# 2. Read plan and start Phase 4
-cat .methodology/phase4_plan.md
-# Follow SKILL.md §0.1 Phase 4 entry check, then execute
+# 2. Read plan and start Phase 5
+cat .methodology/phase5_plan.md
+# Follow SKILL.md §0.1 Phase 5 entry check, then execute
 ```
 
 ---
@@ -31,34 +31,34 @@ git clone --recurse-submodules https://github.com/johnnylugm-tech/omnibot.git /t
 git log --oneline -3
 
 # Confirm FSM state
-cat .methodology/state.json   # expected: phase=3 state=RUNNING last_gate=2
+cat .methodology/state.json   # expected: phase=3 state=RUNNING last_gate=3
 
 # Read active plan
-cat .methodology/phase4_plan.md
+cat .methodology/phase5_plan.md
 ```
 
 | 欄位 | 值 |
 |------|----|
 | Remote | `https://github.com/johnnylugm-tech/omnibot.git` |
 | Branch | `main` |
-| State | `phase=3 state=RUNNING last_gate=2` |
-| Plan | `.methodology/phase4_plan.md` |
+| State | `phase=3 state=RUNNING last_gate=3` |
+| Plan | `.methodology/phase5_plan.md` |
 
 ---
 
 ## 任務背景
 
-Gate 2 PASS — quality cycle complete.
+Gate 3 PASS — quality cycle complete.
 
 ## 目前執行狀況
 
-Gate 2 PASS: score=89.5.
+Gate 3 PASS: score=100.0. — full test suite
 
 ## 接下來的工作
 
-1. Proceed to P4: Testing
-2. Build full test suite (Gate 3 target ≥ 80)
-3. On Gate 3 PASS → call commit_and_push_gate(gate_num=3, ...)
+1. Proceed to P5: Review Baseline
+2. Generate BASELINE.md
+3. On BASELINE.md ready → call commit_and_push_p5_baseline()
 
 ## 注意事項
 
@@ -68,8 +68,8 @@ Gate 2 PASS: score=89.5.
 
 ## 附加資訊
 
-- **gate**: 2
-- **score**: 89.5
+- **gate**: 3
+- **score**: 100.0
 
 ---
 *由 `HandoverGenerator` 自動生成。下次 push 時此檔案將被覆寫。*

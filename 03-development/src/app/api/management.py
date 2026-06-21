@@ -20,7 +20,7 @@ from __future__ import annotations
 import time
 
 from app.admin.rbac import RBACEnforcer
-from app.core.api_response import PaginatedResponse
+from app.api.api_response import PaginatedResponse
 
 # HTTP status codes used across management endpoints.
 _HTTP_OK: int = 200

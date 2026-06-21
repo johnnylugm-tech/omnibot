@@ -17,12 +17,12 @@ from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — ``ApiResponse`` and ``PaginatedResponse`` are
-# intentionally NOT YET exported by ``app.core.api_response``.
+# intentionally NOT YET exported by ``app.api.api_response``.
 # The imports below are unguarded: pytest MUST fail with Collection Error
 # (Exit Code 2) because the module does not exist yet. That is the valid
 # RED signal.
 #
-# GREEN must add ``app/core/api_response.py`` exporting:
+# GREEN must add ``app.api.api_response.py`` exporting:
 #   - ApiResponse[T] : generic envelope with fields
 #                      (success: bool, data: T | None, error: str | None,
 #                       error_code: str | None). On success=True the error /
@@ -35,12 +35,12 @@ from __future__ import annotations
 #                       be computed as ``page * limit < total`` so the
 #                       flag never disagrees with the underlying totals.
 # ---------------------------------------------------------------------------
-from app.core.api_response import ApiResponse, PaginatedResponse
+from app.api.api_response import ApiResponse, PaginatedResponse
 
 # ---------------------------------------------------------------------------
 # GREEN TODO (for the GREEN agent):
 #
-#   # app/core/api_response.py
+#   # app.api.api_response.py
 #   from __future__ import annotations
 #   from dataclasses import dataclass, field
 #   from typing import Generic, TypeVar

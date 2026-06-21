@@ -34,12 +34,12 @@ from app.api.m2m import validate_token
 # ===========================================================================
 # Imports — unguarded on purpose.
 #
-# ``app.core.golden_dataset`` does NOT exist yet. pytest will crash with
+# ``tests.golden_dataset`` does NOT exist yet. pytest will crash with
 # Collection Error (Exit Code 2) due to ModuleNotFoundError — that is the
 # CORRECT RED signal for this step. Do NOT wrap in try/except ImportError.
 # ===========================================================================
 # -- FR-108 core module (does NOT exist — triggers valid RED) --
-from app.core.golden_dataset import (
+from tests.golden_dataset import (
     EdgeCaseStatus,
     GoldenDataset,
     RegressionRunner,
@@ -84,7 +84,7 @@ def _isolate_golden_dataset_io(monkeypatch):
 # =========================================================================
 # GREEN CONTRACTS — pinned by these RED tests.
 #
-#   ``GoldenDataset`` (app.core.golden_dataset) — loads and manages
+#   ``GoldenDataset`` (tests.golden_dataset) — loads and manages
 #     the golden edge-case dataset.
 #     - __init__(self, source_path: str | None = None)
 #     - load(self) -> list[EdgeCase]
@@ -96,16 +96,16 @@ def _isolate_golden_dataset_io(monkeypatch):
 #     - by_status(self, status: EdgeCaseStatus) -> list[EdgeCase]
 #         Filters edge cases by their approval status.
 #
-#   ``EdgeCase`` (app.core.golden_dataset) — frozen dataclass.
+#   ``EdgeCase`` (tests.golden_dataset) — frozen dataclass.
 #     Fields: id, category, text, expected_action, status, created_at, tags.
 #
-#   ``EdgeCaseCategory`` (app.core.golden_dataset) — StrEnum with 6 values:
+#   ``EdgeCaseCategory`` (tests.golden_dataset) — StrEnum with 6 values:
 #     ASR_NOISE, TYPO, DIALECT, MULTI_INTENT, EMOTIONAL, PROMPT_INJECTION.
 #
-#   ``EdgeCaseStatus`` (app.core.golden_dataset) — StrEnum with 3 values:
+#   ``EdgeCaseStatus`` (tests.golden_dataset) — StrEnum with 3 values:
 #     PENDING, APPROVED, REJECTED.
 #
-#   ``RegressionRunner`` (app.core.golden_dataset) — executes regression
+#   ``RegressionRunner`` (tests.golden_dataset) — executes regression
 #     tests from the golden dataset.
 #     - __init__(self, dataset: GoldenDataset, pipeline: Pipeline)
 #     - run(self) -> RegressionResult

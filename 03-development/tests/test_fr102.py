@@ -92,7 +92,7 @@ def _isolate_rag_debugger_io(monkeypatch):
             return dict(self._data)
 
     monkeypatch.setattr(
-        "app.infra.config_store.get_config_store",
+        "app.infra.config.get_config_store",
         lambda: _InMemoryConfigStore(_default_config_store),
         raising=False,
     )

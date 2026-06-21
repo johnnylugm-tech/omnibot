@@ -66,7 +66,7 @@ from app.api.management import (
     list_knowledge,
     update_knowledge,
 )
-from app.core.api_response import ApiResponse, PaginatedResponse
+from app.api.api_response import ApiResponse, PaginatedResponse
 
 
 # ============================================================================
@@ -288,7 +288,7 @@ def test_fr85_paginated_response_has_next():
         f"input); got {expected_has_next!r}."
     )
 
-    # GREEN TODO: ``PaginatedResponse`` (from app.core.api_response,
+    # GREEN TODO: ``PaginatedResponse`` (from app.api.api_response,
     # FR-09) MUST expose a ``has_next`` boolean field. When
     # ``page * limit < total`` (1 * 10 = 10 < 50), ``has_next`` MUST
     # be True. The field MUST be derived from the constructor args

@@ -273,10 +273,12 @@ def test_fr50_nfr06_llm_primary_fallback_switch_under_500ms():
     def _mock_llm_api(model: str, prompt: str) -> str:
         call_sequence.append(model)
         if model == PRIMARY_LLM:
+            import time
+            time.sleep(0.1) # Simulate real network timeout/delay to prevent 0ms tautology
             raise ConnectionError("primary LLM down — NFR-06 fault injection")
         return "fallback answer"
 
-    with patch("app.core.knowledge._call_llm_api", side_effect=_mock_llm_api):
+    with patch("app.core.knowledge.generation._call_llm_api", side_effect=_mock_llm_api):
         t0 = time.monotonic()
         result = _call_llm_with_fallback("test prompt", PRIMARY_LLM, FALLBACK_LLM)
         elapsed_ms = (time.monotonic() - t0) * 1000

@@ -579,14 +579,13 @@ def test_fr99_concurrent_threshold_cross_single_probe():
 
 
 def test_fr99_nfr09_load_test_exists_in_load_folder():
-    # NFR-09: 2000 TPS sustained — validated by k6 load test, not unit test.
-    # Unit tests cannot verify HTTP throughput; the k6 script exercises the
-    # live API Gateway at 2000 req/s and asserts p95 < 800ms + error rate < 1%.
+    # NFR-09: 2000 TPS load test
     import os
-    load_test_path = os.path.join(
-        os.path.dirname(__file__), "load", "k6_nfr09_2000tps.js"
-    )
-    assert os.path.isfile(load_test_path), (
-        f"NFR-09: k6 load test must exist at {load_test_path}; "
-        "run it with: k6 run tests/load/k6_nfr09_2000tps.js"
-    )
+    script_path = os.path.join(os.path.dirname(__file__), "load", "k6_nfr09_2000tps.js")
+    assert os.path.exists(script_path), f"NFR-09: load test script {script_path} must exist"
+    
+    # Check that it asserts HTTP thresholds
+    with open(script_path) as f:
+        content = f.read()
+    assert "http_req_failed" in content, "load test must assert error rate"
+    assert "http_req_duration" in content, "load test must assert response time"

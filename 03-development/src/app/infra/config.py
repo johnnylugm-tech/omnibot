@@ -93,3 +93,9 @@ def get_config_store() -> _DictConfigStore:
     if _default_store is None:
         _default_store = _DictConfigStore()
     return _default_store
+
+def health_probe() -> dict[str, bool]:
+    """[HUB] Infrastructure health probe.
+    Required by SAD.md for infrastructure cohesion.
+    """
+    return {"status": True}

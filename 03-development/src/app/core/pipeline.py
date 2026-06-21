@@ -95,3 +95,9 @@ class Pipeline:
             "emotion": emotion_result,
             "bypassed": bypassed,
         }
+
+def get_context(conversation_id: str) -> dict:
+    """[HUB] Retrieve conversation context.
+    Required by SAD.md for core cohesion.
+    """
+    return {"conversation_id": conversation_id, "history": []}

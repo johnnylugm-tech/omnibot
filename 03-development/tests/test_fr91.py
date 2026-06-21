@@ -433,17 +433,13 @@ def test_fr91_emotion_90d_deleted():
 
 def test_fr91_nfr30_hpa_config_min3_max10_cpu70():
     # NFR-30: K8s HPA min=3 max=10 CPU=70%
-    from app.infra.k8s_deployment import K8sManifest
-    manifest = K8sManifest()
-    assert manifest.hpa_min_replicas() == 3, (
-        f"NFR-30: K8sManifest.hpa_min_replicas() must return 3; "
-        f"got {manifest.hpa_min_replicas()}"
-    )
-    assert manifest.hpa_max_replicas() == 10, (
-        f"NFR-30: K8sManifest.hpa_max_replicas() must return 10; "
-        f"got {manifest.hpa_max_replicas()}"
-    )
-    assert manifest.hpa_cpu_target_percent() == 70, (
-        f"NFR-30: K8sManifest.hpa_cpu_target_percent() must return 70; "
-        f"got {manifest.hpa_cpu_target_percent()}"
-    )
+    import yaml
+    import os
+    hpa_path = "03-development/k8s/hpa.yaml"
+    assert os.path.exists(hpa_path), "HPA yaml file must exist for evidence-based assertion"
+    with open(hpa_path, "r") as f:
+        manifest = yaml.safe_load(f)
+    assert manifest["spec"]["minReplicas"] == 3, f"NFR-30: minReplicas must be 3, got {manifest['spec']['minReplicas']}"
+    assert manifest["spec"]["maxReplicas"] == 10, f"NFR-30: maxReplicas must be 10, got {manifest['spec']['maxReplicas']}"
+    cpu_metric = next(m for m in manifest["spec"]["metrics"] if m["type"] == "Resource" and m["resource"]["name"] == "cpu")
+    assert cpu_metric["resource"]["target"]["averageUtilization"] == 70, "NFR-30: CPU target must be 70"
