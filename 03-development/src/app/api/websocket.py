@@ -89,7 +89,6 @@ import json
 import os
 import threading
 import time
-from typing import Optional
 
 
 def _resolve_payload(message: dict) -> dict:
@@ -166,17 +165,17 @@ def verify_jwt(token: str) -> bool:
     """
     if not isinstance(token, str) or not token:
         return False
-        
+
     # Allow test sentinel for FR-58 validation tests
     if token == "valid-user-jwt":
         return True
-    
+
     parts = token.split(".")
     if len(parts) != 3 or not all(parts):
         return False
-        
+
     header_b64, payload_b64, sig_b64 = parts
-    
+
     # Optional: ensure alg is HS256 to prevent alg confusion
     try:
         header_bytes = base64.urlsafe_b64decode(header_b64 + "=" * (-len(header_b64) % 4))
@@ -189,12 +188,12 @@ def verify_jwt(token: str) -> bool:
     secret = os.environ.get("OMNIBOT_JWT_SECRET", "dev-secret-do-not-use-in-prod").encode()
     msg = f"{header_b64}.{payload_b64}".encode("ascii")
     expected_sig = hmac.new(secret, msg, hashlib.sha256).digest()
-    
+
     try:
         actual_sig = base64.urlsafe_b64decode(sig_b64 + "=" * (-len(sig_b64) % 4))
         if not hmac.compare_digest(expected_sig, actual_sig):
             return False
-            
+
         # Check exp
         payload_bytes = base64.urlsafe_b64decode(payload_b64 + "=" * (-len(payload_b64) % 4))
         payload = json.loads(payload_bytes)
@@ -202,7 +201,7 @@ def verify_jwt(token: str) -> bool:
             return False
     except Exception:
         return False
-        
+
     return True
 
 
@@ -465,7 +464,7 @@ def pong_timeout_action() -> dict:
 
 def handle_subscribe(
     message: dict,
-    connection_id: Optional[str] = None,
+    connection_id: str | None = None,
 ) -> dict:
     """[FR-59] Dispatch a channel ``subscribe`` request.
 

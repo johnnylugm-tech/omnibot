@@ -30,9 +30,13 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 try:
-    from redis.exceptions import ConnectionError as RedisConnectionError  # type: ignore[reportAssignmentType]
+    from redis.exceptions import (
+        ConnectionError as RedisConnectionError,  # type: ignore[reportAssignmentType]
+    )
     from redis.exceptions import ResponseError  # type: ignore[reportAssignmentType]
-    from redis.exceptions import TimeoutError as RedisTimeoutError  # type: ignore[reportAssignmentType]
+    from redis.exceptions import (
+        TimeoutError as RedisTimeoutError,  # type: ignore[reportAssignmentType]
+    )
 except ImportError:  # pragma: no cover -- redis lib is in pyproject dependencies
     class RedisConnectionError(Exception):  # type: ignore[no-redef]
         pass

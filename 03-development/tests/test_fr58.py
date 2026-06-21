@@ -282,7 +282,7 @@ def test_fr58_must_not_c1():
 
             try:
                 loop = asyncio.get_running_loop()
-                loop.create_task(conn.send_json(result))
+                _ = loop.create_task(conn.send_json(result))  # noqa: RUF006
             except RuntimeError:
                 asyncio.run(conn.send_json(result))
 

@@ -300,9 +300,9 @@ __all__ = [
     "_FR80_KNOWN_FIELDS",
     "_PEL_BATCH_SIZE",
     "_PEL_PAGINATION_MAX_BATCHES",
-    "_next_stream_id",
     "AsyncMessageProcessor",
     "BusyGroupError",
     "Message",
     "ParsedMessage",
+    "_next_stream_id",
 ]

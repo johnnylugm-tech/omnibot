@@ -1,0 +1,656 @@
+{
+  "websocket.py": [
+    {
+      "id": "C-01",
+      "files": [
+        "websocket.py"
+      ],
+      "title": "`verify_jwt` 無條件 `return True`",
+      "desc": "任何非 `\"bad\"`-prefix 的 Bearer token 均可通過 JWT 驗證，WebSocket 鑑權完全失效。  \n**Fix:** 實作實際 JWT 簽名驗證而非固定回傳 `True`。\n"
+    }
+  ],
+  "api/webhooks.py": [
+    {
+      "id": "C-02",
+      "files": [
+        "api/webhooks.py"
+      ],
+      "title": "`verify_m2m_token` 是空 stub",
+      "desc": "任何非空 Bearer token 均通過。M2M 鑑權形同虛設。  \n**Fix:** 實作 token hash 查詢 + 有效期驗證。\n"
+    },
+    {
+      "id": "C-03",
+      "files": [
+        "api/webhooks.py"
+      ],
+      "title": "Agent identity 從未驗證的 JWT payload 提取",
+      "desc": "`sub` claim 取自未驗簽的 JWT body，攻擊者可偽造任意 agent identity。  \n**Fix:** 驗簽後才取 `sub`。\n"
+    }
+  ],
+  "services/web_verifier.py": [
+    {
+      "id": "C-04",
+      "files": [
+        "services/web_verifier.py"
+      ],
+      "title": "JWT `alg` field 從未驗證",
+      "desc": "RS256→HS256 algorithm confusion 攻擊可行，攻擊者以服務公鑰作 HMAC secret 偽造 token。  \n**Fix:** 在 decode 前 pin algorithm，拒絕 header 宣告的 alg 與配置不符的 token。\n"
+    }
+  ],
+  "core/retraction.py": [
+    {
+      "id": "C-05",
+      "files": [
+        "core/retraction.py"
+      ],
+      "title": "a2a retraction RPC 失敗時安全不變量被靜默違反",
+      "desc": "`a2a_client.mark_revoked()` 無 try/except，網路錯誤傳播到 caller。注入訊息未被標記撤回，但 caller 收到 exception 而非 `revoked=False` 的結果。  \n**Fix:** 包 try/except，失敗時回傳 `_apology_result('a2a', message_id)` + audit log。\n"
+    },
+    {
+      "id": "H-24",
+      "files": [
+        "core/retraction.py"
+      ],
+      "title": "naive `sent_at` datetime 造成 `TypeError` crash",
+      "desc": "`datetime.utcnow()` 傳入後算術失敗，繞過 fail-secure apology 路徑。\n"
+    },
+    {
+      "id": "M-14",
+      "files": [
+        "core/retraction.py"
+      ],
+      "title": "web retraction 無 error handling，WS 斷線時例外傳播",
+      "desc": "Line: 224-233"
+    }
+  ],
+  "middleware/chain.py": [
+    {
+      "id": "C-06",
+      "files": [
+        "middleware/chain.py"
+      ],
+      "title": "傳 request object 給 `ip_whitelist.is_allowed`，所有請求被拒",
+      "desc": "`is_allowed(request)` 中 `ipaddress.ip_address(request)` 拋 `ValueError`，被靜默 catch，回傳 `deny(403)`。Unit test mock 不觸發此路徑。  \n**Fix:** `self.ip_whitelist.is_allowed(x_forwarded_for=request.headers.get('x-forwarded-for'), client_host=...)`\n"
+    }
+  ],
+  "admin/odd_sql.py": [
+    {
+      "id": "C-07",
+      "files": [
+        "admin/odd_sql.py"
+      ],
+      "title": "`build_fcr_query` SQL injection",
+      "desc": "`scope_type` 和 `days` 直接 f-string 插入 SQL，無 parameterize。攻擊者可執行任意 SQL。  \n**Fix:** 改用 bind parameters，不要字串插值。\n"
+    }
+  ],
+  "api/auth.py": [
+    {
+      "id": "C-08",
+      "files": [
+        "api/auth.py"
+      ],
+      "title": "硬編碼憑證 `\"admin\" / \"correct\"`",
+      "desc": "Source code 中明文儲存，任何能讀 repo 的人均可登入。  \n**Fix:** 改用環境變數 + `hmac.compare_digest`。\n"
+    },
+    {
+      "id": "C-09",
+      "files": [
+        "api/auth.py"
+      ],
+      "title": "JWT signature 是 32 bytes 亂數，非 HMAC",
+      "desc": "任何具備 valid-looking structure 的偽造 token 均無法被 stateless verifier 區分。攻擊者自訂任意 `sub` claim 即可通過任何跳過簽名驗證的 receiver。  \n**Fix:** 用 `hmac.new(SECRET_KEY, f'{header_b64}.{payload_b64}'.encode(), 'sha256').digest()` 作 signature。\n"
+    }
+  ],
+  "services/line_adapter.py": [
+    {
+      "id": "C-10",
+      "files": [
+        "services/line_adapter.py`",
+        "`messenger_adapter.py`",
+        "`telegram_adapter.py`",
+        "`web_adapter.py"
+      ],
+      "title": "`NameError: name 'UTC' is not defined`",
+      "desc": "四個平台 adapter 均使用 bare `UTC` 但只 import 了 `timezone`，未 import `datetime.UTC`（Python 3.11+ 才有）。Python < 3.11 下，所有訊息處理 100% 崩潰。  \n**Fix:** 四個文件均改為 `from datetime import datetime, timezone, UTC`（或使用 `timezone.utc`）。\n"
+    }
+  ],
+  "messenger_adapter.py": [
+    {
+      "id": "C-10",
+      "files": [
+        "services/line_adapter.py`",
+        "`messenger_adapter.py`",
+        "`telegram_adapter.py`",
+        "`web_adapter.py"
+      ],
+      "title": "`NameError: name 'UTC' is not defined`",
+      "desc": "四個平台 adapter 均使用 bare `UTC` 但只 import 了 `timezone`，未 import `datetime.UTC`（Python 3.11+ 才有）。Python < 3.11 下，所有訊息處理 100% 崩潰。  \n**Fix:** 四個文件均改為 `from datetime import datetime, timezone, UTC`（或使用 `timezone.utc`）。\n"
+    }
+  ],
+  "telegram_adapter.py": [
+    {
+      "id": "C-10",
+      "files": [
+        "services/line_adapter.py`",
+        "`messenger_adapter.py`",
+        "`telegram_adapter.py`",
+        "`web_adapter.py"
+      ],
+      "title": "`NameError: name 'UTC' is not defined`",
+      "desc": "四個平台 adapter 均使用 bare `UTC` 但只 import 了 `timezone`，未 import `datetime.UTC`（Python 3.11+ 才有）。Python < 3.11 下，所有訊息處理 100% 崩潰。  \n**Fix:** 四個文件均改為 `from datetime import datetime, timezone, UTC`（或使用 `timezone.utc`）。\n"
+    }
+  ],
+  "web_adapter.py": [
+    {
+      "id": "C-10",
+      "files": [
+        "services/line_adapter.py`",
+        "`messenger_adapter.py`",
+        "`telegram_adapter.py`",
+        "`web_adapter.py"
+      ],
+      "title": "`NameError: name 'UTC' is not defined`",
+      "desc": "四個平台 adapter 均使用 bare `UTC` 但只 import 了 `timezone`，未 import `datetime.UTC`（Python 3.11+ 才有）。Python < 3.11 下，所有訊息處理 100% 崩潰。  \n**Fix:** 四個文件均改為 `from datetime import datetime, timezone, UTC`（或使用 `timezone.utc`）。\n"
+    }
+  ],
+  "api/gdpr.py": [
+    {
+      "id": "C-11",
+      "files": [
+        "api/gdpr.py"
+      ],
+      "title": "`NameError: UTC` 導致 CSV export 與 deletion crash",
+      "desc": "同上根因，`export_user_data` 和 `delete_user_data` 均用 `datetime.now(UTC)`。  \n**Fix:** 改為 `datetime.now(timezone.utc)`。\n"
+    },
+    {
+      "id": "M-20",
+      "files": [
+        "api/gdpr.py"
+      ],
+      "title": "GDPR deletion 未清除 emotion records 的 `source_text`（不完整刪除）",
+      "desc": "Line: 209-219"
+    }
+  ],
+  "infra/migrations.py": [
+    {
+      "id": "C-12",
+      "files": [
+        "infra/migrations.py"
+      ],
+      "title": "`upgrade()` 忽略 `staging_validated` gate",
+      "desc": "`MigrationConfig.staging_validated` 預設 `False`，但 `upgrade()` 直接呼叫 `_step()`，未任何 guard，會對 production DB 執行未經 staging 驗證的 migration。  \n**Fix:** 在 `upgrade()` 開頭加 `if not config.staging_validated: raise ValueError(...)`。\n"
+    },
+    {
+      "id": "H-25",
+      "files": [
+        "infra/migrations.py"
+      ],
+      "title": "`_step()` 讓 alembic 例外原始傳播，違反 MigrationResult 合約",
+      "desc": ""
+    }
+  ],
+  "infra/redis_streams.py": [
+    {
+      "id": "H-01",
+      "files": [
+        "infra/redis_streams.py"
+      ],
+      "title": "`sys.modules` 測試 harness 注入 production constructor",
+      "desc": "生產環境 constructor 執行 `sys.modules` 迴圈，將測試 wiring 注入到生產物件。\n"
+    },
+    {
+      "id": "H-02",
+      "files": [
+        "infra/redis_streams.py"
+      ],
+      "title": "`threading.Lock` 在 async 環境不安全",
+      "desc": "`_claimed` 跨多個 `asyncio.run()` event loop 去重失效。\n"
+    },
+    {
+      "id": "M-01",
+      "files": [
+        "infra/redis_streams.py"
+      ],
+      "title": "PEL 硬限 100 條，超過的 entry 永遠不被 claim",
+      "desc": "Line: 205-244"
+    },
+    {
+      "id": "M-02",
+      "files": [
+        "infra/redis_streams.py"
+      ],
+      "title": "`parse_message` 永遠回傳 `message_id=\"<synthetic>\"`",
+      "desc": "Line: 247-250"
+    },
+    {
+      "id": "L-01",
+      "files": [
+        "infra/redis_streams.py"
+      ],
+      "title": "`ensure_group` 用 `id=\"$\"`，group 重建後訊息丟失",
+      "desc": "Line: 146-164"
+    }
+  ],
+  "infra/tracing.py": [
+    {
+      "id": "H-03",
+      "files": [
+        "infra/tracing.py"
+      ],
+      "title": "`finally` 區塊中的 `return` 靜默吞掉 business logic 例外",
+      "desc": "任何 traced 函數拋出的例外在 `finally` 的 `return` 後消失，caller 收到 `None` 而非例外。\n"
+    },
+    {
+      "id": "H-04",
+      "files": [
+        "infra/tracing.py"
+      ],
+      "title": "`_initialised` flag TOCTOU race",
+      "desc": "多線程並行進入 `_ensure_setup` 時，可能初始化兩次或產生 partial state。\n"
+    },
+    {
+      "id": "M-03",
+      "files": [
+        "infra/tracing.py"
+      ],
+      "title": "module-global `_active_spans` 在並發下破壞 span parent chain",
+      "desc": "Line: 85,91,174-190"
+    },
+    {
+      "id": "M-04",
+      "files": [
+        "infra/tracing.py"
+      ],
+      "title": "`get_current_trace_id` 從 global stack 取值，跨 task 不正確",
+      "desc": "Line: 240-245"
+    },
+    {
+      "id": "L-02",
+      "files": [
+        "infra/tracing.py"
+      ],
+      "title": "docstring 虛假聲明屬性變更被隔離",
+      "desc": "Line: 165-170"
+    }
+  ],
+  "core/paladin.py": [
+    {
+      "id": "H-05",
+      "files": [
+        "core/paladin.py"
+      ],
+      "title": "`is_unverified=True` 觸發 block，違反 NP-07 passthrough",
+      "desc": "L4 classifier 超時時，medium/high-risk 請求全部被拒（self-inflicted outage）。\n"
+    },
+    {
+      "id": "L-05",
+      "files": [
+        "core/paladin.py"
+      ],
+      "title": "generator 作為 `source_texts` 繞過空值檢查後在 `len()` crash",
+      "desc": "Line: 807-819"
+    }
+  ],
+  "core/knowledge.py": [
+    {
+      "id": "H-06",
+      "files": [
+        "core/knowledge.py"
+      ],
+      "title": "Tier-2 RAG 結構性死路",
+      "desc": "`_rag_search` 以 `confidence=0.0` 呼叫，永遠低於閾值 0.85，整個 Tier-2 RAG 永遠無法命中。\n"
+    },
+    {
+      "id": "H-07",
+      "files": [
+        "core/knowledge.py"
+      ],
+      "title": "fallback LLM 在 primary elapsed ≥ 500ms 時被棄用",
+      "desc": "應嘗試 fallback 的 budget，被解讀為「超時就直接 raise TimeoutError」。\n"
+    },
+    {
+      "id": "H-08",
+      "files": [
+        "core/knowledge.py"
+      ],
+      "title": "`grounding_score=None` 繞過 grounding check",
+      "desc": "回傳 `confidence=0.0` 的 `source='wiki'` 結果，未經 grounding 驗證。\n"
+    },
+    {
+      "id": "L-06",
+      "files": [
+        "core/knowledge.py"
+      ],
+      "title": "stub `NotImplementedError` 傳播到 query() caller",
+      "desc": "Line: 637"
+    }
+  ],
+  "core/dst.py": [
+    {
+      "id": "H-09",
+      "files": [
+        "core/dst.py"
+      ],
+      "title": "`auto_escalate` confidence trigger 覆蓋 terminal states",
+      "desc": "已到 `RESOLVED` 的 FSM 可被 `auto_escalate(confidence=0.4)` 強制推入 `ESCALATED`。\n"
+    },
+    {
+      "id": "L-07",
+      "files": [
+        "core/dst.py"
+      ],
+      "title": "`_SUMMARY_MESSAGE` ClassVar mutable dict 被 reference 回傳",
+      "desc": "Line: 599"
+    }
+  ],
+  "services/llm_judge.py": [
+    {
+      "id": "H-10",
+      "files": [
+        "services/llm_judge.py"
+      ],
+      "title": "Python < 3.11 下 `asyncio.TimeoutError` 未被捕獲",
+      "desc": "NP-15 timeout 分支靜默誤路由為 `action='pass'` 而非 `action='skip_cycle'`。\n"
+    },
+    {
+      "id": "H-11",
+      "files": [
+        "services/llm_judge.py"
+      ],
+      "title": "`_agreement_rate` 在 zero-match dict golden_set 時虛構 `kappa=0.95`",
+      "desc": "完全無共識的校準結果被回報為 95% 一致，繞過 FR-69 recalibration gate。\n"
+    }
+  ],
+  "services/aee/mcp_adapter.py": [
+    {
+      "id": "H-12",
+      "files": [
+        "services/aee/mcp_adapter.py"
+      ],
+      "title": "`execute()` 不真正 dispatch MCP 工具，永遠回傳 `success=True`",
+      "desc": "靜態 payload 偽裝成執行結果，任何工具錯誤對 caller 不可見。\n"
+    }
+  ],
+  "core/emotion.py": [
+    {
+      "id": "H-13",
+      "files": [
+        "core/emotion.py"
+      ],
+      "title": "`Pipeline.process()` 呼叫 `.analyze()` 但 `EmotionAnalyzer` 只有 `.classify()`",
+      "desc": "每次 pipeline 執行均拋 `AttributeError`。\n"
+    },
+    {
+      "id": "H-14",
+      "files": [
+        "core/emotion.py"
+      ],
+      "title": "`\"好\"` 子字串匹配錯誤分類（`\"不好\"` → positive）",
+      "desc": "否定詞無前綴保護，false positive 分類。\n"
+    },
+    {
+      "id": "H-15",
+      "files": [
+        "core/emotion.py"
+      ],
+      "title": "已耗盡的 generator 作為 `emotions` 傳入，trailing-run 計數錯誤",
+      "desc": ""
+    },
+    {
+      "id": "M-07",
+      "files": [
+        "core/emotion.py"
+      ],
+      "title": "`None` 傳入 `should_escalate` 拋 `TypeError` 而非回傳 `False`",
+      "desc": "Line: 217"
+    }
+  ],
+  "core/chunking.py": [
+    {
+      "id": "H-16",
+      "files": [
+        "core/chunking.py"
+      ],
+      "title": "`parent_child_overlap` 定義但從未套用",
+      "desc": "`split_parents` hard-partition，sliding window 永遠不執行。\n"
+    },
+    {
+      "id": "H-17",
+      "files": [
+        "core/chunking.py"
+      ],
+      "title": "`add_link` 以空 content stub 作為 parent，LLM 收到空字串",
+      "desc": ""
+    },
+    {
+      "id": "M-08",
+      "files": [
+        "core/chunking.py"
+      ],
+      "title": "`_tokenize` 用 `text.split()`，whitespace normalize 損失 content fidelity",
+      "desc": "Line: 77-79,102"
+    },
+    {
+      "id": "L-04",
+      "files": [
+        "core/chunking.py"
+      ],
+      "title": "空白輸入靜默回傳 `[]`，無任何信號",
+      "desc": "Line: 96-109"
+    }
+  ],
+  "services/aee/tool_executor.py": [
+    {
+      "id": "H-18",
+      "files": [
+        "services/aee/tool_executor.py"
+      ],
+      "title": "`handlers` kwarg 允許任意 callable 注入，無白名單驗證",
+      "desc": "安全邊界完全依賴 caller 的 honesty。\n"
+    },
+    {
+      "id": "H-19",
+      "files": [
+        "services/aee/tool_executor.py"
+      ],
+      "title": "無 JSON schema validation on pre-decoded dict args",
+      "desc": ""
+    },
+    {
+      "id": "M-09",
+      "files": [
+        "services/aee/tool_executor.py"
+      ],
+      "title": "`MemoryError`/`RecursionError` 裸露傳播，違反 NP-07",
+      "desc": "Line: 225-226"
+    },
+    {
+      "id": "L-03",
+      "files": [
+        "services/aee/tool_executor.py"
+      ],
+      "title": "raw exception string 洩漏內部路徑/DSN",
+      "desc": "Line: 228"
+    }
+  ],
+  "services/aee/a2a_adapter.py": [
+    {
+      "id": "H-20",
+      "files": [
+        "services/aee/a2a_adapter.py"
+      ],
+      "title": "無 agent_url scheme/SSRF 驗證",
+      "desc": "任意 URL（`file://`、`http://internal`）均被接受並帶 Bearer token 發送。\n"
+    },
+    {
+      "id": "H-21",
+      "files": [
+        "services/aee/a2a_adapter.py"
+      ],
+      "title": "per-call httpx client，連線洩漏",
+      "desc": "每次呼叫創建新 client，不 close，長時間運行下 fd 耗盡。\n"
+    },
+    {
+      "id": "M-05",
+      "files": [
+        "services/aee/a2a_adapter.py"
+      ],
+      "title": "暫時失敗被 cache 30s，視窗內無 retry",
+      "desc": "Line: 125-130"
+    }
+  ],
+  "admin/webui.py": [
+    {
+      "id": "H-22",
+      "files": [
+        "admin/webui.py"
+      ],
+      "title": "DB session context manager enter 後從未 exit（連線洩漏）",
+      "desc": "每次 CRUD 操作均洩漏 session，最終耗盡連線池。\n"
+    },
+    {
+      "id": "H-23",
+      "files": [
+        "admin/webui.py"
+      ],
+      "title": "`create_entry`/`update_entry` 未呼叫 `commit()`",
+      "desc": "真實 DB adapter 下所有寫入靜默丟失，unit test 因 in-memory stub 通過。\n"
+    },
+    {
+      "id": "M-11",
+      "files": [
+        "admin/webui.py"
+      ],
+      "title": "`EmbeddingStatusProvider` 無 FAILED 路徑（sync error 被誤報為 SYNCED）",
+      "desc": "Line: 166-181"
+    }
+  ],
+  "core/websocket.py": [
+    {
+      "id": "M-06",
+      "files": [
+        "core/websocket.py"
+      ],
+      "title": "無連線 registry，subscribe 完全 no-op",
+      "desc": "Line: 311-339"
+    }
+  ],
+  "infra/rate_limit.py": [
+    {
+      "id": "M-10",
+      "files": [
+        "infra/rate_limit.py"
+      ],
+      "title": "in-memory path 只按 platform bucket，忽略 key（全平台共用限額）",
+      "desc": "Line: 195-207"
+    }
+  ],
+  "services/media.py": [
+    {
+      "id": "M-12",
+      "files": [
+        "services/media.py"
+      ],
+      "title": "runner 回傳 `None` 被當作 clean scan（fail-secure bypass）",
+      "desc": "Line: 216-222"
+    }
+  ],
+  "services/ab_testing.py": [
+    {
+      "id": "M-13",
+      "files": [
+        "services/ab_testing.py"
+      ],
+      "title": "zero-observation variant 參與 gap 比較，觸發虛假 promotion",
+      "desc": "Line: 263-301"
+    }
+  ],
+  "core/response_generator.py": [
+    {
+      "id": "M-15",
+      "files": [
+        "core/response_generator.py"
+      ],
+      "title": "`render()` 缺少 template variable 時 `KeyError` 傳播",
+      "desc": "Line: 122-129"
+    }
+  ],
+  "core/unified_response.py": [
+    {
+      "id": "M-16",
+      "files": [
+        "core/unified_response.py"
+      ],
+      "title": "`quick_replies` mutable list，frozen dataclass 不變性被繞過",
+      "desc": "Line: 92"
+    }
+  ],
+  "core/golden_dataset.py": [
+    {
+      "id": "M-17",
+      "files": [
+        "core/golden_dataset.py"
+      ],
+      "title": "`load()` 前呼叫任何方法靜默回傳空結果",
+      "desc": "Line: 268-298"
+    }
+  ],
+  "infra/circuit_breaker.py": [
+    {
+      "id": "M-18",
+      "files": [
+        "infra/circuit_breaker.py"
+      ],
+      "title": "`current_level` property 讀 `_level` 不加鎖",
+      "desc": "Line: 55-60"
+    },
+    {
+      "id": "H-26",
+      "files": [
+        "infra/circuit_breaker.py"
+      ],
+      "title": "LEVEL_1 latency 降級後永遠無法自愈",
+      "desc": "`record_llm_success` 只在 `_level == LEVEL_3` 時恢復，LEVEL_1 的 success streak 無效。\n| ID | 文件 | L# | 問題 |\n|----|------|----|------|\n| M-01 | `infra/redis_streams.py` | 205-244 | PEL 硬限 100 條，超過的 entry 永遠不被 claim |\n| M-02 | `infra/redis_streams.py` | 247-250 | `parse_message` 永遠回傳 `message_id=\"<synthetic>\"` |\n| M-03 | `infra/tracing.py` | 85,91,174-190 | module-global `_active_spans` 在並發下破壞 span parent chain |\n| M-04 | `infra/tracing.py` | 240-245 | `get_current_trace_id` 從 global stack 取值，跨 task 不正確 |\n| M-05 | `services/aee/a2a_adapter.py` | 125-130 | 暫時失敗被 cache 30s，視窗內無 retry |\n| M-06 | `core/websocket.py` | 311-339 | 無連線 registry，subscribe 完全 no-op |\n| M-07 | `core/emotion.py` | 217 | `None` 傳入 `should_escalate` 拋 `TypeError` 而非回傳 `False` |\n| M-08 | `core/chunking.py` | 77-79,102 | `_tokenize` 用 `text.split()`，whitespace normalize 損失 content fidelity |\n| M-09 | `services/aee/tool_executor.py` | 225-226 | `MemoryError`/`RecursionError` 裸露傳播，違反 NP-07 |\n| M-10 | `infra/rate_limit.py` | 195-207 | in-memory path 只按 platform bucket，忽略 key（全平台共用限額） |\n| M-11 | `admin/webui.py` | 166-181 | `EmbeddingStatusProvider` 無 FAILED 路徑（sync error 被誤報為 SYNCED） |\n| M-12 | `services/media.py` | 216-222 | runner 回傳 `None` 被當作 clean scan（fail-secure bypass） |\n| M-13 | `services/ab_testing.py` | 263-301 | zero-observation variant 參與 gap 比較，觸發虛假 promotion |\n| M-14 | `core/retraction.py` | 224-233 | web retraction 無 error handling，WS 斷線時例外傳播 |\n| M-15 | `core/response_generator.py` | 122-129 | `render()` 缺少 template variable 時 `KeyError` 傳播 |\n| M-16 | `core/unified_response.py` | 92 | `quick_replies` mutable list，frozen dataclass 不變性被繞過 |\n| M-17 | `core/golden_dataset.py` | 268-298 | `load()` 前呼叫任何方法靜默回傳空結果 |\n| M-18 | `infra/circuit_breaker.py` | 55-60 | `current_level` property 讀 `_level` 不加鎖 |\n| M-19 | `infra/observability.py` | 101 | `json.dumps` 在非 JSON-serializable kwarg（如 datetime）時 crash |\n| M-20 | `api/gdpr.py` | 209-219 | GDPR deletion 未清除 emotion records 的 `source_text`（不完整刪除） |\n| M-21 | `admin/gdpr.py` | 95 | `decrypt_pii_entry` 直接 dict 索引，entry 不存在時 `KeyError` 傳播 |\n| ID | 文件 | L# | 問題 |\n|----|------|----|------|\n| L-01 | `infra/redis_streams.py` | 146-164 | `ensure_group` 用 `id=\"$\"`，group 重建後訊息丟失 |\n| L-02 | `infra/tracing.py` | 165-170 | docstring 虛假聲明屬性變更被隔離 |\n| L-03 | `services/aee/tool_executor.py` | 228 | raw exception string 洩漏內部路徑/DSN |\n| L-04 | `core/chunking.py` | 96-109 | 空白輸入靜默回傳 `[]`，無任何信號 |\n| L-05 | `core/paladin.py` | 807-819 | generator 作為 `source_texts` 繞過空值檢查後在 `len()` crash |\n| L-06 | `core/knowledge.py` | 637 | stub `NotImplementedError` 傳播到 query() caller |\n| L-07 | `core/dst.py` | 599 | `_SUMMARY_MESSAGE` ClassVar mutable dict 被 reference 回傳 |\n| L-08 | `services/escalation.py` | 180 | 未知 priority 靜默降為 30min SLA |\n| L-09 | `infra/rollback_strategy.py` | 120-135 | `downgrade_schema` 接受任意 migration 字串，永遠回傳 `rows_preserved=True` |\n## 3. 修復優先順序\n1. **C-10** 四個平台 adapter `NameError: UTC` — 所有訊息處理 100% crash，一行修復\n2. **C-11** `api/gdpr.py NameError: UTC` — GDPR export/deletion crash\n3. **C-06** `chain.py:135` 傳 request object → 所有請求被 403 拒絕\n4. **C-01** `websocket.py:179` `verify_jwt` 無條件 `return True`\n5. **C-02/C-03** `webhooks.py` M2M + agent identity 鑑權 stub\n6. **C-08** `auth.py` 硬編碼憑證\n7. **C-09** `auth.py` JWT random bytes signature\n8. **C-07** `odd_sql.py` SQL injection\n- **C-04** JWT alg confusion (web_verifier)\n- **C-05** a2a retraction 安全不變量\n- **C-12** migrations.py staging_validated 被繞過\n- **H-06** knowledge.py Tier-2 RAG 死路\n- **H-13** pipeline.py `AttributeError` (`analyze` vs `classify`)\n- **H-22/H-23** webui.py 連線洩漏 + commit 缺失\n- **H-12** mcp_adapter.py execute() 永遠回傳 success\n- 所有 MEDIUM findings（M-01 ~ M-21）\n- 剩餘 HIGH findings（H-01 ~ H-26 中尚未列入 P1 者）\n## 4. 被反駁的 Findings\n本次掃描各 agent 均要求 concrete line citation + reachable scenario，以下未進入報告：\n- `portal.py`：純 in-memory inbox，無注入面\n- `redis_security.py / tde.py / data_deletion.py`：純 policy descriptor / stub，無實際 I/O\n- `schema.py`：純資料描述型，無執行路徑\n- `database.py`：純 stub（`NotImplementedError`），無連線管理\n## 5. 掃描方法\n- **Phase 1 Scout：** CRG `get_review_context_tool` (include_source=true, max_depth=2) + `query_graph_tool` (callers_of / tests_for)\n- **Phase 2 Hunt：** HIGH_RISK 文件 × 3-lens（correctness / resilience / concurrency）；STANDARD 文件 × general-lens\n- **Phase 3 Verify：** 每個 finding 必須提供 concrete trigger scenario + exact line numbers；無法具體化的直接棄用\n- **報告：** confirmed critical/high 需逐條 resolved 或 refuted 後，Gate 3 adversarial_review 才放行\n> 本報告 **不含修復** — 老闆確認後再動手。\n"
+    }
+  ],
+  "infra/observability.py": [
+    {
+      "id": "M-19",
+      "files": [
+        "infra/observability.py"
+      ],
+      "title": "`json.dumps` 在非 JSON-serializable kwarg（如 datetime）時 crash",
+      "desc": "Line: 101"
+    }
+  ],
+  "admin/gdpr.py": [
+    {
+      "id": "M-21",
+      "files": [
+        "admin/gdpr.py"
+      ],
+      "title": "`decrypt_pii_entry` 直接 dict 索引，entry 不存在時 `KeyError` 傳播",
+      "desc": "Line: 95"
+    }
+  ],
+  "services/escalation.py": [
+    {
+      "id": "L-08",
+      "files": [
+        "services/escalation.py"
+      ],
+      "title": "未知 priority 靜默降為 30min SLA",
+      "desc": "Line: 180"
+    }
+  ],
+  "infra/rollback_strategy.py": [
+    {
+      "id": "L-09",
+      "files": [
+        "infra/rollback_strategy.py"
+      ],
+      "title": "`downgrade_schema` 接受任意 migration 字串，永遠回傳 `rows_preserved=True`",
+      "desc": "Line: 120-135"
+    }
+  ]
+}

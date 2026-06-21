@@ -85,6 +85,8 @@ ignore = [
     # ``str`` and ``enum.Enum`` for Python 3.9 compatibility
     # (``enum.StrEnum`` is only available in 3.11+). False positive.
     "UP042",
+    # UP017: prefer datetime.UTC over timezone.utc; not available pre-3.11
+    "UP017",
 ]
 
 [tool.ruff.lint.per-file-ignores]

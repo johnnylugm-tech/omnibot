@@ -39,11 +39,11 @@ def _make_jwt(username: str) -> str:
         "exp": int(time.time()) + 3600,
     }
     payload_b64 = _b64url_encode(json.dumps(payload).encode())
-    
+
     secret = os.environ.get("OMNIBOT_JWT_SECRET", "dev-secret-do-not-use-in-prod").encode()
     msg = f"{header_b64}.{payload_b64}".encode()
     sig_b64 = _b64url_encode(hmac.new(secret, msg, "sha256").digest())
-    
+
     return f"{header_b64}.{payload_b64}.{sig_b64}"
 
 
@@ -69,7 +69,7 @@ def login(username: str, password: str) -> dict | int:
     """
     user_match = hmac.compare_digest(username, _ADMIN_USER)
     pass_match = hmac.compare_digest(password, _ADMIN_PASS)
-    
+
     if user_match and pass_match:
         access = _make_jwt(username)
         refresh = secrets.token_urlsafe(32)

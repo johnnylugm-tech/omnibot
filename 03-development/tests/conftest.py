@@ -19,6 +19,7 @@ the valid RED signal.
 from __future__ import annotations
 
 import os
+
 import pytest
 
 os.environ.setdefault("OMNIBOT_ADMIN_USER", "admin")

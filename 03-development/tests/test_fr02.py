@@ -282,7 +282,6 @@ def test_fr02_line_events_array_parsed_to_unified_message():
         )
 
         # received_at must be set to a datetime
-        from datetime import datetime
 
         assert isinstance(result.received_at, datetime), (
             f"Event {i}: received_at must be a datetime; "
@@ -476,7 +475,6 @@ def test_fr02_process_events_non_text_message_type():
 
 def test_fr02_process_events_preserves_received_at_as_utc_datetime():
     """received_at must be a UTC datetime parsed from the Unix-ms timestamp."""
-    from datetime import datetime
 
     adapter = LineWebhookAdapter()
     ts_ms = 1717200000000  # 2024-06-01T00:00:00Z
@@ -698,7 +696,6 @@ def test_fr02_rate_limiter_agent_platform_limit():
 
 def test_fr02_unified_message_line_platform():
     """Explicit construction: Platform.LINE, every field set."""
-    from datetime import datetime
 
     now = datetime.now(timezone.utc)
     msg = UnifiedMessage(
@@ -723,7 +720,6 @@ def test_fr02_unified_message_line_platform():
 
 def test_fr02_unified_message_reply_token_none_for_non_line():
     """reply_token is None for non-LINE platforms per spec."""
-    from datetime import datetime
 
     now = datetime.now(timezone.utc)
     msg = UnifiedMessage(
@@ -741,7 +737,6 @@ def test_fr02_unified_message_reply_token_none_for_non_line():
 
 def test_fr02_unified_message_frozen_prevents_mutation():
     """frozen=True rejects attribute mutation with FrozenInstanceError."""
-    from datetime import datetime
 
     now = datetime.now(timezone.utc)
     msg = UnifiedMessage(
@@ -762,7 +757,6 @@ def test_fr02_unified_message_frozen_prevents_mutation():
 
 def test_fr02_unified_message_sticker_type():
     """MessageType.STICKER is constructible."""
-    from datetime import datetime
 
     now = datetime.now(timezone.utc)
     msg = UnifiedMessage(
@@ -781,7 +775,6 @@ def test_fr02_unified_message_sticker_type():
 
 def test_fr02_unified_message_image_type():
     """MessageType.IMAGE is constructible."""
-    from datetime import datetime
 
     now = datetime.now(timezone.utc)
     msg = UnifiedMessage(
@@ -799,7 +792,6 @@ def test_fr02_unified_message_image_type():
 
 def test_fr02_unified_message_location_type():
     """MessageType.LOCATION is constructible."""
-    from datetime import datetime
 
     now = datetime.now(timezone.utc)
     msg = UnifiedMessage(

@@ -84,12 +84,12 @@ def _is_public_address(ip: ipaddress._BaseAddress) -> bool:
     unspecified address.
     """
     return not (
-        ip.is_private
-        or ip.is_loopback
-        or ip.is_link_local
-        or ip.is_multicast
-        or ip.is_reserved
-        or ip.is_unspecified
+        ip.is_private  # type: ignore[attr-defined]
+        or ip.is_loopback  # type: ignore[attr-defined]
+        or ip.is_link_local  # type: ignore[attr-defined]
+        or ip.is_multicast  # type: ignore[attr-defined]
+        or ip.is_reserved  # type: ignore[attr-defined]
+        or ip.is_unspecified  # type: ignore[attr-defined]
     )
 
 
@@ -189,7 +189,7 @@ class A2AAdapter(ActionAdapter):
         """
         self._client.close()
 
-    def __enter__(self) -> "A2AAdapter":
+    def __enter__(self) -> A2AAdapter:
         return self
 
     def __exit__(self, *exc_info: object) -> None:

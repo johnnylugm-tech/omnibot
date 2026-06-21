@@ -237,7 +237,7 @@ def _retract_web(
             reason="api_error",
         )
         return _apology_result("web", message_id)
-        
+
     return RetractionResult(
         platform="web",
         success=True,
@@ -268,7 +268,7 @@ def _retract_a2a(
             reason="api_error",
         )
         return _apology_result("a2a", message_id)
-        
+
     return RetractionResult(
         platform="a2a",
         success=True,

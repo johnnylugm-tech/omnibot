@@ -108,7 +108,6 @@ def test_fr07_unified_message_telegram_valid():
     # MessageType, str, raw_payload, datetime, Optional[str]) and yield a
     # valid instance. Telegram has no reply_token, so the 8th positional
     # (or ``reply_token=`` kw) is None.
-    from datetime import datetime
 
     msg = UnifiedMessage(
         platform=Platform(platform),
@@ -165,7 +164,6 @@ def test_fr07_unified_message_frozen_immutable():
     platform = "telegram"
     attempt_mutate = "content"
 
-    from datetime import datetime
 
     msg = UnifiedMessage(
         platform=Platform(platform),
@@ -217,7 +215,6 @@ def test_fr07_unified_message_frozen_immutable():
 def test_fr07_unified_message_all_platforms_valid():
     platforms = "telegram,line,messenger,whatsapp,web,a2a"
 
-    from datetime import datetime
 
     platform_list = [p.strip() for p in platforms.split(",")]
     # LINE is the only platform whose reply_token is non-None (SRS FR-07).
@@ -293,7 +290,6 @@ def test_fr07_must_not_mutate_frozen_dataclass():
     expected_error = "FrozenInstanceError"
 
     import dataclasses
-    from datetime import datetime
 
     msg = UnifiedMessage(
         platform=Platform("telegram"),
