@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "cffe396e51008583941d7bc34392c1231f8cefc9",
-  "content_sha256": "7d2fa85066c760d4110fb39bd5c0d9937130404412801dfbdf5ae6edff3bc23d",
+  "git_sha": "0865b95b3e945571600ece5aef2360f9e09e887d",
+  "content_sha256": "e75a37aa6bef7a78a7a0e8deafd07c212af00d5017e22c3d21453f5cc633a4f9",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,18 +11,16 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "89.8%",
-      "test_coverage": "92.6%",
-      "verification_rate": "89.8%",
-      "total_links": 326,
+      "code_coverage": "91.7%",
+      "test_coverage": "95.4%",
+      "verification_rate": "91.7%",
+      "total_links": 331,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
           "FR-108",
           "FR-54",
           "FR-63",
-          "FR-86",
-          "FR-87",
           "FR-88",
           "FR-91",
           "FR-92",
@@ -32,9 +30,6 @@
         ],
         "fr_without_test": [
           "FR-108",
-          "FR-86",
-          "FR-87",
-          "FR-88",
           "FR-92",
           "FR-93",
           "FR-94",
@@ -48,8 +43,6 @@
         "FR-108",
         "FR-54",
         "FR-63",
-        "FR-86",
-        "FR-87",
         "FR-88",
         "FR-91",
         "FR-92",
@@ -59,9 +52,6 @@
       ],
       "fr_without_test": [
         "FR-108",
-        "FR-86",
-        "FR-87",
-        "FR-88",
         "FR-92",
         "FR-93",
         "FR-94",
@@ -1306,19 +1296,27 @@
       },
       "FR-86": {
         "fr_id": "FR-86",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/api/auth.py"
+        ],
+        "test_files": [
+          "tests/test_fr86.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
       "FR-87": {
         "fr_id": "FR-87",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
-        "test_files": [],
+        "code_files": [
+          "03-development/src/app/api/m2m.py"
+        ],
+        "test_files": [
+          "tests/test_fr87.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
@@ -1327,7 +1325,9 @@
         "status": "pending",
         "srs_section": "SAD.md",
         "code_files": [],
-        "test_files": [],
+        "test_files": [
+          "tests/test_fr88.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
