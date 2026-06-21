@@ -110,6 +110,13 @@ def _write_csv_rows(writer, headers, rows):
         writer.writerow([row.get(h, "") for h in headers])
 
 
+def _write_csv_section(writer, headers, rows):
+    """Write a CSV section: blank separator, header row, then data rows."""
+    writer.writerow([])
+    writer.writerow(list(headers))
+    _write_csv_rows(writer, headers, rows)
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -148,17 +155,11 @@ def export_user_data(user_id: str, format: str = "json") -> dict:
         if profile:
             _write_csv_rows(writer, _PROFILE_HEADERS, [profile])
         # Conversations section
-        writer.writerow([])
-        writer.writerow(list(_CONVERSATION_HEADERS))
-        _write_csv_rows(writer, _CONVERSATION_HEADERS, conversations)
+        _write_csv_section(writer, _CONVERSATION_HEADERS, conversations)
         # Messages section
-        writer.writerow([])
-        writer.writerow(list(_MESSAGE_HEADERS))
-        _write_csv_rows(writer, _MESSAGE_HEADERS, messages)
+        _write_csv_section(writer, _MESSAGE_HEADERS, messages)
         # Emotions section [FR-93]
-        writer.writerow([])
-        writer.writerow(list(_EMOTION_HEADERS))
-        _write_csv_rows(writer, _EMOTION_HEADERS, emotions)
+        _write_csv_section(writer, _EMOTION_HEADERS, emotions)
         csv_data = csv_buffer.getvalue()
         filename = (
             f"{user_id}_data_"
