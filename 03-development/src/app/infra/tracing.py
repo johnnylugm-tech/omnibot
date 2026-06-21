@@ -18,13 +18,11 @@ Trace / span id format follows OpenTelemetry's W3C trace-context shape:
     trace_id : 32 lowercase hex chars (128 bits)
     span_id  : 16 lowercase hex chars (64 bits)
 
-The module is intentionally dependency-free at the API boundary: the
-OpenTelemetry SDK is wired up *only* if it is importable, so unit tests
-that monkeypatch ``setup_tracing`` never pay the OTel import cost. The
-in-memory exporter used by ``get_recorded_spans`` is the canonical
-``opentelemetry.sdk.trace.export.in_memory_span_exporter.InMemorySpanExporter``
-when OTel is available; otherwise a list-based fallback is used so the
-GREEN contract is satisfied in any environment.
+The module is intentionally dependency-free: it uses a plain Python list
+as the in-memory span store and has no dependency on the OpenTelemetry
+SDK. The OTel W3C trace-context format (32-char hex trace_id, 16-char
+hex span_id) is followed for compatibility, but no OTel SDK classes are
+imported or instantiated.
 
 Citations:
 - SRS.md FR-72 (description line 165, spec block lines 1017–1024)
