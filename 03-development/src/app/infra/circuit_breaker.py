@@ -31,6 +31,12 @@ class CircuitBreaker:
     LEVEL_CLASSIFIER_DOWN: str = "level_classifier_down"
     LEVEL_JUDGE_DOWN: str = "level_judge_down"
 
+    # Threshold constants
+    _LLM_P95_LATENCY_THRESHOLD_MS: float = 800.0
+    _LLM_CONSECUTIVE_FAILURE_THRESHOLD: int = 5
+    _LLM_CONSECUTIVE_SUCCESS_RECOVERY: int = 3
+    _LATERAL_FAILURE_THRESHOLD: int = 3
+
     def __init__(self) -> None:
         """[FR-99] Initialise circuit breaker at LEVEL_0 (full functionality).
 
@@ -63,7 +69,7 @@ class CircuitBreaker:
         Citations: SRS.md FR-99 line 3 (LLM p95 > 800ms for 2m → level_1).
         """
         with self._lock:
-            if p95_ms >= 800.0 and self._level == self.LEVEL_0:
+            if p95_ms >= self._LLM_P95_LATENCY_THRESHOLD_MS and self._level == self.LEVEL_0:
                 self._level = self.LEVEL_1
             return self._level
 
@@ -79,7 +85,7 @@ class CircuitBreaker:
         with self._lock:
             self._llm_failure_count += 1
             self._llm_success_count = 0
-            if self._llm_failure_count >= 5:
+            if self._llm_failure_count >= self._LLM_CONSECUTIVE_FAILURE_THRESHOLD:
                 self._level = self.LEVEL_3
             return self._level
 
@@ -95,7 +101,7 @@ class CircuitBreaker:
         with self._lock:
             self._llm_failure_count = 0
             self._llm_success_count += 1
-            if self._level == self.LEVEL_3 and self._llm_success_count >= 3:
+            if self._level == self.LEVEL_3 and self._llm_success_count >= self._LLM_CONSECUTIVE_SUCCESS_RECOVERY:
                 self._level = self.LEVEL_0
             return self._level
 
@@ -111,7 +117,7 @@ class CircuitBreaker:
         """
         with self._lock:
             self._embedding_failure_count += 1
-            if self._embedding_failure_count >= 3:
+            if self._embedding_failure_count >= self._LATERAL_FAILURE_THRESHOLD:
                 self._embedding_down = True
             return self._level
 
@@ -148,7 +154,7 @@ class CircuitBreaker:
         """
         with self._lock:
             self._classifier_failure_count += 1
-            if self._classifier_failure_count >= 3:
+            if self._classifier_failure_count >= self._LATERAL_FAILURE_THRESHOLD:
                 self._classifier_down = True
             return self._level
 
