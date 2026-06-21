@@ -239,7 +239,7 @@ def test_fr02_line_events_array_parsed_to_unified_message():
         f"Expected {len(line_events)} UnifiedMessage results; got {len(results)}"
     )
 
-    for i, (event, result) in enumerate(zip(line_events, results)):  # noqa: B905
+    for i, (event, result) in enumerate(zip(line_events, results)):
         # fr02-ok: each result is not None
         assert result is not None, (
             f"Event {i}: process_events() must return UnifiedMessage, not None"

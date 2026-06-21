@@ -540,8 +540,8 @@ class RAGDebugger:
             except Exception:
                 pass
         try:
-            from app.infra import config_store as _cs_mod  # type: ignore
-            store = _cs_mod.get_config_store()
+            from app.infra.config import get_config_store
+            store = get_config_store()
             return float(store.get("rag_cosine_threshold", RAG_DEFAULT_THRESHOLD))
         except Exception:
             return RAG_DEFAULT_THRESHOLD

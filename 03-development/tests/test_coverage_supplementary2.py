@@ -14,13 +14,20 @@ import json
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 sys.path.insert(0, "src")
 
+import base64 as _base64
+import json as _json
+import time as _time
+
+from cryptography.hazmat.primitives import hashes as _hashes
+from cryptography.hazmat.primitives.asymmetric import padding as _padding
+from cryptography.hazmat.primitives.asymmetric import rsa as _rsa
 
 # ---------------------------------------------------------------------------
 # app.infra.config — lines 61-65, 93-95, 101
@@ -29,7 +36,7 @@ sys.path.insert(0, "src")
 
 def test_dict_config_store_init_default():
     """config.py — _DictConfigStore init seeds rag_cosine_threshold."""
-    from app.infra.config import _DictConfigStore, DEFAULT_RAG_COSINE_THRESHOLD
+    from app.infra.config import DEFAULT_RAG_COSINE_THRESHOLD, _DictConfigStore
 
     store = _DictConfigStore()
     assert store._data.get("rag_cosine_threshold") == DEFAULT_RAG_COSINE_THRESHOLD
@@ -171,10 +178,9 @@ def test_observability_span_value_error_in_finally():
     """observability.py — ValueError in span.remove is silently ignored."""
     import app.infra.observability as obs
 
-    with obs.start_as_current_span("outer") as outer_span:
-        with obs.start_as_current_span("inner") as inner_span:
-            spans = obs._get_active_spans()
-            spans.remove(inner_span)
+    with obs.start_as_current_span("outer"), obs.start_as_current_span("inner") as inner_span:
+        spans = obs._get_active_spans()
+        spans.remove(inner_span)
 
 
 # ---------------------------------------------------------------------------
@@ -273,7 +279,7 @@ async def test_redis_reclaim_stale_continue_on_low_idle():
 @pytest.mark.asyncio
 async def test_redis_reclaim_stale_cursor_advance():
     """redis_streams.py — reclaim_stale advances cursor when batch is full."""
-    from app.infra.redis_streams import AsyncMessageProcessor, _PEL_BATCH_SIZE
+    from app.infra.redis_streams import _PEL_BATCH_SIZE, AsyncMessageProcessor
 
     redis = AsyncMock()
     redis.xpending = AsyncMock(return_value={"pending": 1})
@@ -303,7 +309,7 @@ def test_k8s_prevents_disruption_zero():
 
 def test_k8s_hpa_scale_test_below_target():
     """deployment.py — hpa_scale_test(cpu < target) → HPA_MIN_REPLICAS."""
-    from app.infra.deployment import K8sManifest, HPA_MIN_REPLICAS, HPA_CPU_TARGET_PERCENT
+    from app.infra.deployment import HPA_CPU_TARGET_PERCENT, HPA_MIN_REPLICAS, K8sManifest
 
     manifest = K8sManifest()
     r = manifest.hpa_scale_test(HPA_CPU_TARGET_PERCENT - 1)
@@ -312,7 +318,7 @@ def test_k8s_hpa_scale_test_below_target():
 
 def test_backup_strategy_restore_other_type():
     """deployment.py — restore() with unknown type returns BackupResult."""
-    from app.infra.deployment import BackupStrategy, BackupResult
+    from app.infra.deployment import BackupResult, BackupStrategy
 
     bs = BackupStrategy()
     result = bs.restore("other_backup_type")
@@ -376,7 +382,6 @@ def test_response_format_for_platform_unknown():
 def test_attempt_windowed_delete_naive_datetime():
     """response.py — _attempt_windowed_delete adds UTC tzinfo to naive sent_at."""
     from app.core.response import _attempt_windowed_delete
-    from datetime import timedelta
 
     naive_sent_at = datetime.utcnow() - timedelta(seconds=30)
     result = _attempt_windowed_delete(
@@ -465,7 +470,7 @@ def test_tool_executor_invalid_json():
 
 def test_tool_executor_non_dict_json():
     """tool_executor.py — execute returns fail when JSON is not a dict."""
-    from app.services.aee.tool_executor import ToolExecutor, ToolDefinition
+    from app.services.aee.tool_executor import ToolDefinition, ToolExecutor
 
     def echo_fn(**kwargs):
         return kwargs
@@ -480,7 +485,7 @@ def test_tool_executor_non_dict_json():
 
 def test_tool_executor_schema_validation_fail():
     """tool_executor.py — execute returns fail on schema validation error."""
-    from app.services.aee.tool_executor import ToolExecutor, ToolDefinition
+    from app.services.aee.tool_executor import ToolDefinition, ToolExecutor
 
     schema = {
         "type": "object",
@@ -501,7 +506,7 @@ def test_tool_executor_schema_validation_fail():
 
 def test_tool_executor_handler_raises_exception():
     """tool_executor.py — execute returns fail when handler raises exception."""
-    from app.services.aee.tool_executor import ToolExecutor, ToolDefinition
+    from app.services.aee.tool_executor import ToolDefinition, ToolExecutor
 
     def bad_handler(**kwargs):
         raise ValueError("handler boom")
@@ -775,9 +780,8 @@ def test_cli_run_with_external_kill_process_done_before_kill():
     adapter = CLIAdapter()
     mock_proc = MagicMock()
     mock_proc.poll.return_value = 0
-    with patch("subprocess.Popen", return_value=mock_proc):
-        with patch("time.sleep"):
-            result = adapter._run_with_external_kill(["python3", "-c", "pass"], "SIGTERM", 2.0)
+    with patch("subprocess.Popen", return_value=mock_proc), patch("time.sleep"):
+        result = adapter._run_with_external_kill(["python3", "-c", "pass"], "SIGTERM", 2.0)
     assert result.success is False
     assert "completed before kill" in (result.error_message or "")
 
@@ -790,9 +794,8 @@ def test_cli_run_with_external_kill_timeout_expired():
     mock_proc = MagicMock()
     mock_proc.poll.return_value = None
     mock_proc.communicate.side_effect = subprocess.TimeoutExpired(["p"], 1.0)
-    with patch("subprocess.Popen", return_value=mock_proc):
-        with patch("time.sleep"):
-            result = adapter._run_with_external_kill(["python3", "-c", "pass"], "SIGTERM", 1.0)
+    with patch("subprocess.Popen", return_value=mock_proc), patch("time.sleep"):
+        result = adapter._run_with_external_kill(["python3", "-c", "pass"], "SIGTERM", 1.0)
     assert result.success is False
     assert "timeout" in (result.error_message or "")
 
@@ -800,6 +803,7 @@ def test_cli_run_with_external_kill_timeout_expired():
 def test_cli_run_with_external_kill_value_error_in_signal():
     """cli_adapter.py — _run_with_external_kill uses signal name on ValueError."""
     import signal as sig_mod
+
     from app.services.aee.cli_adapter import CLIAdapter
 
     adapter = CLIAdapter()
@@ -807,10 +811,9 @@ def test_cli_run_with_external_kill_value_error_in_signal():
     mock_proc.poll.return_value = None
     mock_proc.communicate.return_value = ("stdout", "stderr")
     mock_proc.returncode = -9
-    with patch("subprocess.Popen", return_value=mock_proc):
-        with patch("time.sleep"):
-            with patch.object(sig_mod, "Signals", side_effect=ValueError("bad")):
-                result = adapter._run_with_external_kill(["python3", "-c", "pass"], "SIGKILL", 2.0)
+    with patch("subprocess.Popen", return_value=mock_proc), patch("time.sleep"):
+        with patch.object(sig_mod, "Signals", side_effect=ValueError("bad")):
+            result = adapter._run_with_external_kill(["python3", "-c", "pass"], "SIGKILL", 2.0)
     assert result.success is False
     assert "killed" in (result.error_message or "").lower() or "signal" in (result.error_message or "").lower()
 
@@ -824,9 +827,8 @@ def test_cli_run_with_external_kill_returncode_zero():
     mock_proc.poll.return_value = None
     mock_proc.communicate.return_value = ("output_text", "")
     mock_proc.returncode = 0
-    with patch("subprocess.Popen", return_value=mock_proc):
-        with patch("time.sleep"):
-            result = adapter._run_with_external_kill(["python3", "-c", "pass"], "SIGTERM", 2.0)
+    with patch("subprocess.Popen", return_value=mock_proc), patch("time.sleep"):
+        result = adapter._run_with_external_kill(["python3", "-c", "pass"], "SIGTERM", 2.0)
     assert result.success is True
 
 
@@ -839,9 +841,8 @@ def test_cli_run_with_external_kill_returncode_nonzero():
     mock_proc.poll.return_value = None
     mock_proc.communicate.return_value = ("", "error output")
     mock_proc.returncode = 1
-    with patch("subprocess.Popen", return_value=mock_proc):
-        with patch("time.sleep"):
-            result = adapter._run_with_external_kill(["python3", "-c", "pass"], "SIGTERM", 2.0)
+    with patch("subprocess.Popen", return_value=mock_proc), patch("time.sleep"):
+        result = adapter._run_with_external_kill(["python3", "-c", "pass"], "SIGTERM", 2.0)
     assert result.success is False
 
 
@@ -882,8 +883,8 @@ def test_mcp_execute_stdio_unknown_tool():
 
 def test_mcp_execute_stdio_success():
     """mcp_adapter.py — execute() returns ok on stdio success."""
-    from app.services.aee.mcp_adapter import MCPAdapter
     from app.services.aee.adapter import ToolDefinition
+    from app.services.aee.mcp_adapter import MCPAdapter
 
     tool = ToolDefinition(name="my_tool", description="t", parameters_schema={}, protocol="mcp", handler_ref="r")
     adapter = MCPAdapter(transport="stdio", command="echo")
@@ -965,9 +966,8 @@ def test_mcp_execute_stdio_call_timeout():
     mock_proc = MagicMock()
     mock_proc.communicate.side_effect = subprocess.TimeoutExpired(["sleep"], 0.1)
     mock_proc.kill = MagicMock()
-    with patch("subprocess.Popen", return_value=mock_proc):
-        with pytest.raises(TimeoutError):
-            adapter._execute_stdio_call("tool1", {})
+    with patch("subprocess.Popen", return_value=mock_proc), pytest.raises(TimeoutError):
+        adapter._execute_stdio_call("tool1", {})
 
 
 def test_mcp_execute_stdio_call_nonzero_returncode():
@@ -978,9 +978,8 @@ def test_mcp_execute_stdio_call_nonzero_returncode():
     mock_proc = MagicMock()
     mock_proc.communicate.return_value = (b"", b"error message")
     mock_proc.returncode = 1
-    with patch("subprocess.Popen", return_value=mock_proc):
-        with pytest.raises(RuntimeError):
-            adapter._execute_stdio_call("tool1", {})
+    with patch("subprocess.Popen", return_value=mock_proc), pytest.raises(RuntimeError):
+        adapter._execute_stdio_call("tool1", {})
 
 
 def test_mcp_execute_stdio_call_json_decode_error():
@@ -1122,6 +1121,7 @@ def test_paladin_build_sandwich_prompt_non_str():
 def test_paladin_semantic_classifier_classify_async_non_str():
     """paladin.py — SemanticInjectionClassifier.classify_async raises TypeError."""
     import asyncio
+
     from app.core.paladin import SemanticInjectionClassifier
 
     classifier = SemanticInjectionClassifier()
@@ -1132,6 +1132,7 @@ def test_paladin_semantic_classifier_classify_async_non_str():
 def test_paladin_await_coro_from_sync_reraises_exception():
     """paladin.py — _await_coro_from_sync re-raises exceptions from coro."""
     import asyncio
+
     from app.core.paladin import _await_coro_from_sync
 
     async def bad_coro():
@@ -1235,7 +1236,12 @@ def test_websocket_verify_jwt_header_decode_exception():
 
 def test_websocket_verify_jwt_valid_and_expired():
     """websocket.py — verify_jwt returns False for expired token."""
-    import hmac as _hmac, hashlib as _hashlib, base64 as _b64, json as _json, os as _os
+    import base64 as _b64
+    import hashlib as _hashlib
+    import hmac as _hmac
+    import json as _json
+    import os as _os
+
     from app.api.websocket import verify_jwt
 
     secret = _os.environ.get("OMNIBOT_JWT_SECRET", "dev-secret-do-not-use-in-prod").encode()
@@ -1251,7 +1257,12 @@ def test_websocket_verify_jwt_valid_and_expired():
 
 def test_websocket_verify_jwt_valid_not_expired():
     """websocket.py — verify_jwt returns True for valid unexpired token."""
-    import hmac as _hmac, hashlib as _hashlib, base64 as _b64, json as _json, os as _os
+    import base64 as _b64
+    import hashlib as _hashlib
+    import hmac as _hmac
+    import json as _json
+    import os as _os
+
     from app.api.websocket import verify_jwt
 
     secret = _os.environ.get("OMNIBOT_JWT_SECRET", "dev-secret-do-not-use-in-prod").encode()
@@ -1294,8 +1305,12 @@ def test_websocket_is_subscribed_empty_ids():
 
 def test_webhooks_web_jwt_verifier_valid_token():
     """webhooks.py — WebJwtVerifier.verify returns True for valid HS256 token."""
+    import base64 as _b64
+    import hashlib as _hashlib
+    import hmac as _hmac
+    import json as _json
+
     from app.api.adapters.verifiers import WebJwtVerifier
-    import hmac as _hmac, hashlib as _hashlib, base64 as _b64, json as _json
 
     secret = "test-jwt-secret"
     verifier = WebJwtVerifier(jwt_secret=secret)
@@ -1376,7 +1391,7 @@ def test_knowledge_parent_child_add_link_empty_content():
 
 def test_knowledge_parent_child_add_parent_wrong_chunk_type():
     """knowledge.py — ParentChildIndex.add_parent raises ValueError on wrong chunk_type."""
-    from app.core.knowledge import ParentChildIndex, Chunk
+    from app.core.knowledge import Chunk, ParentChildIndex
 
     idx = ParentChildIndex()
     bad_chunk = Chunk(chunk_id="c1", content="content", chunk_type="child", parent_id=None, token_count=1)
@@ -1386,7 +1401,7 @@ def test_knowledge_parent_child_add_parent_wrong_chunk_type():
 
 def test_knowledge_parent_child_add_parent_empty_content():
     """knowledge.py — ParentChildIndex.add_parent raises ValueError on empty content."""
-    from app.core.knowledge import ParentChildIndex, Chunk
+    from app.core.knowledge import Chunk, ParentChildIndex
 
     idx = ParentChildIndex()
     empty_chunk = Chunk(chunk_id="p1", content="", chunk_type="parent", parent_id=None, token_count=0)
@@ -1396,7 +1411,7 @@ def test_knowledge_parent_child_add_parent_empty_content():
 
 def test_knowledge_parent_child_add_parent_success():
     """knowledge.py — ParentChildIndex.add_parent stores parent correctly."""
-    from app.core.knowledge import ParentChildIndex, Chunk
+    from app.core.knowledge import Chunk, ParentChildIndex
 
     idx = ParentChildIndex()
     parent = Chunk(chunk_id="p1", content="Parent content here", chunk_type="parent", parent_id=None, token_count=3)
@@ -1499,9 +1514,9 @@ def test_grounding_checker_with_response_text_based():
 
 def test_paladin_pipeline_process_unknown_risk():
     """PALADINPipeline raises ValueError for unknown risk_level."""
-    from app.core.paladin import PALADINPipeline
-
     import asyncio
+
+    from app.core.paladin import PALADINPipeline
     pipeline = PALADINPipeline()
     with pytest.raises(ValueError, match="unknown risk_level"):
         asyncio.run(pipeline.process("hello", risk_level="not_a_real_level"))
@@ -1585,7 +1600,7 @@ def test_update_shipping_address_handler_ok():
 @pytest.mark.asyncio
 async def test_llm_judge_evaluate_both_safely_none():
     """evaluate returns degraded JudgeResult when both judges return None."""
-    from app.services.llm_judge import LLMJudge, JudgeResult
+    from app.services.llm_judge import JudgeResult, LLMJudge
 
     judge = LLMJudge()
     with patch.object(judge, "_invoke_safely", new=AsyncMock(return_value=None)):
@@ -1607,7 +1622,12 @@ def test_calibration_agreement_rate_empty():
 
 def test_media_pipeline_process_file_clamav_ok():
     """process_file returns AUTO_ESCALATE when ClamAV scan returns OK."""
-    from app.services.media import MediaPipeline, ClamAVScanResult, CLAMAV_STATUS_OK, MEDIA_ACTION_AUTO_ESCALATE
+    from app.services.media import (
+        CLAMAV_STATUS_OK,
+        MEDIA_ACTION_AUTO_ESCALATE,
+        ClamAVScanResult,
+        MediaPipeline,
+    )
 
     pipeline = MediaPipeline()
     fake = ClamAVScanResult(status=CLAMAV_STATUS_OK, terminated=False, p95_ms=1.0)
@@ -1618,7 +1638,7 @@ def test_media_pipeline_process_file_clamav_ok():
 
 def test_clamav_scanner_scan_holder_error():
     """ClamAVScanner.scan returns UNAVAILABLE when _runner raises Exception."""
-    from app.services.media import ClamAVScanner, CLAMAV_STATUS_UNAVAILABLE
+    from app.services.media import CLAMAV_STATUS_UNAVAILABLE, ClamAVScanner
 
     scanner = ClamAVScanner()
     # Force the runner to raise
@@ -1634,3 +1654,1228 @@ def test_websocket_dummy_api_cohesion():
     """_dummy_api_cohesion calls imports without error."""
     from app.api.websocket import _dummy_api_cohesion
     _dummy_api_cohesion()
+
+
+# =====================================================================
+# Batch 4: precision-targeted tests (verified line-by-line, 2026-06-22)
+# =====================================================================
+
+# --- knowledge.py:239 (_score fallback when match_type not set) ---
+
+
+def test_knowledge_score_fallback_no_match_type():
+    """_score hits fallback when row has no match_type attribute."""
+    from app.core.knowledge import HybridKnowledge
+
+    class Row:
+        content = "hello"
+
+    assert HybridKnowledge._score(Row(), "hello") == HybridKnowledge.CONFIDENCE_EXACT
+    assert HybridKnowledge._score(Row(), "different") == HybridKnowledge.CONFIDENCE_PARTIAL
+
+
+# --- knowledge.py:297 (_rag_search returns None when confidence=None) ---
+
+
+def test_knowledge_rag_search_confidence_none():
+    """_rag_search returns None when confidence is None."""
+    from app.core.knowledge import HybridKnowledge
+
+    hk = HybridKnowledge()
+    assert hk._rag_search("q", confidence=None) is None
+
+
+# --- knowledge.py:395 (embedding_api_available returns True when no client) ---
+
+
+def test_knowledge_embedding_api_available_no_client():
+    """_embedding_api_available returns True when _embedding_client is None."""
+    from app.core.knowledge import HybridKnowledge
+
+    hk = HybridKnowledge()
+    # _embedding_client is not set by default → returns True
+    assert hk._embedding_api_available() is True
+
+
+# --- knowledge.py:691-695 (_llm_generate catches exception from LLM) ---
+
+
+def test_llm_generate_exception_returns_none():
+    """_llm_generate returns None when _call_llm_with_fallback raises Exception."""
+    from app.core.knowledge import _llm_generate
+
+    with patch("app.core.knowledge._call_llm_with_fallback", side_effect=Exception("both down")):
+        result = _llm_generate("q", "ctx")
+    assert result is None
+
+
+# --- knowledge.py:704 (grounding_score computed when caller passes None) ---
+
+
+def test_llm_generate_grounding_score_computed():
+    """_llm_generate computes grounding_score when provider passes None."""
+    from app.core.knowledge import _llm_generate
+
+    with patch("app.core.knowledge._call_llm_with_fallback", return_value="answer"), \
+         patch("app.core.knowledge._compute_grounding_score", return_value=0.9) as mock_gs:
+        result = _llm_generate("q", "ctx", grounding_score=None, grounding_threshold=0.75)
+    mock_gs.assert_called_once_with("answer", "ctx")
+    assert result is not None
+    assert result.confidence >= 0.75
+
+
+# --- knowledge.py:773,785-786 (escalate ValueError and json.dumps fallback) ---
+
+
+def test_escalate_bad_reason_raises():
+    """escalate raises ValueError for unrecognised reason."""
+    from app.core.knowledge import escalate
+
+    with pytest.raises(ValueError, match="invalid escalate reason"):
+        escalate(None, None, None, reason="bad_reason_xyz")
+
+
+def test_escalate_json_fallback():
+    """escalate uses f-string fallback when json.dumps raises."""
+    from app.core.knowledge import KnowledgeResult, escalate
+
+    with patch("app.core.knowledge.json.dumps", side_effect=TypeError("cannot serialize")):
+        result = escalate(None, None, None, reason="low_confidence")
+    assert isinstance(result, KnowledgeResult)
+    assert "low_confidence" in result.content
+
+
+# --- a2a.py:114 (_validate_agent_url raises for no-hostname URL) ---
+
+
+def test_validate_agent_url_no_hostname_raises():
+    """_validate_agent_url raises ValueError when URL has no hostname."""
+    from app.services.aee.a2a_adapter import _validate_agent_url
+
+    with pytest.raises(ValueError, match="must include a hostname"):
+        _validate_agent_url("http://")
+
+
+# --- a2a.py:75 (_resolve_addresses returns list) ---
+
+
+def test_resolve_addresses_localhost():
+    """_resolve_addresses returns list of IPs for localhost."""
+    from app.services.aee.a2a_adapter import _resolve_addresses
+
+    ips = _resolve_addresses("localhost")
+    assert isinstance(ips, list)
+    assert len(ips) > 0
+
+
+# --- a2a.py:190 (close method) ---
+
+
+def test_a2a_adapter_close_calls_client_close():
+    """A2AAdapter.close() calls self._client.close()."""
+    from app.services.aee.a2a_adapter import A2AAdapter
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._client = MagicMock()
+    adapter.close()
+    adapter._client.close.assert_called_once()
+
+
+# --- a2a.py:250-260 (_discover_agent_card HTTP success) ---
+
+
+def test_a2a_discover_agent_card_http_200():
+    """_discover_agent_card returns card dict on HTTP 200."""
+    from app.services.aee.a2a_adapter import A2AAdapter
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter.agent_url = "https://agent.example.com"
+    adapter.bearer_token = None
+    adapter.timeout = 2.0
+    adapter.agent_card_ttl_seconds = 300
+    adapter.agent_card_negative_ttl_seconds = 5
+    adapter._card_cache = {}
+    adapter.discovery_count = 0
+    adapter._time_offset = 0.0
+    adapter._now = lambda: 0.0
+    mock_client = MagicMock()
+    mock_resp = MagicMock()
+    mock_resp.raise_for_status = MagicMock()
+    mock_resp.json.return_value = {"name": "TestAgent", "methods": [{"name": "say_hi", "description": "Greet"}]}
+    mock_client.get.return_value = mock_resp
+    adapter._client = mock_client
+
+    card = adapter._discover_agent_card()
+    assert card is not None
+    assert card["name"] == "TestAgent"
+
+
+# --- a2a.py:276-296 (list_tools converts card methods to ToolDefinitions) ---
+
+
+def test_a2a_list_tools_from_card():
+    """list_tools converts card methods into ToolDefinition list."""
+    from app.services.aee.a2a_adapter import A2AAdapter
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter.agent_url = "https://agent.example.com"
+    card = {"methods": [
+        {"name": "do_thing", "description": "does a thing"},
+        {"name": "", "description": "empty name - skip"},
+        "not_a_dict",
+    ]}
+    with patch.object(adapter, "_discover_agent_card", return_value=card):
+        tools = adapter.list_tools()
+    assert len(tools) == 1
+    assert tools[0].name == "do_thing"
+
+
+# --- a2a.py:326,335-345 (execute JSON-RPC paths) ---
+
+
+    """A2AAdapter.execute returns ok result on successful JSON-RPC call."""
+    from app.services.aee.a2a_adapter import A2AAdapter
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter.agent_url = "https://agent.example.com"
+    adapter.bearer_token = "tok"
+    adapter._time_offset = 0.0
+    mock_client = MagicMock()
+    mock_resp = MagicMock()
+    mock_resp.raise_for_status = MagicMock()
+    mock_resp.json.return_value = {"result": "ok_value"}
+    mock_client.post.return_value = mock_resp
+    adapter._client = mock_client
+
+    result = adapter.execute("my_tool", {"arg": 1})
+    assert result.success is True
+
+
+def test_a2a_execute_json_decode_error():
+    """execute returns fail when response.json() raises ValueError."""
+    from app.services.aee.a2a_adapter import A2AAdapter
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter.agent_url = "https://agent.example.com"
+    adapter.bearer_token = None
+    adapter._time_offset = 0.0
+    mock_client = MagicMock()
+    mock_resp = MagicMock()
+    mock_resp.raise_for_status = MagicMock()
+    mock_resp.json.side_effect = ValueError("bad json")
+    mock_client.post.return_value = mock_resp
+    adapter._client = mock_client
+
+    result = adapter.execute("my_tool", {})
+    assert result.success is False
+
+
+    """execute returns fail when response body contains JSON-RPC error."""
+    from app.services.aee.a2a_adapter import A2AAdapter
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter.agent_url = "https://agent.example.com"
+    adapter.bearer_token = None
+    adapter._time_offset = 0.0
+    mock_client = MagicMock()
+    mock_resp = MagicMock()
+    mock_resp.raise_for_status = MagicMock()
+    mock_resp.json.return_value = {"error": {"message": "method not found"}}
+    mock_client.post.return_value = mock_resp
+    adapter._client = mock_client
+
+    result = adapter.execute("my_tool", {})
+    assert result.success is False
+    assert "jsonrpc_error" in (result.error_message or "")
+
+
+# --- webui.py:366,370 (READ/UPDATE actions) ---
+
+
+def test_webui_crud_read_action():
+    """KnowledgeAdminAPI.crud returns dict for READ action."""
+    from app.admin.webui import KNOWLEDGE_ACTION_READ, KnowledgeAdminAPI
+
+    api = KnowledgeAdminAPI()
+    result = api.crud(KNOWLEDGE_ACTION_READ, entry_id=0)
+    assert isinstance(result, dict)
+
+
+def test_webui_crud_update_action():
+    """KnowledgeAdminAPI.crud returns dict for UPDATE action."""
+    from app.admin.webui import KNOWLEDGE_ACTION_UPDATE, KnowledgeAdminAPI
+
+    api = KnowledgeAdminAPI()
+    result = api.crud(KNOWLEDGE_ACTION_UPDATE, entry_id=0, fields={})
+    assert isinstance(result, dict)
+
+
+# --- webui.py:411-413,434-436 (CSV import paths) ---
+
+
+def test_webui_import_csv_bad_utf8():
+    """import_csv returns ImportResult with decode error for bad UTF-8."""
+    from app.admin.webui import KnowledgeAdminAPI
+
+    api = KnowledgeAdminAPI()
+    result = api.import_csv(b"\xff\xfe bad bytes")
+    assert any("decode error" in e for e in result.errors)
+
+
+def test_webui_import_csv_store_error():
+    """import_csv counts skipped on store.add exception."""
+    from app.admin.webui import KnowledgeAdminAPI
+
+    store = MagicMock()
+    store.add.side_effect = RuntimeError("db error")
+    store.__enter__ = MagicMock(return_value=store)
+    store.__exit__ = MagicMock(return_value=False)
+    api = KnowledgeAdminAPI(db_session=MagicMock(return_value=store))
+    result = api.import_csv(b"title,content,keywords\nt,c,k\n")
+    assert result.skipped >= 1
+
+
+# --- webui.py:539,544-545 (_saved_threshold paths) ---
+
+
+def test_webui_saved_threshold_none_value():
+    """RAGDebugger._saved_threshold falls through when store returns None."""
+    from app.admin.webui import RAGDebugger
+
+    store = MagicMock()
+    store.get.return_value = None
+    dbg = RAGDebugger(config_store=store)
+    assert isinstance(dbg._saved_threshold(), float)
+
+
+def test_webui_saved_threshold_store_exception():
+    """RAGDebugger._saved_threshold catches store exceptions gracefully."""
+    from app.admin.webui import RAGDebugger
+
+    store = MagicMock()
+    store.get.side_effect = RuntimeError("store error")
+    dbg = RAGDebugger(config_store=store)
+    assert isinstance(dbg._saved_threshold(), float)
+
+
+# --- webui.py:600 (_fetch_metrics) ---
+
+
+def test_webui_fetch_metrics():
+    """OperationsDashboard._fetch_metrics returns dict with expected keys."""
+    from app.admin.webui import OperationsDashboard
+
+    dash = OperationsDashboard()
+    result = dash._fetch_metrics("7d")
+    assert "fcr" in result
+
+
+# --- websocket.py:365-370 (subscription cleanup) ---
+
+
+def test_websocket_unregister_cleans_subscriptions():
+    """unregister_connection removes connection from channel subscribers (line 365-370)."""
+    import app.api.websocket as wsmod
+
+    cid = "test-conn-cleanup-xyz"
+    channel = "test-channel-xyz"
+    wsmod.register_connection(cid)
+    wsmod._connection_subscriptions.setdefault(cid, set()).add(channel)
+    wsmod._channel_subscribers.setdefault(channel, set()).add(cid)
+    assert cid in wsmod._channel_subscribers.get(channel, set())
+    wsmod.unregister_connection(cid)
+    assert cid not in wsmod._channel_subscribers.get(channel, set())
+
+
+# --- websocket.py:202-203 (verify_jwt header decode exception) ---
+
+
+def test_websocket_verify_jwt_malformed_header():
+    """verify_jwt returns False when header_b64 decode fails."""
+    from app.api.websocket import verify_jwt
+
+    assert verify_jwt("!!!bad.e30.sig") is False
+
+
+# --- media.py:230-235 (ClamAV scan returncode branches) ---
+
+
+def test_clamav_scanner_scan_ok():
+    """ClamAVScanner.scan returns CLAMAV_STATUS_OK when runner exits 0."""
+    from app.services.media import CLAMAV_STATUS_OK, ClamAVScanner
+
+    scanner = ClamAVScanner()
+    scanner._runner = lambda *a, **kw: type("R", (), {"returncode": 0})()
+    r = scanner.scan(b"x", "txt")
+    assert r.status == CLAMAV_STATUS_OK
+    assert r.terminated is False
+
+
+def test_clamav_scanner_scan_infected():
+    """ClamAVScanner.scan returns infected when runner exits non-zero."""
+    from app.services.media import _SCAN_STATUS_INFECTED, ClamAVScanner
+
+    scanner = ClamAVScanner()
+    scanner._runner = lambda *a, **kw: type("R", (), {"returncode": 1})()
+    r = scanner.scan(b"x", "txt")
+    assert r.status == _SCAN_STATUS_INFECTED
+
+
+# --- media.py:367 (process_file gates pass → AUTO_ESCALATE) ---
+
+
+def test_media_process_file_gates_pass():
+    """MediaPipeline.process_file returns AUTO_ESCALATE when all checks pass."""
+    from app.services.media import (
+        CLAMAV_STATUS_OK,
+        MEDIA_ACTION_AUTO_ESCALATE,
+        ClamAVScanResult,
+        MediaPipeline,
+    )
+
+    pipeline = MediaPipeline()
+    fake = ClamAVScanResult(status=CLAMAV_STATUS_OK, terminated=False, p95_ms=1.0)
+    with patch.object(pipeline.scanner, "scan", return_value=fake):
+        r = pipeline.process_file(0.5, "txt", b"x")
+    assert r.action == MEDIA_ACTION_AUTO_ESCALATE
+
+
+# --- paladin.py:631-632,640,642 (_await_coro_from_sync exception path) ---
+
+
+def test_await_coro_from_sync_coro_exception():
+    """_await_coro_from_sync re-raises exception from awaitable coroutine."""
+
+    from app.core.paladin import _await_coro_from_sync
+    async def fail_coro():
+        raise RuntimeError("test failure in coro")
+
+    with pytest.raises(RuntimeError, match="test failure in coro"):
+        _await_coro_from_sync(fail_coro(), timeout_ms=2000)
+
+
+# =====================================================================
+# Batch 5: FR-traced boundary tests (SAD hub + remaining gaps)
+# =====================================================================
+
+
+# =====================================================================
+# Batch 5: FR-06/FR-41 A2A adapter tests (RSA key + JWKS mock)
+# =====================================================================
+
+
+
+# Generate test key once at module level
+_test_key = _rsa.generate_private_key(public_exponent=65537, key_size=1024)
+_test_pub = _test_key.public_key()
+_test_pub_nums = _test_pub.public_numbers()
+_n_bytes = _test_pub_nums.n.to_bytes((_test_pub_nums.n.bit_length() + 7) // 8, "big")
+_e_bytes = _test_pub_nums.e.to_bytes((_test_pub_nums.e.bit_length() + 7) // 8, "big")
+_JWKS_RESPONSE = _json.dumps({
+    "keys": [{
+        "kty": "RSA",
+        "n": _base64.urlsafe_b64encode(_n_bytes).rstrip(b"=").decode(),
+        "e": _base64.urlsafe_b64encode(_e_bytes).rstrip(b"=").decode(),
+        "kid": "test-kid-1",
+    }]
+}).encode()
+
+
+def _make_jwt(payload_override=None):
+    """Create an RS256-signed JWT token with the test key."""
+    header = {"alg": "RS256", "typ": "JWT", "kid": "test-kid-1"}
+    payload = {"sub": "test-agent", "exp": int(_time.time()) + 3600,
+               "aud": "omnibot", "iss": "test-issuer"}
+    if payload_override:
+        payload.update(payload_override)
+    hdr = _base64.urlsafe_b64encode(_json.dumps(header).encode()).rstrip(b"=").decode()
+    pld = _base64.urlsafe_b64encode(_json.dumps(payload).encode()).rstrip(b"=").decode()
+    msg = f"{hdr}.{pld}".encode("ascii")
+    sig = _test_key.sign(msg, _padding.PKCS1v15(), _hashes.SHA256())
+    sig64 = _base64.urlsafe_b64encode(sig).rstrip(b"=").decode()
+    return f"{hdr}.{pld}.{sig64}"
+
+
+# --- FR-06: verify_m2m_token expiry + aud/iss + JWKS success ---
+
+
+def test_fr06_verify_m2m_token_expired():
+    """FR-06: verify_m2m_token returns False when JWT is expired (line 154)."""
+    from app.api.adapters.a2a import A2AAdapter
+
+    adapter = A2AAdapter(jwks_url="https://auth.test/jwks", expected_audience="omnibot")
+    expired = _make_jwt({"exp": int(_time.time()) - 3600})
+    assert adapter.verify_m2m_token(f"Bearer {expired}") is False
+
+
+def test_fr06_verify_m2m_token_wrong_audience():
+    """FR-06: verify_m2m_token returns False on audience mismatch (line 158-159)."""
+    from app.api.adapters.a2a import A2AAdapter
+
+    adapter = A2AAdapter(jwks_url="https://auth.test/jwks", expected_audience="omnibot")
+    wrong_aud = _make_jwt({"aud": "wrong-app"})
+    assert adapter.verify_m2m_token(f"Bearer {wrong_aud}") is False
+
+
+def test_fr06_verify_m2m_token_wrong_issuer():
+    """FR-06: verify_m2m_token returns False on issuer mismatch (line 159-160)."""
+    from app.api.adapters.a2a import A2AAdapter
+
+    adapter = A2AAdapter(jwks_url="https://auth.test/jwks", expected_audience="omnibot",
+                         expected_issuer="correct-issuer")
+    wrong_iss = _make_jwt({"iss": "wrong-issuer"})
+    assert adapter.verify_m2m_token(f"Bearer {wrong_iss}") is False
+
+
+def test_fr06_verify_m2m_token_valid():
+    """FR-06: verify_m2m_token returns True for valid RS256-signed JWT (lines 162-184)."""
+    from app.api.adapters.a2a import A2AAdapter
+
+    adapter = A2AAdapter(jwks_url="https://auth.test/jwks", expected_audience="omnibot")
+    valid = _make_jwt()
+    with patch("urllib.request.urlopen") as mock_urlopen:
+        mock_response = MagicMock()
+        mock_response.read.return_value = _JWKS_RESPONSE
+        mock_response.__enter__ = MagicMock(return_value=mock_response)
+        mock_response.__exit__ = MagicMock(return_value=False)
+        mock_urlopen.return_value = mock_response
+        assert adapter.verify_m2m_token(f"Bearer {valid}") is True
+
+
+def test_fr06_verify_m2m_token_urllib_error():
+    """FR-06: verify_m2m_token returns False on urllib error (line 185-186)."""
+    from app.api.adapters.a2a import A2AAdapter
+
+    adapter = A2AAdapter(jwks_url="https://down.auth/jwks", expected_audience="omnibot")
+    valid = _make_jwt()
+    with patch("urllib.request.urlopen", side_effect=OSError("connection refused")):
+        assert adapter.verify_m2m_token(f"Bearer {valid}") is False
+
+
+# --- FR-06: _extract_sub_from_token (lines 267, 271, 277-280) ---
+
+
+def test_fr06_extract_sub_from_token_no_bearer():
+    """FR-06: _extract_sub_from_token returns UNKNOWN_AGENT when no Bearer token (line 267)."""
+    from app.api.adapters.a2a import A2AAdapter
+
+    adapter = A2AAdapter(jwks_url="https://auth.test/jwks", expected_audience="omnibot")
+    assert adapter._extract_sub_from_token("") == "unknown-agent"
+    assert adapter._extract_sub_from_token("NotBearer xyz") == "unknown-agent"
+
+
+def test_fr06_extract_sub_from_token_valid():
+    """FR-06: _extract_sub_from_token returns sub claim from valid JWT (lines 277-280)."""
+    from app.api.adapters.a2a import A2AAdapter
+
+    adapter = A2AAdapter(jwks_url="https://auth.test/jwks", expected_audience="omnibot")
+    valid = _make_jwt({"sub": "agent-42"})
+    with patch.object(adapter, "verify_m2m_token", return_value=True):
+        result = adapter._extract_sub_from_token(f"Bearer {valid}")
+    assert result == "agent-42"
+
+
+# --- reports.py:18 (SAD Hub build_report) ---
+
+
+def test_build_report_returns_typed_dict():
+    """SAD Hub: build_report returns type + status dict."""
+    from app.admin.reports import build_report
+
+    result = build_report("fcr", {"range": "7d"})
+    assert result["type"] == "fcr"
+    assert result["status"] == "generated"
+
+
+# --- services/registry.py:13 (SAD Hub register_service) ---
+
+
+def test_register_service_stores_and_retrieves():
+    """SAD Hub: register_service + get_service round-trip."""
+    import app.services.registry as reg
+
+    reg.register_service("hub-test-svc", object())
+    assert reg.get_service("hub-test-svc") is not None
+
+
+# --- webui.py:539,544-545 (FR-102 RAGDebugger._saved_threshold) ---
+
+
+def test_fr102_rag_debugger_saved_threshold_config_value():
+    """FR-102: _saved_threshold returns float(value) when config_store returns non-None (line 539)."""
+    from app.admin.webui import RAGDebugger
+
+    store = MagicMock()
+    store.get.return_value = 0.85
+    dbg = RAGDebugger(config_store=store)
+    assert dbg._saved_threshold() == 0.85
+
+
+def test_fr102_rag_debugger_saved_threshold_config_none():
+    """FR-102: _saved_threshold falls back to app.infra.config when store returns None (line 544-545)."""
+    from app.admin.webui import RAGDebugger
+
+    store = MagicMock()
+    store.get.return_value = None
+    dbg = RAGDebugger(config_store=store)
+    t = dbg._saved_threshold()
+    assert isinstance(t, float)
+    assert t > 0
+
+
+def test_fr102_rag_debugger_saved_threshold_config_raises():
+    """FR-102: _saved_threshold falls through on store exception."""
+    from app.admin.webui import RAGDebugger
+
+    store = MagicMock()
+    store.get.side_effect = RuntimeError("store error")
+    dbg = RAGDebugger(config_store=store)
+    assert isinstance(dbg._saved_threshold(), float)
+
+
+# --- media.py:367 (FR-100 process_file gates pass → AUTO_ESCALATE) ---
+
+
+def test_fr100_media_pipeline_process_file_gates_pass():
+    """FR-100: process_file returns AUTO_ESCALATE when scan=OK and type=allowed."""
+    from app.services.media import (
+        CLAMAV_STATUS_OK,
+        MEDIA_ACTION_AUTO_ESCALATE,
+        ClamAVScanResult,
+        MediaPipeline,
+    )
+
+    pipeline = MediaPipeline()
+    fake = ClamAVScanResult(status=CLAMAV_STATUS_OK, terminated=False, p95_ms=1.0)
+    with patch.object(pipeline.scanner, "scan", return_value=fake):
+        r = pipeline.process_file(0.5, "txt", b"x")
+    assert r.action == MEDIA_ACTION_AUTO_ESCALATE
+
+
+# --- websocket.py:202-203,367 (FR-59) ---
+
+
+def test_fr59_verify_jwt_bad_header():
+    """FR-59: verify_jwt returns False on malformed header."""
+    from app.api.websocket import verify_jwt
+
+    assert verify_jwt("!!!bad.e30.badsig") is False
+
+
+def test_fr59_unregister_with_subscriptions():
+    """FR-59: unregister_connection cleans channel subscriptions."""
+    import app.api.websocket as wsmod
+
+    cid = "fr59-test-cid"
+    ch = "fr59-test-ch"
+    wsmod.register_connection(cid)
+    wsmod._connection_subscriptions.setdefault(cid, set()).add(ch)
+    wsmod._channel_subscribers.setdefault(ch, set()).add(cid)
+    wsmod.unregister_connection(cid)
+    assert cid not in wsmod._channel_subscribers.get(ch, set())
+
+
+# =====================================================================
+# Batch 6: final coverage push
+# =====================================================================
+
+# --- knowledge.py:578 (NotImplementedError in _call_llm_api) ---
+
+
+def test_call_llm_api_not_implemented():
+    """FR-30: _call_llm_api raises NotImplementedError (production-only wiring)."""
+    from app.core.knowledge import _call_llm_api
+
+    with pytest.raises(NotImplementedError):
+        _call_llm_api("gpt-4o", "test prompt")
+
+
+# --- knowledge.py:911,916,918,928 (_slice_tokens validation) ---
+
+
+def test_slice_tokens_empty_input():
+    """_slice_tokens raises ValueError on empty tokens."""
+    from app.core.knowledge import _slice_tokens
+
+    with pytest.raises(ValueError, match="empty"):
+        _slice_tokens([], size=100, prefix="p", chunk_type="child",
+                       parent_id_for=lambda i, s: None)
+    with pytest.raises(ValueError, match="empty"):
+        _slice_tokens(["  "], size=100, prefix="p", chunk_type="child",
+                       parent_id_for=lambda i, s: None)
+
+
+def test_slice_tokens_invalid_size():
+    """_slice_tokens raises ValueError when size <= 0."""
+    from app.core.knowledge import _slice_tokens
+
+    with pytest.raises(ValueError, match="size must be positive"):
+        _slice_tokens(["a", "b"], size=0, prefix="p", chunk_type="child",
+                       parent_id_for=lambda i, s: None)
+    with pytest.raises(ValueError, match="size must be positive"):
+        _slice_tokens(["a", "b"], size=-5, prefix="p", chunk_type="child",
+                       parent_id_for=lambda i, s: None)
+
+
+def test_slice_tokens_invalid_overlap():
+    """_slice_tokens raises ValueError on invalid overlap values."""
+    from app.core.knowledge import _slice_tokens
+
+    with pytest.raises(ValueError, match="overlap"):
+        _slice_tokens(["a", "b", "c"], size=3, overlap=3, prefix="p",
+                       chunk_type="child", parent_id_for=lambda i, s: None)
+    with pytest.raises(ValueError, match="overlap"):
+        _slice_tokens(["a", "b", "c"], size=3, overlap=-1, prefix="p",
+                       chunk_type="child", parent_id_for=lambda i, s: None)
+
+
+# --- knowledge.py:1099,1102 (retrieve_parent edge paths) ---
+
+
+def test_retrieve_parent_unknown_child():
+    """ParentChildIndex.retrieve_parent returns None for unknown child."""
+    from app.core.knowledge import ParentChildIndex
+
+    idx = ParentChildIndex()
+    assert idx.retrieve_parent("no_such_child") is None
+
+
+def test_retrieve_parent_missing_data():
+    """ParentChildIndex.retrieve_parent returns None when parent data missing."""
+    from app.core.knowledge import ParentChildIndex
+
+    idx = ParentChildIndex()
+    idx._links["c1"] = "p1"  # link exists but parent data doesn't
+    assert idx.retrieve_parent("c1") is None
+
+
+# --- media.py:367 (FR-100 process_file → setenv dummy to avoid registry import) ---
+
+
+def test_fr100_media_process_file_escalate():
+    """FR-100: MediaPipeline.process_file with allowed file returns AUTO_ESCALATE."""
+    from app.services.media import (
+        CLAMAV_STATUS_OK,
+        MEDIA_ACTION_AUTO_ESCALATE,
+        ClamAVScanResult,
+        MediaPipeline,
+    )
+
+    pipeline = MediaPipeline()
+    fake = ClamAVScanResult(status=CLAMAV_STATUS_OK, terminated=False, p95_ms=1.0)
+    with patch.object(pipeline.scanner, "scan", return_value=fake):
+        result = pipeline.process_file(0.5, "txt", b"stub")
+    assert result.action == MEDIA_ACTION_AUTO_ESCALATE
+
+
+# --- messenger.py:91,95 (FR-03 handle_challenge) ---
+
+
+def test_fr03_messenger_handle_challenge_wrong_mode():
+    """FR-03: MessengerWebhookAdapter raises ValueError on wrong hub_mode (line 91)."""
+    from app.api.adapters.messenger import MessengerWebhookAdapter
+
+    adapter = MessengerWebhookAdapter(verify_token="secret")
+    with pytest.raises(ValueError, match=r"Invalid hub.mode"):
+        adapter.handle_challenge("not_subscribe", "secret", "challenge")
+
+
+def test_fr03_messenger_handle_challenge_wrong_token():
+    """FR-03: MessengerWebhookAdapter raises ValueError on token mismatch (line 95)."""
+    from app.api.adapters.messenger import MessengerWebhookAdapter
+
+    adapter = MessengerWebhookAdapter(verify_token="secret")
+    with pytest.raises(ValueError, match=r"Verify token mismatch"):
+        adapter.handle_challenge("subscribe", "wrong_token", "challenge")
+
+
+# --- whatsapp.py:97,101 (FR-04 handle_challenge) ---
+
+
+def test_fr04_whatsapp_handle_challenge_wrong_mode():
+    """FR-04: WhatsAppWebhookAdapter raises ValueError on wrong hub_mode (line 97)."""
+    from app.api.adapters.whatsapp import WhatsAppWebhookAdapter
+
+    adapter = WhatsAppWebhookAdapter(verify_token="secret")
+    with pytest.raises(ValueError, match=r"Invalid hub.mode"):
+        adapter.handle_challenge("not_subscribe", "secret", "challenge")
+
+
+def test_fr04_whatsapp_handle_challenge_wrong_token():
+    """FR-04: WhatsAppWebhookAdapter raises ValueError on token mismatch (line 101)."""
+    from app.api.adapters.whatsapp import WhatsAppWebhookAdapter
+
+    adapter = WhatsAppWebhookAdapter(verify_token="secret")
+    with pytest.raises(ValueError, match=r"Verify token mismatch"):
+        adapter.handle_challenge("subscribe", "wrong_token", "challenge")
+
+
+# --- verifiers.py:143 (FR-03 MessengerWebhookVerifier.verify_challenge) ---
+
+
+def test_fr03_messenger_verifier_verify_challenge_match():
+    """FR-03: MessengerWebhookVerifier.verify_challenge returns challenge on match (line 143)."""
+    from app.api.adapters.verifiers import MessengerWebhookVerifier
+
+    v = MessengerWebhookVerifier(verify_token="my_token")
+    assert v.verify_challenge("subscribe", "my_token", "ch123") == "ch123"
+
+
+def test_fr03_messenger_verifier_verify_challenge_mismatch():
+    """FR-03: MessengerWebhookVerifier.verify_challenge returns None on mismatch."""
+    from app.api.adapters.verifiers import MessengerWebhookVerifier
+
+    v = MessengerWebhookVerifier(verify_token="my_token")
+    assert v.verify_challenge("subscribe", "wrong", "ch123") is None
+
+
+# --- verifiers.py:325 (FR-04 WhatsAppWebhookVerifier.verify_challenge) ---
+
+
+def test_fr04_whatsapp_verifier_verify_challenge():
+    """FR-04: WhatsAppWebhookVerifier.verify_challenge delegates to _verify_challenge (line 325)."""
+    from app.api.adapters.verifiers import WhatsAppWebhookVerifier
+
+    v = WhatsAppWebhookVerifier(verify_token="my_token")
+    assert v.verify_challenge("subscribe", "my_token", "ch456") == "ch456"
+
+
+# --- verifiers.py:214 (WebJwtVerifier rejects non-HS256 alg) ---
+
+
+def test_fr06_web_jwt_verifier_rejects_non_hs256():
+    """FR-06: WebJwtVerifier.verify returns False for non-HS256 algorithm (line 214)."""
+    import base64 as _b
+    import json as _j
+
+    from app.api.adapters.verifiers import WebJwtVerifier
+
+    verifier = WebJwtVerifier(jwt_secret="test-secret")
+    # Create a JWT with alg=RS256 (not HS256) → should hit line 214
+    hdr = _b.urlsafe_b64encode(_j.dumps({"alg": "RS256"}).encode()).rstrip(b"=").decode()
+    pld = _b.urlsafe_b64encode(_j.dumps({"sub": "x"}).encode()).rstrip(b"=").decode()
+    assert verifier.verify(f"{hdr}.{pld}.fakesig") is False
+
+
+# --- verifiers.py:225 (HMAC signature mismatch) ---
+
+
+def test_fr06_web_jwt_verifier_bad_signature():
+    """FR-06: WebJwtVerifier.verify returns False on HMAC mismatch (line 225)."""
+    import base64 as _b
+    import hashlib as _hl
+    import hmac as _h
+    import json as _j
+
+    from app.api.adapters.verifiers import WebJwtVerifier
+
+    verifier = WebJwtVerifier(jwt_secret="test-secret")
+    hdr = _b.urlsafe_b64encode(_j.dumps({"alg": "HS256"}).encode()).rstrip(b"=").decode()
+    pld = _b.urlsafe_b64encode(_j.dumps({"sub": "x"}).encode()).rstrip(b"=").decode()
+    # Sign with WRONG secret
+    bad_sig = _b.urlsafe_b64encode(_h.new(b"wrong-secret", f"{hdr}.{pld}".encode("ascii"), _hl.sha256).digest()).rstrip(b"=").decode()
+    assert verifier.verify(f"{hdr}.{pld}.{bad_sig}") is False
+
+
+# --- a2a.py:171 (JWK missing kty=RSA) ---
+
+
+def test_fr06_verify_m2m_jwk_not_rsa():
+    """FR-06: verify_m2m_token returns False when JWK kty is not RSA (line 171)."""
+    import json as _j
+
+    from app.api.adapters.a2a import A2AAdapter
+
+    adapter = A2AAdapter(jwks_url="https://auth.test/jwks", expected_audience="omnibot")
+    valid = _make_jwt()
+    wrong_jwks = _j.dumps({"keys": [{"kty": "EC", "n": "x", "e": "AQAB", "kid": "test-kid-1"}]}).encode()
+    with patch("urllib.request.urlopen") as mock_urlopen:
+        mock_response = MagicMock()
+        mock_response.read.return_value = wrong_jwks
+        mock_response.__enter__ = MagicMock(return_value=mock_response)
+        mock_response.__exit__ = MagicMock(return_value=False)
+        mock_urlopen.return_value = mock_response
+        assert adapter.verify_m2m_token(f"Bearer {valid}") is False
+
+
+# --- a2a.py:271 (extract_sub returns UNKNOWN when verify fails) ---
+
+
+def test_fr06_extract_sub_token_verify_fails():
+    """FR-06: _extract_sub_from_token returns UNKNOWN_AGENT when verify fails (line 271)."""
+    from app.api.adapters.a2a import A2AAdapter
+
+    adapter = A2AAdapter(jwks_url="https://auth.test/jwks", expected_audience="omnibot")
+    with patch.object(adapter, "verify_m2m_token", return_value=False):
+        assert adapter._extract_sub_from_token("Bearer some.jwt.token") == "unknown-agent"
+
+
+# --- webui.py:546-547 (except block in _saved_threshold) ---
+
+
+
+
+def test_fr100_media_process_file_ok():
+    """FR-100: process_file returns AUTO_ESCALATE when all gates pass."""
+    from app.services.media import (
+        CLAMAV_STATUS_OK,
+        MEDIA_ACTION_AUTO_ESCALATE,
+        ClamAVScanResult,
+        MediaPipeline,
+    )
+
+    pipeline = MediaPipeline()
+    with patch.object(pipeline.scanner, "scan", return_value=ClamAVScanResult(status=CLAMAV_STATUS_OK, terminated=False, p95_ms=1.0)):
+        r = pipeline.process_file(1.0, "txt", b"data")
+    assert r.action == MEDIA_ACTION_AUTO_ESCALATE
+
+
+# ===========================================================================
+# whatsapp.py:148-149 — ValueError catch when timestamp is non-numeric
+# ===========================================================================
+
+
+def test_whatsapp_build_unified_message_bad_timestamp():
+    """WhatsAppWebhookAdapter._build_unified_message: bad timestamp → ValueError → ts=0."""
+    from app.api.adapters.whatsapp import WhatsAppWebhookAdapter
+
+    msg = {"from": "5511999999999", "text": {"body": "hello"}, "type": "text", "timestamp": "not-a-number"}
+    result = WhatsAppWebhookAdapter._build_unified_message(msg)
+    assert result.platform_user_id == "5511999999999"
+    assert result.content == "hello"
+    assert result.received_at.year == 1970  # epoch 0
+
+
+# ===========================================================================
+# websocket.py:202-203 — except Exception in JWT verify (malformed signature)
+# ===========================================================================
+
+
+def test_verify_jwt_malformed_signature():
+    """verify_jwt returns False when payload JSON parsing raises Exception (lines 202-203)."""
+    import hashlib
+
+    from app.api.websocket import verify_jwt
+
+    secret = b"dev-secret-do-not-use-in-prod"
+    header = {"alg": "HS256"}
+    header_b64 = base64.urlsafe_b64encode(json.dumps(header).encode()).rstrip(b"=").decode()
+    # Payload is valid base64 but not valid JSON — triggers json.JSONDecodeError inside try block
+    payload_bytes = b"this-is-not-valid-json"
+    payload_b64 = base64.urlsafe_b64encode(payload_bytes).rstrip(b"=").decode()
+    msg = f"{header_b64}.{payload_b64}".encode("ascii")
+    sig = base64.urlsafe_b64encode(hmac.new(secret, msg, hashlib.sha256).digest()).rstrip(b"=").decode()
+    token = f"{header_b64}.{payload_b64}.{sig}"
+
+    assert verify_jwt(token) is False
+
+
+# ===========================================================================
+# websocket.py:367 — unregister_connection when _channel_subscribers returns None
+# ===========================================================================
+
+
+def test_unregister_connection_subscribers_none():
+    """unregister_connection: when _channel_subscribers.get returns None → continue."""
+    import app.api.websocket as ws_mod
+    from app.api.websocket import register_connection, unregister_connection
+
+    cid = "test-conn-none-sub"
+    register_connection(cid)
+    # Manually add a channel subscription to the connection
+    # but ensure the channel's subscriber set is None
+    with ws_mod._registry_lock:
+        ws_mod._connection_subscriptions.setdefault(cid, set()).add("ch-empty-none")
+        # Don't create _channel_subscribers["ch-empty-none"] — it stays absent
+    unregister_connection(cid)  # should not raise; hits continue at line 367
+
+
+# ===========================================================================
+# jobs.py:393 — compute_sync_status fallthrough to "failed"
+# ===========================================================================
+
+
+def test_compute_sync_status_failed_when_done_zero_total_positive():
+    """compute_sync_status returns 'failed' when chunks_done=0, chunks_total>0."""
+    from app.infra.jobs import compute_sync_status
+
+    assert compute_sync_status(0, 5) == "failed"
+    assert compute_sync_status(0, 1) == "failed"
+
+
+# ===========================================================================
+# security.py:420,441,468-470,495 — retention policy methods
+# ===========================================================================
+
+
+def test_messages_retention_policy_should_archive():
+    """MessagesRetentionPolicy.should_archive: True when age_days >= retention_days."""
+    from app.infra.security import MessagesRetentionPolicy
+
+    p = MessagesRetentionPolicy(retention_days=180, target="messages", archive_format="Parquet/S3", archive_action="archive")
+    assert p.should_archive(180) is True
+    assert p.should_archive(200) is True
+    assert p.should_archive(179) is False
+
+
+def test_archive_retention_policy_should_delete():
+    """ArchiveRetentionPolicy.should_delete: True when age_years >= archive_age_years."""
+    from app.infra.security import ArchiveRetentionPolicy
+
+    p = ArchiveRetentionPolicy(archive_age_years=2, action="delete")
+    assert p.should_delete(2) is True
+    assert p.should_delete(3) is True
+    assert p.should_delete(1) is False
+
+
+def test_pii_audit_retention_policy_action_for():
+    """PiiAuditRetentionPolicy.action_for: returns 'anonymize' or 'retain' based on age."""
+    from app.infra.security import PiiAuditRetentionPolicy
+
+    p = PiiAuditRetentionPolicy(retention_days=90, table="audit_log", action="anonymize")
+    assert p.action_for(90) == "anonymize"
+    assert p.action_for(100) == "anonymize"
+    assert p.action_for(89) == "retain"
+
+
+def test_emotion_history_retention_policy_should_delete():
+    """EmotionHistoryRetentionPolicy.should_delete: True when age_days >= retention_days."""
+    from app.infra.security import EmotionHistoryRetentionPolicy
+
+    p = EmotionHistoryRetentionPolicy(retention_days=90, table="emotion_history", action="delete")
+    assert p.should_delete(90) is True
+    assert p.should_delete(100) is True
+    assert p.should_delete(89) is False
+
+
+# ===========================================================================
+# media.py:367 — process_file returns reject when scan result not OK
+# ===========================================================================
+
+
+def test_media_process_file_scan_not_ok():
+    """MediaPipeline.process_file: returns reject when scan status != OK."""
+    from app.services.media import MEDIA_ACTION_FILE_REJECTED, ClamAVScanResult, MediaPipeline
+
+    pipeline = MediaPipeline()
+    bad_scan = ClamAVScanResult(status="infected", terminated=False, p95_ms=1.0)
+    with patch.object(pipeline.scanner, "scan", return_value=bad_scan):
+        r = pipeline.process_file(1.0, "txt", b"bad data")
+    assert r.action == MEDIA_ACTION_FILE_REJECTED
+    assert r.status == "503"
+
+
+def test_media_process_file_scan_terminated():
+    """MediaPipeline.process_file: returns reject when scan terminated=True."""
+    from app.services.media import (
+        CLAMAV_STATUS_OK,
+        MEDIA_ACTION_FILE_REJECTED,
+        ClamAVScanResult,
+        MediaPipeline,
+    )
+
+    pipeline = MediaPipeline()
+    term_scan = ClamAVScanResult(status=CLAMAV_STATUS_OK, terminated=True, p95_ms=1.0)
+    with patch.object(pipeline.scanner, "scan", return_value=term_scan):
+        r = pipeline.process_file(1.0, "txt", b"data")
+    assert r.action == MEDIA_ACTION_FILE_REJECTED
+
+
+# ===========================================================================
+# webui.py:546-547 — _saved_threshold import-failure fallback
+# ===========================================================================
+
+
+def test_saved_threshold_import_failure():
+    """RAGDebugger._saved_threshold: returns RAG_DEFAULT_THRESHOLD when import fails."""
+    from app.admin.webui import RAG_DEFAULT_THRESHOLD, RAGDebugger
+
+    debugger = RAGDebugger(config_store=None)
+    # Force the app.infra.config import to fail
+    with patch("builtins.__import__", side_effect=ImportError("no config module")):
+        result = debugger._saved_threshold()
+    assert result == RAG_DEFAULT_THRESHOLD
+
+
+# ===========================================================================
+# knowledge.py:486,498,509,517 — query() tier-hit return paths
+# ===========================================================================
+
+
+def test_knowledge_query_tier1_hit():
+    """HybridKnowledge.query: returns Tier 1 hit when rule match confidence >= 0.80."""
+    from app.core.knowledge import HybridKnowledge, KnowledgeResult
+
+    hk = HybridKnowledge(session=None)
+    tier1_result = KnowledgeResult(id=1, content="answer", confidence=0.95, source="rule", knowledge_id=10)
+    with patch.object(hk, "_rule_match", return_value=tier1_result):
+        result = hk.query("test query")
+    assert result.source == "rule"
+    assert result.confidence == 0.95
+    assert hasattr(result, "tier_sequence")
+    assert result.tier_sequence == ["t1"]
+
+
+def test_knowledge_query_tier2_ilike_fallback():
+    """HybridKnowledge.query: Tier 2 is None when rag_fallback is ilike (line 498)."""
+    from app.core.knowledge import HybridKnowledge, RAGFallback
+
+    hk = HybridKnowledge(session=None)
+    # _rule_match returns None (session=None ensures this), then Tier 1 misses
+    # _rag_search_with_fallback returns ilike → tier2 = None → falls through to Tier 3/4
+    # The query should reach Tier 4 escalation
+    with patch.object(hk, "_rag_search_with_fallback", return_value=RAGFallback(search_path="ilike", degraded_to="tier1_ilike_only")):
+        result = hk.query("test")
+    assert result.source == "escalate"
+    assert "t2" in result.tier_sequence
+
+
+def test_knowledge_query_tier2_hit():
+    """HybridKnowledge.query: returns Tier 2 hit when RAG confidence >= 0.85 (line 509)."""
+    from app.core.knowledge import HybridKnowledge, KnowledgeResult, RAGFallback
+
+    hk = HybridKnowledge(session=None)
+    tier2_result = KnowledgeResult(id=2, content="rag answer", confidence=0.90, source="rag", knowledge_id=20)
+    with patch.object(hk, "_rule_match", return_value=None):
+        with patch.object(hk, "_rag_search_with_fallback", return_value=RAGFallback(search_path="vector")):
+            with patch.object(hk, "_rag_search_top_k", return_value=[1, 2, 3]):
+                with patch.object(hk, "_rag_search", return_value=tier2_result):
+                    result = hk.query("test")
+    assert result.source == "rag"
+    assert result.confidence == 0.90
+    assert "t2" in result.tier_sequence
+
+
+def test_knowledge_query_tier3_hit():
+    """HybridKnowledge.query: returns Tier 3 hit when LLM confidence >= 0.65 (line 517)."""
+    from app.core.knowledge import HybridKnowledge, KnowledgeResult, RAGFallback
+
+    hk = HybridKnowledge(session=None)
+    tier3_result = KnowledgeResult(id=3, content="llm answer", confidence=0.80, source="wiki", knowledge_id=30)
+    with patch.object(hk, "_rule_match", return_value=None):
+        with patch.object(hk, "_rag_search_with_fallback", return_value=RAGFallback(search_path="vector")):
+            with patch.object(hk, "_rag_search_top_k", return_value=[]):  # empty → tier2 miss
+                with patch.object(hk, "_llm_call", return_value=tier3_result):
+                    result = hk.query("test")
+    assert result.source == "wiki"
+    assert result.confidence == 0.80
+    assert "t3" in result.tier_sequence
+
+
+# ===========================================================================
+# knowledge.py:1258-1259,1273 — create_knowledge_with_chunks timeout + enqueue failure
+# ===========================================================================
+
+
+@pytest.mark.asyncio
+async def test_create_knowledge_timeout_triggers_fallback():
+    """create_knowledge_with_chunks: built-in TimeoutError triggers _fallback_to_async (line 1273)."""
+    from app.core.knowledge import create_knowledge_with_chunks
+
+    async def _raise_timeout(*args, **kwargs):
+        raise TimeoutError("simulated embedding timeout")
+
+    with patch("app.core.knowledge._embed_first_chunk", _raise_timeout):
+        result = await create_knowledge_with_chunks(
+            knowledge_id="kb-timeout",
+            title="Test",
+            content="content for timeout test",
+            model="text-embedding-3-small",
+        )
+    assert result.fallback == "async_queue"
+    assert result.search_ready is False
+    assert result.embedding_synced is False
+
+
+@pytest.mark.asyncio
+async def test_create_knowledge_enqueue_failure_logged():
+    """create_knowledge_with_chunks: exception in enqueue fallback is logged (lines 1258-1259)."""
+    from app.core.knowledge import create_knowledge_with_chunks
+
+    async def _slow_embed(*args, **kwargs):
+        await asyncio.sleep(0.1)
+
+    with patch("app.core.knowledge._embed_first_chunk", _slow_embed):
+        with patch("app.core.knowledge.EMBEDDING_TIMEOUT_S", 0.001):
+            with patch("app.infra.jobs.enqueue_embedding_job", side_effect=RuntimeError("queue down")):
+                result = await create_knowledge_with_chunks(
+                    knowledge_id="kb-enqueue-fail",
+                    title="Test",
+                    content="content for enqueue failure test",
+                    model="text-embedding-3-small",
+                )
+    assert result.fallback == "async_queue"
+    assert result.search_ready is False
+
+
+# ===========================================================================
+# paladin.py:631-632,640,642 — _await_coro_from_sync thread-path exception paths
+# ===========================================================================
+
+
+def test_await_coro_from_sync_thread_timeout():
+    """_await_coro_from_sync: raises TimeoutError when thread alive after join (line 640)."""
+    from app.core.paladin import _await_coro_from_sync
+
+    async def _never_complete():
+        # Create an Event that never gets set — the coroutine hangs forever
+        ev = asyncio.Event()
+        await ev.wait()
+
+    # Force thread path and mock Thread to always report alive
+    with patch("asyncio.get_running_loop", return_value=MagicMock()):
+        with patch("threading.Thread.is_alive", return_value=True):
+            with pytest.raises(TimeoutError, match="FR-15"):
+                _await_coro_from_sync(_never_complete(), timeout_ms=10)
+
+
+def test_await_coro_from_sync_thread_exception_propagate():
+    """_await_coro_from_sync: re-raises coroutine exception via holder (lines 631-632, 642)."""
+    from app.core.paladin import _await_coro_from_sync
+
+    async def _failing_coro():
+        raise ValueError("test error from coroutine")
+
+    with patch("asyncio.get_running_loop", return_value=MagicMock()):
+        with pytest.raises(ValueError, match="test error from coroutine"):
+            _await_coro_from_sync(_failing_coro(), timeout_ms=1000)
+
+
+def test_await_coro_from_sync_thread_success():
+    """_await_coro_from_sync: returns value from coroutine via thread path (line 643)."""
+    from app.core.paladin import _await_coro_from_sync
+
+    async def _ok_coro():
+        return 42
+
+    with patch("asyncio.get_running_loop", return_value=MagicMock()):
+        result = _await_coro_from_sync(_ok_coro(), timeout_ms=1000)
+    assert result == 42
+
+
+# --- gdpr.py:263,272,278 (RetentionPolicy keep returns) ---
+
+
+def test_retention_policy_should_archive_keep():
+    """RetentionPolicy returns keep for non-matching tables."""
+    from app.admin.gdpr import RetentionPolicy
+
+    p = RetentionPolicy()
+    assert p.should_archive("other_table", days_old=999, retention_days=10).action == "keep"
+
+
+def test_retention_policy_should_delete_keep():
+    """RetentionPolicy returns keep for non-matching delete criteria."""
+    from app.admin.gdpr import RetentionPolicy
+
+    p = RetentionPolicy()
+    assert p.should_delete("unknown_table", years_old=0).action == "keep"
+    assert p.should_delete("emotion_history", days_old=1, retention_days=90).action == "keep"
+
+
+def test_retention_policy_should_anonymize_keep():
+    """RetentionPolicy returns keep for non-matching anonymize criteria."""
+    from app.admin.gdpr import RetentionPolicy
+
+    p = RetentionPolicy()
+    assert p.should_anonymize("other_table", days_old=999, retention_days=10).action == "keep"

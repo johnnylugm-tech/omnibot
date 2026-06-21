@@ -150,5 +150,5 @@ from app.api.common import build_response, extract_user_context  # noqa: E402
 
 
 def _dummy_api_cohesion():
-    _ = build_response()
-    _ = extract_user_context(None)
+    _ = build_response()  # pragma: no cover — API cohesion dummy, never called
+    _ = extract_user_context(None)  # pragma: no cover — API cohesion dummy, never called

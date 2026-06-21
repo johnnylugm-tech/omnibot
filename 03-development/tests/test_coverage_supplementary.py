@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import base64
 import hashlib
 import hmac as hmac_mod
@@ -12,14 +11,13 @@ import socket
 import time
 import uuid as uuid_mod
 from collections import deque
-from datetime import date, datetime, timezone, timedelta
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 
 # ===========================================================================
 # app.infra.circuit_breaker  — RetryStrategy jitter=False path
@@ -55,7 +53,7 @@ def test_rate_limiter_drops_expired_bucket_entries():
 
 def test_migration_runner_staging_not_validated_raises():
     """database.py — upgrade() refuses when staging_validated=False."""
-    from app.infra.database import MigrationRunner, MigrationConfig
+    from app.infra.database import MigrationConfig, MigrationRunner
     runner = MigrationRunner()
     cfg = MigrationConfig(
         db_url="sqlite:///:memory:",
@@ -123,7 +121,7 @@ def test_ip_whitelist_ip_not_in_cidr():
 
 def test_compute_backoff_jitter_false():
     """jobs.py — _compute_backoff with jitter=False returns capped value."""
-    from app.infra.jobs import _compute_backoff, EmbeddingJob
+    from app.infra.jobs import EmbeddingJob, _compute_backoff
     job = EmbeddingJob(
         chunk_id="c1", knowledge_id="k1", content="x", model="m",
         max_retries=3, base_delay=1.0, jitter=False,
@@ -239,7 +237,7 @@ async def test_calibration_run_cycle_empty_golden():
 
 def test_dst_auto_escalate_triggers_escalation():
     """dst.py — auto_escalate → ESCALATED when confidence below threshold."""
-    from app.core.dst import DialogueState, INTENT_CONFIDENCE_THRESHOLD
+    from app.core.dst import INTENT_CONFIDENCE_THRESHOLD, DialogueState
     fsm = DialogueState(initial_state="SLOT_FILLING")
     result = fsm.auto_escalate(
         slot_filling_rounds=0,
@@ -250,7 +248,7 @@ def test_dst_auto_escalate_triggers_escalation():
 
 def test_dst_auto_escalate_no_trigger():
     """dst.py — auto_escalate returns current state when no trigger fires."""
-    from app.core.dst import DialogueState, INTENT_CONFIDENCE_THRESHOLD
+    from app.core.dst import INTENT_CONFIDENCE_THRESHOLD, DialogueState
     fsm = DialogueState(initial_state="SLOT_FILLING")
     result = fsm.auto_escalate(
         slot_filling_rounds=0,
@@ -268,7 +266,7 @@ def test_dst_escalation_triggered_terminal_state():
 
 def test_dst_context_window_history_budget():
     """dst.py — ContextWindowManager.history_budget is computed correctly."""
-    from app.core.dst import ContextWindowManager, MAX_TOKENS, SYSTEM_RESERVED, KNOWLEDGE_MAX
+    from app.core.dst import KNOWLEDGE_MAX, MAX_TOKENS, SYSTEM_RESERVED, ContextWindowManager
     manager = ContextWindowManager()
     expected = MAX_TOKENS - SYSTEM_RESERVED - KNOWLEDGE_MAX
     assert manager.history_budget == expected
@@ -355,7 +353,7 @@ def test_emotion_classify_empty_text():
 
 def test_emotion_classify_negated_positive():
     """emotion.py — negated positive keyword produces negative emotion."""
-    from app.core.emotion import emotion_classify, _POSITIVE_KEYWORDS, _NEGATION_PREFIXES
+    from app.core.emotion import _NEGATION_PREFIXES, _POSITIVE_KEYWORDS, emotion_classify
     if not _POSITIVE_KEYWORDS or not _NEGATION_PREFIXES:
         pytest.skip("Keywords not defined")
     kw = next(iter(_POSITIVE_KEYWORDS))
@@ -379,7 +377,11 @@ def test_emotion_should_escalate_none_input():
 
 def test_has_negated_positive_keyword_finds_negation():
     """emotion.py — _has_negated_positive_keyword returns True when negated."""
-    from app.core.emotion import _has_negated_positive_keyword, _POSITIVE_KEYWORDS, _NEGATION_PREFIXES
+    from app.core.emotion import (
+        _NEGATION_PREFIXES,
+        _POSITIVE_KEYWORDS,
+        _has_negated_positive_keyword,
+    )
     if not _POSITIVE_KEYWORDS or not _NEGATION_PREFIXES:
         pytest.skip("Keywords not defined")
     kw = next(iter(_POSITIVE_KEYWORDS))
@@ -410,7 +412,7 @@ def test_clamav_scanner_force_invalid_status():
 
 def test_clamav_scan_unavailable():
     """media.py — scan returns UNAVAILABLE when forced unavailable."""
-    from app.services.media import ClamAVScanner, CLAMAV_STATUS_UNAVAILABLE
+    from app.services.media import CLAMAV_STATUS_UNAVAILABLE, ClamAVScanner
     scanner = ClamAVScanner()
     scanner.force_status(CLAMAV_STATUS_UNAVAILABLE)
     result = scanner.scan(b"some bytes", "image/jpeg")
@@ -420,7 +422,7 @@ def test_clamav_scan_unavailable():
 
 def test_media_pipeline_file_too_large():
     """media.py — process_file returns rejected for oversized file."""
-    from app.services.media import MediaPipeline, FILE_SIZE_LIMIT_MB
+    from app.services.media import FILE_SIZE_LIMIT_MB, MediaPipeline
     pipeline = MediaPipeline()
     result = pipeline.process_file(
         file_size_mb=FILE_SIZE_LIMIT_MB + 1.0,
@@ -448,14 +450,14 @@ def test_media_pipeline_unsupported_type():
 
 def test_k8s_manifest_max_unavailable():
     """deployment.py — max_unavailable returns DEFAULT_MAX_UNAVAILABLE."""
-    from app.infra.deployment import K8sManifest, DEFAULT_MAX_UNAVAILABLE
+    from app.infra.deployment import DEFAULT_MAX_UNAVAILABLE, K8sManifest
     manifest = K8sManifest()
     assert manifest.max_unavailable() == DEFAULT_MAX_UNAVAILABLE
 
 
 def test_k8s_manifest_service_port():
     """deployment.py — service_port returns SERVICE_PORT constant."""
-    from app.infra.deployment import K8sManifest, SERVICE_PORT
+    from app.infra.deployment import SERVICE_PORT, K8sManifest
     manifest = K8sManifest()
     assert manifest.service_port() == SERVICE_PORT
 
@@ -476,7 +478,7 @@ def test_k8s_manifest_resource_limits():
 
 def test_backup_strategy_restore_redis_rdb():
     """deployment.py — BackupStrategy.restore dispatches redis_rdb type."""
-    from app.infra.deployment import BackupStrategy, BACKUP_TYPE_REDIS_RDB
+    from app.infra.deployment import BACKUP_TYPE_REDIS_RDB, BackupStrategy
     strategy = BackupStrategy()
     result = strategy.restore(backup_type=BACKUP_TYPE_REDIS_RDB)
     assert result is not None
@@ -484,7 +486,7 @@ def test_backup_strategy_restore_redis_rdb():
 
 def test_backup_strategy_has_schedule():
     """deployment.py — has_schedule returns True for scheduled types."""
-    from app.infra.deployment import BackupStrategy, SCHEDULED_BACKUP_TYPES
+    from app.infra.deployment import SCHEDULED_BACKUP_TYPES, BackupStrategy
     strategy = BackupStrategy()
     for btype in SCHEDULED_BACKUP_TYPES:
         assert strategy.has_schedule(btype) is True
@@ -499,7 +501,7 @@ def test_backup_strategy_triggers_alert():
 
 def test_rollback_strategy_downgrade_schema():
     """deployment.py — RollbackStrategy.downgrade_schema with valid direction."""
-    from app.infra.deployment import RollbackStrategy, MIGRATION_DOWNGRADE
+    from app.infra.deployment import MIGRATION_DOWNGRADE, RollbackStrategy
     strategy = RollbackStrategy()
     result = strategy.downgrade_schema(migration=MIGRATION_DOWNGRADE)
     assert result is not None
@@ -615,7 +617,7 @@ def test_retract_unknown_platform_raises():
 
 def test_tool_executor_execute_known_tool():
     """tool_executor.py — execute returns success for known tool."""
-    from app.services.aee.tool_executor import ToolExecutor, ToolExecutionResult, ToolDefinition
+    from app.services.aee.tool_executor import ToolDefinition, ToolExecutionResult, ToolExecutor
 
     def echo_fn(**kwargs) -> str:
         return kwargs.get("x", "")
@@ -716,7 +718,7 @@ def test_json_default_unknown_type_raises():
 
 def test_get_current_trace_id_no_spans():
     """observability.py — get_current_trace_id returns None when no active spans."""
-    from app.infra.observability import get_current_trace_id, _get_active_spans
+    from app.infra.observability import _get_active_spans, get_current_trace_id
     _get_active_spans().clear()
     assert get_current_trace_id() is None
 
@@ -841,7 +843,7 @@ def test_embedding_status_mark_failed():
 
 def test_embedding_status_get_status_failed():
     """webui.py — get_status returns FAILED after mark_failed."""
-    from app.admin.webui import EmbeddingStatusProvider, EMBEDDING_STATUS_FAILED
+    from app.admin.webui import EMBEDDING_STATUS_FAILED, EmbeddingStatusProvider
     provider = EmbeddingStatusProvider(default_total=10)
     provider.mark_failed()
     assert provider.get_status()["status"] == EMBEDDING_STATUS_FAILED
@@ -849,7 +851,7 @@ def test_embedding_status_get_status_failed():
 
 def test_embedding_status_get_status_synced():
     """webui.py — get_status returns SYNCED when synced >= total."""
-    from app.admin.webui import EmbeddingStatusProvider, EMBEDDING_STATUS_SYNCED
+    from app.admin.webui import EMBEDDING_STATUS_SYNCED, EmbeddingStatusProvider
     provider = EmbeddingStatusProvider(default_synced=5, default_total=5)
     assert provider.get_status()["status"] == EMBEDDING_STATUS_SYNCED
 
@@ -865,7 +867,7 @@ def test_knowledge_admin_api_update_entry():
 
 def test_knowledge_admin_api_crud_delete():
     """webui.py — crud DELETE action."""
-    from app.admin.webui import KnowledgeAdminAPI, KNOWLEDGE_ACTION_DELETE
+    from app.admin.webui import KNOWLEDGE_ACTION_DELETE, KnowledgeAdminAPI
     api = KnowledgeAdminAPI()
     entry = api.create_entry(title="T", content="C")
     result = api.crud(KNOWLEDGE_ACTION_DELETE, entry_id=entry.id)

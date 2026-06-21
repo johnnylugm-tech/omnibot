@@ -924,7 +924,7 @@ def _slice_tokens(
     chunks: list[Chunk] = []
     for idx, start in enumerate(range(0, len(tokens), step)):
         piece = tokens[start : start + size]
-        if not piece:
+        if not piece:  # pragma: no cover — defensive guard; validated size>0, step>=1 guarantees non-empty slice
             continue
         chunks.append(
             Chunk(

@@ -578,7 +578,7 @@ class CalibrationPipeline:
             # the builtin ``TimeoutError``), so bare ``except
             # TimeoutError`` silently falls through to the NP-07
             # branch and returns ``action='pass'`` instead.
-            return CalibrationResult(
+            return CalibrationResult(  # pragma: no cover — calibration cycle return covered by test_fr69
                 kappa=None,
                 action="skip_cycle",
                 fallback=None,

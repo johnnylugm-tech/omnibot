@@ -16,6 +16,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import uuid
+from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from cryptography.fernet import Fernet
@@ -232,3 +233,46 @@ def get_pii_audit_log(user_id: str, event_type: str = "gdpr_deletion") -> list[d
     ]
 
 
+
+
+# ---------------------------------------------------------------------------
+# [FR-91] RetentionPolicy — per-table retention schedule
+# ---------------------------------------------------------------------------
+
+
+
+@dataclass
+class RetentionResult:
+    """Result of a retention check."""
+    action: str  # "archive", "delete", "anonymize", "keep"
+    format: str = ""  # e.g. "Parquet/S3" for archive
+
+
+class RetentionPolicy:
+    """[FR-91] Data retention policy enforcing per-table schedules.
+
+    Citations:
+        - SRS.md FR-91 — conversations 180d→archive→2yr delete;
+          PII audit 90d anonymize; emotion 90d delete
+    """
+
+    def should_archive(self, table: str, *, days_old: int, retention_days: int) -> RetentionResult:
+        """Check if a record should be archived based on age."""
+        if table == "conversations" and days_old > retention_days:
+            return RetentionResult(action="archive", format="Parquet/S3")
+        return RetentionResult(action="keep")
+
+    def should_delete(self, table: str, *, years_old: int = 0, archive_age_years: int = 0,
+                      days_old: int = 0, retention_days: int = 0) -> RetentionResult:
+        """Check if a record should be permanently deleted."""
+        if table == "archive" and years_old > archive_age_years:
+            return RetentionResult(action="delete")
+        if table == "emotion_history" and days_old > retention_days:
+            return RetentionResult(action="delete")
+        return RetentionResult(action="keep")
+
+    def should_anonymize(self, table: str, *, days_old: int, retention_days: int) -> RetentionResult:
+        """Check if a record should be anonymized (not deleted)."""
+        if table == "pii_audit_log" and days_old > retention_days:
+            return RetentionResult(action="anonymize")
+        return RetentionResult(action="keep")

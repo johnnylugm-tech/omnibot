@@ -70,7 +70,8 @@ exclude = ["harness*", ".sessi-work*", "docs*"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-extend-exclude = ["harness", ".sessi-work", ".ruff_cache", "__pycache__"]
+extend-exclude = ["harness", ".sessi-work", ".ruff_cache", "__pycache__", ".claude", "docs"]
+include = ["03-development/src/**/*.py", "03-development/tests/**/*.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "RUF"]
@@ -81,6 +82,8 @@ ignore = [
     "RUF001",
     "RUF002",
     "RUF003",
+    "SIM117",
+    "B905",
     # UP042: our StrEnum backport intentionally inherits from both
     # ``str`` and ``enum.Enum`` for Python 3.9 compatibility
     # (``enum.StrEnum`` is only available in 3.11+). False positive.

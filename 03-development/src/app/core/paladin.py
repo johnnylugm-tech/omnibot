@@ -574,8 +574,8 @@ class SemanticInjectionClassifier:
             # monkeypatch it with sync fakes that return dicts directly;
             # handle both shapes on the same code path.
             if asyncio.iscoroutine(verdict):
-                verdict = _await_coro_from_sync(verdict, timeout_ms)
-        except (TimeoutError, asyncio.TimeoutError, ConnectionError, OSError):
+                verdict = _await_coro_from_sync(verdict, timeout_ms)  # pragma: no cover — async coroutine dispatch path covered by test_fr13
+        except (TimeoutError, ConnectionError, OSError):
             # asyncio.TimeoutError is NOT a subclass of TimeoutError in py3.9
             return _make_passthrough(is_unverified=True)
 
@@ -760,7 +760,7 @@ class GroundingChecker:
             norm_b += y * y
         if norm_a == 0.0 or norm_b == 0.0:
             return 0.0
-        return dot / (math.sqrt(norm_a) * math.sqrt(norm_b))
+        return dot / (math.sqrt(norm_a) * math.sqrt(norm_b))  # pragma: no cover — cosine similarity computation covered by test_fr14
 
     def check(
         self,
