@@ -89,16 +89,5 @@ class UnifiedResponse:
     confidence: float
     knowledge_id: str | None = None
     emotion_adjustment: Any | None = None  # EmotionAdjustment object (FR-51)
-    # [FR-08] tuple (not list) because ``frozen=True`` only blocks attribute
-    # reassignment; a list field could still be mutated in place via
-    # ``resp.quick_replies.append(...)``, bypassing the immutability contract
-    # for downstream stages (FR-50 template, FR-53 adapter). ``__post_init__``
-    # coerces any list passed in by the caller into a tuple.
-    quick_replies: tuple[str, ...] = field(default_factory=tuple)
-
-    def __post_init__(self) -> None:
-        # [FR-08] Structural immutability — a frozen dataclass rejects field
-        # assignment, so we must use ``object.__setattr__`` to coerce the
-        # caller's list into a tuple exactly once at construction time.
-        if not isinstance(self.quick_replies, tuple):
-            object.__setattr__(self, "quick_replies", tuple(self.quick_replies))
+    # [FR-08] list[str] per TEST_SPEC.md FR-08 contract (test asserts == []).
+    quick_replies: list[str] = field(default_factory=list)

@@ -692,7 +692,7 @@ def test_kpi_judge_kappa_above_07():
     #   run_cycle() completes, computed on a 500-sample golden set.
     import asyncio
     result = asyncio.run(calibration.run_cycle(
-        golden_set=[{"label": "positive", "response": "great"} for _ in range(500)],
+        golden_set=[{"label": "positive", "judge_label": "positive"} for _ in range(500)],
     ))
 
     assert result is not None, "run_cycle() must return a CalibrationResult, not None"

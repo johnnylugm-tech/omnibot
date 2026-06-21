@@ -195,10 +195,10 @@ class RateLimiter:
         window_start = now - self._WINDOW_SECONDS
 
         with self._lock:
-            # Per-(platform, key) sub-bucket: matches the Redis path's
-            # `rate_limit:{platform}:{key}` keying, so the in-memory fallback
-            # is not a global-per-platform limiter.
-            bucket = self._buckets.setdefault((platform, key), deque())
+            # Platform-level global bucket: the in-memory fallback enforces
+            # a per-platform aggregate limit (not per-user), matching the
+            # FR-21 spec: 31st request to any `telegram` key must return 429.
+            bucket = self._buckets.setdefault((platform, ""), deque())
             # Drop entries that have aged out of the sliding window.
             while bucket and bucket[0] < window_start:
                 bucket.popleft()

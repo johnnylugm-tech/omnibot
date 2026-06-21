@@ -575,8 +575,9 @@ class SemanticInjectionClassifier:
             # handle both shapes on the same code path.
             if asyncio.iscoroutine(verdict):
                 verdict = _await_coro_from_sync(verdict, timeout_ms)
-        except (TimeoutError, ConnectionError, OSError):
+        except (TimeoutError, ConnectionError, OSError, asyncio.TimeoutError):
             # Timeout OR downstream down → passthrough, do NOT block.
+            # asyncio.TimeoutError is NOT a subclass of TimeoutError in py3.9
             return _make_passthrough(is_unverified=True)
 
         return _result_from_verdict(verdict)

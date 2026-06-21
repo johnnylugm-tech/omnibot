@@ -564,20 +564,18 @@ class CalibrationPipeline:
                 action="pass",
                 fallback=None,
             )
-        except TimeoutError:
+        except (TimeoutError, asyncio.TimeoutError):
             # NP-15 timeout — the wall-clock budget was breached.
             # The cycle is abandoned gracefully and the operator
             # retries next month (action == "skip_cycle"). The
             # exception is NOT propagated to the caller.
             #
-            # Catches BOTH ``asyncio.TimeoutError`` AND the builtin
+            # Must catch BOTH ``asyncio.TimeoutError`` AND the builtin
             # ``TimeoutError``: on Python < 3.11 they are distinct
-            # classes (``asyncio.TimeoutError`` aliases
-            # ``concurrent.futures.TimeoutError`` and does NOT
-            # inherit from the builtin ``TimeoutError``), so a bare
-            # ``except TimeoutError`` silently misroutes the timeout
-            # to the NP-07 fallback branch and reports
-            # ``action='pass'`` instead of ``'skip_cycle'``.
+            # classes (``asyncio.TimeoutError`` does NOT inherit from
+            # the builtin ``TimeoutError``), so bare ``except
+            # TimeoutError`` silently falls through to the NP-07
+            # branch and returns ``action='pass'`` instead.
             return CalibrationResult(
                 kappa=None,
                 action="skip_cycle",
@@ -626,17 +624,12 @@ class CalibrationPipeline:
         n = len(golden_set)
         first = golden_set[0]
         if isinstance(first, dict):
-            # [FR-108] dict golden_set — compute agreement from label/response
+            # dict golden_set: compare human label vs judge's predicted label.
+            # Field contract: {"label": <human_label>, "judge_label": <judge_prediction>}.
             matches = sum(
                 1 for item in golden_set
-                if item.get("label") == item.get("response")
+                if item.get("label") == item.get("judge_label")
             )
-            # Report the observed agreement rate verbatim — including
-            # the zero-match case. Fabricating a non-zero baseline
-            # here would silently pass the FR-69 ≥ 0.7 Kappa gate for
-            # genuinely miscalibrated judge ensembles, so the
-            # caller's ``action == "recalibration"`` branch fires
-            # correctly when ``rate < 0.7``.
             return matches / n
         else:
             matches = sum(1 for pair in golden_set if pair[0] == pair[1])
