@@ -105,7 +105,7 @@ def test_fr26_exact_match_confidence_095_returns_rule():
     # return a KnowledgeResult when the best row's confidence ≥ 0.80.
     # For an exact ILIKE match (entire query string hit), confidence = 0.95
     # and source must be "rule".
-    fake = _FakeSession_with_exact_match()
+    fake = _fake_session_with_exact_match()
     hk = HybridKnowledge(session=fake)
 
     result = hk._rule_match(query)
@@ -130,7 +130,7 @@ def test_fr26_exact_match_confidence_095_returns_rule():
     )
 
 
-def _FakeSession_with_exact_match():
+def _fake_session_with_exact_match():
     """Helper: build a FakeSession pre-loaded with an exact-match row."""
     from types import SimpleNamespace
 
@@ -143,10 +143,10 @@ def _FakeSession_with_exact_match():
         content="退款申請流程：請至訂單頁面提交退款申請。",
         match_type="exact",
     )
-    return _FakeSession_factory([row])
+    return _fake_session_factory([row])
 
 
-def _FakeSession_factory(rows):
+def _fake_session_factory(rows):
     """Re-use the FakeSession class defined in the autouse fixture.
 
     Defined at module level so tests can call it directly; the autouse
@@ -195,7 +195,7 @@ def test_fr26_confidence_below_080_falls_through_tier2():
     # Tier 2 (RAG). Do NOT return a KnowledgeResult with source="rule"
     # when confidence < 0.80 — that would short-circuit Tier 2 and hide
     # higher-quality RAG results.
-    fake = _FakeSession_factory([])
+    fake = _fake_session_factory([])
     hk = HybridKnowledge(session=fake)
 
     result = hk._rule_match(query)
@@ -234,7 +234,7 @@ def test_fr26_limit_5_applied():
     # both ``LIMIT 5`` and ``LIMIT(5)``). GREEN should pass ``limit`` as a
     # bound parameter or inline literal; both are acceptable as long as
     # the resulting SQL caps the row count at 5.
-    fake = _FakeSession_factory([])
+    fake = _fake_session_factory([])
     hk = HybridKnowledge(session=fake)
 
     _ = hk._rule_match(query)
@@ -289,7 +289,7 @@ def test_fr26_partial_match_confidence_070_falls_through():
     # full query), confidence must be 0.70 (per SRS FR-26 "partial 0.7").
     # 0.70 < 0.80 so _rule_match must return None — the row exists in
     # the database but is not strong enough to short-circuit Tier 2.
-    fake = _FakeSession_with_partial_match()
+    fake = _fake_session_with_partial_match()
     hk = HybridKnowledge(session=fake)
 
     result = hk._rule_match(query)
@@ -311,7 +311,7 @@ def test_fr26_partial_match_confidence_070_falls_through():
     )
 
 
-def _FakeSession_with_partial_match():
+def _fake_session_with_partial_match():
     """Helper: FakeSession pre-loaded with a partial-match row."""
     from types import SimpleNamespace
 
@@ -324,4 +324,4 @@ def _FakeSession_with_partial_match():
         content="退款流程說明...",
         match_type="partial",
     )
-    return _FakeSession_factory([row])
+    return _fake_session_factory([row])

@@ -103,7 +103,7 @@ def test_fr25_valid_cidr_startup_succeeds():
 # it is never acceptable to silently continue with a partially-loaded
 # whitelist that could let unauthorized traffic through.
 # ---------------------------------------------------------------------------
-def test_fr25_invalid_cidr_raises_IPWhitelistError_at_startup():
+def test_fr25_invalid_cidr_raises_ipwhitelisterror_at_startup():
     cidr = "256.0.0.0/8"
     expected_error = "IPWhitelistError"
 

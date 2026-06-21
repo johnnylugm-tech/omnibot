@@ -197,7 +197,7 @@ def test_fr17_telegram_retraction_within_48hr():
     hours_since_send = "24"
     message_id = "tg-msg-001"
 
-    sent_at = datetime(2026, 6, 18, 12, 0, 0, tzinfo=UTC)
+    sent_at = datetime(2026, 6, 18, 12, 0, 0, tzinfo=timezone.utc)
     # Freeze "now" 24h after sent_at so the test is deterministic
     # without depending on real wall-clock — GREEN's retract() reads
     # ``datetime.now(timezone.utc)`` internally and the 24h/49h
@@ -316,7 +316,7 @@ def test_fr17_telegram_window_expired_sends_apology():
     hours_since_send = "49"
     message_id = "tg-msg-002"
 
-    sent_at = datetime(2026, 6, 16, 12, 0, 0, tzinfo=UTC)
+    sent_at = datetime(2026, 6, 16, 12, 0, 0, tzinfo=timezone.utc)
     fixed_now = sent_at + timedelta(hours=49)
 
     tg_client = _FakeTelegramClient()  # not expected to be called
@@ -395,7 +395,7 @@ def test_fr17_messenger_retraction_within_10min():
     minutes_since_send = "8"
     message_id = "msg-mid-001"
 
-    sent_at = datetime(2026, 6, 19, 9, 0, 0, tzinfo=UTC)
+    sent_at = datetime(2026, 6, 19, 9, 0, 0, tzinfo=timezone.utc)
     fixed_now = sent_at + timedelta(minutes=8)
 
     msgr_client = _FakeMessengerClient(delete_returns=True)
@@ -456,7 +456,7 @@ def test_fr17_messenger_window_expired_sends_apology():
     minutes_since_send = "12"
     message_id = "msg-mid-002"
 
-    sent_at = datetime(2026, 6, 19, 9, 0, 0, tzinfo=UTC)
+    sent_at = datetime(2026, 6, 19, 9, 0, 0, tzinfo=timezone.utc)
     fixed_now = sent_at + timedelta(minutes=12)
 
     msgr_client = _FakeMessengerClient()
@@ -532,7 +532,7 @@ def test_fr17_line_no_delete_sends_apology():
     platform = "line"
     message_id = "line-msg-001"
 
-    sent_at = datetime(2026, 6, 19, 9, 0, 0, tzinfo=UTC)
+    sent_at = datetime(2026, 6, 19, 9, 0, 0, tzinfo=timezone.utc)
     fixed_now = sent_at + timedelta(minutes=2)
 
     writer = _ListSecurityLogWriter()
@@ -586,7 +586,7 @@ def test_fr17_whatsapp_sends_correction():
     platform = "whatsapp"
     message_id = "wa-msg-001"
 
-    sent_at = datetime(2026, 6, 19, 9, 0, 0, tzinfo=UTC)
+    sent_at = datetime(2026, 6, 19, 9, 0, 0, tzinfo=timezone.utc)
     fixed_now = sent_at + timedelta(minutes=5)
 
     writer = _ListSecurityLogWriter()
@@ -639,7 +639,7 @@ def test_fr17_web_ws_replace_response():
     channel = "websocket"
     message_id = "ws-frame-001"
 
-    sent_at = datetime(2026, 6, 19, 9, 0, 0, tzinfo=UTC)
+    sent_at = datetime(2026, 6, 19, 9, 0, 0, tzinfo=timezone.utc)
     fixed_now = sent_at + timedelta(seconds=20)
 
     ws_pusher = _FakeWebWsPusher(replace_returns=True)
@@ -707,7 +707,7 @@ def test_fr17_a2a_revoked_true():
     expected_revoked = "true"
     message_id = "a2a-rpc-001"
 
-    sent_at = datetime(2026, 6, 19, 9, 0, 0, tzinfo=UTC)
+    sent_at = datetime(2026, 6, 19, 9, 0, 0, tzinfo=timezone.utc)
     fixed_now = sent_at + timedelta(seconds=30)
 
     a2a_client = _FakeA2AClient(revoke_returns=True)
@@ -775,7 +775,7 @@ def test_fr17_retraction_failed_logged():
     platform = "telegram"
     message_id = "tg-msg-003"
 
-    sent_at = datetime(2026, 6, 19, 9, 0, 0, tzinfo=UTC)
+    sent_at = datetime(2026, 6, 19, 9, 0, 0, tzinfo=timezone.utc)
     fixed_now = sent_at + timedelta(minutes=30)  # within 48h window
 
     # The Telegram client rejects the call (HTTP 400 surfaced as an

@@ -51,7 +51,7 @@ class LineWebhookAdapter:
             content = line_msg.get("text", "")
 
             received_at = datetime.fromtimestamp(
-                event["timestamp"] / 1000.0, tz=timezone.utc
+                event["timestamp"] / 1000.0, tz=UTC
             )
 
             msg = UnifiedMessage(

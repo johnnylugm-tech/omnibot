@@ -1,12 +1,12 @@
 {
   "summary": {
-    "total": 430,
+    "total": 432,
     "missing": 0,
     "incomplete": 0,
-    "orphaned": 430,
+    "orphaned": 432,
     "critical": 0,
     "major": 0,
-    "minor": 430
+    "minor": 432
   },
   "gaps": [
     {
@@ -678,6 +678,12 @@
     {
       "type": "ORPHANED",
       "severity": "minor",
+      "reason": "'StrEnum' has no corresponding specification in SPEC.md",
+      "action": "Add spec for StrEnum or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
       "reason": "'EdgeCaseCategory' has no corresponding specification in SPEC.md",
       "action": "Add spec for EdgeCaseCategory or remove if unnecessary"
     },
@@ -806,6 +812,12 @@
       "severity": "minor",
       "reason": "'recall_at_k' has no corresponding specification in SPEC.md",
       "action": "Add spec for recall_at_k or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'StrEnum' has no corresponding specification in SPEC.md",
+      "action": "Add spec for StrEnum or remove if unnecessary"
     },
     {
       "type": "ORPHANED",

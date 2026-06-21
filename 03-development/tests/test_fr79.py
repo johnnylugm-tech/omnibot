@@ -158,12 +158,12 @@ def test_fr79_embedding_synced_at_set_after_all_chunks():
     # Core assertion: EmbeddingSyncStatus.embedding_synced_at MUST be
     # non-None when ALL chunks are done.
     # GREEN TODO: EmbeddingSyncStatus.__post_init__ (or a property)
-    # MUST auto-set embedding_synced_at to datetime.now(UTC) when
+    # MUST auto-set embedding_synced_at to datetime.now(timezone.utc) when
     # chunks_done == chunks_total, or accept it as a required arg
     # when status is "synced".
     import datetime as _dt
 
-    now = _dt.datetime.now(_dt.UTC)
+    now = _dt.datetime.now(_dt.timezone.utc)
     sync = EmbeddingSyncStatus(
         chunks_done=chunks_done,
         chunks_total=chunks_total,

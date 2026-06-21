@@ -29,13 +29,13 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import enum
 import math
 import re
 import threading
 import unicodedata
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-import enum
 from typing import cast
 
 
@@ -806,17 +806,19 @@ class GroundingChecker:
         # ``grounded=False`` and ``len(source_texts)`` reports 0.
         if not source_texts:
             cosine_score = 0.0
+            _source_count = 0
         else:
             cosine_score = max(
                 self._cosine_similarity(output_embedding, src)
                 for src in source_texts
             )
+            _source_count = len(source_texts)  # type: ignore[arg-type]
 
         return GroundingResult(
             grounded=cosine_score >= threshold,
             cosine_score=float(cosine_score),
             threshold=float(threshold),
-            source_count=len(source_texts),
+            source_count=_source_count,
         )
 
 

@@ -82,7 +82,7 @@ class MessengerWebhookAdapter:
         for entry in entries:
             timestamp_ms = entry.get("time", 0)
             received_at = datetime.fromtimestamp(
-                timestamp_ms / 1000, tz=timezone.utc
+                timestamp_ms / 1000, tz=UTC
             )
             for messaging_event in entry.get("messaging", []):
                 sender_id = messaging_event["sender"]["id"]

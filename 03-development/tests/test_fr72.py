@@ -124,10 +124,11 @@ def test_fr72_span_tree_complete_per_request():
     # Drive the pipeline: nested context-manager chain mirrors the
     # handle_message → emotion_analysis → knowledge_query → response_generation
     # control flow described in SRS FR-72.
-    with start_as_current_span("handle_message"), start_as_current_span("emotion_analysis"):
-        with start_as_current_span("knowledge_query"):
-            with start_as_current_span("response_generation"):
-                pass
+    with start_as_current_span("handle_message"):  # noqa: SIM117
+        with start_as_current_span("emotion_analysis"):
+            with start_as_current_span("knowledge_query"):
+                with start_as_current_span("response_generation"):
+                    pass
 
     spans = get_recorded_spans()
     span_names = {s.name for s in spans}
@@ -258,7 +259,7 @@ def test_fr72_span_attributes_include_platform():
         "confidence": 0.85,
     }
 
-    with start_as_current_span("handle_message", attributes=caller_attrs):
+    with start_as_current_span("handle_message", attributes=caller_attrs):  # noqa: SIM117
         with start_as_current_span("emotion_analysis"):
             with start_as_current_span("knowledge_query"):
                 with start_as_current_span("response_generation"):

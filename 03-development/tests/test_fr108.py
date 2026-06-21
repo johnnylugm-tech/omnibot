@@ -179,7 +179,7 @@ def test_fr108_6_categories_present():
 
     # Verify all 6 categories have at least one edge case
     for cat in expected:
-        cases_in_cat = [c for c in dataset.by_category(cat)]
+        cases_in_cat = list(dataset.by_category(cat))
         assert len(cases_in_cat) > 0, (
             f"Category '{cat}' must have at least 1 edge case; got 0"
         )

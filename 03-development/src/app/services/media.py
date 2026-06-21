@@ -190,7 +190,7 @@ class ClamAVScanner:
 
         def _invoke() -> None:
             try:
-                holder["result"] = self._runner(file_bytes, file_type)
+                holder["result"] = self._runner(file_bytes, file_type)  # type: ignore[arg-type]
             except Exception:
                 holder["error"] = True
 

@@ -202,9 +202,9 @@ def test_fr64_promoted_status_set_completed():
         # experiment record without touching real infra. The DB stub
         # returns a mutable dict that the GREEN implementation can
         # update in-place (via a side-effect on ``get_experiment``).
-        from unittest.mock import MagicMock as _MM
+        from unittest.mock import MagicMock as MagicMockClass
 
-        mock_db = _MM()
+        mock_db = MagicMockClass()
         experiment_record = {
             "traffic_split": {"a": 50, "b": 50},
             "status": "running",
@@ -220,7 +220,7 @@ def test_fr64_promoted_status_set_completed():
         mock_db.update_experiment_status.side_effect = (
             _fake_update_experiment_status
         )
-        ab = ABTestManager(db=mock_db, llm=_MM())
+        ab = ABTestManager(db=mock_db, llm=MagicMockClass())
 
         results = {
             "a": [0.85] * 80,  # mean = 0.85

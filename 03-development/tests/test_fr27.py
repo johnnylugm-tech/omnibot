@@ -162,7 +162,7 @@ def test_fr27_confidence_above_085_returns_rag():
     # cosine similarity and return a KnowledgeResult with
     # source="rag" when the best confidence ≥ 0.85. Below 0.85 it must
     # return None so Tier 3 (LLM generation) gets a chance.
-    fake = _FakeSession_factory(rows=[])
+    fake = _fake_session_factory(rows=[])
     hk = HybridKnowledge(session=fake)
 
     result = hk._rag_search(query="退款流程", confidence=confidence)
@@ -204,7 +204,7 @@ def test_fr27_parent_child_lookup_correct():
     # parent chunk by foreign key and return its content + knowledge_id.
     # The vector store hit returns a child chunk; the parent walk is
     # what delivers the actual context to the LLM (Tier 3 / RAG).
-    fake = _FakeSession_factory(rows=[])
+    fake = _fake_session_factory(rows=[])
     hk = HybridKnowledge(session=fake)
 
     parent = hk._get_parent(child_id)
@@ -245,7 +245,7 @@ def test_fr27_recall_at_3_above_92_percent():
     # Recall@3. The wiring is the contract; the metric itself is
     # asserted against a stub golden set so this test fails because the
     # search is not implemented, not because pgvector is missing.
-    fake = _FakeSession_factory(rows=[])
+    fake = _fake_session_factory(rows=[])
     hk = HybridKnowledge(session=fake)
 
     hits = hk._rag_search_top_k(query="退款流程", top_k=3)
@@ -283,7 +283,7 @@ def test_fr27_embedding_api_down_falls_through_to_ilike_only():
     # detect an embedding API outage (ConnectionError or pre-flight
     # health probe) and return a sentinel that signals Tier 1 ILIKE-only
     # fallback. Do NOT raise — fault injection contract per NP-07.
-    fake = _FakeSession_factory(rows=[])
+    fake = _fake_session_factory(rows=[])
     hk = HybridKnowledge(session=fake)
 
     fallback = hk._rag_search_with_fallback(
@@ -326,7 +326,7 @@ def test_fr27_embedding_timeout_triggers_tsvector_fallback():
     # switch to the tsvector full-text path (GIN index on
     # knowledge_chunks.content) so latency stays bounded and the user
     # still gets a relevant hit.
-    fake = _FakeSession_factory(rows=[])
+    fake = _fake_session_factory(rows=[])
     hk = HybridKnowledge(session=fake)
 
     result = hk._rag_search_with_fallback(
@@ -356,7 +356,7 @@ def test_fr27_embedding_timeout_triggers_tsvector_fallback():
 # Helpers (module-level so test functions can call them directly without
 # depending on the autouse fixture's yield value).
 # ---------------------------------------------------------------------------
-def _FakeSession_factory(rows):
+def _fake_session_factory(rows):
     """Build a FakeSession compatible with the HybridKnowledge constructor.
 
     The FR-27 path does not hit the database directly (it goes through

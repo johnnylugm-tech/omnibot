@@ -136,7 +136,7 @@ def test_fr81_3_retries_then_stop(monkeypatch):
     # The 4th attempt (index 3 + 1) must NOT happen. The contract is
     # that after max_retries unsuccessful tries the function gives up.
     if expected_retried == "false":
-        with pytest.raises(Exception):
+        with pytest.raises((RuntimeError, ValueError)):
             rs.execute_with_retry(_always_fails)
 
     # Spec fr81-ok predicate 'result is not None' applies_to case 1.

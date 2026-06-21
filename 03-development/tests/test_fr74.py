@@ -321,5 +321,5 @@ def test_fr74_grafana_panels_wired_to_prometheus_metrics():
         # Guarded re-check to catch a future refactor that loosens the
         # primary assertion but accidentally keeps a stale local copy.
         assert len(panels) == 4
-        for panel_name, panel in panels.items():
+        for _panel_name, panel in panels.items():
             assert getattr(panel, "datasource", None) == "prometheus"

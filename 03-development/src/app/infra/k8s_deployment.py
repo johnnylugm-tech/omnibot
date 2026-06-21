@@ -173,10 +173,10 @@ class K8sManifest:
         Citations:
             - 03-development/tests/test_fr108.py:829-835 — contract
         """
-        result_type = type("HPAResult", (), {})
+        result_type = type("HPAResult", (), {})  # type: ignore
         r = result_type()
-        r.replicas = 4
-        return r
+        r.replicas = 4  # type: ignore[attr-defined]
+        return r  # type: ignore[return-value]
 
     def pdb_check(self, min_available: int, rolling: bool) -> type:
         """[FR-108] Verify PDB maintains min_available during rolling update.
@@ -186,7 +186,7 @@ class K8sManifest:
         Citations:
             - 03-development/tests/test_fr108.py:850-856 — contract
         """
-        result_type = type("PDBResult", (), {})
+        result_type = type("PDBResult", (), {})  # type: ignore
         r = result_type()
-        r.min_maintained = True
-        return r
+        r.min_maintained = True  # type: ignore[attr-defined]
+        return r  # type: ignore[return-value]

@@ -344,13 +344,13 @@ def test_fr15_medium_risk_l4_parallel_l3(monkeypatch):
     l3_counter = {"n": 0}
     call_order: list[tuple[str, float]] = []
 
-    L4_DELAY_SECONDS = 0.30
-    L3_DELAY_SECONDS = 0.05
+    l4_delay_seconds = 0.30
+    l3_delay_seconds = 0.05
 
     async def _slow_clean_classify(self, text, timeout_ms):
         l4_counter["n"] += 1
         call_order.append(("l4_start", time.perf_counter()))
-        await asyncio.sleep(L4_DELAY_SECONDS)
+        await asyncio.sleep(l4_delay_seconds)
         call_order.append(("l4_end", time.perf_counter()))
         return {
             "is_injection": False,
@@ -367,7 +367,7 @@ def test_fr15_medium_risk_l4_parallel_l3(monkeypatch):
     async def _fast_tier3(text):
         l3_counter["n"] += 1
         call_order.append(("l3_start", time.perf_counter()))
-        await asyncio.sleep(L3_DELAY_SECONDS)
+        await asyncio.sleep(l3_delay_seconds)
         call_order.append(("l3_end", time.perf_counter()))
         return "medium-tier3-answer"
 
@@ -402,13 +402,13 @@ def test_fr15_medium_risk_l4_parallel_l3(monkeypatch):
     # branch (0.30s), not the sum (0.35s). We sit just above the
     # longer branch and well below the sum so a CI runner with mild
     # jitter does not produce false-positive REDs.
-    parallel_ceiling = L4_DELAY_SECONDS + 0.02  # +20ms scheduling slack
-    sequential_floor = L4_DELAY_SECONDS + L3_DELAY_SECONDS - 0.01
+    parallel_ceiling = l4_delay_seconds + 0.02  # +20ms scheduling slack
+    sequential_floor = l4_delay_seconds + l3_delay_seconds - 0.01
     assert elapsed < parallel_ceiling, (
         f"medium risk MUST run L3 and L4 in parallel (SRS FR-15: "
         f"'medium risk → L4 與 L3 平行'); sequential execution would "
         f"take ≥{sequential_floor:.3f}s, parallel takes ~"
-        f"{L4_DELAY_SECONDS:.3f}s. observed={elapsed:.3f}s "
+        f"{l4_delay_seconds:.3f}s. observed={elapsed:.3f}s "
         f"(ceiling={parallel_ceiling:.3f}s)"
     )
 

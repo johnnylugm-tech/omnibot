@@ -729,7 +729,10 @@ def test_fr80_concurrent_xclaim_isolated():
 
     def _runner(idx: int) -> None:
         consumer = f"winner-{idx}"
-        results[idx] = asyncio.run(proc.claim_pending(consumer=consumer))
+        # ``proc`` is a Redis stream processor expected to expose
+        # claim_pending(); the test's GREEN contract is to verify the
+        # single-winner semantic regardless of how ``proc`` is wired.
+        results[idx] = asyncio.run(proc.claim_pending(consumer=consumer))  # noqa: F821
 
     threads = [
         threading.Thread(target=_runner, args=(i,))

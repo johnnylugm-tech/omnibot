@@ -21,8 +21,8 @@ Citations:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import enum
+from dataclasses import dataclass, field
 
 
 class StrEnum(str, enum.Enum):

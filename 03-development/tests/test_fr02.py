@@ -35,7 +35,7 @@ import base64
 import hashlib
 import hmac
 import json
-from datetime import timezone
+from datetime import datetime, timezone
 
 import pytest
 

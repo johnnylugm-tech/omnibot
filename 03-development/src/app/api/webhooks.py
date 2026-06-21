@@ -163,7 +163,7 @@ class A2AAdapter:
             message_type=MessageType.TEXT,
             content=content,
             raw_payload=body,
-            received_at=datetime.now(timezone.utc),
+            received_at=datetime.now(UTC),
             reply_token=None,
         )
 

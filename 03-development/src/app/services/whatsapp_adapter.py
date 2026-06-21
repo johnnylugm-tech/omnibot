@@ -114,7 +114,7 @@ class WhatsAppWebhookAdapter:
             ts = int(timestamp_str)
         except ValueError:
             ts = 0
-        received_at = datetime.fromtimestamp(ts, tz=timezone.utc)
+        received_at = datetime.fromtimestamp(ts, tz=UTC)
 
         return UnifiedMessage(
             platform=Platform.WHATSAPP,

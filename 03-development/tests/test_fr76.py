@@ -287,7 +287,7 @@ def test_fr76_backoff_has_jitter():
     # in a 20-draw sample (probability of all-identical with uniform
     # [0.5, 1.0] over 20 draws is effectively zero, so a flat draw set
     # means jitter=False).
-    distinct = len(set(round(d, 6) for d in draws))
+    distinct = len({round(d, 6) for d in draws})
     assert distinct >= 2, (
         f"FR-76 jitter=True must produce non-deterministic delays; "
         f"20 draws returned only {distinct} distinct value(s): {draws}"
@@ -359,7 +359,7 @@ def test_fr76_p95_under_30s():
     # Compute p95 — the SRS-mandated SLO is that this value must
     # stay under 30s.
     durations.sort()
-    p95_index = max(0, int(round(0.95 * (len(durations) - 1))))
+    p95_index = max(0, round(0.95 * (len(durations) - 1)))
     p95 = durations[p95_index]
 
     assert p95 < p95_limit_seconds, (

@@ -17,7 +17,7 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-from datetime import timezone
+from datetime import datetime, timezone
 
 import pytest
 
@@ -117,7 +117,7 @@ def test_fr07_unified_message_telegram_valid():
         message_type=MessageType(message_type),
         content=content,
         raw_payload={"update_id": 1, "text": content},
-        received_at=datetime.now(tz=timezone.utc),
+        received_at=datetime.now(tz=UTC),
         reply_token=None,
     )
     # Spec fr07-frozen predicate 'result is not None' applies_to case 1.
@@ -174,7 +174,7 @@ def test_fr07_unified_message_frozen_immutable():
         message_type=MessageType("text"),
         content="hello",
         raw_payload={"update_id": 1, "text": "hello"},
-        received_at=datetime.now(tz=timezone.utc),
+        received_at=datetime.now(tz=UTC),
         reply_token=None,
     )
 
@@ -236,7 +236,7 @@ def test_fr07_unified_message_all_platforms_valid():
             message_type=MessageType("text"),
             content=f"hello from {p}",
             raw_payload={"platform": p, "text": f"hello from {p}"},
-            received_at=datetime.now(tz=timezone.utc),
+            received_at=datetime.now(tz=UTC),
             reply_token=reply_token_by_platform[p],
         )
         constructed[p] = msg
@@ -302,7 +302,7 @@ def test_fr07_must_not_mutate_frozen_dataclass():
         message_type=MessageType("text"),
         content="original",
         raw_payload={"update_id": 1, "text": "original"},
-        received_at=datetime.now(tz=timezone.utc),
+        received_at=datetime.now(tz=UTC),
         reply_token=None,
     )
 

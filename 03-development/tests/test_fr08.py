@@ -187,7 +187,7 @@ def test_fr08_unified_response_invalid_source_raises():
     if bad_source is not None:
         # If GREEN mistakenly allows "unknown", this branch is hit; the
         # downstream constructor MUST still reject it.
-        with pytest.raises(Exception):
+        with pytest.raises((ValueError, TypeError)):
             UnifiedResponse(
                 content=content,
                 source=bad_source,

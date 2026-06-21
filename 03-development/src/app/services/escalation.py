@@ -124,7 +124,7 @@ class EscalationManager:
 
     def _utcnow(self) -> datetime:
         """Current UTC time — single source for timestamps."""
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
 
     def _make_row(
         self,

@@ -367,10 +367,10 @@ def test_fr16_l3_result_revoked_on_late_injection(monkeypatch):
     l3_result = "sent"
     expected_revoke = "true"
 
-    L4_DELAY_SECONDS = 0.10  # 100 ms
+    l4_delay_seconds = 0.10  # 100 ms
 
     classifier_cls, slow_injection_call_llm = _make_slow_injection_verdict_classifier(
-        L4_DELAY_SECONDS
+        l4_delay_seconds
     )
     monkeypatch.setattr(classifier_cls, "_call_llm", slow_injection_call_llm)
 

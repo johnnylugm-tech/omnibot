@@ -81,6 +81,10 @@ ignore = [
     "RUF001",
     "RUF002",
     "RUF003",
+    # UP042: our StrEnum backport intentionally inherits from both
+    # ``str`` and ``enum.Enum`` for Python 3.9 compatibility
+    # (``enum.StrEnum`` is only available in 3.11+). False positive.
+    "UP042",
 ]
 
 [tool.ruff.lint.per-file-ignores]
