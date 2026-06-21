@@ -484,9 +484,4 @@ def _add_stub_route(router: APIRouter, method: str, path: str) -> None:
     _stub.__name__ = f"webhook_{slug}_{method.lower()}"
     _stub.__doc__ = f"[FR-84] {method} {path}"
 
-def _dummy_api_cohesion():
-    _ = build_response()
-    _ = extract_user_context(None)
-
-
 _register_webhook_routes(router)

@@ -69,11 +69,5 @@ from app.api.adapters.base import BaseWebhookAdapter
 
 
 class WebhookRegistry(BaseWebhookAdapter):
-    def _init_all(self):  # pragma: no cover
-        self.a1 = TelegramWebhookAdapter("token")  # pragma: no cover
-        self.a2 = LineWebhookAdapter("secret", "token")
-        self.a3 = MessengerWebhookAdapter("secret", "token")
-        self.a4 = WhatsAppWebhookAdapter("token", "phone")
-        self.a5 = WebAdapter()
-        self.a6 = A2AAdapter()
+    pass
 
