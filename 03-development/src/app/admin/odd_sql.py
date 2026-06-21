@@ -33,92 +33,87 @@ JUDGE_SAMPLE_RATE_DEFAULT: float = 0.20
 # Shared SQL filter fragments — de-duplicated across all 10 ODD queries
 # ---------------------------------------------------------------------------
 
-_IN_SCOPE = "scope_type = 'in_scope'"
-_LAST_30_DAYS = "created_at >= NOW() - INTERVAL '30 days'"
 
-# Subquery for judge sampling LIMIT — extracted so SELECT keyword is on a
-# line where # nosec B608 can suppress the bandit finding (B608 requires
-# the nosec pragma on the same physical source line as the SELECT keyword).
-_JUDGE_LIMIT_SUBQUERY = (
-    "SELECT COUNT(*) * "  # nosec B608 — admin ODD read-only subquery
-    + str(JUDGE_SAMPLE_RATE_DEFAULT)
-    + " FROM odd_queries WHERE " + _IN_SCOPE + " AND " + _LAST_30_DAYS
-)
 
 # ---------------------------------------------------------------------------
 # ODD SQL query definitions — the 10 queries required by FR-105
 #
-# Each query is built via string concatenation so that the SELECT keyword
-# appears on a Python source line ending with  # nosec B608, satisfying
-# bandit's per-line suppression requirement (B608 can only be suppressed
-# on the line containing the SELECT keyword).
+# All queries are pure compile-time string constants; no user input is
+# interpolated. String concatenation (not f-strings) avoids bandit B608
+# false positives, which fire on f-string SQL even when the interpolated
+# values are module-level constants.
 # ---------------------------------------------------------------------------
 
 _ODD_SQL_QUERIES: dict[str, str] = {
     "odd_fcr_rate": (
-        "SELECT"  # nosec B608 — admin ODD dashboard, read-only constant queries
-        " COUNT(*) FILTER (WHERE odd_resolved_on_first_contact = TRUE)::FLOAT"
+        "SELECT COUNT(*) FILTER (WHERE odd_resolved_on_first_contact = TRUE)::FLOAT"
         " / NULLIF(COUNT(*), 0) AS fcr_rate"
-        " FROM odd_conversations WHERE "
-        + _IN_SCOPE + " AND " + _LAST_30_DAYS
+        " FROM odd_conversations"
+        " WHERE scope_type = 'in_scope'"
+        " AND created_at >= NOW() - INTERVAL '30 days'"
     ),
     "odd_resolution_time_p50": (
-        "SELECT"  # nosec B608
-        " PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY resolution_time_seconds)"
-        " FROM odd_conversations WHERE "
-        + _IN_SCOPE + " AND resolved_at IS NOT NULL"
+        "SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY resolution_time_seconds)"
+        " FROM odd_conversations"
+        " WHERE scope_type = 'in_scope'"
+        " AND resolved_at IS NOT NULL"
     ),
     "odd_resolution_time_p95": (
-        "SELECT"  # nosec B608
-        " PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY resolution_time_seconds)"
-        " FROM odd_conversations WHERE "
-        + _IN_SCOPE + " AND resolved_at IS NOT NULL"
+        "SELECT PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY resolution_time_seconds)"
+        " FROM odd_conversations"
+        " WHERE scope_type = 'in_scope'"
+        " AND resolved_at IS NOT NULL"
     ),
     "odd_escalation_rate": (
-        "SELECT"  # nosec B608
-        " COUNT(*) FILTER (WHERE escalated = TRUE)::FLOAT"
+        "SELECT COUNT(*) FILTER (WHERE escalated = TRUE)::FLOAT"
         " / NULLIF(COUNT(*), 0) AS escalation_rate"
-        " FROM odd_conversations WHERE "
-        + _IN_SCOPE
+        " FROM odd_conversations"
+        " WHERE scope_type = 'in_scope'"
     ),
     "odd_avg_sentiment": (
-        "SELECT"  # nosec B608
-        " AVG(sentiment_score) AS avg_sentiment"
-        " FROM odd_conversations WHERE "
-        + _IN_SCOPE + " AND sentiment_score IS NOT NULL"
+        "SELECT AVG(sentiment_score) AS avg_sentiment"
+        " FROM odd_conversations"
+        " WHERE scope_type = 'in_scope'"
+        " AND sentiment_score IS NOT NULL"
     ),
     "odd_tier_distribution": (
-        "SELECT"  # nosec B608
-        " tier, COUNT(*) AS query_count"
-        " FROM odd_queries WHERE "
-        + _IN_SCOPE + " GROUP BY tier ORDER BY tier"
+        "SELECT tier, COUNT(*) AS query_count"
+        " FROM odd_queries"
+        " WHERE scope_type = 'in_scope'"
+        " GROUP BY tier ORDER BY tier"
     ),
     "odd_daily_volume": (
-        "SELECT"  # nosec B608
-        " DATE(created_at) AS day, COUNT(*) AS volume"
-        " FROM odd_conversations WHERE "
-        + _IN_SCOPE + " AND " + _LAST_30_DAYS
-        + " GROUP BY DATE(created_at) ORDER BY day"
+        "SELECT DATE(created_at) AS day, COUNT(*) AS volume"
+        " FROM odd_conversations"
+        " WHERE scope_type = 'in_scope'"
+        " AND created_at >= NOW() - INTERVAL '30 days'"
+        " GROUP BY DATE(created_at) ORDER BY day"
     ),
     "odd_top_intents": (
-        "SELECT"  # nosec B608
-        " intent, COUNT(*) AS count"
-        " FROM odd_conversations WHERE "
-        + _IN_SCOPE + " AND intent IS NOT NULL"
-        + " GROUP BY intent ORDER BY count DESC LIMIT 10"
+        "SELECT intent, COUNT(*) AS count"
+        " FROM odd_conversations"
+        " WHERE scope_type = 'in_scope'"
+        " AND intent IS NOT NULL"
+        " GROUP BY intent ORDER BY count DESC LIMIT 10"
     ),
     "odd_csat_distribution": (
-        "SELECT"  # nosec B608
-        " csat_score, COUNT(*) AS count"
-        " FROM odd_conversations WHERE "
-        + _IN_SCOPE + " AND csat_score IS NOT NULL"
-        + " GROUP BY csat_score ORDER BY csat_score"
+        "SELECT csat_score, COUNT(*) AS count"
+        " FROM odd_conversations"
+        " WHERE scope_type = 'in_scope'"
+        " AND csat_score IS NOT NULL"
+        " GROUP BY csat_score ORDER BY csat_score"
     ),
     "odd_judge_sample_queries": (
-        "SELECT *"  # nosec B608
-        " FROM odd_queries WHERE "
-        + _IN_SCOPE + " AND " + _LAST_30_DAYS
-        + " ORDER BY RANDOM() LIMIT (" + _JUDGE_LIMIT_SUBQUERY + ")"
+        "SELECT *"
+        " FROM odd_queries"
+        " WHERE scope_type = 'in_scope'"
+        " AND created_at >= NOW() - INTERVAL '30 days'"
+        " ORDER BY RANDOM() LIMIT ("
+        " SELECT COUNT(*) * 0.2"
+        " FROM odd_queries"
+        " WHERE scope_type = 'in_scope'"
+        " AND created_at >= NOW() - INTERVAL '30 days'"
+        ")"
     ),
 }
 

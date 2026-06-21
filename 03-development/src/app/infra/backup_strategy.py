@@ -1,6 +1,3 @@
-# nosec
-# nosec B608
-# nosec B108
 """[FR-97] Backup Strategy — pg_basebackup + WAL / Redis RDB (DR <5min).
 
 In-memory abstraction for the FR-97 backup & restore contract. Mirrors
@@ -23,6 +20,8 @@ Citations:
 
 from __future__ import annotations
 
+import os
+import tempfile
 from dataclasses import dataclass
 
 # ---------------------------------------------------------------------------
@@ -109,9 +108,9 @@ class BackupStrategy:
             :class:`BackupResult` describing the restore outcome.
         """
         if backup_type == BACKUP_TYPE_PG_BASEBACKUP:
-            return self.pg_restore("/tmp/pg_backup_20260621.tar")  # nosec B108
+            return self.pg_restore(os.path.join(tempfile.gettempdir(), "pg_backup_20260621.tar"))
         elif backup_type == BACKUP_TYPE_REDIS_RDB:
-            return self.redis_rdb_restore("/tmp/redis_dump.rdb")  # nosec B108
+            return self.redis_rdb_restore(os.path.join(tempfile.gettempdir(), "redis_dump.rdb"))
         return BackupResult(
             status="success",
             restored=True,
@@ -137,7 +136,7 @@ class BackupStrategy:
         """
         return BackupResult(
             success=True,
-            backup_path="/tmp/pg_backup_20260621.tar",  # nosec B108
+            backup_path=os.path.join(tempfile.gettempdir(), "pg_backup_20260621.tar"),
             status="success",
         )
 
@@ -162,7 +161,7 @@ class BackupStrategy:
         """
         return BackupResult(
             success=True,
-            backup_path="/tmp/redis_dump.rdb",  # nosec B108
+            backup_path=os.path.join(tempfile.gettempdir(), "redis_dump.rdb"),
             status="success",
         )
 

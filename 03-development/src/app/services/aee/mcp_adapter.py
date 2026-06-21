@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import shlex
 import subprocess
 
 from app.services.aee.adapter import (
@@ -122,8 +123,8 @@ class MCPAdapter(ActionAdapter):
             }
         ).encode("utf-8")
 
-        proc = subprocess.Popen(  # noqa: S603 — MCP tool self-contained command
-            self.command,
+        proc = subprocess.Popen(
+            shlex.split(self.command),
             shell=False,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
@@ -161,8 +162,8 @@ class MCPAdapter(ActionAdapter):
         fixture 替換為固定 sentinel 回傳。
         """
         try:
-            proc = subprocess.Popen(  # noqa: S603 — MCP tool self-contained command
-                self.command or "",
+            proc = subprocess.Popen(
+                shlex.split(self.command or ""),
                 shell=False,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
