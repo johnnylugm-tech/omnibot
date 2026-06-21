@@ -77,6 +77,18 @@ _DELETED_USERS: set[str] = set()
 # Deletion job records keyed by deletion_id.
 _DELETION_JOBS: dict[str, dict] = {}
 
+# Canonical field lists — shared by CSV export and PII-clear logic.
+_PII_FIELDS = ("name", "email", "phone", "address")
+_PROFILE_HEADERS = ("user_id",) + _PII_FIELDS
+_CONVERSATION_HEADERS = ("conversation_id", "topic", "created_at")
+_MESSAGE_HEADERS = ("message_id", "conversation_id", "content", "timestamp")
+
+
+def _write_csv_rows(writer, headers, rows):
+    """Write one CSV row per dict in *rows* using *headers* as keys."""
+    for row in rows:
+        writer.writerow([row.get(h, "") for h in headers])
+
 
 # ---------------------------------------------------------------------------
 # Public API
@@ -104,40 +116,25 @@ def export_user_data(user_id: str, format: str = "json") -> dict:
     messages = _USER_MESSAGES.get(user_id, [])
 
     if format == "csv":
-        output = io.StringIO()
-        writer = csv.writer(output)
-        # Header row — profile fields
-        writer.writerow(["user_id", "name", "email", "phone", "address"])
+        csv_buffer = io.StringIO()
+        writer = csv.writer(csv_buffer)
+        # Profile section
+        writer.writerow(list(_PROFILE_HEADERS))
         if profile:
-            writer.writerow([
-                profile.get("user_id", ""),
-                profile.get("name", ""),
-                profile.get("email", ""),
-                profile.get("phone", ""),
-                profile.get("address", ""),
-            ])
+            _write_csv_rows(writer, _PROFILE_HEADERS, [profile])
         # Conversations section
         writer.writerow([])
-        writer.writerow(["conversation_id", "topic", "created_at"])
-        for conv in conversations:
-            writer.writerow([
-                conv.get("conversation_id", ""),
-                conv.get("topic", ""),
-                conv.get("created_at", ""),
-            ])
+        writer.writerow(list(_CONVERSATION_HEADERS))
+        _write_csv_rows(writer, _CONVERSATION_HEADERS, conversations)
         # Messages section
         writer.writerow([])
-        writer.writerow(["message_id", "conversation_id", "content", "timestamp"])
-        for msg in messages:
-            writer.writerow([
-                msg.get("message_id", ""),
-                msg.get("conversation_id", ""),
-                msg.get("content", ""),
-                msg.get("timestamp", ""),
-            ])
-        csv_data = output.getvalue()
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        filename = f"{user_id}_data_{today}.csv"
+        writer.writerow(list(_MESSAGE_HEADERS))
+        _write_csv_rows(writer, _MESSAGE_HEADERS, messages)
+        csv_data = csv_buffer.getvalue()
+        filename = (
+            f"{user_id}_data_"
+            f"{datetime.now(timezone.utc).strftime('%Y-%m-%d')}.csv"
+        )
         return {"csv_data": csv_data, "filename": filename}
 
     # Default: JSON format
@@ -177,7 +174,7 @@ def delete_user_data(user_id: str) -> dict:
     # Clear PII fields from the user profile.
     if user_id in _USER_PROFILES:
         profile = _USER_PROFILES[user_id]
-        for pii_key in ("name", "email", "phone", "address"):
+        for pii_key in _PII_FIELDS:
             profile[pii_key] = None
         _DELETED_USERS.add(user_id)
 
