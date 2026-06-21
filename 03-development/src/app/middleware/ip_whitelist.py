@@ -51,30 +51,35 @@ class IPCheckResult:
     """Outcome of an IP whitelist check.
 
     Attributes:
-        status: HTTP-shaped status — 200 allowed, 403 denied, 400 misconfig.
+        status_code: HTTP-shaped status — 200 allowed, 403 denied, 400 misconfig.
         body: Response body bytes. Empty for 200/403 per FR-23; non-empty
             for 400 so the caller can surface the reason.
         allowed: True iff the request should proceed.
     """
 
-    status: int
+    status_code: int
     body: bytes = b""
     allowed: bool = False
+
+    @property
+    def status(self) -> int:
+        """Backward-compat alias for ``status_code``."""
+        return self.status_code
 
     @classmethod
     def allow(cls) -> IPCheckResult:
         """Caller IP matched the whitelist — request may proceed."""
-        return cls(status=200, allowed=True)
+        return cls(status_code=200, allowed=True)
 
     @classmethod
     def deny(cls) -> IPCheckResult:
         """Caller IP did not match — FR-23 mandates an empty body for 403."""
-        return cls(status=403)
+        return cls(status_code=403)
 
     @classmethod
     def misconfigured(cls, body: bytes) -> IPCheckResult:
         """Caller IP could not be evaluated (empty config / no IP)."""
-        return cls(status=400, body=body, allowed=False)
+        return cls(status_code=400, body=body, allowed=False)
 
 
 class IPWhitelist:

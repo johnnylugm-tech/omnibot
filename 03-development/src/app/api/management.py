@@ -134,12 +134,12 @@ def create_experiment(role: str, payload: dict) -> int:
 
 
 __all__ = [
-    "check_health",
-    "list_knowledge",
-    "create_knowledge",
-    "update_knowledge",
-    "delete_knowledge",
     "bulk_create_knowledge",
-    "list_conversations",
+    "check_health",
     "create_experiment",
+    "create_knowledge",
+    "delete_knowledge",
+    "list_conversations",
+    "list_knowledge",
+    "update_knowledge",
 ]

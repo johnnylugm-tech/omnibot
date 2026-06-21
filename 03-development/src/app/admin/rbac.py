@@ -21,6 +21,7 @@ from __future__ import annotations
 import functools
 import os
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any
 
 # HTTP-style status codes returned by ``enforce``. Mirrors the
@@ -28,6 +29,20 @@ from typing import Any
 # (``AUTHZ_INSUFFICIENT_ROLE``).
 _HTTP_OK: int = 200
 _HTTP_FORBIDDEN: int = 403
+
+
+@dataclass(frozen=True)
+class EnforceResult:
+    """[FR-108] Outcome of ``RBACEnforcer.enforce()``.
+
+    Attributes:
+        allowed: True when the role holds the resource:action grant.
+        status_code: HTTP-style status — 200 on grant, 403 on denial.
+    """
+
+    allowed: bool
+    status_code: int
+
 
 # Full resource surface — every role entry MUST enumerate all resources
 # so the RBAC enforcer can dispatch ``matrix[role][resource]`` without
@@ -160,8 +175,10 @@ def enforce(role: str, resource: str, action: str) -> int:
     return _HTTP_OK if action in resource_grants else _HTTP_FORBIDDEN
 
 
-def _resolve_role(args: tuple[Any, ...], kwargs: dict[str, Any]) -> str:
-    """Return the caller's role for ``RBACEnforcer.require`` dispatch.
+def _resolve_role(
+    args: tuple[Any, ...], kwargs: dict[str, Any]
+) -> tuple[str, tuple[Any, ...]]:
+    """Return ``(role, cleaned_args)`` for ``RBACEnforcer.require`` dispatch.
 
     Lookup order (SRS FR-62 "``user_role`` 從 request 取得"):
         1. ``kwargs["role"]`` — explicit role override (test hook).
@@ -170,19 +187,24 @@ def _resolve_role(args: tuple[Any, ...], kwargs: dict[str, Any]) -> str:
         4. ``"anonymous"`` — safe default (FR-61 anonymous only holds
            ``knowledge:read`` so any undeclared privilege still maps
            to 403).
+
+    Role-bearing arguments are **consumed** (popped from *kwargs* in
+    place for paths 1–2, sliced off *args* for path 3) so they are not
+    passed through to the decorated function.
     """
     if "role" in kwargs:
         override = kwargs.pop("role")
         if override is not None and os.environ.get("TESTING") == "1":
-            return str(override)
+            return str(override), args
     request = kwargs.get("request")
     if request is not None and getattr(request, "user_role", None) is not None:
-        return str(request.user_role)
+        kwargs.pop("request")
+        return str(request.user_role), args
     if args:
         first = args[0]
         if first is not None and getattr(first, "user_role", None) is not None:
-            return str(first.user_role)
-    return "anonymous"
+            return str(first.user_role), args[1:]
+    return "anonymous", args
 
 
 class RBACEnforcer:
@@ -218,6 +240,20 @@ class RBACEnforcer:
         """
         return enforce(role, resource, action)
 
+    def enforce(self, role: str, resource: str, action: str) -> EnforceResult:
+        """[FR-108] Instance-level RBAC enforcement returning ``EnforceResult``.
+
+        Citations:
+            - 03-development/tests/test_fr108.py:502-510 — auditor pii:decrypt 403
+            - 03-development/tests/test_fr108.py:1079-1088 — customer knowledge:write 403
+            - 03-development/tests/test_fr108.py:1099-1109 — editor knowledge:delete 403
+        """
+        status = enforce(role, resource, action)
+        return EnforceResult(
+            allowed=(status == _HTTP_OK),
+            status_code=status,
+        )
+
     @classmethod
     def require(cls, resource: str, action: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
         """Return a decorator that gates ``func`` on the
@@ -235,7 +271,7 @@ class RBACEnforcer:
         def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             @functools.wraps(func)
             def wrapper(*args: Any, **kwargs: Any) -> Any:
-                role = _resolve_role(args, kwargs)
+                role, args = _resolve_role(args, kwargs)
                 if cls.check(role, resource, action) != _HTTP_OK:
                     raise PermissionError(cls.ERROR_AUTHZ_INSUFFICIENT_ROLE)
                 return func(*args, **kwargs)

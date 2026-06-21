@@ -17,7 +17,7 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-from app.admin.rbac import RBACEnforcer
+from app.admin.rbac import RBACEnforcer, enforce
 
 # ---------------------------------------------------------------------------
 # Source under test.
@@ -56,8 +56,17 @@ from app.admin.rbac import RBACEnforcer
 # is the valid RED signal — GREEN adds the module and tightens the
 # behaviour to make every assertion hold.
 # ---------------------------------------------------------------------------
-from app.api.management import check_health, list_knowledge
-from app.core.api_response import PaginatedResponse
+from app.api.management import (
+    bulk_create_knowledge,
+    check_health,
+    create_experiment,
+    create_knowledge,
+    delete_knowledge,
+    list_conversations,
+    list_knowledge,
+    update_knowledge,
+)
+from app.core.api_response import ApiResponse, PaginatedResponse
 
 
 # ============================================================================
@@ -351,3 +360,243 @@ def test_fr85_paginated_response_has_next():
         f"FR-85: expected_has_next sentinel must remain 'true'; got "
         f"{expected_has_next!r}."
     )
+
+
+# ============================================================================
+# Coverage-fill tests — the 3 spec tests above cover the core contracts;
+# these additional tests exercise every remaining branch and endpoint
+# to bring code coverage ≥ 80% for the COVERAGE-FIX step.
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# management.py: list_knowledge authorized path + 6 stub endpoints
+# ---------------------------------------------------------------------------
+
+
+def test_fr85_list_knowledge_authorized():
+    """Authorised role (admin) receives a PaginatedResponse, exercising the
+    _authorized True branch and list_knowledge success path (line 87)."""
+    result = list_knowledge(role="admin", page=1, limit=10)
+    assert isinstance(result, PaginatedResponse)
+    assert result.total == 0
+    assert result.page == 1
+    assert result.limit == 10
+    assert result.has_next is False  # 1*10=10 not < 0
+
+
+def test_fr85_create_knowledge_authorized():
+    assert create_knowledge(role="admin", payload={"key": "val"}) == 200
+
+
+def test_fr85_update_knowledge_authorized():
+    assert update_knowledge(role="admin", id_="kb-1", payload={"key": "val"}) == 200
+
+
+def test_fr85_delete_knowledge_authorized():
+    assert delete_knowledge(role="admin", id_="kb-1") == 200
+
+
+def test_fr85_bulk_create_knowledge_authorized():
+    assert bulk_create_knowledge(role="admin", payload={"items": []}) == 200
+
+
+def test_fr85_list_conversations_authorized():
+    assert list_conversations(role="admin", page=1, limit=10) == 200
+
+
+def test_fr85_create_experiment_authorized():
+    assert create_experiment(role="admin", payload={"name": "exp-1"}) == 200
+
+
+# --- Stub endpoint denied paths ---
+
+
+def test_fr85_create_knowledge_denied():
+    assert create_knowledge(role="anonymous", payload={}) == 403
+
+
+def test_fr85_update_knowledge_denied():
+    assert update_knowledge(role="anonymous", id_="kb-1", payload={}) == 403
+
+
+def test_fr85_delete_knowledge_denied():
+    assert delete_knowledge(role="anonymous", id_="kb-1") == 403
+
+
+def test_fr85_bulk_create_knowledge_denied():
+    assert bulk_create_knowledge(role="anonymous", payload={}) == 403
+
+
+def test_fr85_list_conversations_denied():
+    assert list_conversations(role="anonymous", page=1, limit=10) == 403
+
+
+def test_fr85_create_experiment_denied():
+    assert create_experiment(role="anonymous", payload={}) == 403
+
+
+# ---------------------------------------------------------------------------
+# api_response.py: ApiResponse.__post_init__ coverage
+# ---------------------------------------------------------------------------
+
+
+def test_fr85_api_response_success():
+    """ApiResponse with data and no error — success flag stays True."""
+    resp = ApiResponse(success=True, data="result")
+    assert resp.success is True
+    assert resp.data == "result"
+    assert resp.error is None
+    assert resp.error_code is None
+
+
+def test_fr85_api_response_failure():
+    """ApiResponse with error and error_code — success overridden to False."""
+    resp = ApiResponse(success=False, error="not found", error_code="E404")
+    assert resp.success is False
+    assert resp.data is None
+    assert resp.error == "not found"
+    assert resp.error_code == "E404"
+
+
+def test_fr85_api_response_success_overridden_by_error():
+    """__post_init__ overrides success when error is present, even if
+    the caller passed success=True."""
+    resp = ApiResponse(success=True, error="boom")
+    assert resp.success is False
+    assert resp.error == "boom"
+
+
+def test_fr85_api_response_failure_error_code_only():
+    """__post_init__ overrides success when error_code is present (no error str)."""
+    resp = ApiResponse(success=True, error_code="E500")
+    assert resp.success is False
+    assert resp.error_code == "E500"
+
+
+# ---------------------------------------------------------------------------
+# rbac.py: enforce() edge cases + RBACEnforcer.require decorator paths
+# ---------------------------------------------------------------------------
+
+
+def test_fr85_enforce_unknown_role():
+    """enforce with a role not in ROLE_PERMISSIONS → 403."""
+    assert enforce(role="nonexistent", resource="knowledge", action="read") == 403
+
+
+def test_fr85_enforce_unknown_resource():
+    """enforce with a resource not in the role's grants → 403."""
+    assert enforce(role="admin", resource="nonexistent", action="read") == 403
+
+
+def test_fr85_enforce_authorized_action():
+    """enforce with admin + knowledge:read → 200 (the True branch of line 160)."""
+    assert enforce(role="admin", resource="knowledge", action="read") == 200
+
+
+def test_fr85_rbac_require_authorized(monkeypatch):
+    """RBACEnforcer.require decorator permits execution for authorised role.
+    Covers _resolve_role Path 1 (explicit role kwarg + TESTING=1)."""
+    monkeypatch.setenv("TESTING", "1")
+
+    @RBACEnforcer.require("knowledge", "read")
+    def handler(payload=None):
+        return payload
+
+    result = handler(role="admin", payload="data")
+    assert result == "data"
+
+
+def test_fr85_rbac_require_denied(monkeypatch):
+    """RBACEnforcer.require decorator raises PermissionError for denied role."""
+    monkeypatch.setenv("TESTING", "1")
+
+    @RBACEnforcer.require("knowledge", "read")
+    def handler():
+        return "should not reach"  # pragma: no cover — unreachable on deny
+
+    try:
+        handler(role="anonymous")
+    except PermissionError as exc:
+        assert str(exc) == RBACEnforcer.ERROR_AUTHZ_INSUFFICIENT_ROLE
+    else:
+        raise AssertionError("Expected PermissionError")
+
+
+def test_fr85_rbac_require_role_from_request(monkeypatch):
+    """_resolve_role Path 3: role resolved from kwargs['request'].user_role."""
+    monkeypatch.setenv("TESTING", "1")
+
+    @RBACEnforcer.require("knowledge", "read")
+    def handler():
+        return "ok"
+
+    class FakeRequest:
+        user_role = "admin"
+
+    result = handler(request=FakeRequest())
+    assert result == "ok"
+
+
+def test_fr85_rbac_require_role_from_first_arg(monkeypatch):
+    """_resolve_role Path 4: role resolved from args[0].user_role."""
+    monkeypatch.setenv("TESTING", "1")
+
+    @RBACEnforcer.require("knowledge", "read")
+    def handler():
+        return "ok"
+
+    class FakeRequest:
+        user_role = "admin"
+
+    result = handler(FakeRequest())
+    assert result == "ok"
+
+
+def test_fr85_rbac_require_fallback_anonymous(monkeypatch):
+    """_resolve_role Path 5: no role found anywhere → 'anonymous' → 403."""
+    monkeypatch.setenv("TESTING", "1")
+
+    @RBACEnforcer.require("knowledge", "read")
+    def handler():
+        return "ok"  # pragma: no cover — unreachable when anonymous denied
+
+    try:
+        handler()
+    except PermissionError as exc:
+        assert str(exc) == RBACEnforcer.ERROR_AUTHZ_INSUFFICIENT_ROLE
+    else:
+        raise AssertionError("Expected PermissionError")
+
+
+def test_fr85_rbac_require_role_ignored_without_testing(monkeypatch):
+    """_resolve_role: role kwarg popped but ignored when TESTING != '1'
+    (falls through to default 'anonymous')."""
+    monkeypatch.setenv("TESTING", "0")
+
+    @RBACEnforcer.require("knowledge", "read")
+    def handler():
+        return "ok"  # pragma: no cover
+
+    try:
+        handler(role="admin")
+    except PermissionError:
+        pass
+    else:
+        raise AssertionError("Expected PermissionError — role kwarg ignored without TESTING=1")
+
+
+def test_fr85_rbac_require_role_none_falls_through(monkeypatch):
+    """_resolve_role: role=None in kwargs is skipped (override is None check)
+    and falls through to default 'anonymous'."""
+    monkeypatch.setenv("TESTING", "1")
+
+    @RBACEnforcer.require("knowledge", "read")
+    def handler():
+        return "ok"  # pragma: no cover
+
+    try:
+        handler(role=None)
+    except PermissionError:
+        pass
+    else:
+        raise AssertionError("Expected PermissionError — role=None should fall through")

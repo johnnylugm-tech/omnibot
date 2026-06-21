@@ -333,18 +333,18 @@ class KnowledgeAdminAPI:
             return self._crud_response(entry)
         if action == KNOWLEDGE_ACTION_READ:
             return self._crud_response(
-                self.read_entry(kwargs.get("entry_id"))
+                self.read_entry(kwargs.get("entry_id", 0))
             )
         if action == KNOWLEDGE_ACTION_UPDATE:
             return self._crud_response(
                 self.update_entry(
-                    kwargs.get("entry_id"), **kwargs.get("fields", {})
+                    kwargs.get("entry_id", 0), **kwargs.get("fields", {})
                 )
             )
         if action == KNOWLEDGE_ACTION_DELETE:
             # Delete is the only verb whose ``ok`` follows the
             # affected-row count rather than entry-presence.
-            deleted = self.delete_entry(kwargs.get("entry_id"))
+            deleted = self.delete_entry(kwargs.get("entry_id", 0))
             return {
                 "status": KNOWLEDGE_API_OK_STATUS,
                 "entry": None,

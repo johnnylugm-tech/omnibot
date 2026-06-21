@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import hashlib
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 # Token format: m2m_ prefix + 32 bytes random → 64 lowercase hex chars.
 _TOKEN_BYTES = 32
@@ -92,7 +92,7 @@ def create_token(
     client_id = f"client-{secrets.token_hex(_CLIENT_ID_BYTES)}"
 
     # Expiry as ISO 8601 with timezone.
-    expires_at_dt = datetime.now(timezone.utc) + timedelta(days=expires_in_days)
+    expires_at_dt = datetime.now(datetime.timezone.utc) + timedelta(days=expires_in_days)
     expires_at = expires_at_dt.isoformat()
 
     _TOKEN_STORE[client_id] = {
@@ -199,7 +199,4 @@ def validate_token(token: str) -> bool:
 
     # Check expiry.
     expires_at = datetime.fromisoformat(data["expires_at"])
-    if datetime.now(timezone.utc) > expires_at:
-        return False
-
-    return True
+    return not datetime.now(datetime.timezone.utc) > expires_at

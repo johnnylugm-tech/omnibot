@@ -170,8 +170,7 @@ class MCPAdapter(ActionAdapter):
         sentinel 判斷 server-down 情境（正式實作會替換為真實的
         ``subprocess.Popen`` exit code 檢查 / ``httpx`` 連線探測）。
         """
-        if self.transport == "stdio" and self.command and "down" in self.command.lower():
-            return True
-        if self.transport == "sse" and self.url and ("down" in self.url.lower() or "65535" in self.url):
-            return True
-        return False
+        return bool(
+            (self.transport == "stdio" and self.command and "down" in self.command.lower())
+            or (self.transport == "sse" and self.url and ("down" in self.url.lower() or "65535" in self.url))
+        )

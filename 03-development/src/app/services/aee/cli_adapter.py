@@ -17,7 +17,6 @@ from __future__ import annotations
 import contextlib
 import signal
 import subprocess
-import threading
 import time
 
 from app.services.aee.adapter import (
@@ -231,10 +230,8 @@ class CLIAdapter(ActionAdapter):
             # and report the timeout.
             with contextlib.suppress(ProcessLookupError, OSError):
                 proc.kill()
-            try:
+            with contextlib.suppress(subprocess.TimeoutExpired):
                 proc.communicate(timeout=5)
-            except subprocess.TimeoutExpired:
-                pass
             return fail(
                 f"timeout: process exceeded {timeout_seconds}s and was terminated"
             )
