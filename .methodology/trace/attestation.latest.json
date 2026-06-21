@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "0096a678cc6acf1a78547e55a7ee01b23ec02e72",
-  "content_sha256": "8f1c88b3734fa0ade98867cd98246dcc4c713eeaf4ff48d582e2f5ef239c7ee9",
+  "git_sha": "35947421882d147664131a396a7e6cc571f25e97",
+  "content_sha256": "93dbc0ed02b4e4d5aa10be7aff4fb32641e3eda18ada863c17b7ab97d3854f2b",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,18 +11,22 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "97.2%",
-      "test_coverage": "100.0%",
-      "verification_rate": "97.2%",
-      "total_links": 366,
+      "code_coverage": "96.3%",
+      "test_coverage": "98.1%",
+      "verification_rate": "95.4%",
+      "total_links": 362,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
           "FR-54",
           "FR-63",
-          "FR-91"
+          "FR-91",
+          "FR-93"
         ],
-        "fr_without_test": []
+        "fr_without_test": [
+          "FR-107",
+          "FR-91"
+        ]
       }
     },
     "missing": {
@@ -30,9 +34,13 @@
       "fr_without_code": [
         "FR-54",
         "FR-63",
-        "FR-91"
+        "FR-91",
+        "FR-93"
       ],
-      "fr_without_test": []
+      "fr_without_test": [
+        "FR-107",
+        "FR-91"
+      ]
     },
     "requirements": {
       "FR-01": {
@@ -40,8 +48,9 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/services/telegram_adapter.py",
-          "03-development/src/app/services/telegram_verifier.py"
+          "03-development/src/app/api/adapters/telegram.py",
+          "03-development/src/app/api/adapters/verifiers.py",
+          "03-development/src/app/api/webhooks.py"
         ],
         "test_files": [
           "tests/test_fr01.py"
@@ -54,8 +63,9 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/services/line_adapter.py",
-          "03-development/src/app/services/line_verifier.py"
+          "03-development/src/app/api/adapters/line.py",
+          "03-development/src/app/api/adapters/verifiers.py",
+          "03-development/src/app/api/webhooks.py"
         ],
         "test_files": [
           "tests/test_fr02.py"
@@ -68,8 +78,9 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/services/messenger_adapter.py",
-          "03-development/src/app/services/messenger_verifier.py"
+          "03-development/src/app/api/adapters/messenger.py",
+          "03-development/src/app/api/adapters/verifiers.py",
+          "03-development/src/app/api/webhooks.py"
         ],
         "test_files": [
           "tests/test_fr03.py"
@@ -82,8 +93,9 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/services/whatsapp_adapter.py",
-          "03-development/src/app/services/whatsapp_verifier.py"
+          "03-development/src/app/api/adapters/verifiers.py",
+          "03-development/src/app/api/adapters/whatsapp.py",
+          "03-development/src/app/api/webhooks.py"
         ],
         "test_files": [
           "tests/test_fr04.py"
@@ -96,9 +108,10 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/services/_jwt_utils.py",
-          "03-development/src/app/services/web_adapter.py",
-          "03-development/src/app/services/web_verifier.py"
+          "03-development/src/app/api/adapters/utils.py",
+          "03-development/src/app/api/adapters/verifiers.py",
+          "03-development/src/app/api/adapters/web.py",
+          "03-development/src/app/api/webhooks.py"
         ],
         "test_files": [
           "tests/test_fr05.py"
@@ -111,6 +124,15 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/src/app/api/adapters/a2a.py",
+          "03-development/src/app/api/adapters/base.py",
+          "03-development/src/app/api/adapters/line.py",
+          "03-development/src/app/api/adapters/messenger.py",
+          "03-development/src/app/api/adapters/registry.py",
+          "03-development/src/app/api/adapters/telegram.py",
+          "03-development/src/app/api/adapters/verifiers.py",
+          "03-development/src/app/api/adapters/web.py",
+          "03-development/src/app/api/adapters/whatsapp.py",
           "03-development/src/app/api/webhooks.py"
         ],
         "test_files": [
@@ -137,7 +159,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/core/unified_response.py"
+          "03-development/src/app/core/response.py"
         ],
         "test_files": [
           "tests/test_fr08.py"
@@ -150,7 +172,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/api/api_response.py",
+          "03-development/src/app/api/common.py",
           "03-development/tests/test_fr09.py"
         ],
         "test_files": [
@@ -164,7 +186,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/core/paladin/sanitizer.py",
+          "03-development/src/app/core/paladin.py",
           "03-development/tests/test_fr10.py"
         ],
         "test_files": [
@@ -266,14 +288,12 @@
       },
       "FR-107": {
         "fr_id": "FR-107",
-        "status": "verified",
+        "status": "in_progress",
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/tests/pyramid.py"
         ],
-        "test_files": [
-          "tests/test_fr107.py"
-        ],
+        "test_files": [],
         "sad_module": "—",
         "priority": "HIGH"
       },
@@ -283,19 +303,12 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/app/admin/rbac.py",
-          "03-development/src/app/core/knowledge/hybrid.py",
-          "03-development/src/app/core/paladin/grounding.py",
-          "03-development/src/app/core/paladin/pipeline.py",
-          "03-development/src/app/core/paladin/sanitizer.py",
-          "03-development/src/app/infra/backup_strategy.py",
-          "03-development/src/app/infra/compose.py",
-          "03-development/src/app/infra/k8s_deployment.py",
-          "03-development/src/app/services/_webhook_utils.py",
+          "03-development/src/app/api/adapters/verifiers.py",
+          "03-development/src/app/core/knowledge.py",
+          "03-development/src/app/core/paladin.py",
+          "03-development/src/app/infra/deployment.py",
           "03-development/src/app/services/escalation.py",
           "03-development/src/app/services/llm_judge.py",
-          "03-development/src/app/services/messenger_verifier.py",
-          "03-development/src/app/services/web_verifier.py",
-          "03-development/src/app/services/whatsapp_verifier.py",
           "03-development/tests/golden_dataset.py"
         ],
         "test_files": [
@@ -309,8 +322,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/core/paladin/injection_defense.py",
-          "03-development/src/app/core/paladin/sanitizer.py",
+          "03-development/src/app/core/paladin.py",
           "03-development/tests/test_fr11.py"
         ],
         "test_files": [
@@ -324,7 +336,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/core/paladin/injection_defense.py",
+          "03-development/src/app/core/paladin.py",
           "03-development/tests/test_fr12.py"
         ],
         "test_files": [
@@ -338,8 +350,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/core/paladin/classifier.py",
-          "03-development/src/app/core/paladin/injection_defense.py",
+          "03-development/src/app/core/paladin.py",
           "03-development/tests/test_fr13.py"
         ],
         "test_files": [
@@ -353,8 +364,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/core/paladin/classifier.py",
-          "03-development/src/app/core/paladin/grounding.py",
+          "03-development/src/app/core/paladin.py",
           "03-development/tests/test_fr14.py"
         ],
         "test_files": [
@@ -368,8 +378,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/core/paladin/classifier.py",
-          "03-development/src/app/core/paladin/pipeline.py",
+          "03-development/src/app/core/paladin.py",
           "03-development/tests/test_fr15.py"
         ],
         "test_files": [
@@ -383,7 +392,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/core/paladin/pipeline.py",
+          "03-development/src/app/core/paladin.py",
           "03-development/tests/test_fr16.py"
         ],
         "test_files": [
@@ -397,7 +406,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/core/retraction.py",
+          "03-development/src/app/core/response.py",
           "03-development/tests/test_fr17.py"
         ],
         "test_files": [
@@ -438,7 +447,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/app/core/pii.py",
-          "03-development/src/app/infra/data_retention.py"
+          "03-development/src/app/infra/security.py"
         ],
         "test_files": [
           "tests/test_fr20.py"
@@ -516,7 +525,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/core/knowledge/hybrid.py"
+          "03-development/src/app/core/knowledge.py"
         ],
         "test_files": [
           "tests/test_fr26.py"
@@ -529,8 +538,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/core/knowledge/hybrid.py",
-          "03-development/src/app/core/knowledge/models.py"
+          "03-development/src/app/core/knowledge.py"
         ],
         "test_files": [
           "tests/test_fr27.py"
@@ -543,7 +551,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/core/chunking.py"
+          "03-development/src/app/core/knowledge.py"
         ],
         "test_files": [
           "tests/test_fr28.py"
@@ -556,7 +564,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/infra/vector_index.py"
+          "03-development/src/app/infra/database.py"
         ],
         "test_files": [
           "tests/test_fr29.py"
@@ -569,8 +577,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/core/knowledge/generation.py",
-          "03-development/src/app/core/knowledge/hybrid.py"
+          "03-development/src/app/core/knowledge.py"
         ],
         "test_files": [
           "tests/test_fr30.py"
@@ -583,8 +590,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/core/knowledge/escalation.py",
-          "03-development/src/app/core/knowledge/generation.py"
+          "03-development/src/app/core/knowledge.py"
         ],
         "test_files": [
           "tests/test_fr31.py"
@@ -597,10 +603,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/core/knowledge/escalation.py",
-          "03-development/src/app/core/knowledge/generation.py",
-          "03-development/src/app/core/knowledge/hybrid.py",
-          "03-development/src/app/core/knowledge/models.py",
+          "03-development/src/app/core/knowledge.py",
           "03-development/tests/test_fr32.py"
         ],
         "test_files": [
@@ -614,7 +617,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/core/knowledge/hybrid.py",
+          "03-development/src/app/core/knowledge.py",
           "03-development/tests/test_fr33.py"
         ],
         "test_files": [
@@ -760,7 +763,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/api/agent_card.py"
+          "03-development/src/app/api/webhooks.py"
         ],
         "test_files": [
           "tests/test_fr44.py"
@@ -838,7 +841,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/core/response_generator.py"
+          "03-development/src/app/core/response.py"
         ],
         "test_files": [
           "tests/test_fr50.py"
@@ -851,7 +854,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/core/response_generator.py"
+          "03-development/src/app/core/response.py"
         ],
         "test_files": [
           "tests/test_fr51.py"
@@ -864,7 +867,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/core/response_generator.py"
+          "03-development/src/app/core/response.py"
         ],
         "test_files": [
           "tests/test_fr52.py"
@@ -877,7 +880,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/core/response_generator.py"
+          "03-development/src/app/core/response.py"
         ],
         "test_files": [
           "tests/test_fr53.py"
@@ -1108,7 +1111,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/infra/prometheus_metrics.py"
+          "03-development/src/app/infra/observability.py"
         ],
         "test_files": [
           "tests/test_fr71.py"
@@ -1121,7 +1124,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/infra/tracing.py"
+          "03-development/src/app/infra/observability.py"
         ],
         "test_files": [
           "tests/test_fr72.py"
@@ -1134,7 +1137,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/infra/alert_rules.py"
+          "03-development/src/app/infra/observability.py"
         ],
         "test_files": [
           "tests/test_fr73.py"
@@ -1147,7 +1150,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/infra/grafana_dashboard.py"
+          "03-development/src/app/infra/observability.py"
         ],
         "test_files": [
           "tests/test_fr74.py"
@@ -1199,6 +1202,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/src/app/core/knowledge.py",
           "03-development/src/app/infra/jobs.py"
         ],
         "test_files": [
@@ -1212,7 +1216,8 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/infra/jobs.py"
+          "03-development/src/app/infra/jobs.py",
+          "refactor_jobs.py"
         ],
         "test_files": [
           "tests/test_fr79.py"
@@ -1238,7 +1243,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/infra/retry.py"
+          "03-development/src/app/infra/circuit_breaker.py"
         ],
         "test_files": [
           "tests/test_fr81.py"
@@ -1251,7 +1256,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/infra/schema.py"
+          "03-development/src/app/infra/database.py"
         ],
         "test_files": [
           "tests/test_fr82.py"
@@ -1264,7 +1269,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/infra/migrations.py"
+          "03-development/src/app/infra/database.py"
         ],
         "test_files": [
           "tests/test_fr83.py"
@@ -1277,7 +1282,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/api/webhook_routes.py"
+          "03-development/src/app/api/webhooks.py"
         ],
         "test_files": [
           "tests/test_fr84.py"
@@ -1316,7 +1321,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/api/m2m.py"
+          "03-development/src/app/api/webhooks.py"
         ],
         "test_files": [
           "tests/test_fr87.py"
@@ -1329,7 +1334,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/api/gdpr.py"
+          "03-development/src/app/admin/gdpr.py"
         ],
         "test_files": [
           "tests/test_fr88.py"
@@ -1342,7 +1347,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/infra/tde.py"
+          "03-development/src/app/infra/security.py"
         ],
         "test_files": [
           "tests/test_fr89.py"
@@ -1355,7 +1360,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/infra/redis_security.py"
+          "03-development/src/app/infra/security.py"
         ],
         "test_files": [
           "tests/test_fr90.py"
@@ -1368,9 +1373,7 @@
         "status": "pending",
         "srs_section": "SAD.md",
         "code_files": [],
-        "test_files": [
-          "tests/test_fr91.py"
-        ],
+        "test_files": [],
         "sad_module": "—",
         "priority": "HIGH"
       },
@@ -1379,7 +1382,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/infra/data_deletion.py"
+          "03-development/src/app/infra/security.py"
         ],
         "test_files": [
           "tests/test_fr92.py"
@@ -1389,11 +1392,9 @@
       },
       "FR-93": {
         "fr_id": "FR-93",
-        "status": "verified",
+        "status": "pending",
         "srs_section": "SAD.md",
-        "code_files": [
-          "03-development/src/app/api/gdpr.py"
-        ],
+        "code_files": [],
         "test_files": [
           "tests/test_fr93.py"
         ],
@@ -1418,7 +1419,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/infra/compose.py"
+          "03-development/src/app/infra/deployment.py"
         ],
         "test_files": [
           "tests/test_fr95.py"
@@ -1431,7 +1432,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/infra/k8s_deployment.py"
+          "03-development/src/app/infra/deployment.py"
         ],
         "test_files": [
           "tests/test_fr96.py"
@@ -1444,7 +1445,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/infra/backup_strategy.py"
+          "03-development/src/app/infra/deployment.py"
         ],
         "test_files": [
           "tests/test_fr97.py"
@@ -1457,7 +1458,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/infra/rollback_strategy.py"
+          "03-development/src/app/infra/deployment.py"
         ],
         "test_files": [
           "tests/test_fr98.py"

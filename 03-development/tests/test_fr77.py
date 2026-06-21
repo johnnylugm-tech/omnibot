@@ -305,7 +305,7 @@ def test_fr77_timeout_does_not_block_main_flow(monkeypatch):
 
     with contextlib.suppress(Exception):
         monkeypatch.setattr(
-            "app.infra.jobs._embed_first_chunk",
+            "app.core.knowledge._embed_first_chunk",
             _slow_embed,
             raising=False,
         )

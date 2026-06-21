@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "b4a42eeb727aaa535039bd86a9731a15588be212",
-  "content_sha256": "3e6c26dc1c8d02b4e16e9f100faf1d345ada5ffb7ef3da5835727edece94c355",
+  "git_sha": "35947421882d147664131a396a7e6cc571f25e97",
+  "content_sha256": "93dbc0ed02b4e4d5aa10be7aff4fb32641e3eda18ada863c17b7ab97d3854f2b",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -14,7 +14,7 @@
       "code_coverage": "96.3%",
       "test_coverage": "98.1%",
       "verification_rate": "95.4%",
-      "total_links": 340,
+      "total_links": 362,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -48,6 +48,8 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/src/app/api/adapters/telegram.py",
+          "03-development/src/app/api/adapters/verifiers.py",
           "03-development/src/app/api/webhooks.py"
         ],
         "test_files": [
@@ -61,6 +63,8 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/src/app/api/adapters/line.py",
+          "03-development/src/app/api/adapters/verifiers.py",
           "03-development/src/app/api/webhooks.py"
         ],
         "test_files": [
@@ -74,6 +78,8 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/src/app/api/adapters/messenger.py",
+          "03-development/src/app/api/adapters/verifiers.py",
           "03-development/src/app/api/webhooks.py"
         ],
         "test_files": [
@@ -87,6 +93,8 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/src/app/api/adapters/verifiers.py",
+          "03-development/src/app/api/adapters/whatsapp.py",
           "03-development/src/app/api/webhooks.py"
         ],
         "test_files": [
@@ -100,6 +108,9 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/src/app/api/adapters/utils.py",
+          "03-development/src/app/api/adapters/verifiers.py",
+          "03-development/src/app/api/adapters/web.py",
           "03-development/src/app/api/webhooks.py"
         ],
         "test_files": [
@@ -113,6 +124,15 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/src/app/api/adapters/a2a.py",
+          "03-development/src/app/api/adapters/base.py",
+          "03-development/src/app/api/adapters/line.py",
+          "03-development/src/app/api/adapters/messenger.py",
+          "03-development/src/app/api/adapters/registry.py",
+          "03-development/src/app/api/adapters/telegram.py",
+          "03-development/src/app/api/adapters/verifiers.py",
+          "03-development/src/app/api/adapters/web.py",
+          "03-development/src/app/api/adapters/whatsapp.py",
           "03-development/src/app/api/webhooks.py"
         ],
         "test_files": [
@@ -283,7 +303,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/app/admin/rbac.py",
-          "03-development/src/app/api/webhooks.py",
+          "03-development/src/app/api/adapters/verifiers.py",
           "03-development/src/app/core/knowledge.py",
           "03-development/src/app/core/paladin.py",
           "03-development/src/app/infra/deployment.py",
@@ -1182,6 +1202,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/src/app/core/knowledge.py",
           "03-development/src/app/infra/jobs.py"
         ],
         "test_files": [
@@ -1195,7 +1216,8 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/infra/jobs.py"
+          "03-development/src/app/infra/jobs.py",
+          "refactor_jobs.py"
         ],
         "test_files": [
           "tests/test_fr79.py"
