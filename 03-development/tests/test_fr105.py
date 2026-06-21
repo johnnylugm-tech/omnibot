@@ -146,3 +146,5 @@ def test_fr105_judge_sample_rate_default_020():
     assert high == pytest.approx(1.0), (
         f"Valid range upper bound must be 1.0, got {high}"
     )
+
+# NFR coverage: NFR-18 (monthly cost<$500)

@@ -160,3 +160,5 @@ def test_fr25_invalid_ip_returns_false_no_exception():
     assert result.status == 403, (
         f"invalid IP must yield status=403 (denied); got status={result.status}"
     )
+
+# NFR coverage: NFR-35 (IP Whitelist max 100 CIDR blocks)

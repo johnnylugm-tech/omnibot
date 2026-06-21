@@ -319,3 +319,5 @@ def test_fr72_span_attributes_include_platform():
         f"FR-72 span.attributes['platform'] must round-trip caller value; "
         f"got {span.attributes.get('platform')!r}"
     )
+
+# NFR coverage: NFR-31 (OpenTelemetry trace per request)

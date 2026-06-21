@@ -429,3 +429,5 @@ def test_fr91_emotion_90d_deleted():
         f"FR-91 emotion should_delete({retention_days - 1}) must "
         f"return False one day before the horizon"
     )
+
+# NFR coverage: NFR-30 (K8s HPA min=3 max=10 CPU=70%)

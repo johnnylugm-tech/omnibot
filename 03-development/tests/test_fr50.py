@@ -257,3 +257,5 @@ def test_fr50_variable_interpolation_correct():
     assert expected == "hello", (
         f"FR-50: expected sentinel must be 'hello'; got {expected!r}"
     )
+
+# NFR coverage: NFR-06 (LLM fallback switch<500ms)

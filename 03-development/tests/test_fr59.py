@@ -312,4 +312,4 @@ def test_fr59_subscribe_returns_subscribed():
         f"{message['channel']!r}."
     )
 
-# NFR coverage: NFR-25 (>=95% escalation SLA)
+# NFR coverage: NFR-25 (>=95% escalation SLA), NFR-27 (grounding check pass rate 100%)

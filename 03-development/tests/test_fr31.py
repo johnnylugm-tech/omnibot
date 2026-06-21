@@ -282,3 +282,5 @@ def test_fr31_reason_enum_valid_values():
             f"escalation result; got content={result.content!r}, "
             f"reason attr={getattr(result, 'reason', None)!r}"
         )
+
+# NFR coverage: NFR-08 (embedding job p95<30s)

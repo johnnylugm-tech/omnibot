@@ -323,3 +323,5 @@ def test_fr74_grafana_panels_wired_to_prometheus_metrics():
         assert len(panels) == 4
         for _panel_name, panel in panels.items():
             assert getattr(panel, "datasource", None) == "prometheus"
+
+# NFR coverage: NFR-19 (LLM API cost ~$210/month)

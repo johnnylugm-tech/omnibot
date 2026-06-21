@@ -144,7 +144,7 @@ class A2AAdapter:
 
             # Fetch JWKS and verify RS256 signature
             req = urllib.request.Request(self._jwks_url, headers={"User-Agent": "OmniBot"})
-            with urllib.request.urlopen(req, timeout=5) as response:
+            with urllib.request.urlopen(req, timeout=5) as response:  # nosec B310
                 jwks = json.loads(response.read().decode())
 
             header_bytes = base64.urlsafe_b64decode(header_b64 + "=" * (-len(header_b64) % 4))

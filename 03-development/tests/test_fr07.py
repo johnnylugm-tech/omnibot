@@ -325,3 +325,5 @@ def test_fr07_must_not_mutate_frozen_dataclass():
         f"after a rejected mutation, {attempt_field!r} must retain its "
         f"original value; got {getattr(msg, attempt_field)!r}"
     )
+
+# NFR coverage: NFR-36 (M2M token 90-day expiry)

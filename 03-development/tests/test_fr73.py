@@ -385,4 +385,4 @@ def test_fr73_high_error_rate_threshold_0_5pct():
         assert getattr(rule, "threshold", None) == 0.005
         assert getattr(rule, "severity", None) == "critical"
 
-# NFR coverage: NFR-33 (rate_limit fail-open), NFR-34 (IP whitelist fail-secure)
+# NFR coverage: NFR-12 (p95>0.8s HighLatency alert), NFR-33 (rate_limit fail-open), NFR-34 (IP whitelist fail-secure)

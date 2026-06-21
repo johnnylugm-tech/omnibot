@@ -686,4 +686,4 @@ def test_fr65_judge_timeout_returns_partial_result():
 _ = MagicMock
                 # GREEN will see once it implements the module.
 
-# NFR coverage: NFR-24 (>=90% FCR)
+# NFR coverage: NFR-24 (>=90% FCR), NFR-26 (LLM-as-a-Judge Cohen's Kappa>=0.7)

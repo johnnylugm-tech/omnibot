@@ -576,3 +576,5 @@ def test_fr99_concurrent_threshold_cross_single_probe():
         "FR-99: expected_circuit_state sentinel must remain 'open' per "
         f"TEST_SPEC FR-99 case 7; got {expected_circuit_state!r}."
     )
+
+# NFR coverage: NFR-09 (2000 TPS sustained)

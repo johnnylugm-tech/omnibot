@@ -122,9 +122,9 @@ class MCPAdapter(ActionAdapter):
             }
         ).encode("utf-8")
 
-        proc = subprocess.Popen(
+        proc = subprocess.Popen(  # noqa: S603 — MCP tool self-contained command
             self.command,
-            shell=True,
+            shell=False,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -161,9 +161,9 @@ class MCPAdapter(ActionAdapter):
         fixture 替換為固定 sentinel 回傳。
         """
         try:
-            proc = subprocess.Popen(
+            proc = subprocess.Popen(  # noqa: S603 — MCP tool self-contained command
                 self.command or "",
-                shell=True,
+                shell=False,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
