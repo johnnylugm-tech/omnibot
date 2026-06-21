@@ -80,18 +80,18 @@
   },
   "crg_review_context": {
     "status": "ok",
-    "summary": "Review context for 21 changed file(s):\n  - Risk: high\n  - 500 impacted nodes in 141 files",
+    "summary": "Review context for 15 changed file(s):\n  - Risk: high\n  - 500 impacted nodes in 148 files",
     "risk": "high",
-    "changed_file_count": 21,
-    "impacted_file_count": 141,
+    "changed_file_count": 15,
+    "impacted_file_count": 148,
     "key_entities": [
-      "/Users/johnny/projects/omnibot/03-development/src/app/infra/backup_strategy.py",
-      "BackupResult",
-      "BackupStrategy",
+      "/Users/johnny/projects/omnibot/03-development/src/app/core/paladin.py",
+      "ClassificationResult",
+      "GroundingChecker",
       "__init__",
-      "has_schedule"
+      "_cosine_similarity"
     ],
-    "test_gaps": 25,
+    "test_gaps": 39,
     "next_tool_suggestions": [
       "detect_changes",
       "get_affected_flows",
@@ -99,38 +99,58 @@
     ],
     "context_savings": {
       "estimated": true,
-      "saved_tokens": 87695,
+      "saved_tokens": 77677,
       "saved_percent": 100
     }
   },
   "crg_impact_radius": {
     "status": "ok",
-    "summary": "Blast radius for 21 changed file(s):\n  - 88 nodes directly changed\n  - 500 nodes impacted (within 2 hops)\n  - 139 additional files affected\n  - Results truncated: showing 500 of 537 impacted nodes",
+    "summary": "Blast radius for 15 changed file(s):\n  - 93 nodes directly changed\n  - 500 nodes impacted (within 2 hops)\n  - 147 additional files affected\n  - Results truncated: showing 500 of 543 impacted nodes",
     "risk": "high",
-    "impacted_file_count": 139,
+    "impacted_file_count": 147,
     "key_entities": [
-      "/Users/johnny/projects/omnibot/.check_tool.py",
-      "/Users/johnny/projects/omnibot/.cov_runner.py",
-      "/Users/johnny/projects/omnibot/.coverage_runner_fr22.py",
-      "/Users/johnny/projects/omnibot/.fr96_ruff_capture.py",
-      "/Users/johnny/projects/omnibot/.lint_check_fr11.py"
+      "/Users/johnny/projects/omnibot/.check_imports.py",
+      "/Users/johnny/projects/omnibot/.check_lint.py",
+      "extract_json",
+      "has_line_citation",
+      "hunt_agent"
     ],
     "truncated": true,
     "context_savings": {
       "estimated": true,
-      "saved_tokens": 87664,
+      "saved_tokens": 77676,
       "saved_percent": 100
     }
   },
   "crg_affected_flows": {
-    "total": 2,
+    "total": 7,
     "flows": [
       {
-        "name": "run_backup",
-        "criticality": 0.16
+        "name": "sanitize",
+        "criticality": 0.61
       },
       {
-        "name": "restore",
+        "name": "process_with_knowledge",
+        "criticality": 0.4
+      },
+      {
+        "name": "classify",
+        "criticality": 0.37
+      },
+      {
+        "name": "check",
+        "criticality": 0.36
+      },
+      {
+        "name": "check_input",
+        "criticality": 0.28
+      },
+      {
+        "name": "_build_sandwich_prompt",
+        "criticality": 0.24
+      },
+      {
+        "name": "__init__",
         "criticality": 0.16
       }
     ]
