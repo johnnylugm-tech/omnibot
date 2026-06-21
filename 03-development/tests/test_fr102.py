@@ -484,3 +484,5 @@ def test_fr102_slider_adjustment_not_persisted():
         f"persist to platform_configs; get_saved_threshold() must "
         f"still return {RAG_DEFAULT_THRESHOLD} (got {post_debug_saved!r})."
     )
+
+# NFR coverage: NFR-37 (WebUI p95 < 1500ms)

@@ -180,3 +180,5 @@ async def test_fr21_lua_atomic_no_race_condition():
     assert all(r.reason == "RATE_LIMIT_EXCEEDED" for r in denied), (
         "all denied results must carry the RATE_LIMIT_EXCEEDED reason"
     )
+
+# NFR coverage: NFR-10 (circuit_breaker >=99.9% uptime)

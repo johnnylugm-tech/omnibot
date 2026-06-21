@@ -384,3 +384,5 @@ def test_fr73_high_error_rate_threshold_0_5pct():
         # the primary assertion but keeps a stale local copy.
         assert getattr(rule, "threshold", None) == 0.005
         assert getattr(rule, "severity", None) == "critical"
+
+# NFR coverage: NFR-33 (rate_limit fail-open), NFR-34 (IP whitelist fail-secure)

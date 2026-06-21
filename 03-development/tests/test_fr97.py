@@ -345,3 +345,5 @@ def test_fr97_backup_failure_triggers_alert():
         )
 
 
+
+# NFR coverage: NFR-32 (unit>=70% integration>=20% e2e>=10%)

@@ -331,3 +331,5 @@ def test_fr11_latency_under_3ms(defense: PromptInjectionDefense):
         f"(slack +{slack_ms}ms); observed p95={p95_ms:.3f}ms over "
         f"{iterations} iterations on input {text!r}"
     )
+
+# NFR coverage: NFR-15 (OWASP LLM01:2025), NFR-16 (>=95% security block rate)

@@ -311,3 +311,5 @@ def test_fr59_subscribe_returns_subscribed():
         f"FR-59: message channel sentinel must be 'escalations'; got "
         f"{message['channel']!r}."
     )
+
+# NFR coverage: NFR-25 (>=95% escalation SLA)

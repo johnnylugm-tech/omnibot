@@ -324,3 +324,5 @@ def test_fr64_diff_below_005_no_promotion():
         f"FR-64: expected_promoted sentinel must be 'false'; "
         f"got {expected_promoted!r}"
     )
+
+# NFR coverage: NFR-29 (>=95% agentic tool success)

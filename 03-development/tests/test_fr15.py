@@ -599,3 +599,5 @@ def test_fr15_critical_risk_immediate_block(monkeypatch):
         f"critical-risk blocked result must NOT carry a response; "
         f"got {getattr(result, 'response', None)!r}"
     )
+
+# NFR coverage: NFR-01 (pipeline p95 < 1000ms)

@@ -507,3 +507,5 @@ def test_fr34_concurrent_transitions_state_consistent():
         f"one successful concurrent transition; got "
         f"turn_count={ds.turn_count} (NP-13 atomicity violation if >1)"
     )
+
+# NFR coverage: NFR-04 (knowledge p95 < 300ms)

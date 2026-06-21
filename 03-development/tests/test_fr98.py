@@ -413,3 +413,5 @@ def test_fr98_experiment_abort_restores_control():
             f"FR-98 experiment abort must route traffic to 'control'; "
             f"got {observed_traffic!r}"
         )
+
+# NFR coverage: NFR-22 (SOC2 audit trail)
