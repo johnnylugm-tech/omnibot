@@ -35,7 +35,7 @@ import contextvars
 import copy
 import secrets
 import threading
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 
@@ -193,7 +193,7 @@ def _ensure_setup() -> None:
 def start_as_current_span(
     name: str,
     attributes: dict | None = None,
-) -> Iterator[_ActiveSpan]:
+) -> Generator[_ActiveSpan, None, None]:
     """[FR-72] Open ``name`` as the current span; record on context exit.
 
     On entry a new ``_ActiveSpan`` is pushed onto the **current execution
