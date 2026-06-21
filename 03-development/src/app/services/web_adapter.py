@@ -18,7 +18,7 @@ import hmac
 import json
 import secrets
 import time
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from app.core.unified_message import MessageType, Platform, UnifiedMessage
 from app.services._jwt_utils import _b64url_decode, _b64url_encode
@@ -110,7 +110,7 @@ class WebAdapter:
             message_type=MessageType.TEXT,
             content=content,
             raw_payload={"content": content},
-            received_at=datetime.now(UTC),
+            received_at=datetime.now(timezone.utc),
             reply_token=None,
         )
 

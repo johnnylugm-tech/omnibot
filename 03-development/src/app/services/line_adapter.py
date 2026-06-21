@@ -12,7 +12,7 @@ Citations:
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from app.core.unified_message import MessageType, Platform, UnifiedMessage
 
@@ -51,7 +51,7 @@ class LineWebhookAdapter:
             content = line_msg.get("text", "")
 
             received_at = datetime.fromtimestamp(
-                event["timestamp"] / 1000.0, tz=UTC
+                event["timestamp"] / 1000.0, tz=timezone.utc
             )
 
             msg = UnifiedMessage(

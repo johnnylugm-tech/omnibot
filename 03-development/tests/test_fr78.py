@@ -105,7 +105,6 @@ def _isolate_batch_io(monkeypatch):
 # ---------------------------------------------------------------------------
 from app.infra.jobs import batch_import_knowledge  # noqa: E402
 
-
 # ---------------------------------------------------------------------------
 # Spec-pinned trigger values — keep these in lock-step with TEST_SPEC.md.
 # ---------------------------------------------------------------------------

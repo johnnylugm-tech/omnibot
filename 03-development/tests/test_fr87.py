@@ -15,8 +15,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Source under test.
 #

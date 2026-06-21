@@ -23,6 +23,8 @@ Citations:
       Parent for LLM input (line 109).
 """
 
+from __future__ import annotations
+
 from collections.abc import Callable
 from dataclasses import dataclass
 

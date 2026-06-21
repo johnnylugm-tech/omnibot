@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import base64
 import json
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from app.core.unified_message import (
@@ -138,7 +138,7 @@ class A2AAdapter:
         Returns:
             UnifiedMessage with platform=Platform.A2A, message_type=TEXT,
             content sourced from params.query or params.text, raw_payload
-            set to the full request body, received_at=now(UTC),
+            set to the full request body, received_at=now(timezone.utc),
             reply_token=None, and platform_user_id from the JWT "sub" claim.
 
         Citations:
@@ -163,7 +163,7 @@ class A2AAdapter:
             message_type=MessageType.TEXT,
             content=content,
             raw_payload=body,
-            received_at=datetime.now(UTC),
+            received_at=datetime.now(timezone.utc),
             reply_token=None,
         )
 

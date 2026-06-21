@@ -13,7 +13,7 @@ Citations:
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from app.core.unified_message import MessageType, Platform, UnifiedMessage
 
@@ -82,7 +82,7 @@ class MessengerWebhookAdapter:
         for entry in entries:
             timestamp_ms = entry.get("time", 0)
             received_at = datetime.fromtimestamp(
-                timestamp_ms / 1000, tz=UTC
+                timestamp_ms / 1000, tz=timezone.utc
             )
             for messaging_event in entry.get("messaging", []):
                 sender_id = messaging_event["sender"]["id"]

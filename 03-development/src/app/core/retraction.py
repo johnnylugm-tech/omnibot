@@ -29,7 +29,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 # Platform-specific retraction windows (SRS FR-17).
@@ -111,7 +111,7 @@ def _attempt_windowed_delete(
     window-expired send or a raised API exception fall through to the
     fail-secure apology + audit-log event.
     """
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     if client is None or (now - sent_at) > window:
         reason = "no_client" if client is None else "window_expired"
         _log_retraction_failed(

@@ -30,7 +30,7 @@ performs an exact-match lookup, so do not rename or alias.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 # ---------------------------------------------------------------------------

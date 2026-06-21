@@ -16,12 +16,8 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import os
-
 import pytest
-
 from app.admin.rbac import RBACEnforcer, enforce
-from app.services._jwt_utils import _b64url_decode, _b64url_encode
 
 # ---------------------------------------------------------------------------
 # Source under test.
@@ -56,6 +52,7 @@ from app.services._jwt_utils import _b64url_decode, _b64url_encode
 # make every assertion hold.
 # ---------------------------------------------------------------------------
 from app.api.auth import assign_role_to_user, login
+from app.services._jwt_utils import _b64url_decode, _b64url_encode
 
 
 # ============================================================================

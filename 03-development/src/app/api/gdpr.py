@@ -31,7 +31,7 @@ from __future__ import annotations
 import csv
 import io
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 # ---------------------------------------------------------------------------
 # In-memory data stores — test-visible surrogates for DB tables.
@@ -163,7 +163,7 @@ def export_user_data(user_id: str, format: str = "json") -> dict:
         csv_data = csv_buffer.getvalue()
         filename = (
             f"{user_id}_data_"
-            f"{datetime.now(UTC).strftime('%Y-%m-%d')}.csv"
+            f"{datetime.now(timezone.utc).strftime('%Y-%m-%d')}.csv"
         )
         return {
             "csv_data": csv_data,
@@ -204,7 +204,7 @@ def delete_user_data(user_id: str) -> dict:
         03-development/tests/test_fr88.py:251-324 — case 4 audit log entry
     """
     deletion_id = str(uuid.uuid4())
-    now = datetime.now(UTC).isoformat()
+    now = datetime.now(timezone.utc).isoformat()
 
     # Clear PII fields from the user profile.
     if user_id in _USER_PROFILES:

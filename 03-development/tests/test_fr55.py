@@ -21,7 +21,7 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # ---------------------------------------------------------------------------
 # Source under test.
@@ -265,7 +265,7 @@ def test_fr55_breach_query_correct():
             conversation_id="conv-breach",
             priority=2,
         )
-        past = datetime.now(UTC) - timedelta(hours=1)
+        past = datetime.now(timezone.utc) - timedelta(hours=1)
         manager.rows[breached_id]["sla_deadline"] = past
         manager.rows[breached_id]["resolved_at"] = None
         # Sanity: the row exists and is unresolved.
@@ -285,7 +285,7 @@ def test_fr55_breach_query_correct():
             conversation_id="conv-future",
             priority=0,
         )
-        future = datetime.now(UTC) + timedelta(hours=1)
+        future = datetime.now(timezone.utc) + timedelta(hours=1)
         manager.rows[future_id]["sla_deadline"] = future
         manager.rows[future_id]["resolved_at"] = None
 
@@ -348,7 +348,7 @@ def test_fr55_breach_query_correct():
         # condition. Loop over the rows and check both clauses
         # explicitly so a partial implementation (e.g. filter on
         # resolved_at but ignore sla_deadline) fails loudly.
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         for row in rows:
             if isinstance(row, dict):
                 row_resolved_at = row.get("resolved_at")

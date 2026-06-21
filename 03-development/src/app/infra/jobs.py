@@ -70,7 +70,7 @@ import time
 import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Literal
 
 # ---------------------------------------------------------------------------
@@ -439,7 +439,7 @@ async def create_knowledge_with_chunks(
          ``asyncio.wait_for(_embed_first_chunk(...),
          timeout=EMBEDDING_TIMEOUT_S)``.
       3. On success → ``embedding_synced=True``,
-         ``search_ready=True``, ``embedding_synced_at=now(UTC)``,
+         ``search_ready=True``, ``embedding_synced_at=now(timezone.utc)``,
          ``fallback=None``.
       4. On ``asyncio.TimeoutError`` (or any unexpected exception
          inside the embed call) → log a warning, enqueue the chunk
@@ -515,7 +515,7 @@ async def create_knowledge_with_chunks(
         )
     else:
         embedding_synced = True
-        embedding_synced_at = datetime.now(tz=UTC)
+        embedding_synced_at = datetime.now(tz=timezone.utc)
 
     elapsed = time.perf_counter() - start
 

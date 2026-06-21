@@ -71,7 +71,7 @@ from __future__ import annotations
 # exercise the deletion function in isolation, which is the canonical
 # unit-test shape for FR-92.
 # ---------------------------------------------------------------------------
-from app.infra.data_deletion import DataDeletionResult, execute_data_deletion
+from app.infra.data_deletion import execute_data_deletion
 
 
 # ---------------------------------------------------------------------------

@@ -35,7 +35,7 @@ import base64
 import hashlib
 import hmac
 import json
-from datetime import UTC
+from datetime import timezone
 
 import pytest
 
@@ -700,7 +700,7 @@ def test_fr02_unified_message_line_platform():
     """Explicit construction: Platform.LINE, every field set."""
     from datetime import datetime
 
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     msg = UnifiedMessage(
         platform=Platform.LINE,
         platform_user_id="U123",
@@ -725,7 +725,7 @@ def test_fr02_unified_message_reply_token_none_for_non_line():
     """reply_token is None for non-LINE platforms per spec."""
     from datetime import datetime
 
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     msg = UnifiedMessage(
         platform=Platform.TELEGRAM,
         platform_user_id="U456",
@@ -743,7 +743,7 @@ def test_fr02_unified_message_frozen_prevents_mutation():
     """frozen=True rejects attribute mutation with FrozenInstanceError."""
     from datetime import datetime
 
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     msg = UnifiedMessage(
         platform=Platform.WEB,
         platform_user_id="U789",
@@ -764,7 +764,7 @@ def test_fr02_unified_message_sticker_type():
     """MessageType.STICKER is constructible."""
     from datetime import datetime
 
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     msg = UnifiedMessage(
         platform=Platform.LINE,
         platform_user_id="U_sticker",
@@ -783,7 +783,7 @@ def test_fr02_unified_message_image_type():
     """MessageType.IMAGE is constructible."""
     from datetime import datetime
 
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     msg = UnifiedMessage(
         platform=Platform.WHATSAPP,
         platform_user_id="U_img",
@@ -801,7 +801,7 @@ def test_fr02_unified_message_location_type():
     """MessageType.LOCATION is constructible."""
     from datetime import datetime
 
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     msg = UnifiedMessage(
         platform=Platform.MESSENGER,
         platform_user_id="U_loc",

@@ -64,7 +64,7 @@ import pytest
 # (Exit Code 2) because ``app.admin.gdpr`` does not exist yet. That is the
 # valid RED signal — GREEN creates the module with the functions above.
 # ---------------------------------------------------------------------------
-from app.admin.gdpr import store_pii_entry, decrypt_pii_entry
+from app.admin.gdpr import decrypt_pii_entry, store_pii_entry
 
 
 # ============================================================================

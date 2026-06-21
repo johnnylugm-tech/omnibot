@@ -35,8 +35,13 @@ import threading
 import unicodedata
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from enum import StrEnum
+import enum
 from typing import cast
+
+
+class StrEnum(str, enum.Enum):
+    """Python 3.9 compatible StrEnum backport."""
+    pass
 
 # Curated Cyrillic + Greek homoglyphs that visually mimic ASCII and are
 # routinely used to bypass naive input filters (look-alike usernames,

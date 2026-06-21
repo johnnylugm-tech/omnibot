@@ -10,7 +10,7 @@ Citations:
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from app.core.unified_message import MessageType, Platform, UnifiedMessage
 
@@ -43,6 +43,6 @@ class TelegramWebhookAdapter:
             message_type=MessageType.TEXT,
             content=content,
             raw_payload=update_payload,
-            received_at=datetime.now(UTC),
+            received_at=datetime.now(timezone.utc),
             reply_token=None,
         )

@@ -28,6 +28,8 @@ TEST_SPEC cases (41 total — function names MUST match exactly):
 from __future__ import annotations
 
 import pytest
+from app.admin.rbac import RBACEnforcer
+from app.api.m2m import validate_token
 
 # ===========================================================================
 # Imports — unguarded on purpose.
@@ -36,48 +38,34 @@ import pytest
 # Collection Error (Exit Code 2) due to ModuleNotFoundError — that is the
 # CORRECT RED signal for this step. Do NOT wrap in try/except ImportError.
 # ===========================================================================
-
 # -- FR-108 core module (does NOT exist — triggers valid RED) --
 from app.core.golden_dataset import (
-    EdgeCase,
-    EdgeCaseCategory,
     EdgeCaseStatus,
     GoldenDataset,
     RegressionRunner,
 )
+from app.core.knowledge import HybridKnowledge
 
 # -- Cross-cutting module imports (some exist, used as GREEN contracts) --
 from app.core.paladin import (
     GroundingChecker,
     InputSanitizer,
     PALADINPipeline,
-    PromptInjectionDefense,
 )
 from app.core.pii import PIIMasking
-from app.core.knowledge import HybridKnowledge
-from app.core.emotion import EmotionAnalyzer
 from app.core.pipeline import Pipeline
-from app.core.retraction import RetractionResult
-
-from app.infra.rate_limit import RateLimiter
-from app.infra.compose import ComposeHealth
 from app.infra.backup_strategy import BackupStrategy
+from app.infra.compose import ComposeHealth
 from app.infra.k8s_deployment import K8sManifest
-
+from app.infra.rate_limit import RateLimiter
 from app.middleware.ip_whitelist import IPWhitelist
-
-from app.admin.rbac import RBACEnforcer
-
-from app.services.llm_judge import CalibrationPipeline, LLMJudge
 from app.services.escalation import EscalationManager
-
-from app.services.telegram_verifier import TelegramWebhookVerifier
 from app.services.line_verifier import LineWebhookVerifier
+from app.services.llm_judge import CalibrationPipeline, LLMJudge
 from app.services.messenger_verifier import MessengerWebhookVerifier
-from app.services.whatsapp_verifier import WhatsAppWebhookVerifier
+from app.services.telegram_verifier import TelegramWebhookVerifier
 from app.services.web_verifier import WebJwtVerifier
-
-from app.api.m2m import validate_token
+from app.services.whatsapp_verifier import WhatsAppWebhookVerifier
 
 
 # ===========================================================================

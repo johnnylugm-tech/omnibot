@@ -22,7 +22,12 @@ Citations:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import StrEnum
+import enum
+
+
+class StrEnum(str, enum.Enum):
+    """Python 3.9 compatible StrEnum backport."""
+    pass
 
 
 class EdgeCaseCategory(StrEnum):

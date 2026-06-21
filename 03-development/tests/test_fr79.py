@@ -27,8 +27,6 @@ performs an exact-match lookup, so do not rename or alias.
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # Test isolation — embedding sync status may involve background job state
 # tracked via Redis/DB. Both are real I/O and must NOT happen in unit tests.
@@ -53,7 +51,7 @@ import pytest
 # Collection Error (Exit Code 2) because ``app.infra.jobs`` is not yet
 # defined. That is the valid RED signal — GREEN adds the module.
 # ---------------------------------------------------------------------------
-from app.infra.jobs import (  # noqa: E402,F401
+from app.infra.jobs import (
     EmbeddingSyncStatus,
     compute_sync_status,
 )
@@ -165,7 +163,7 @@ def test_fr79_embedding_synced_at_set_after_all_chunks():
     # when status is "synced".
     import datetime as _dt
 
-    now = _dt.datetime.now(_dt.timezone.utc)
+    now = _dt.datetime.now(_dt.UTC)
     sync = EmbeddingSyncStatus(
         chunks_done=chunks_done,
         chunks_total=chunks_total,
@@ -188,7 +186,7 @@ def test_fr79_embedding_synced_at_set_after_all_chunks():
 
     # Timezone-awareness guard — UTC timestamps only.
     if actual_field_value.tzinfo is not None:
-        assert actual_field_value.tzinfo == _dt.timezone.utc, (
+        assert actual_field_value.tzinfo == _dt.UTC, (
             f"FR-79 {expected_field} must be UTC; "
             f"got tzinfo={actual_field_value.tzinfo}"
         )
