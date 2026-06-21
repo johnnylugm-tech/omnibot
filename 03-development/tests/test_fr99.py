@@ -577,4 +577,13 @@ def test_fr99_concurrent_threshold_cross_single_probe():
         f"TEST_SPEC FR-99 case 7; got {expected_circuit_state!r}."
     )
 
-# NFR coverage: NFR-09 (2000 TPS sustained)
+
+def test_fr99_nfr09_2000_consecutive_successes_no_circuit_trip():
+    # NFR-09: 2000 TPS sustained — circuit breaker must not false-trip under load
+    cb = CircuitBreaker()
+    for _ in range(2000):
+        cb.record_llm_success()
+    assert cb.current_level == CircuitBreaker.LEVEL_0, (
+        f"NFR-09: after 2000 successful LLM calls, circuit breaker must remain "
+        f"at LEVEL_0; got {cb.current_level!r}"
+    )

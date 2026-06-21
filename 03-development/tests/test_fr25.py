@@ -161,4 +161,9 @@ def test_fr25_invalid_ip_returns_false_no_exception():
         f"invalid IP must yield status=403 (denied); got status={result.status}"
     )
 
-# NFR coverage: NFR-35 (IP Whitelist max 100 CIDR blocks)
+
+def test_fr25_nfr35_rejects_over_100_cidrs():
+    # NFR-35: IP Whitelist max 100 CIDR blocks
+    cidrs_101 = [f"10.{i // 256}.{i % 256}.0/24" for i in range(101)]
+    with pytest.raises(IPWhitelistError, match="ip_whitelist_too_many_entries"):
+        IPWhitelist(cidrs_101)

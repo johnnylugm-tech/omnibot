@@ -324,4 +324,15 @@ def test_fr74_grafana_panels_wired_to_prometheus_metrics():
         for _panel_name, panel in panels.items():
             assert getattr(panel, "datasource", None) == "prometheus"
 
-# NFR coverage: NFR-19 (LLM API cost ~$210/month)
+
+def test_fr74_nfr19_cost_time_series_panel_tracks_llm_spend():
+    # NFR-19: LLM API cost ~$210/month — dashboard panel must exist for tracking
+    assert "cost_time_series" in GRAFANA_DASHBOARD, (
+        "NFR-19: GRAFANA_DASHBOARD must include 'cost_time_series' panel "
+        "to monitor and enforce the ~$210/month LLM API budget"
+    )
+    panel = GRAFANA_DASHBOARD["cost_time_series"]
+    assert panel.datasource == "prometheus", (
+        f"NFR-19: cost_time_series panel must use prometheus datasource; "
+        f"got {panel.datasource!r}"
+    )

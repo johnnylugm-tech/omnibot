@@ -258,4 +258,16 @@ def test_fr50_variable_interpolation_correct():
         f"FR-50: expected sentinel must be 'hello'; got {expected!r}"
     )
 
-# NFR coverage: NFR-06 (LLM fallback switch<500ms)
+
+def test_fr50_nfr06_llm_fallback_switch_under_500ms():
+    # NFR-06: LLM fallback switch < 500ms
+    import time
+    tmpl = ResponseGenerator.DEFAULT_TEMPLATES.get("rule_default")
+    assert tmpl is not None, "NFR-06: rule_default fallback template must exist"
+    t0 = time.monotonic()
+    result = ResponseGenerator.render(tmpl.template, answer="fallback")
+    elapsed_ms = (time.monotonic() - t0) * 1000
+    assert result is not None, "NFR-06: fallback render must return a non-None result"
+    assert elapsed_ms < 500.0, (
+        f"NFR-06: fallback switch must complete in < 500ms; took {elapsed_ms:.2f}ms"
+    )

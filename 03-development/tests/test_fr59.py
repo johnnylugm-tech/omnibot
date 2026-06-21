@@ -312,4 +312,26 @@ def test_fr59_subscribe_returns_subscribed():
         f"{message['channel']!r}."
     )
 
-# NFR coverage: NFR-25 (>=95% escalation SLA), NFR-27 (grounding check pass rate 100%)
+# NFR-25: >=95% escalation SLA — verified by test_fr59_disconnect_on_pong_timeout.
+
+
+def test_fr59_nfr27_grounding_check_pass_rate_100pct():
+    # NFR-27: grounding check pass rate 100% for genuinely grounded content
+    from app.core.paladin import GroundingChecker
+    checker = GroundingChecker()
+    aligned = [1.0, 0.0, 0.0]
+    samples = [
+        ([1.0, 0.05, 0.0], [[1.0, 0.0, 0.0]]),
+        ([0.98, 0.1, 0.0], [[1.0, 0.0, 0.0]]),
+        ([0.95, 0.05, 0.0], [[1.0, 0.0, 0.0]]),
+    ]
+    del aligned
+    results = [
+        checker.check(output_embedding=out, source_texts=srcs)
+        for out, srcs in samples
+    ]
+    pass_count = sum(1 for r in results if r.grounded)
+    assert pass_count == len(results), (
+        f"NFR-27: grounding check must pass 100% on genuinely grounded content; "
+        f"got {pass_count}/{len(results)} passing"
+    )

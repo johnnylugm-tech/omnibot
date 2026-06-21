@@ -430,4 +430,20 @@ def test_fr91_emotion_90d_deleted():
         f"return False one day before the horizon"
     )
 
-# NFR coverage: NFR-30 (K8s HPA min=3 max=10 CPU=70%)
+
+def test_fr91_nfr30_hpa_config_min3_max10_cpu70():
+    # NFR-30: K8s HPA min=3 max=10 CPU=70%
+    from app.infra.k8s_deployment import (
+        HPA_CPU_TARGET_PERCENT,
+        HPA_MAX_REPLICAS,
+        HPA_MIN_REPLICAS,
+    )
+    assert HPA_MIN_REPLICAS == 3, (
+        f"NFR-30: HPA_MIN_REPLICAS must be 3; got {HPA_MIN_REPLICAS}"
+    )
+    assert HPA_MAX_REPLICAS == 10, (
+        f"NFR-30: HPA_MAX_REPLICAS must be 10; got {HPA_MAX_REPLICAS}"
+    )
+    assert HPA_CPU_TARGET_PERCENT == 70, (
+        f"NFR-30: HPA_CPU_TARGET_PERCENT must be 70; got {HPA_CPU_TARGET_PERCENT}"
+    )

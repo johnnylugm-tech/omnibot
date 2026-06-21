@@ -283,4 +283,11 @@ def test_fr31_reason_enum_valid_values():
             f"reason attr={getattr(result, 'reason', None)!r}"
         )
 
-# NFR coverage: NFR-08 (embedding job p95<30s)
+
+def test_fr31_nfr08_embedding_timeout_within_30s_nfr_ceiling():
+    # NFR-08: embedding job p95 < 30s
+    from app.infra.jobs import EMBEDDING_TIMEOUT_S
+    assert EMBEDDING_TIMEOUT_S <= 30.0, (
+        f"NFR-08: EMBEDDING_TIMEOUT_S must be <= 30s (NFR ceiling); "
+        f"got {EMBEDDING_TIMEOUT_S}s"
+    )

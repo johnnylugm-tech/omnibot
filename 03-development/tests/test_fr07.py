@@ -326,4 +326,13 @@ def test_fr07_must_not_mutate_frozen_dataclass():
         f"original value; got {getattr(msg, attempt_field)!r}"
     )
 
-# NFR coverage: NFR-36 (M2M token 90-day expiry)
+
+def test_fr07_nfr36_m2m_token_90day_default_expiry():
+    # NFR-36: M2M token 90-day expiry
+    import inspect
+    from app.api.m2m import create_token
+    sig = inspect.signature(create_token)
+    default_days = sig.parameters["expires_in_days"].default
+    assert default_days == 90, (
+        f"NFR-36: create_token default expires_in_days must be 90; got {default_days!r}"
+    )

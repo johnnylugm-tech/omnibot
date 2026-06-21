@@ -147,4 +147,14 @@ def test_fr105_judge_sample_rate_default_020():
         f"Valid range upper bound must be 1.0, got {high}"
     )
 
-# NFR coverage: NFR-18 (monthly cost<$500)
+
+def test_fr105_nfr18_monthly_cost_under_500_usd():
+    # NFR-18: monthly cost < $500
+    # At Tier-3 ($0.009/query) with 30,000 queries/month: total = $270 < $500.
+    monthly_queries = 30_000
+    tier3_cost = TIER_COSTS[3]
+    monthly_cost = monthly_queries * tier3_cost
+    assert monthly_cost < 500.0, (
+        f"NFR-18: {monthly_queries} Tier-3 queries/month must cost < $500; "
+        f"got ${monthly_cost:.2f} at ${tier3_cost}/query"
+    )

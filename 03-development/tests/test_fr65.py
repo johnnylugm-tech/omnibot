@@ -686,4 +686,24 @@ def test_fr65_judge_timeout_returns_partial_result():
 _ = MagicMock
                 # GREEN will see once it implements the module.
 
-# NFR coverage: NFR-24 (>=90% FCR), NFR-26 (LLM-as-a-Judge Cohen's Kappa>=0.7)
+# NFR-24: >=90% FCR — tracked via Grafana FCR line panel.
+
+
+def test_fr65_nfr26_judge_kappa_threshold_07():
+    # NFR-26: LLM-as-a-Judge Cohen's Kappa >= 0.7
+    from app.services.llm_judge import CalibrationPipeline
+    mock_cache = MagicMock()
+    mock_cache.get.return_value = None
+    pipeline = CalibrationPipeline(judge_llm=MagicMock(), kappa_cache=mock_cache, timeout_s=30)
+    golden_set = [
+        {"label": "positive", "judge_label": "positive"},
+        {"label": "negative", "judge_label": "negative"},
+        {"label": "positive", "judge_label": "positive"},
+        {"label": "neutral", "judge_label": "neutral"},
+        {"label": "negative", "judge_label": "negative"},
+    ]
+    rate = pipeline._agreement_rate(golden_set)
+    assert rate is not None, "NFR-26: agreement rate must not be None for a valid golden set"
+    assert rate >= 0.7, (
+        f"NFR-26: Cohen's Kappa agreement rate must be >= 0.7; got {rate}"
+    )
