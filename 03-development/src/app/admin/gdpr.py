@@ -25,9 +25,6 @@ from app.admin.rbac import enforce as _rbac_enforce
 # Keys are UUID strings (entry_id); values are the encrypted record dicts.
 _VAULT: dict[str, dict] = {}
 
-_HTTP_OK: int = 200
-
-
 def _derive_fernet_key(encryption_key_id: str) -> bytes:
     """Derive a deterministic Fernet-compatible 32-byte key from a KMS key ID.
 
@@ -92,7 +89,7 @@ def decrypt_pii_entry(entry_id: str, role: str) -> dict:
     Returns a dict with ``original_text`` (str), ``masked_text`` (str),
     and ``category`` (str).
     """
-    if _rbac_enforce(role, "pii", "decrypt") != _HTTP_OK:
+    if _rbac_enforce(role, "pii", "decrypt") != 200:
         raise PermissionError("AUTHZ_INSUFFICIENT_ROLE")
 
     entry = _VAULT[entry_id]
