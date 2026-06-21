@@ -266,11 +266,23 @@ class ABTestManager:
     ) -> tuple[list[tuple[str, float]], int]:
         """Compute per-variant mean metric and total observation count.
 
+        Zero-observation variants (empty score list) are **excluded**
+        from ``means`` entirely. They cannot participate in the gap
+        comparison because a synthetic 0.0 mean from a variant nobody
+        ran is not a real signal — using it as the runner-up would
+        inflate ``best_mean - second_mean`` and trigger a spurious
+        promotion when the observed gap is below the real baseline
+        (fix for [M-13] zero-observation variant 參與 gap 比較，觸發
+        虛假 promotion).
+
         Returns:
             A ``(means, total_sample)`` tuple where ``means`` is a list
-            of ``(variant_label, mean)`` pairs in insertion order, and
+            of ``(variant_label, mean)`` pairs in insertion order for
+            variants that have at least one observation, and
             ``total_sample`` is the sum of observation counts across
-            all variants. Variants with no observations get mean 0.0.
+            **all** variants including zero-obs ones (SRS FR-64
+            "最小樣本量 100" measures total observations, not the
+            count of populated variants).
         """
         means: list[tuple[str, float]] = []
         total_sample = 0
@@ -279,7 +291,8 @@ class ABTestManager:
             count = len(scores_list)
             total_sample += count
             if count == 0:
-                means.append((str(variant), 0.0))
+                # Skip — a variant with zero observations has no
+                # observed mean and must not pollute the gap baseline.
                 continue
             means.append((str(variant), sum(scores_list) / count))
         return means, total_sample

@@ -252,6 +252,15 @@ class GoldenDataset:
         self._cases: list[EdgeCase] = []
         self._loaded = False
 
+    def _ensure_loaded(self) -> None:
+        """[FR-108] Lazy-load the default dataset if load() was not called.
+
+        Prevents silent empty results when query methods are invoked
+        before an explicit load().
+        """
+        if not self._loaded:
+            self.load()
+
     def load(self) -> list[EdgeCase]:
         """[FR-108] Load the 500 edge cases.
 
@@ -271,6 +280,7 @@ class GoldenDataset:
         Citations:
             - 03-development/tests/test_fr108.py:149
         """
+        self._ensure_loaded()
         return len(self._cases)
 
     def categories(self) -> set[str]:
@@ -279,6 +289,7 @@ class GoldenDataset:
         Citations:
             - 03-development/tests/test_fr108.py:172
         """
+        self._ensure_loaded()
         return {case.category for case in self._cases}
 
     def by_status(self, status: EdgeCaseStatus) -> list[EdgeCase]:
@@ -287,6 +298,7 @@ class GoldenDataset:
         Citations:
             - 03-development/tests/test_fr108.py:108-109
         """
+        self._ensure_loaded()
         return [c for c in self._cases if c.status == status]
 
     def by_category(self, category: str) -> list[EdgeCase]:
@@ -295,6 +307,7 @@ class GoldenDataset:
         Citations:
             - 03-development/tests/test_fr108.py:194
         """
+        self._ensure_loaded()
         return [c for c in self._cases if c.category == category]
 
 

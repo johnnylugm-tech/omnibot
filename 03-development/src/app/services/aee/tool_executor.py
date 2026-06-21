@@ -15,9 +15,14 @@ Citations:
 
 from __future__ import annotations
 
+import inspect
 import json
+import logging
 from collections.abc import Callable
 from typing import Any
+
+from jsonschema import Draft202012Validator
+from jsonschema.exceptions import ValidationError
 
 from app.services.aee.adapter import (
     ToolDefinition,
@@ -25,6 +30,49 @@ from app.services.aee.adapter import (
     fail,
     ok,
 )
+
+_log = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# [H-18] Handler safety whitelist.
+#
+# Only top-level ``def`` functions, bound methods, and C builtins are
+# accepted as tool handlers. Callable classes / instances / arbitrary
+# objects with ``__call__`` are REJECTED so that callers cannot inject
+# code that bypasses the registry's audit surface (callable instances
+# can carry arbitrary closure state and re-enter the executor with
+# unexpected semantics).
+# ---------------------------------------------------------------------------
+_ALLOWED_HANDLER_PREDICATES: tuple[Callable[[Any], bool], ...] = (
+    inspect.isfunction,
+    inspect.ismethod,
+    inspect.isbuiltin,
+)
+
+
+def _validate_handler(handler: Any, *, context: str) -> None:
+    """[H-18] Reject handlers that are not in the safety whitelist.
+
+    Args:
+        handler: the candidate handler to validate.
+        context: human-readable label (typically the tool name) used
+            in the error message so misconfiguration is debuggable.
+
+    Raises:
+        TypeError: when ``handler`` is not callable, or is callable
+            but its type is not in ``_ALLOWED_HANDLER_PREDICATES``.
+    """
+    if not callable(handler):
+        raise TypeError(
+            f"{context}: handler must be callable; got "
+            f"{type(handler).__name__}"
+        )
+    if not any(predicate(handler) for predicate in _ALLOWED_HANDLER_PREDICATES):
+        raise TypeError(
+            f"{context}: handler type {type(handler).__name__!r} is "
+            f"not in the safety whitelist; allowed: top-level "
+            f"functions, bound methods, or C builtins"
+        )
 
 # Order statuses that BLOCK address updates per SRS FR-43: "出貨前才允許".
 _BLOCKED_ADDRESS_STATUSES: frozenset[str] = frozenset({"shipped", "delivered"})
@@ -138,6 +186,10 @@ class ToolExecutor:
             self._register_default_tools()
         if handlers:
             for tool_name, handler in handlers.items():
+                # [H-18] Reject arbitrary callables up-front so the
+                # security boundary is enforced at construction time,
+                # not deferred to the first ``execute()`` call.
+                _validate_handler(handler, context=f"handlers[{tool_name!r}]")
                 self.register(
                     ToolDefinition(
                         name=tool_name,
@@ -170,6 +222,9 @@ class ToolExecutor:
                 ``ToolExecutionResult`` is also accepted and passed
                 through unchanged.
         """
+        # [H-18] Defense in depth: even if the ``handlers`` kwarg path
+        # is bypassed, ``register()`` itself enforces the whitelist.
+        _validate_handler(handler, context=f"register({tool.name!r})")
         self._tools[tool.name] = tool
         self._handlers[tool.name] = handler
 
@@ -215,17 +270,54 @@ class ToolExecutor:
         handler = self._handlers.get(tool_name)
         if handler is None:
             return fail(f"Tool '{tool_name}' is not registered")
+        # Invariant: ``_handlers`` and ``_tools`` are kept in lockstep
+        # by ``register()``; the handler lookup above guarantees a
+        # matching ``ToolDefinition`` exists.
+        tool = self._tools[tool_name]
 
         arguments = self._decode_arguments(arguments_json)
         if isinstance(arguments, ToolExecutionResult):
             return arguments
+        # [H-19] Pre-decoded (or freshly decoded) arguments MUST be a
+        # JSON object; lists / scalars / ``None`` are not valid tool
+        # arguments regardless of what the schema says.
+        if not isinstance(arguments, dict):
+            return fail(
+                f"Tool '{tool_name}' arguments must be a JSON object; "
+                f"got {type(arguments).__name__}"
+            )
+
+        # [H-19] Validate arguments against the tool's declared
+        # ``parameters_schema``. Applied to BOTH the string-decoded and
+        # pre-decoded-dict paths (the bug was that the pre-decoded path
+        # skipped validation entirely).
+        if tool.parameters_schema:
+            try:
+                Draft202012Validator(tool.parameters_schema).validate(arguments)
+            except ValidationError as exc:
+                return fail(
+                    f"Tool '{tool_name}' arguments failed schema "
+                    f"validation: {exc.message}"
+                )
 
         try:
             result = handler(**arguments)
-        except (MemoryError, RecursionError):
-            raise
-        except Exception as exc:
-            return fail(f"Tool '{tool_name}' raised an exception: {exc}")
+        except Exception:
+            # [M-09] NP-07: ``MemoryError`` / ``RecursionError`` are
+            # subclasses of ``Exception`` and therefore land here; the
+            # prior explicit ``raise`` is removed so the executor NEVER
+            # propagates raw exceptions to the caller.
+            #
+            # [L-03] Log the full traceback (which may include
+            # internal paths / DSNs / stack frames) for operators via
+            # the standard logging channel, but return a SANITIZED
+            # generic message to the caller — the raw ``exc`` text is
+            # never embedded in the user-visible error_message.
+            _log.exception(
+                "Tool %s raised an exception during execute()",
+                tool_name,
+            )
+            return fail(f"Tool '{tool_name}' raised an exception")
 
         # Handlers may return a plain value (wrapped via ok()) or a fully
         # formed ``ToolExecutionResult`` (passed through unchanged).

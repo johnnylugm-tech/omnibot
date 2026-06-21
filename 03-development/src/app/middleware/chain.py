@@ -132,7 +132,9 @@ class MiddlewareChain:
                 )
 
         # 2. IP Whitelist — FR-24 mandates this BEFORE signature validation.
-        ip_outcome = self.ip_whitelist.is_allowed(request)
+        client_host = getattr(getattr(request, "client", None), "host", None)
+        x_forwarded_for = request.headers.get("x-forwarded-for")
+        ip_outcome = self.ip_whitelist.is_allowed(x_forwarded_for=x_forwarded_for, client_host=client_host)
         if not _is_allowed(ip_outcome, default=False):
             return self._deny(
                 "ip",

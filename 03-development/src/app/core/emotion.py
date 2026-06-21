@@ -104,6 +104,15 @@ _NEGATIVE_KEYWORDS: frozenset[str] = frozenset(
 # place if the lexicon grows.
 _INTENSIFIER: str = "非常"
 
+# Negation prefixes that flip the polarity of an immediately-following
+# positive keyword (e.g. "不好" should classify as negative, not
+# positive). The set is intentionally narrow: only single-character
+# Mandarin negators that directly precede the keyword in text. SRS FR-46
+# requires the (category, intensity) tuple to be honest about sentiment;
+# a bare substring match on "好" inside "不好" would otherwise produce a
+# false-positive classification. See H-14 in the 2026-06-21 bug report.
+_NEGATION_PREFIXES: frozenset[str] = frozenset({"不", "沒", "無", "別", "勿", "未", "莫"})
+
 
 @dataclass(frozen=True)
 class EmotionScore:
@@ -150,6 +159,21 @@ class EmotionAnalyzer:
             - SRS.md FR-46 -- intensity in [0.0, 1.0] (line 808).
         """
         return emotion_classify(text)
+
+    def analyze(self, text: str) -> EmotionScore:
+        """Alias for :meth:`classify` used by FR-49 ``Pipeline.process``.
+
+        The pipeline contract is ``emotion.analyze(text)`` (see
+        ``core/pipeline.py``); ``EmotionAnalyzer`` keeps the
+        keyword-driven heuristic behind both names so callers that wire
+        the analyzer into the pipeline don't have to know which
+        classifier entry point is canonical. Both methods return the
+        same :class:`EmotionScore` for the same input.
+
+        Citations:
+            - SRS.md FR-49 -- "platform check in pipeline" (line 107).
+        """
+        return self.classify(text)
 
 
 class EmotionTracker:
@@ -203,6 +227,14 @@ class EmotionTracker:
         meets :data:`ESCALATION_THRESHOLD`; any shorter run — including
         the empty sequence — yields ``False``.
 
+        ``emotions`` may be ``None`` (e.g. when the upstream history
+        has not yet been populated); the method short-circuits to
+        ``False`` instead of propagating a ``TypeError`` from the
+        helper (M-07). Pass a list/tuple for a sequence; a single
+        iterable (generator) is consumed once — re-passing an exhausted
+        generator yields an empty trail and correctly returns
+        ``False`` (H-15).
+
         Examples (using the three SRS FR-48 acceptance cases):
 
         - ``["negative", "negative", "negative"]`` → ``True``
@@ -214,12 +246,57 @@ class EmotionTracker:
             - SRS.md FR-48 -- "計算從最近往回的連續負面次數" (line 106).
             - SRS.md FR-48 -- "連續 3 次負面觸發；中間有非負面打斷重計" (line 106).
         """
+        if emotions is None:
+            return False
         return emotion_should_escalate(emotions)
 
 
 def _has_any_keyword(haystack: str, keywords: frozenset[str]) -> bool:
     """True iff any keyword appears as a substring of ``haystack``."""
     return any(keyword in haystack for keyword in keywords)
+
+
+def _find_unnegated_keyword(haystack: str, keywords: frozenset[str]) -> str | None:
+    """Return the first keyword in ``keywords`` that appears without a negation prefix.
+
+    A keyword is "negated" when the character immediately before its
+    occurrence is one of :data:`_NEGATION_PREFIXES` (e.g. "不好" — the
+    "好" is preceded by "不", so the match does NOT count as positive).
+    Returns ``None`` when no keyword in ``keywords`` has a clean,
+    non-negated occurrence in ``haystack``. Used by
+    :func:`emotion_classify` to avoid the false-positive "好" hit inside
+    "不好" (H-14).
+    """
+    for keyword in keywords:
+        idx = 0
+        while True:
+            pos = haystack.find(keyword, idx)
+            if pos < 0:
+                break
+            if pos == 0 or haystack[pos - 1] not in _NEGATION_PREFIXES:
+                return keyword
+            idx = pos + 1
+    return None
+
+
+def _has_negated_positive_keyword(haystack: str, keywords: frozenset[str]) -> bool:
+    """True iff some keyword in ``keywords`` appears preceded by a negation prefix.
+
+    Detects cases like "不好" or "不喜歡" — the positive keyword is
+    present but flipped by a negator — so the classifier can route the
+    text to ``"negative"`` instead of silently emitting ``"positive"``
+    or ``"neutral"`` (H-14).
+    """
+    for keyword in keywords:
+        idx = 0
+        while True:
+            pos = haystack.find(keyword, idx)
+            if pos < 0:
+                break
+            if pos > 0 and haystack[pos - 1] in _NEGATION_PREFIXES:
+                return True
+            idx = pos + 1
+    return False
 
 
 def _intensity(base: float, boosted: float, haystack: str) -> float:
@@ -245,13 +322,25 @@ def emotion_classify(text: str) -> EmotionScore:
 
     haystack = text.lower()
 
+    # 1. Explicit negative lexicon wins outright (unchanged behaviour).
     if _has_any_keyword(haystack, _NEGATIVE_KEYWORDS):
         return EmotionScore(
             category="negative",
             intensity=_intensity(base=0.7, boosted=0.9, haystack=haystack),
         )
 
-    if _has_any_keyword(haystack, _POSITIVE_KEYWORDS):
+    # 2. A positive keyword that has been negated (e.g. "不好",
+    # "不喜歡") MUST route to negative so the polarity flip is honoured
+    # — bare substring matching would otherwise emit "positive" for
+    # "不好" (H-14).
+    if _has_negated_positive_keyword(haystack, _POSITIVE_KEYWORDS):
+        return EmotionScore(
+            category="negative",
+            intensity=_intensity(base=0.7, boosted=0.9, haystack=haystack),
+        )
+
+    # 3. A clean (non-negated) positive keyword hit.
+    if _find_unnegated_keyword(haystack, _POSITIVE_KEYWORDS) is not None:
         return EmotionScore(
             category="positive",
             intensity=_intensity(base=0.6, boosted=0.8, haystack=haystack),
@@ -290,13 +379,28 @@ def emotion_should_escalate(emotions) -> bool:
     entries — resets the count. Returns ``True`` when the trailing run
     length is at least :data:`ESCALATION_THRESHOLD` (3 per SRS FR-48).
 
+    ``emotions`` may be any iterable (list, tuple, generator, …).
+    ``None`` short-circuits to ``False`` (M-07). The iterable is
+    materialised exactly once via :func:`list` so a generator is
+    consumed in a single, predictable pass and the trailing-run count
+    is computed against that materialised snapshot — re-using an
+    already-exhausted generator therefore deterministically returns
+    ``False`` rather than silently re-traversing stale state (H-15).
+
     Citations:
         - SRS.md FR-48 -- implementation function ``EmotionTracker.should_escalate()`` (line 106).
         - SRS.md FR-48 -- "consecutive_negative_count() ≥ 3 → should_escalate()=True" (line 106).
         - SRS.md FR-48 -- "中間有非負面打斷重計" (line 106).
     """
+    if emotions is None:
+        return False
+    # Materialise once: iterators/generators cannot be re-iterated, so
+    # the trailing-run walk must operate on a stable snapshot. An
+    # already-exhausted generator becomes ``[]`` here, which correctly
+    # yields ``count == 0`` and ``False`` (H-15).
+    categories = list(emotions)
     count = 0
-    for category in reversed(list(emotions)):
+    for category in reversed(categories):
         if category == NEGATIVE_CATEGORY:
             count += 1
         else:

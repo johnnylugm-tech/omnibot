@@ -32,8 +32,6 @@ Citations:
 
 from __future__ import annotations
 
-import sys
-import threading
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
@@ -81,6 +79,32 @@ _FR80_KNOWN_FIELDS: frozenset[str] = frozenset({
     "payload",
 })
 
+# [FR-80] PEL pagination knobs. ``_PEL_BATCH_SIZE`` is the per-call
+# XPENDING range count — the original code hard-coded 100 here, which
+# silently dropped any backlog beyond that. ``_PEL_PAGINATION_MAX_BATCHES``
+# is a safety cap on the pagination loop (prevents an infinite loop
+# if the cursor ever fails to advance).
+_PEL_BATCH_SIZE: int = 100
+_PEL_PAGINATION_MAX_BATCHES: int = 10_000
+
+
+def _next_stream_id(stream_id: str) -> str:
+    """Return the stream id immediately after ``stream_id``.
+
+    Redis stream ids are ``"<ms>-<seq>"``; incrementing the sequence
+    number is the canonical way to express "the next id after this
+    one" for cursor-based XPENDING pagination. The id is returned
+    unchanged if it does not match the expected format (defensive:
+    a malformed id should not crash the consumer-loop).
+    """
+    if "-" not in stream_id:
+        return stream_id
+    ms, _, seq = stream_id.partition("-")
+    try:
+        return f"{ms}-{int(seq) + 1}"
+    except ValueError:
+        return stream_id
+
 
 class AsyncMessageProcessor:
     """[FR-80] Consumer-group lifecycle + forward-compatible parse.
@@ -110,24 +134,6 @@ class AsyncMessageProcessor:
         self.stream = stream
         self.block_ms = block_ms
         self.idle_ms = idle_ms
-        # [FR-80/NP-13] Re-entrancy guard for concurrent XCLAIM in the
-        # same process: tracks ids already claimed so two coroutines on
-        # the same processor do not double-handle. The cross-process
-        # gate is the underlying XCLAIM JUSTID return value.
-        self._claim_lock = threading.Lock()
-        self._claimed: set[str] = set()
-        # Bind ``proc`` into the test module's global namespace so the
-        # test 5 closure (which references ``proc`` as a free variable)
-        # resolves to the most-recently-constructed instance. All five
-        # concurrent test threads share that single instance; the
-        # XCLAIM JUSTID return value is the cross-consumer gate.
-        for mod in list(sys.modules.values()):
-            if mod is None:
-                continue
-            name = getattr(mod, "__name__", "")
-            if name.endswith("test_fr80"):
-                mod.proc = self  # type: ignore[attr-defined]
-                break
 
     @staticmethod
     def _is_busygroup_error(exc: BaseException) -> bool:
@@ -149,12 +155,21 @@ class AsyncMessageProcessor:
         Returns ``True`` on both the create-success and BUSYGROUP paths
         so callers can use the return value as a simple "ready" signal
         without inspecting exceptions.
+
+        The group's starting id is ``"0"`` (the beginning of the
+        stream), not ``"$"``. Using ``"$"`` would mean "deliver only
+        messages added after the group is created" — that loses every
+        pre-existing stream entry on the very first deploy, and loses
+        the entire backlog if the group is ever destroyed and
+        recreated (disaster recovery, consumer group migration, etc.).
+        The BUSYGROUP path (group already exists) ignores the id, so
+        this only affects the first creation.
         """
         try:
             await self.redis.xgroup_create(
                 name=self.stream,
                 groupname=self.group_name,
-                id="$",
+                id="0",
                 mkstream=True,
             )
             return True
@@ -203,55 +218,89 @@ class AsyncMessageProcessor:
         return fields
 
     async def claim_pending(self, consumer: str) -> list[Message]:
-        """[FR-80] XPENDING + XCLAIM stale pending messages to ``consumer``."""
-        # XPENDING summary to find owners and idle times.
+        """[FR-80] XPENDING + XCLAIM stale pending messages to ``consumer``.
+
+        The pending-entries list (PEL) is paginated because Redis'
+        XPENDING range command returns at most ``BATCH_SIZE`` entries
+        per call; a single call would silently drop any backlog beyond
+        that. We iterate with a cursor that advances past the last id
+        of each batch, stopping when a batch is short (we drained the
+        PEL) or empty.
+
+        The XCLAIM JUSTID return value is the cross-process / cross-
+        consumer gate: a losing racer gets ``[]`` back and is excluded
+        from the result. No local dedup state is kept — an in-process
+        ``_claimed`` set would need cross-event-loop synchronisation
+        (and would be redundant with the Redis-level gate).
+        """
+        # XPENDING summary to short-circuit when nothing is pending.
         pending_summary = await self.redis.xpending(
             self.stream, self.group_name,
         )
         if not pending_summary or pending_summary.get("pending", 0) == 0:
             return []
-        # Fetch the full pending list, filter by idle_ms, then XCLAIM
-        # each one. The XCLAIM JUSTID return value is the cross-
-        # consumer gate: a losing racer gets ``[]`` back. The local
-        # ``_claimed`` set guards against the same processor being
-        # called multiple times for the same id (in-process dedupe).
-        detailed = await self.redis.xpending_range(
-            self.stream, self.group_name,
-            min="-", max="+", count=100,
-        )
+        # Paginate the PEL so PELs larger than BATCH_SIZE are fully
+        # processed, not silently truncated to the first batch.
         claimed: list[Message] = []
-        for entry in detailed:
-            idle = entry.get("time_since_delivered", 0)
-            if idle < self.idle_ms:
-                continue
-            msg_id = entry["message_id"]
-            # XCLAIM is the cross-process gate; we let it run for every
-            # caller so the JUSTID return value is the source of truth.
-            justids = await self.redis.xclaim(
-                self.stream, self.group_name, consumer,
-                min_idle_time=self.idle_ms,
-                message_ids=[msg_id],
+        cursor = "-"
+        # Safety cap: the cursor only advances, so this loop is bounded
+        # by the PEL size in practice, but we still guard against a
+        # pathological Redis state (e.g. cursor that never advances).
+        for _ in range(_PEL_PAGINATION_MAX_BATCHES):
+            detailed = await self.redis.xpending_range(
+                self.stream, self.group_name,
+                min=cursor, max="+", count=_PEL_BATCH_SIZE,
             )
-            with self._claim_lock:
-                winner_ids = [j for j in justids if j not in self._claimed]
-                for j in winner_ids:
-                    self._claimed.add(j)
-            for claimed_id in winner_ids:
-                fields = await self._fetch_message_fields(claimed_id)
-                if fields is not None:
-                    claimed.append(
-                        Message(message_id=claimed_id, fields=fields)
-                    )
+            if not detailed:
+                break
+            for entry in detailed:
+                idle = entry.get("time_since_delivered", 0)
+                if idle < self.idle_ms:
+                    continue
+                msg_id = entry["message_id"]
+                # XCLAIM JUSTID is the cross-process gate: a losing
+                # racer gets ``[]`` back and naturally drops out.
+                justids = await self.redis.xclaim(
+                    self.stream, self.group_name, consumer,
+                    min_idle_time=self.idle_ms,
+                    message_ids=[msg_id],
+                )
+                for claimed_id in justids:
+                    fields = await self._fetch_message_fields(claimed_id)
+                    if fields is not None:
+                        claimed.append(
+                            Message(message_id=claimed_id, fields=fields)
+                        )
+            if len(detailed) < _PEL_BATCH_SIZE:
+                # Short batch ⇒ we drained the PEL in this round.
+                break
+            # Advance the cursor past the last returned id so the next
+            # call yields the next page rather than re-yielding this one.
+            cursor = _next_stream_id(detailed[-1]["message_id"])
         return claimed
 
-    def parse_message(self, fields: Mapping[str, str]) -> ParsedMessage:
-        """[FR-80] Forward-compatible parse: keep only the known fields."""
+    def parse_message(
+        self,
+        message_id: str,
+        fields: Mapping[str, str],
+    ) -> ParsedMessage:
+        """[FR-80] Forward-compatible parse: keep only the known fields.
+
+        ``message_id`` is the real stream id of the entry being parsed
+        (from XREADGROUP / XCLAIM). It is surfaced verbatim on the
+        result so the caller can correlate the parsed view back to the
+        underlying stream entry — a hard-coded synthetic placeholder
+        would sever that correlation.
+        """
         known = {k: v for k, v in fields.items() if k in _FR80_KNOWN_FIELDS}
-        return ParsedMessage(message_id="<synthetic>", known=known)
+        return ParsedMessage(message_id=message_id, known=known)
 
 
 __all__ = [
     "_FR80_KNOWN_FIELDS",
+    "_PEL_BATCH_SIZE",
+    "_PEL_PAGINATION_MAX_BATCHES",
+    "_next_stream_id",
     "AsyncMessageProcessor",
     "BusyGroupError",
     "Message",

@@ -43,6 +43,6 @@ class TelegramWebhookAdapter:
             message_type=MessageType.TEXT,
             content=content,
             raw_payload=update_payload,
-            received_at=datetime.now(UTC),
+            received_at=datetime.now(timezone.utc),
             reply_token=None,
         )

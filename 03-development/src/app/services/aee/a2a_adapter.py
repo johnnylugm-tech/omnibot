@@ -26,9 +26,12 @@ Citations:
 
 from __future__ import annotations
 
+import ipaddress
+import socket
 import time
 import uuid
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 
@@ -46,6 +49,82 @@ from app.services.aee.adapter import (
 # error paths and tests asserting ``"timeout" in error_message`` stay green.
 _TIMEOUT_FAILURE_PREFIX = "timeout: "
 
+# H-20 SSRF guard: only http(s) transports are permitted — anything
+# else (``file://``, ``gopher://``, ``ftp://`` …) could exfiltrate the
+# Bearer token via a side channel.
+_ALLOWED_SCHEMES: frozenset[str] = frozenset({"http", "https"})
+
+# M-05 negative-cache window. Kept short so a transient DNS hiccup or
+# agent restart is not amplified into a 30-second blank period during
+# which ``list_tools()`` returns ``[]``. Callers who need the old
+# behaviour can raise this explicitly via ``__init__``.
+_DEFAULT_NEGATIVE_TTL_SECONDS: int = 5
+
+
+def _resolve_addresses(hostname: str) -> list[ipaddress._BaseAddress]:
+    """Resolve ``hostname`` to its IPv4/IPv6 addresses.
+
+    Returns ``[]`` on resolution failure — that is a runtime
+    connectivity condition, not a security violation, and is left for
+    ``httpx`` to surface as a connection error.
+    """
+    try:
+        infos = socket.getaddrinfo(hostname, None)
+    except (socket.gaierror, UnicodeError, ValueError):
+        return []
+    return [ipaddress.ip_address(info[4][0]) for info in infos]
+
+
+def _is_public_address(ip: ipaddress._BaseAddress) -> bool:
+    """True iff ``ip`` is safe to call with a Bearer token attached.
+
+    Blocks the standard SSRF surface: loopback, RFC1918 / ULA private
+    ranges, link-local (covers the AWS / GCP metadata endpoints at
+    ``169.254.169.254`` and friends), multicast, reserved, and the
+    unspecified address.
+    """
+    return not (
+        ip.is_private
+        or ip.is_loopback
+        or ip.is_link_local
+        or ip.is_multicast
+        or ip.is_reserved
+        or ip.is_unspecified
+    )
+
+
+def _validate_agent_url(url: str) -> None:
+    """Reject ``agent_url`` values that would leak the Bearer token.
+
+    - Non-``http(s)`` schemes (``file://``, ``gopher://`` …) → ``ValueError``.
+    - Hostnames that resolve to a non-public address (loopback,
+      RFC1918, link-local, multicast, reserved, unspecified) → ``ValueError``.
+    - Unresolvable hostnames pass through; ``httpx`` will surface a
+      connect error at request time, which is the expected runtime
+      behaviour for FR-41 NP-07.
+    """
+    parsed = urlparse(url)
+    if parsed.scheme.lower() not in _ALLOWED_SCHEMES:
+        raise ValueError(
+            f"agent_url scheme must be one of {sorted(_ALLOWED_SCHEMES)}; "
+            f"got {parsed.scheme!r}"
+        )
+    hostname = parsed.hostname
+    if not hostname:
+        raise ValueError(f"agent_url must include a hostname; got {url!r}")
+    addresses = _resolve_addresses(hostname)
+    if not addresses:
+        # Unresolvable host — not a security violation; let the runtime
+        # surface the connection error and ``list_tools()`` degrade to
+        # ``[]`` per FR-41 NP-07.
+        return
+    for ip in addresses:
+        if not _is_public_address(ip):
+            raise ValueError(
+                f"agent_url resolves to a non-public address {ip} "
+                f"(SSRF guard); hostname={hostname!r}"
+            )
+
 
 class A2AAdapter(ActionAdapter):
     """[FR-41] A2A 協定 adapter — Agent Card + JSON-RPC 2.0 transport."""
@@ -56,13 +135,23 @@ class A2AAdapter(ActionAdapter):
         bearer_token: str | None = None,
         timeout: float = 2.0,
         agent_card_ttl_seconds: int = 300,
+        agent_card_negative_ttl_seconds: int = _DEFAULT_NEGATIVE_TTL_SECONDS,
     ) -> None:
+        # H-20: SSRF guard. Fail fast on non-http(s) schemes and
+        # private/loopback/link-local hosts so the Bearer token is
+        # never attached to a dangerous URL.
+        _validate_agent_url(agent_url)
+
         # Strip trailing slash so URL composition is deterministic
         # (e.g. ``agent_url + "/.well-known/agent.json"``).
         self.agent_url = agent_url.rstrip("/")
         self.bearer_token = bearer_token
         self.timeout = timeout
         self.agent_card_ttl_seconds = agent_card_ttl_seconds
+        # M-05: short window for negative caching so a transient
+        # outage does not pin ``list_tools()`` to ``[]`` for the full
+        # 300s positive TTL.
+        self.agent_card_negative_ttl_seconds = agent_card_negative_ttl_seconds
 
         # Cache: ``agent_url -> (card_or_None, fetched_at_real_time)``.
         # ``fetched_at`` is real ``time.time()`` (no offset); the test
@@ -79,6 +168,32 @@ class A2AAdapter(ActionAdapter):
         # calculation. Production code leaves it at 0; tests use
         # ``_force_cache_age`` to advance past the TTL.
         self._time_offset: float = 0.0
+
+        # H-21: single ``httpx.Client`` reused across calls so the
+        # connection pool (keep-alive sockets) is shared instead of
+        # being thrown away on every ``httpx.get`` / ``httpx.post``
+        # module-helper invocation. Long-lived adapters no longer
+        # leak file descriptors.
+        self._client: httpx.Client = httpx.Client(timeout=self.timeout)
+
+    # ------------------------------------------------------------------
+    # Lifecycle (H-21 — close persistent HTTP client).
+    # ------------------------------------------------------------------
+    def close(self) -> None:
+        """Release the underlying HTTP connection pool.
+
+        Callers managing an ``A2AAdapter`` as a long-lived service
+        SHOULD invoke this on shutdown. Using ``A2AAdapter`` as a
+        context manager (``with A2AAdapter(...) as adapter: ...``) is
+        the preferred pattern.
+        """
+        self._client.close()
+
+    def __enter__(self) -> "A2AAdapter":
+        return self
+
+    def __exit__(self, *exc_info: object) -> None:
+        self.close()
 
     # ------------------------------------------------------------------
     # Cache / clock hooks (testability surface for FR-41 RED tests).
@@ -104,12 +219,24 @@ class A2AAdapter(ActionAdapter):
         快取以 ``agent_url`` 為鍵。在 TTL 內 → 回傳快取；TTL 過期
         或無快取 → 重新發起 HTTP GET。失敗（連線 / DNS / HTTP 4xx/5xx）
         回傳 ``None``，由 ``list_tools`` 降級為空清單。
+
+        M-05: 失敗結果以較短的 ``agent_card_negative_ttl_seconds``
+        快取（預設 5s），而非完整的 300s 正快取 TTL，避免暫時性故障
+        被放大成 30s 空窗。
         """
         now = self._now()
         cached = self._card_cache.get(self.agent_url)
         if cached is not None:
             card, fetched_at = cached
-            if (now - fetched_at) < self.agent_card_ttl_seconds:
+            # Cached success uses the long positive TTL; cached failure
+            # (``card is None``) uses the short negative TTL so a
+            # transient outage does not pin ``list_tools()`` to ``[]``.
+            ttl = (
+                self.agent_card_ttl_seconds
+                if card is not None
+                else self.agent_card_negative_ttl_seconds
+            )
+            if (now - fetched_at) < ttl:
                 return card
 
         # Cache miss or TTL expired — attempt HTTP discovery.
@@ -119,14 +246,14 @@ class A2AAdapter(ActionAdapter):
         self.discovery_count += 1
         url = f"{self.agent_url}/.well-known/agent.json"
         try:
-            response = httpx.get(url, timeout=self.timeout)
+            response = self._client.get(url)
             response.raise_for_status()
             card = response.json()
         except Exception:
-            # Store None with an older timestamp so the failure is cached
-            # for a shorter duration (max 30s) instead of the full TTL.
-            short_ttl = min(30, self.agent_card_ttl_seconds)
-            self._card_cache[self.agent_url] = (None, now - self.agent_card_ttl_seconds + short_ttl)
+            # Negative-cache the failure for ``agent_card_negative_ttl_seconds``
+            # so a transient DNS / connect blip does not blank the tool
+            # list for the full positive TTL.
+            self._card_cache[self.agent_url] = (None, now)
             return None
 
         self._card_cache[self.agent_url] = (card, now)
@@ -191,11 +318,10 @@ class A2AAdapter(ActionAdapter):
 
         url = f"{self.agent_url}/rpc"
         try:
-            response = httpx.post(
+            response = self._client.post(
                 url,
                 json=payload,
                 headers=headers,
-                timeout=self.timeout,
             )
             response.raise_for_status()
         except Exception as exc:

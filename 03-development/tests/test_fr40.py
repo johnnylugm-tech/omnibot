@@ -111,12 +111,30 @@ def _stub_transport_io(monkeypatch):
             ),
         ]
 
+    def _fake_stdio_execute(self, tool_name, arguments):
+        # Stubbed dispatch — simulate a successful MCP server response so
+        # ``execute`` returns ``success=True`` without spawning a real child
+        # process.
+        return {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "result": {
+                "tool": tool_name,
+                "arguments": arguments,
+                "status": "ok",
+            },
+        }
+
     # Only attach if the methods exist post-GREEN; safe no-op during
     # RED because the methods either do not exist or behave the same.
     if hasattr(MCPAdapter, "_connect_stdio"):
         monkeypatch.setattr(MCPAdapter, "_connect_stdio", _fake_stdio_connect)
     if hasattr(MCPAdapter, "_connect_sse"):
         monkeypatch.setattr(MCPAdapter, "_connect_sse", _fake_sse_connect)
+    if hasattr(MCPAdapter, "_execute_stdio_call"):
+        monkeypatch.setattr(
+            MCPAdapter, "_execute_stdio_call", _fake_stdio_execute
+        )
 
     yield
 

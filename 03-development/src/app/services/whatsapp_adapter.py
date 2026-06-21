@@ -14,7 +14,6 @@ Citations:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 
 from app.core.unified_message import MessageType, Platform, UnifiedMessage
 
@@ -114,7 +113,7 @@ class WhatsAppWebhookAdapter:
             ts = int(timestamp_str)
         except ValueError:
             ts = 0
-        received_at = datetime.fromtimestamp(ts, tz=UTC)
+        received_at = datetime.fromtimestamp(ts, tz=timezone.utc)
 
         return UnifiedMessage(
             platform=Platform.WHATSAPP,

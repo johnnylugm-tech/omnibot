@@ -808,11 +808,16 @@ class GroundingChecker:
             cosine_score = 0.0
             _source_count = 0
         else:
+            # [FR-14] Materialize once so ``len()`` works for any
+            # iterable (generator, iterator, custom Iterable) — a
+            # bare generator passes ``if not source_texts:`` (the
+            # generator object is truthy) and then crashes on len().
+            sources_list = list(source_texts)
             cosine_score = max(
                 self._cosine_similarity(output_embedding, src)
-                for src in source_texts
+                for src in sources_list
             )
-            _source_count = len(source_texts)  # type: ignore[arg-type]
+            _source_count = len(sources_list)
 
         return GroundingResult(
             grounded=cosine_score >= threshold,
@@ -1105,7 +1110,7 @@ class PALADINPipeline:
             verdict = await self._run_l4(
                 text, risk_level=risk_level, timeout_ms=timeout_ms
             )
-            if verdict.is_injection or verdict.is_unverified:
+            if verdict.is_injection:
                 return self._blocked_result(
                     block_reason=_BLOCK_REASON_INJECTION,
                     tier3_called=False,
@@ -1131,7 +1136,7 @@ class PALADINPipeline:
         verdict = cast(ClassificationResult, verdict)
         response = cast(str, response)
 
-        if verdict.is_injection or verdict.is_unverified:
+        if verdict.is_injection:
             return self._handle_retrospective_block(text, verdict, risk_level)
         return self._success_result(
             response=response, verdict=verdict, l4_called=True

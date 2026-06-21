@@ -499,12 +499,13 @@ def test_fr80_unknown_fields_ignored():
         # Another future-schema field — also dropped.
         "experimental_trace_id": "trace-9",
     }
+    test_message_id = "1718918400000-0"
 
     if expected_error == "none":
         # The Spec fr80-ok predicate applies_to case 1; this is case 3
         # so the predicate is not redeclared here. We still need a
         # result-not-None check after parse.
-        parsed = proc.parse_message(raw_fields)
+        parsed = proc.parse_message(test_message_id, raw_fields)
 
     assert parsed is not None, (
         "FR-80 parse_message must not return None for a well-formed "
@@ -544,7 +545,7 @@ def test_fr80_unknown_fields_ignored():
     # unknown fields — that is the strongest forward-compat test
     # (proves the function does not require any specific known key).
     all_unknown = {"future_field_a": "1", "future_field_b": "2"}
-    parsed_all_unknown = proc.parse_message(all_unknown)
+    parsed_all_unknown = proc.parse_message("1718918400000-1", all_unknown)
     assert parsed_all_unknown is not None, (
         "FR-80 parse_message must not raise on a message that has "
         "only unknown fields (forward compatibility)"
@@ -708,7 +709,13 @@ def test_fr80_concurrent_xclaim_isolated():
     # which is the real Redis behaviour under contention.
     fake.claim_winners[message_id] = "winner-0"
 
-    [
+    # Each concurrent consumer must get its own AsyncMessageProcessor
+    # instance (the XCLAIM race is per-instance: each consumer claims
+    # under its own consumer name). The previous design relied on the
+    # production constructor injecting ``proc`` into the test module's
+    # globals — that has been removed because test wiring must not
+    # leak into the production constructor.
+    procs: list[AsyncMessageProcessor] = [
         AsyncMessageProcessor(
             redis_client=fake,
             group_name=_FR80_GROUP_NAME_DEFAULT,
@@ -722,17 +729,16 @@ def test_fr80_concurrent_xclaim_isolated():
     # be safe to call concurrently from multiple instances (or
     # threads). The XCLAIM call itself is the cross-process gate: a
     # losing racer gets an empty list back and must not proceed to
-    # process the message. Internally the processor should also
-    # short-circuit on a local ``_claimed`` set so a single process
-    # with two coroutines does not double-handle a message.
+    # process the message.
     results: list[Any] = [None] * concurrent_consumers
 
     def _runner(idx: int) -> None:
         consumer = f"winner-{idx}"
-        # ``proc`` is a Redis stream processor expected to expose
-        # claim_pending(); the test's GREEN contract is to verify the
-        # single-winner semantic regardless of how ``proc`` is wired.
-        results[idx] = asyncio.run(proc.claim_pending(consumer=consumer))  # noqa: F821
+        # Each thread uses its own processor instance (not a shared
+        # global) so the XCLAIM JUSTID race is the only synchroniser.
+        results[idx] = asyncio.run(
+            procs[idx].claim_pending(consumer=consumer)
+        )
 
     threads = [
         threading.Thread(target=_runner, args=(i,))

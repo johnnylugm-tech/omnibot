@@ -137,19 +137,22 @@ class ODDSqlRunner:
             results[name] = self.db.execute(sql)
         return results
 
-    def build_fcr_query(self, scope_type: str, days: int) -> str:
+    def build_fcr_query(self, scope_type: str, days: int) -> tuple[str, dict[str, Any]]:
         """Return the FCR (First Contact Resolution) SQL string.
 
         Filters on the given ``scope_type`` column value and includes a
         ``days``-day time window via INTERVAL.
         """
-        return f"""SELECT
+        return (
+            """SELECT
     COUNT(*) FILTER (WHERE fcr_achieved = TRUE)::FLOAT
     / NULLIF(COUNT(*), 0) AS fcr_rate
 FROM odd_conversations
-WHERE scope_type = '{scope_type}'
-  AND created_at >= NOW() - INTERVAL '{days} days'
-  AND fcr_achieved IS NOT NULL"""
+WHERE scope_type = :scope_type
+  AND created_at >= NOW() - INTERVAL '1 day' * :days
+  AND fcr_achieved IS NOT NULL""",
+            {"scope_type": scope_type, "days": days},
+        )
 
     def calculate_cost(self, query_counts: dict[int, int]) -> dict[str, Any]:
         """Return total cost and per-tier cost breakdown.

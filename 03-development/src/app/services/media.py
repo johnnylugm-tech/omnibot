@@ -215,10 +215,16 @@ class ClamAVScanner:
 
         result = holder.get("result")
         if result is None:
-            # Stubbed runner that returns None — treat as clean (the
-            # test injects this shape deliberately).
+            # Runner completed without raising but produced no result.
+            # Indistinguishable from a silently-swallowed error or a
+            # malicious stub deliberately returning None to bypass the
+            # malware check — fail-secure per FR-100. Mirrors the
+            # runner-raises branch above (status="unavailable",
+            # terminated=True) so the upstream pipeline rejects.
             return ClamAVScanResult(
-                status=CLAMAV_STATUS_OK, terminated=False, p95_ms=elapsed_ms
+                status=CLAMAV_STATUS_UNAVAILABLE,
+                terminated=True,
+                p95_ms=elapsed_ms,
             )
 
         returncode = getattr(result, "returncode", 0)

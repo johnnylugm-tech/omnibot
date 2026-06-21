@@ -53,7 +53,8 @@ from __future__ import annotations
 
 import csv
 import io
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -151,6 +152,7 @@ class EmbeddingStatusProvider:
     def __init__(self, default_synced: int = 0, default_total: int = 0) -> None:
         self._synced = default_synced
         self._total = default_total
+        self._failed: bool = False
 
     def force_sync_status(self, synced: int, total: int) -> None:
         """Pin the provider into a deterministic chunks_synced/total pair.
@@ -159,15 +161,29 @@ class EmbeddingStatusProvider:
         canonical "已同步" state; synced < total is the in-progress
         "同步中" state; total == 0 is "nothing to sync" (also reported
         as 已同步 so the WebUI does not lie about a missing job).
+        Driving a new pair also clears any prior FAILED state so a
+        successful retry is reflected as SYNCING/SYNCED, not stuck red.
         """
         self._synced = synced
         self._total = total
+        self._failed = False
+
+    def mark_failed(self) -> None:
+        """Pin the provider into the FAILED state (同步失敗 / 🔴).
+
+        The next ``get_status`` call returns the FAILED branch so the
+        WebUI stops misreporting a sync error as SYNCED (M-11).
+        """
+        self._failed = True
 
     def get_status(self, entry_id: int | None = None) -> dict[str, Any]:
         """Return the canonical 4-key status dict for the WebUI."""
         synced = self._synced
         total = self._total
-        if total <= 0 or synced >= total:
+        if self._failed:
+            status = EMBEDDING_STATUS_FAILED
+            display = EMBEDDING_DISPLAY_FAILED
+        elif total <= 0 or synced >= total:
             status = EMBEDDING_STATUS_SYNCED
             display = EMBEDDING_DISPLAY_SYNCED
         else:
@@ -256,19 +272,26 @@ class KnowledgeAdminAPI:
 
     # ---- internal helpers ------------------------------------------------
 
-    def _store(self) -> _InMemoryStore:
-        """Return the active store: injected session or in-memory default.
+    @contextmanager
+    def _store(self) -> Iterator[Any]:
+        """Yield the active store, guaranteeing the session is exited.
 
-        The test-injected ``_FakeSession`` is a context manager whose
-        ``__enter__`` returns a store with ``add/get/delete/commit``;
-        honour that contract for compatibility.
+        The injected ``db_session`` factory returns a context manager
+        whose ``__enter__`` yields a store; this wrapper funnels the
+        access through ``with`` so ``__exit__`` (and therefore the
+        underlying connection release) is always called. Without it,
+        every CRUD call would leak one session and eventually exhaust
+        the connection pool (H-22).
         """
         if self._db_session is None:
-            return self._default_store
+            yield self._default_store
+            return
         session = self._db_session()
         if hasattr(session, "__enter__"):
-            return session.__enter__()
-        return session
+            with session as store:
+                yield store
+        else:
+            yield session
 
     # ---- per-verb CRUD methods -------------------------------------------
 
@@ -283,25 +306,31 @@ class KnowledgeAdminAPI:
             content=content,
             keywords=list(keywords) if keywords else [],
         )
-        return self._store().add(entry)
+        with self._store() as store:
+            result = store.add(entry)
+            store.commit()  # H-23: real DB adapter requires explicit commit
+        return result
 
     def read_entry(self, entry_id: int) -> KnowledgeEntry | None:
-        return self._store().get(entry_id)
+        with self._store() as store:
+            return store.get(entry_id)
 
     def update_entry(
         self, entry_id: int, **fields: Any
     ) -> KnowledgeEntry | None:
-        store = self._store()
-        entry = store.get(entry_id)
-        if entry is None:
-            return None
-        for key, value in fields.items():
-            if hasattr(entry, key):
-                setattr(entry, key, value)
+        with self._store() as store:
+            entry = store.get(entry_id)
+            if entry is None:
+                return None
+            for key, value in fields.items():
+                if hasattr(entry, key):
+                    setattr(entry, key, value)
+            store.commit()  # H-23: real DB adapter requires explicit commit
         return entry
 
     def delete_entry(self, entry_id: int) -> bool:
-        return bool(self._store().delete(entry_id))
+        with self._store() as store:
+            return bool(store.delete(entry_id))
 
     # ---- dispatcher ------------------------------------------------------
 
@@ -382,27 +411,27 @@ class KnowledgeAdminAPI:
             return result
 
         reader = csv.DictReader(io.StringIO(text))
-        store = self._store()
-        for row in reader:
-            try:
-                title = (row.get("title") or "").strip()
-                content = (row.get("content") or "").strip()
-                kw_raw = (row.get("keywords") or "").strip()
-                keywords = [k for k in kw_raw.split("|") if k]
-                if not title:
+        with self._store() as store:
+            for row in reader:
+                try:
+                    title = (row.get("title") or "").strip()
+                    content = (row.get("content") or "").strip()
+                    kw_raw = (row.get("keywords") or "").strip()
+                    keywords = [k for k in kw_raw.split("|") if k]
+                    if not title:
+                        result.skipped += 1
+                        result.errors.append("missing title")
+                        continue
+                    entry = KnowledgeEntry(
+                        title=title,
+                        content=content,
+                        keywords=keywords,
+                    )
+                    store.add(entry)
+                    result.imported += 1
+                except Exception as exc:
                     result.skipped += 1
-                    result.errors.append("missing title")
-                    continue
-                entry = KnowledgeEntry(
-                    title=title,
-                    content=content,
-                    keywords=keywords,
-                )
-                store.add(entry)
-                result.imported += 1
-            except Exception as exc:
-                result.skipped += 1
-                result.errors.append(str(exc))
+                    result.errors.append(str(exc))
         return result
 
     # ---- embedding status ------------------------------------------------

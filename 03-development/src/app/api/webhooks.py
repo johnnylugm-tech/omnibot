@@ -23,8 +23,14 @@ from __future__ import annotations
 
 import base64
 import json
+import time
+import urllib.request
 from datetime import datetime, timezone
 from typing import Any
+
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
 from app.core.unified_message import (
     MessageType,
@@ -114,11 +120,54 @@ class A2AAdapter:
             - SRS.md FR-06 — M2M OAuth2/JWT token verification
         """
         token = self._extract_bearer_token(authorization_header)
-        # TODO: fetch JWKS from self._jwks_url, find matching key, decode
-        # JWT, validate signature + exp + aud + iss claims.  Current stub
-        # returns True for any non-empty Bearer token so the adapter
-        # structure is testable; real verification will replace this.
-        return bool(token)
+        if not token:
+            return False
+
+        try:
+            segments = token.split(".")
+            if len(segments) != 3:
+                return False
+            header_b64, payload_b64, sig_b64 = segments
+
+            # Validate payload claims
+            payload_bytes = base64.urlsafe_b64decode(payload_b64 + "=" * (-len(payload_b64) % 4))
+            payload = json.loads(payload_bytes)
+            
+            # Check expiration
+            if "exp" in payload and time.time() > payload["exp"]:
+                return False
+                
+            # Check audience and issuer
+            if payload.get("aud") != self._expected_audience:
+                return False
+            if self._expected_issuer and payload.get("iss") != self._expected_issuer:
+                return False
+
+            # Fetch JWKS and verify RS256 signature
+            req = urllib.request.Request(self._jwks_url, headers={"User-Agent": "OmniBot"})
+            with urllib.request.urlopen(req, timeout=5) as response:
+                jwks = json.loads(response.read().decode())
+            
+            header_bytes = base64.urlsafe_b64decode(header_b64 + "=" * (-len(header_b64) % 4))
+            kid = json.loads(header_bytes).get("kid")
+            jwk = next((k for k in jwks.get("keys", []) if k.get("kid") == kid), None)
+            if not jwk or jwk.get("kty") != "RSA":
+                return False
+                
+            def b64url_dec(s: str) -> bytes:
+                return base64.urlsafe_b64decode(s + "=" * (-len(s) % 4))
+                
+            n_int = int.from_bytes(b64url_dec(jwk["n"]), byteorder="big")
+            e_int = int.from_bytes(b64url_dec(jwk["e"]), byteorder="big")
+            public_key = rsa.RSAPublicNumbers(e=e_int, n=n_int).public_key()
+            
+            msg = f"{header_b64}.{payload_b64}".encode("ascii")
+            sig = b64url_dec(sig_b64)
+            public_key.verify(sig, msg, padding.PKCS1v15(), hashes.SHA256())
+            
+            return True
+        except Exception:
+            return False
 
     def handle_jsonrpc_call(
         self,
@@ -163,7 +212,7 @@ class A2AAdapter:
             message_type=MessageType.TEXT,
             content=content,
             raw_payload=body,
-            received_at=datetime.now(UTC),
+            received_at=datetime.now(timezone.utc),
             reply_token=None,
         )
 
@@ -200,6 +249,11 @@ class A2AAdapter:
         token = self._extract_bearer_token(authorization_header)
         if not token:
             return _UNKNOWN_AGENT
+            
+        # [FR-06] Require valid signature BEFORE extracting sub claim (C-03 fix)
+        if not self.verify_m2m_token(authorization_header):
+            return _UNKNOWN_AGENT
+            
         try:
             # JWT structure: header.payload.signature
             payload_b64: str = token.split(".")[1]

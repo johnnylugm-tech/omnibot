@@ -110,7 +110,7 @@ class WebAdapter:
             message_type=MessageType.TEXT,
             content=content,
             raw_payload={"content": content},
-            received_at=datetime.now(UTC),
+            received_at=datetime.now(timezone.utc),
             reply_token=None,
         )
 

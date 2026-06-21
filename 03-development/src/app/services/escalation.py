@@ -124,7 +124,7 @@ class EscalationManager:
 
     def _utcnow(self) -> datetime:
         """Current UTC time — single source for timestamps."""
-        return datetime.now(UTC)
+        return datetime.now(timezone.utc)
 
     def _make_row(
         self,
@@ -177,7 +177,12 @@ class EscalationManager:
         case without a follow-up query.
         """
         escalation_id = f"esc-{uuid.uuid4().hex[:8]}"
-        sla_minutes = self.SLA_BY_PRIORITY.get(priority, self.SLA_BY_PRIORITY[0])
+        if priority not in self.SLA_BY_PRIORITY:
+            raise ValueError(
+                f"Unknown priority {priority!r}; expected one of "
+                f"{sorted(self.SLA_BY_PRIORITY)}"
+            )
+        sla_minutes = self.SLA_BY_PRIORITY[priority]  # FR-55: 0→30, 1→15, 2→5
         now = self._utcnow()
         row = self._make_row(
             escalation_id=escalation_id,

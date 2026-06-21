@@ -76,14 +76,33 @@ class MigrationRunner:
         config: MigrationConfig,
         direction: str,
     ) -> MigrationResult:
-        """Run a single alembic step in ``direction`` and envelope the outcome."""
+        """Run a single alembic step in ``direction`` and envelope the outcome.
+
+        Alembic exceptions are caught and converted into a ``MigrationResult``
+        with ``success=False`` so callers always receive the envelope
+        (see FR-83 contract — never raise from a public migration method).
+        """
         ac = self._build_alembic_config(config)
         alembic_call = (
             _alembic_command.upgrade
             if direction == "upgrade"
             else _alembic_command.downgrade
         )
-        alembic_call(ac, config.target_revision)
+        try:
+            alembic_call(ac, config.target_revision)
+        except Exception as exc:
+            logger.exception(
+                "alembic %s to %s failed", direction, config.target_revision
+            )
+            return MigrationResult(
+                success=False,
+                direction=direction,
+                target_revision=config.target_revision,
+                rows_affected=0,
+                error=f"{type(exc).__name__}: {exc}",
+                snapshot_path=config.snapshot_path,
+                steps=(direction,),
+            )
         return MigrationResult(
             success=True,
             direction=direction,
@@ -94,7 +113,18 @@ class MigrationRunner:
         )
 
     def upgrade(self, config: MigrationConfig) -> MigrationResult:
-        """Apply pending migrations forward to ``config.target_revision``."""
+        """Apply pending migrations forward to ``config.target_revision``.
+
+        Refuses to run unless ``config.staging_validated`` is True —
+        the migration must have cleared the staging environment first
+        (see FR-83 staging gate).
+        """
+        if not config.staging_validated:
+            raise ValueError(
+                "upgrade() refused: MigrationConfig.staging_validated is False. "
+                "Run the migration against the staging environment and set "
+                "staging_validated=True before applying to production."
+            )
         return self._step(config, "upgrade")
 
     def downgrade(self, config: MigrationConfig) -> MigrationResult:

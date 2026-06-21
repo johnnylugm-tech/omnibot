@@ -515,7 +515,7 @@ async def create_knowledge_with_chunks(
         )
     else:
         embedding_synced = True
-        embedding_synced_at = datetime.now(tz=UTC)
+        embedding_synced_at = datetime.now(tz=timezone.utc)
 
     elapsed = time.perf_counter() - start
 

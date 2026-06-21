@@ -12,7 +12,9 @@ Citations:
 
 from __future__ import annotations
 
+import hmac
 import json
+import os
 import secrets
 import time
 
@@ -37,8 +39,16 @@ def _make_jwt(username: str) -> str:
         "exp": int(time.time()) + 3600,
     }
     payload_b64 = _b64url_encode(json.dumps(payload).encode())
-    sig_b64 = _b64url_encode(secrets.token_bytes(32))
+    
+    secret = os.environ.get("OMNIBOT_JWT_SECRET", "dev-secret-do-not-use-in-prod").encode()
+    msg = f"{header_b64}.{payload_b64}".encode()
+    sig_b64 = _b64url_encode(hmac.new(secret, msg, "sha256").digest())
+    
     return f"{header_b64}.{payload_b64}.{sig_b64}"
+
+
+_ADMIN_USER = os.environ["OMNIBOT_ADMIN_USER"]
+_ADMIN_PASS = os.environ["OMNIBOT_ADMIN_PASS"]
 
 
 def login(username: str, password: str) -> dict | int:
@@ -57,7 +67,10 @@ def login(username: str, password: str) -> dict | int:
         TEST_SPEC.md FR-86 case 2 (validation) — invalid creds return
             401 (int), no credential leak.
     """
-    if username == "admin" and password == "correct":
+    user_match = hmac.compare_digest(username, _ADMIN_USER)
+    pass_match = hmac.compare_digest(password, _ADMIN_PASS)
+    
+    if user_match and pass_match:
         access = _make_jwt(username)
         refresh = secrets.token_urlsafe(32)
         return {"access": access, "refresh": refresh}

@@ -80,20 +80,19 @@ def test_fr105_fcr_query_in_scope_only():
     """FCR query must filter scope_type='in_scope' entries within 30 days."""
     runner = ODDSqlRunner(db=MagicMock(), environment="staging")
 
-    fcr_sql = runner.build_fcr_query(scope_type="in_scope", days=30)
+    fcr_sql, params = runner.build_fcr_query(scope_type="in_scope", days=30)
 
     # Must reference the scope_type column with value 'in_scope'
     assert "scope_type" in fcr_sql, (
         "FCR query must filter on scope_type column"
     )
-    assert "'in_scope'" in fcr_sql or "= 'in_scope'" in fcr_sql, (
-        "FCR query must restrict to scope_type = 'in_scope'"
+    assert ":scope_type" in fcr_sql, (
+        "FCR query must restrict to scope_type via bind parameter"
     )
+    assert params["scope_type"] == "in_scope"
     # Must include a 30-day window constraint
-    assert (
-        "30" in fcr_sql
-        and ("INTERVAL" in fcr_sql.upper() or "day" in fcr_sql.lower())
-    ), "FCR query must include a 30-day time window"
+    assert ":days" in fcr_sql, "FCR query must restrict to days via bind parameter"
+    assert params["days"] == 30, "FCR query must include a 30-day time window"
 
 
 def test_fr105_cost_per_tier_correct():

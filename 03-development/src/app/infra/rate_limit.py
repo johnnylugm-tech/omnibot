@@ -115,8 +115,8 @@ class RateLimiter:
     def __init__(self, redis_client=None) -> None:
         # Inject; do not connect.
         self.redis_client = redis_client
-        # platform -> deque of monotonic timestamps inside the window.
-        self._buckets: dict[str, deque[float]] = {}
+        # (platform, key) -> deque of monotonic timestamps inside the window.
+        self._buckets: dict[tuple[str, str], deque[float]] = {}
         self._lock = threading.Lock()
 
     def allow(self, *, platform: str, key: str) -> RateLimitResult:
@@ -144,7 +144,7 @@ class RateLimiter:
             return self._redis_decide(platform, key, limit)
 
         # No Redis client → in-memory fallback (FR-21 path).
-        return self._in_memory_check(platform, limit)
+        return self._in_memory_check(platform, key, limit)
 
     def _redis_decide(self, platform: str, key: str, limit: int) -> RateLimitResult:
         """Consult Redis and apply the limit. Fail-open on outage (FR-22)."""
@@ -186,12 +186,15 @@ class RateLimiter:
         )
         return int(result)
 
-    def _in_memory_check(self, platform: str, limit: int) -> RateLimitResult:
+    def _in_memory_check(self, platform: str, key: str, limit: int) -> RateLimitResult:
         now = time.monotonic()
         window_start = now - self._WINDOW_SECONDS
 
         with self._lock:
-            bucket = self._buckets.setdefault(platform, deque())
+            # Per-(platform, key) sub-bucket: matches the Redis path's
+            # `rate_limit:{platform}:{key}` keying, so the in-memory fallback
+            # is not a global-per-platform limiter.
+            bucket = self._buckets.setdefault((platform, key), deque())
             # Drop entries that have aged out of the sliding window.
             while bucket and bucket[0] < window_start:
                 bucket.popleft()

@@ -57,7 +57,8 @@ class CircuitBreaker:
 
         Citations: SRS.md FR-99 lines 1-8.
         """
-        return self._level
+        with self._lock:
+            return self._level
 
     # ------------------------------------------------------------------
     # LLM latency tracking
@@ -101,7 +102,10 @@ class CircuitBreaker:
         with self._lock:
             self._llm_failure_count = 0
             self._llm_success_count += 1
-            if self._level == self.LEVEL_3 and self._llm_success_count >= self._LLM_CONSECUTIVE_SUCCESS_RECOVERY:
+            if (
+                self._level in (self.LEVEL_1, self.LEVEL_3)
+                and self._llm_success_count >= self._LLM_CONSECUTIVE_SUCCESS_RECOVERY
+            ):
                 self._level = self.LEVEL_0
             return self._level
 

@@ -102,7 +102,7 @@ def _isolate_a2a_io(monkeypatch):
 #           message_type = MessageType.TEXT
 #           content = params.query (or params.text) from the RPC body
 #           raw_payload = the full JSON-RPC 2.0 request body
-#           received_at = datetime.now(UTC)
+#           received_at = datetime.now(timezone.utc)
 #           reply_token = None
 #
 #   ``A2AAuthError`` — exception raised on token verification failure.
@@ -208,7 +208,7 @@ def test_fr06_a2a_invalid_m2m_token_401(monkeypatch):
 #         message_type = MessageType.TEXT
 #         content = params["query"] (or params["text"])
 #         raw_payload = the full JSON-RPC 2.0 body
-#         received_at = datetime.now(UTC)
+#         received_at = datetime.now(timezone.utc)
 #         reply_token = None
 #   GREEN must also implement A2AAuthError Exception class with
 #   status: int and error_code: str attributes.

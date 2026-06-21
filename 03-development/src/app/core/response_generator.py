@@ -88,6 +88,28 @@ class ResponseTemplate:
     template: str
 
 
+class _SafeFormatDict(dict):
+    """``dict`` subclass for ``str.format_map`` that tolerates missing keys.
+
+    ``str.format_map`` looks up each ``{key}`` placeholder in the
+    supplied mapping. By default a missing key raises ``KeyError`` and
+    aborts the entire render, discarding the partial output. By
+    returning ``"{key}"`` from ``__missing__`` we make the formatter
+    substitute the original placeholder text back into the output for
+    any key the caller did not provide, while keys that *are* in the
+    mapping are interpolated normally.
+
+    Implementation note: ``__missing__`` is invoked only for the
+    *value* lookup of the field name; the surrounding ``{...}`` (or
+    ``{key:spec}``, ``{key!conv}``) is reconstructed by the formatter
+    from the returned literal, so the original placeholder text round-
+    trips intact into the rendered string.
+    """
+
+    def __missing__(self, key: str) -> str:
+        return "{" + key + "}"
+
+
 class ResponseGenerator:
     """[FR-50] Holds the pre-canned reply templates and a render helper.
 
@@ -120,13 +142,30 @@ class ResponseGenerator:
 
     @staticmethod
     def render(template: str, **vars: object) -> str:
-        """Substitute ``{var}`` placeholders via ``str.format(**vars)``.
+        """Substitute ``{var}`` placeholders via ``str.format_map(**vars)``.
 
-        Returns the rendered string for valid inputs. Callers are
-        expected to keep ``vars`` flat (no dotted attribute paths);
-        SRS FR-50 only mandates ``str.format``-style interpolation.
+        Missing keys in ``vars`` are left as their original ``{var}``
+        placeholder in the rendered output rather than raising
+        ``KeyError`` mid-format, so a partial render still surfaces the
+        substituted context to the caller and the offending placeholder
+        is visible for downstream diagnostics (e.g. logging the
+        unresolved variable name). Provided keys are interpolated
+        exactly as ``str.format_map`` would interpolate them.
+
+        Callers are expected to keep ``vars`` flat (no dotted attribute
+        paths); SRS FR-50 only mandates ``str.format``-style
+        interpolation.
         """
-        return template.format(**vars)
+        return template.format_map(_SafeFormatDict(vars))
+
+    # ``_SafeFormatDict`` exists solely to give ``render`` a mapping
+    # whose ``__missing__`` returns the original ``{key}`` placeholder
+    # text. ``str.format_map`` is the documented Python API for
+    # "substitute these values, leave the rest of the placeholders
+    # alone"; using it here is the canonical fix for the
+    # ``KeyError``-on-missing-template-variable bug, not a workaround.
+    # Kept as a module-level class (rather than a nested closure) so
+    # the test suite can import and exercise it directly if needed.
 
     # Tone prefixes are SRS FR-51-mandated literals — keep them as module
     # constants so a future A/B variant injection (FR-52) can swap them

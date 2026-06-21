@@ -31,7 +31,12 @@ from __future__ import annotations
 import json
 import logging
 import time
+from datetime import date, datetime
+from decimal import Decimal
+from enum import Enum
+from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 # ISO 8601 with literal trailing ``Z`` — no fractional seconds, no offset.
 _ISO_Z_FMT = "%Y-%m-%dT%H:%M:%SZ"
@@ -49,6 +54,45 @@ _LEVEL_MAP: dict[str, int] = {
 # Security-tagged events are always emitted at CRITICAL, never downgraded.
 _SECURITY_EVENT_TYPE = "security"
 _SECURITY_LEVEL = "CRITICAL"
+
+
+def _json_default(obj: Any) -> Any:
+    """Serializer for values ``json.dumps`` cannot encode by default.
+
+    Handles the common non-JSON-native types a logger is likely to receive
+    via kwargs (datetime/date, Decimal, UUID, sets, bytes, Path, Enum,
+    Exception) and raises ``TypeError`` for anything else so callers see
+    the real encoding error instead of a silently mangled record.
+    """
+    if isinstance(obj, datetime):
+        # Preserve ISO 8601 round-trip; strftime would lose tzinfo.
+        return obj.isoformat()
+    if isinstance(obj, date):
+        return obj.isoformat()
+    if isinstance(obj, Decimal):
+        # str() keeps precision; float() would silently round.
+        return str(obj)
+    if isinstance(obj, UUID):
+        return str(obj)
+    if isinstance(obj, (set, frozenset)):
+        # JSON has no set — emit as sorted list for deterministic output.
+        return sorted(obj)
+    if isinstance(obj, bytes):
+        # Prefer UTF-8 text; fall back to hex so binary payloads are still
+        # representable as a JSON string instead of crashing the log call.
+        try:
+            return obj.decode("utf-8")
+        except UnicodeDecodeError:
+            return obj.hex()
+    if isinstance(obj, Path):
+        return str(obj)
+    if isinstance(obj, Enum):
+        return obj.value
+    if isinstance(obj, BaseException):
+        return str(obj)
+    raise TypeError(
+        f"Object of type {type(obj).__name__} is not JSON serializable"
+    )
 
 
 class StructuredLogger:
@@ -98,7 +142,7 @@ class StructuredLogger:
             "message": message,
             **kwargs,
         }
-        line = json.dumps(record, ensure_ascii=False)
+        line = json.dumps(record, ensure_ascii=False, default=_json_default)
         py_level = _LEVEL_MAP.get(resolved_level.upper(), logging.INFO)
         self._logger.log(py_level, line)
         return line

@@ -121,14 +121,26 @@ class RollbackStrategy:
         """[FR-98] Execute an Alembic-style downgrade; no data loss.
 
         The FR-98 contract is that the downgrade path MUST NOT lose data —
-        ``rows_preserved`` on the result MUST be True.
+        ``rows_preserved`` on the result MUST be True. Per the documented
+        contract, ``migration`` MUST equal :data:`MIGRATION_DOWNGRADE`;
+        any other direction (e.g. ``"upgrade"``) is rejected with
+        :class:`ValueError` rather than silently misreported as a
+        data-preserving downgrade.
 
         Args:
             migration: Migration direction (must be ``MIGRATION_DOWNGRADE``).
 
         Returns:
             :class:`SchemaMigrationResult` describing the downgrade outcome.
+
+        Raises:
+            ValueError: If ``migration`` is not exactly ``MIGRATION_DOWNGRADE``.
         """
+        if migration != MIGRATION_DOWNGRADE:
+            raise ValueError(
+                f"FR-98 downgrade_schema requires migration="
+                f"{MIGRATION_DOWNGRADE!r}; got {migration!r}"
+            )
         return SchemaMigrationResult(
             migration=migration,
             rows_preserved=True,

@@ -280,9 +280,11 @@ def test_fr58_must_not_c1():
             # here so the test asserts push semantics.
             import asyncio
 
-            asyncio.get_event_loop().run_until_complete(
-                conn.send_json(result)
-            ) if not asyncio.get_event_loop().is_running() else None
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(conn.send_json(result))
+            except RuntimeError:
+                asyncio.run(conn.send_json(result))
 
         # The client MUST NOT have polled. ``poll_attempts`` is the
         # number of times the client called ``poll_for_messages``

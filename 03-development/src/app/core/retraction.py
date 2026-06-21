@@ -112,6 +112,8 @@ def _attempt_windowed_delete(
     fail-secure apology + audit-log event.
     """
     now = datetime.now(timezone.utc)
+    if sent_at.tzinfo is None:
+        sent_at = sent_at.replace(tzinfo=timezone.utc)
     if client is None or (now - sent_at) > window:
         reason = "no_client" if client is None else "window_expired"
         _log_retraction_failed(
@@ -214,6 +216,7 @@ def _retract_whatsapp(message_id: str) -> RetractionResult:
 def _retract_web(
     message_id: str,
     web_ws_pusher: Any,
+    security_log_writer: Callable[..., None] | None = None,
 ) -> RetractionResult:
     """[FR-17] Web path: push replacement frame over the open WebSocket.
 
@@ -221,10 +224,20 @@ def _retract_web(
     an in-place replacement of the outgoing frame so the user sees
     the correction live rather than alongside the original.
     """
-    web_ws_pusher.replace_response(
-        message_id,
-        replacement=WS_REPLACEMENT_TEXT,
-    )
+    try:
+        web_ws_pusher.replace_response(
+            message_id,
+            replacement=WS_REPLACEMENT_TEXT,
+        )
+    except Exception:
+        _log_retraction_failed(
+            security_log_writer,
+            platform="web",
+            message_id=message_id,
+            reason="api_error",
+        )
+        return _apology_result("web", message_id)
+        
     return RetractionResult(
         platform="web",
         success=True,
@@ -236,6 +249,7 @@ def _retract_web(
 def _retract_a2a(
     message_id: str,
     a2a_client: Any,
+    security_log_writer: Callable[..., None] | None = None,
 ) -> RetractionResult:
     """[FR-17] A2A path: mark the message revoked so JSON-RPC echoes it.
 
@@ -244,7 +258,17 @@ def _retract_a2a(
     returns ``success=True`` but ``revoked=False`` would let an
     injected agent response remain valid on the wire.
     """
-    a2a_client.mark_revoked(message_id)
+    try:
+        a2a_client.mark_revoked(message_id)
+    except Exception:
+        _log_retraction_failed(
+            security_log_writer,
+            platform="a2a",
+            message_id=message_id,
+            reason="api_error",
+        )
+        return _apology_result("a2a", message_id)
+        
     return RetractionResult(
         platform="a2a",
         success=True,
@@ -295,8 +319,8 @@ def retract(
     if platform == "whatsapp":
         return _retract_whatsapp(message_id)
     if platform == "web":
-        return _retract_web(message_id, web_ws_pusher)
+        return _retract_web(message_id, web_ws_pusher, security_log_writer)
     if platform == "a2a":
-        return _retract_a2a(message_id, a2a_client)
+        return _retract_a2a(message_id, a2a_client, security_log_writer)
 
     raise ValueError(f"Unknown platform: {platform!r}")

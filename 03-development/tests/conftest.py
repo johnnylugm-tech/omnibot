@@ -18,8 +18,11 @@ the valid RED signal.
 
 from __future__ import annotations
 
+import os
 import pytest
 
+os.environ.setdefault("OMNIBOT_ADMIN_USER", "admin")
+os.environ.setdefault("OMNIBOT_ADMIN_PASS", "correct")
 
 @pytest.fixture(autouse=True)
 def _isolate_external_services(monkeypatch):

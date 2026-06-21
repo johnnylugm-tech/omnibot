@@ -351,7 +351,15 @@ class DialogueState:
         ``MAX_SLOT_FILLING_ROUNDS`` IS a trigger (>=, so 3 rounds
         fires per the spec-pinned limit).
         """
-        # Confidence trigger — fires regardless of FSM state.
+        # Terminal states (RESOLVED, ESCALATED) are sinks per
+        # ALLOWED_TRANSITIONS (FR-34) — no edge leaves them. Neither
+        # the confidence trigger nor the round trigger may move the
+        # FSM out of a terminal state; doing so would silently undo
+        # a finalised outcome (H-09).
+        if self.state in ("RESOLVED", "ESCALATED"):
+            return False
+        # Confidence trigger — fires regardless of FSM state (except
+        # terminal).
         if confidence < INTENT_CONFIDENCE_THRESHOLD:
             return True
         # Round trigger — only applies while the FSM is in
@@ -596,4 +604,9 @@ class ContextWindowManager:
         if total_tokens <= self.history_budget:
             return messages
         drop_count = max(1, len(messages) // 3)
-        return [self._SUMMARY_MESSAGE, *messages[drop_count:]]
+        # Defensive copy: ``_SUMMARY_MESSAGE`` is a ClassVar mutable
+        # dict (single source of truth — tests / callers pin its
+        # ``role`` / ``content``). Returning the reference itself
+        # would let a caller mutate it in-place and corrupt every
+        # subsequent ``manage()`` call (L-07).
+        return [{**self._SUMMARY_MESSAGE}, *messages[drop_count:]]

@@ -209,6 +209,9 @@ def test_fr28_child_vector_indexed_parent_not():
 def test_fr28_vector_hit_child_retrieves_parent():
     child_id = "chunk-1"
     parent_id = "doc-1"
+    # H-17: add_link requires real parent_content; an empty stub would
+    # propagate to the LLM as the parent context.
+    parent_content = "doc-1 500-token parent context block"
 
     # GREEN TODO: ParentChildIndex.retrieve_parent(child_id) must walk
     # child_id → knowledge_chunks.parent_id → fetch the 500-token
@@ -217,7 +220,11 @@ def test_fr28_vector_hit_child_retrieves_parent():
     # ``add_link(child_id, parent_id)`` (or equivalent seed API) so the
     # unit test can wire the child→parent mapping without a real DB.
     index = ParentChildIndex()
-    index.add_link(child_id=child_id, parent_id=parent_id)
+    index.add_link(
+        child_id=child_id,
+        parent_id=parent_id,
+        parent_content=parent_content,
+    )
 
     if child_id == "chunk-1":
         # Spec fr28-ok predicate 'result is not None' applies_to case 1.

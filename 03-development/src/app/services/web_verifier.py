@@ -52,6 +52,12 @@ class WebJwtVerifier:
                 return False
 
             header_b64, payload_b64, sig_b64 = segments
+            
+            # Verify alg header
+            header_bytes = _b64url_decode(header_b64)
+            header = json.loads(header_bytes)
+            if header.get("alg") != "HS256":
+                return False
 
             # Verify HMAC-SHA256 signature
             signing_input = f"{header_b64}.{payload_b64}".encode("ascii")

@@ -92,7 +92,9 @@ def decrypt_pii_entry(entry_id: str, role: str) -> dict:
     if _rbac_enforce(role, "pii", "decrypt") != 200:
         raise PermissionError("AUTHZ_INSUFFICIENT_ROLE")
 
-    entry = _VAULT[entry_id]
+    entry = _VAULT.get(entry_id)
+    if entry is None:
+        raise KeyError(f"pii_vault entry not found: {entry_id!r}")
     key = _derive_fernet_key(entry["encryption_key_id"])
     fernet = Fernet(key)
 

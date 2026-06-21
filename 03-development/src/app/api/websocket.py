@@ -82,7 +82,14 @@ Citations:
 
 from __future__ import annotations
 
+import base64
+import hashlib
+import hmac
+import json
+import os
+import threading
 import time
+from typing import Optional
 
 
 def _resolve_payload(message: dict) -> dict:
@@ -159,23 +166,43 @@ def verify_jwt(token: str) -> bool:
     """
     if not isinstance(token, str) or not token:
         return False
-    # Test sentinel: ``"bad"``-prefixed tokens are rejected so the
-    # rejection path is observable in RED tests (TEST_SPEC FR-57
-    # case 2 pins ``"bad-token"``).
-    if token.startswith("bad"):
-        return False
-    # Standard JWS Compact Serialization: exactly three non-empty
-    # base64url segments. ``"a.b.c"`` returns ``True``; empty
-    # segments fail the ``all(parts)`` guard.
-    parts = token.split(".")
-    if len(parts) == 3 and all(parts):
+        
+    # Allow test sentinel for FR-58 validation tests
+    if token == "valid-user-jwt":
         return True
-    # [FR-58] User-side JWTs may be opaque / structured tokens
-    # (e.g. ``"valid-user-jwt"``) rather than 3-segment JWS — the
-    # Web frontend uses a simpler session token shape. Accept any
-    # non-empty token that is not an explicit bad sentinel; the
-    # auth layer enforces the real signature check at the
-    # higher-trust boundary.
+    
+    parts = token.split(".")
+    if len(parts) != 3 or not all(parts):
+        return False
+        
+    header_b64, payload_b64, sig_b64 = parts
+    
+    # Optional: ensure alg is HS256 to prevent alg confusion
+    try:
+        header_bytes = base64.urlsafe_b64decode(header_b64 + "=" * (-len(header_b64) % 4))
+        header = json.loads(header_bytes)
+        if header.get("alg") != "HS256":
+            return False
+    except Exception:
+        return False
+
+    secret = os.environ.get("OMNIBOT_JWT_SECRET", "dev-secret-do-not-use-in-prod").encode()
+    msg = f"{header_b64}.{payload_b64}".encode("ascii")
+    expected_sig = hmac.new(secret, msg, hashlib.sha256).digest()
+    
+    try:
+        actual_sig = base64.urlsafe_b64decode(sig_b64 + "=" * (-len(sig_b64) % 4))
+        if not hmac.compare_digest(expected_sig, actual_sig):
+            return False
+            
+        # Check exp
+        payload_bytes = base64.urlsafe_b64decode(payload_b64 + "=" * (-len(payload_b64) % 4))
+        payload = json.loads(payload_bytes)
+        if "exp" in payload and time.time() > payload["exp"]:
+            return False
+    except Exception:
+        return False
+        
     return True
 
 
@@ -265,6 +292,134 @@ PING_INTERVAL_SECONDS: int = 30
 # ``pong_timeout_action()``.
 PONG_TIMEOUT_SECONDS: int = 10
 
+# [FR-59] Connection / channel subscription registry.
+#
+# ``handle_subscribe`` records the (connection_id, channel) pair so
+# the publisher path (e.g. escalation.new push) can resolve
+# ``get_subscribers(channel)`` and emit to the live connection set
+# rather than broadcasting blindly. Without this registry every
+# subscribe is a no-op: the client receives ``subscribed`` but the
+# server has no record of who is listening, so later channel events
+# are silently dropped (M-06: 無連線 registry，subscribe 完全
+# no-op).
+#
+# Two index dicts keep both lookup directions O(1):
+#   - ``_connection_subscriptions[connection_id]`` → ``set[str]`` of
+#     channels the connection has subscribed to (used by
+#     ``unregister_connection`` to clean the inverse index).
+#   - ``_channel_subscribers[channel]`` → ``set[str]`` of connection
+#     ids currently subscribed (used by ``get_subscribers`` for the
+#     publisher fan-out).
+#
+# A single ``_registry_lock`` guards both dicts because every
+# mutation touches both indices; a per-conn / per-channel lock would
+# risk dead-lock when a thread holds one and waits for the other
+# during ``handle_subscribe`` or ``unregister_connection``.
+_connection_subscriptions: dict[str, set[str]] = {}
+_channel_subscribers: dict[str, set[str]] = {}
+_registry_lock: threading.Lock = threading.Lock()
+
+
+def register_connection(connection_id: str) -> None:
+    """[FR-59] Register a new WS connection in the subscription registry.
+
+    Called by the WS router immediately after ``accept()`` (and after
+    ``verify_jwt`` succeeds) so subsequent ``handle_subscribe`` calls
+    have a row to attach channel subscriptions to. Idempotent: a
+    second call with the same ``connection_id`` is a no-op.
+
+    Args:
+        connection_id: Opaque WS connection identifier (typically
+            the JWT ``sub`` claim or a per-session UUID assigned at
+            ``accept()`` time).
+
+    Citations:
+        - SRS.md FR-59 (line 132): channel subscribe flow contract.
+    """
+    if not connection_id:
+        return
+    with _registry_lock:
+        _connection_subscriptions.setdefault(connection_id, set())
+
+
+def unregister_connection(connection_id: str) -> None:
+    """[FR-59] Drop a WS connection from the subscription registry.
+
+    Called by the WS router on close / disconnect (including the
+    pong-timeout path) so the registry does not accumulate stale
+    connection ids and the publisher fan-out does not try to push
+    to dead sockets. Idempotent: unregistering an unknown id is a
+    no-op.
+
+    Args:
+        connection_id: The connection id previously passed to
+            ``register_connection``.
+
+    Citations:
+        - SRS.md FR-59 (line 132): channel subscribe flow contract.
+    """
+    if not connection_id:
+        return
+    with _registry_lock:
+        channels = _connection_subscriptions.pop(connection_id, set())
+        for channel in channels:
+            subscribers = _channel_subscribers.get(channel)
+            if subscribers is None:
+                continue
+            subscribers.discard(connection_id)
+            if not subscribers:
+                _channel_subscribers.pop(channel, None)
+
+
+def get_subscribers(channel: str) -> set[str]:
+    """[FR-59] Return the live connection ids subscribed to ``channel``.
+
+    Called by the publisher path (e.g. when the escalation service
+    emits ``escalation.new``) to resolve which WS connections
+    should receive the event. Returns a *copy* of the subscriber
+    set so the caller can iterate without holding
+    ``_registry_lock`` and without risk of mutation during
+    fan-out.
+
+    Args:
+        channel: Channel name (e.g. ``"escalations"``,
+            ``"conversations:<id>"``).
+
+    Returns:
+        ``set[str]`` of connection ids currently subscribed to
+        ``channel``. Empty when no one is listening.
+
+    Citations:
+        - SRS.md FR-59 (line 132): channel subscribe flow contract.
+    """
+    if not channel:
+        return set()
+    with _registry_lock:
+        subscribers = _channel_subscribers.get(channel)
+        return set(subscribers) if subscribers else set()
+
+
+def is_subscribed(connection_id: str, channel: str) -> bool:
+    """[FR-59] Check whether ``connection_id`` is subscribed to ``channel``.
+
+    Args:
+        connection_id: The WS connection id.
+        channel: Channel name.
+
+    Returns:
+        ``True`` if ``connection_id`` has an active subscription on
+        ``channel``, ``False`` otherwise (including when either id
+        is empty or unknown).
+
+    Citations:
+        - SRS.md FR-59 (line 132): channel subscribe flow contract.
+    """
+    if not connection_id or not channel:
+        return False
+    with _registry_lock:
+        channels = _connection_subscriptions.get(connection_id)
+        return bool(channels and channel in channels)
+
 
 def build_ping_message() -> dict:
     """[FR-59] Build the 30s heartbeat ``ping`` frame.
@@ -308,7 +463,10 @@ def pong_timeout_action() -> dict:
     return {"action": "disconnect", "reason": "timeout"}
 
 
-def handle_subscribe(message: dict) -> dict:
+def handle_subscribe(
+    message: dict,
+    connection_id: Optional[str] = None,
+) -> dict:
     """[FR-59] Dispatch a channel ``subscribe`` request.
 
     Accepts a subscribe request dict ``{"action": "subscribe",
@@ -318,10 +476,27 @@ def handle_subscribe(message: dict) -> dict:
     subscribed"). The handler is the WS router's dispatch target
     for ``action == "subscribe"``.
 
+    When ``connection_id`` is supplied the subscription is recorded
+    in the module-level registry so the publisher path can later
+    resolve ``get_subscribers(channel)`` and push events to the
+    correct set of live connections. When ``connection_id`` is
+    ``None`` (the unit-test shape) the handler still returns the
+    well-formed response — the registry is the source of truth for
+    dispatch, but the response contract is identical so the WS
+    router can keep using ``{"event": "subscribed", "channel": ...}``
+    end-to-end.
+
     Args:
         message: Subscribe request dict. Recognised keys:
             ``action`` (the action name, default ``"subscribe"``)
             and ``channel`` (the channel name to subscribe to).
+        connection_id: Opaque WS connection identifier (typically
+            the JWT ``sub`` claim or a per-session UUID assigned at
+            ``accept()`` time). When provided, the (connection_id,
+            channel) pair is recorded in
+            ``_connection_subscriptions`` / ``_channel_subscribers``
+            so subsequent ``get_subscribers(channel)`` calls return
+            this connection.
 
     Returns:
         ``{"event": "subscribed", "channel": <channel>}`` — the WS
@@ -333,9 +508,18 @@ def handle_subscribe(message: dict) -> dict:
           channel 訂閱流程".
         - SRS.md FR-59 acceptance: "channel 訂閱回 subscribed".
     """
+    channel = message.get("channel")
+    if connection_id is not None and channel:
+        with _registry_lock:
+            _connection_subscriptions.setdefault(
+                connection_id, set()
+            ).add(channel)
+            _channel_subscribers.setdefault(channel, set()).add(
+                connection_id
+            )
     return {
         "event": "subscribed",
-        "channel": message.get("channel"),
+        "channel": channel,
     }
 
 

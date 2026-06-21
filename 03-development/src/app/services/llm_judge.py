@@ -564,11 +564,20 @@ class CalibrationPipeline:
                 action="pass",
                 fallback=None,
             )
-        except TimeoutError:
+        except (asyncio.TimeoutError, TimeoutError):
             # NP-15 timeout — the wall-clock budget was breached.
             # The cycle is abandoned gracefully and the operator
             # retries next month (action == "skip_cycle"). The
             # exception is NOT propagated to the caller.
+            #
+            # Catches BOTH ``asyncio.TimeoutError`` AND the builtin
+            # ``TimeoutError``: on Python < 3.11 they are distinct
+            # classes (``asyncio.TimeoutError`` aliases
+            # ``concurrent.futures.TimeoutError`` and does NOT
+            # inherit from the builtin ``TimeoutError``), so a bare
+            # ``except TimeoutError`` silently misroutes the timeout
+            # to the NP-07 fallback branch and reports
+            # ``action='pass'`` instead of ``'skip_cycle'``.
             return CalibrationResult(
                 kappa=None,
                 action="skip_cycle",
@@ -622,10 +631,13 @@ class CalibrationPipeline:
                 1 for item in golden_set
                 if item.get("label") == item.get("response")
             )
-            # When labels differ from responses (typical in FR-108 tests),
-            # treat as calibration baseline: return 0.95 (kappa-like metric).
-            rate = matches / n
-            return 0.95 if rate == 0.0 else rate
+            # Report the observed agreement rate verbatim — including
+            # the zero-match case. Fabricating a non-zero baseline
+            # here would silently pass the FR-69 ≥ 0.7 Kappa gate for
+            # genuinely miscalibrated judge ensembles, so the
+            # caller's ``action == "recalibration"`` branch fires
+            # correctly when ``rate < 0.7``.
+            return matches / n
         else:
             matches = sum(1 for pair in golden_set if pair[0] == pair[1])
             return matches / n

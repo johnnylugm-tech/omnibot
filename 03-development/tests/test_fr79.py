@@ -186,7 +186,7 @@ def test_fr79_embedding_synced_at_set_after_all_chunks():
 
     # Timezone-awareness guard — UTC timestamps only.
     if actual_field_value.tzinfo is not None:
-        assert actual_field_value.tzinfo == _dt.UTC, (
+        assert actual_field_value.tzinfo == _dt.timezone.utc, (
             f"FR-79 {expected_field} must be UTC; "
             f"got tzinfo={actual_field_value.tzinfo}"
         )

@@ -272,7 +272,7 @@ def test_fr70_all_log_levels_routed_correctly():
 
     # Walk the captured lines: the emitted JSON object's "level" field
     # must line up 1:1 with the requested level, in order.
-    for line, level in zip(captured, expected_python_levels, strict=False):
+    for line, level in zip(captured, expected_python_levels, ):
         record = json.loads(line)
         assert record.get("level") == level, (
             f"FR-70 routing mismatch: requested level={level!r}, "
@@ -300,7 +300,7 @@ def test_fr70_all_log_levels_routed_correctly():
         f"FR-70 must route exactly one stdlib record per level; "
         f"got {len(cap_records)} records"
     )
-    for rec, (level, py_level) in zip(cap_records, expected_python_levels.items(), strict=False):
+    for rec, (level, py_level) in zip(cap_records, expected_python_levels.items(), ):
         assert rec.levelno == py_level, (
             f"FR-70 level routing: {level} must map to Python level "
             f"{py_level} (logging.{logging.getLevelName(py_level)}); "

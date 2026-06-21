@@ -492,7 +492,7 @@ def test_fr02_process_events_preserves_received_at_as_utc_datetime():
     received = results[0].received_at
     assert isinstance(received, datetime)
     assert received.tzinfo is not None, "received_at must be timezone-aware"
-    assert received.tzinfo == UTC or received.utcoffset().total_seconds() == 0, (
+    assert received.tzinfo == timezone.utc or received.utcoffset().total_seconds() == 0, (
         f"received_at must be UTC, got {received.tzinfo}"
     )
     assert received.year == 2024

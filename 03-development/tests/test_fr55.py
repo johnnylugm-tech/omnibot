@@ -273,7 +273,7 @@ def test_fr55_breach_query_correct():
             "Test setup invariant: breached row must have resolved_at=None"
         )
         assert manager.rows[breached_id]["sla_deadline"] < datetime.now(
-            UTC
+            timezone.utc
         ), (
             "Test setup invariant: breached row must have sla_deadline < now"
         )

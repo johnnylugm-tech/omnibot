@@ -192,7 +192,7 @@ def test_fr69_kappa_above_07_on_golden_set():
         import asyncio as _asyncio
 
         cycle_result = pipeline.run_cycle(
-            golden_set=list(zip(human_labels, judge_labels, strict=False)),
+            golden_set=list(zip(human_labels, judge_labels, )),
         )
         if inspect.isawaitable(cycle_result):
             cycle_result = _asyncio.new_event_loop().run_until_complete(
