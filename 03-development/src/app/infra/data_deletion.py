@@ -21,6 +21,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+# ---------------------------------------------------------------------------
+# FR-92 mandated sentinels — single source of truth referenced by the
+# DataDeletionResult docstring and consumed by execute_data_deletion().
+# ---------------------------------------------------------------------------
+_PLATFORM_USER_ID_DELETED: str = "DELETED"
+_MESSAGES_CONTENT_REDACTED: str = "[REDACTED]"
+_AUDIT_EVENT_GDPR_DELETION: str = "gdpr_deletion"
+_SLA_DAYS: int = 30
+
 
 # ---------------------------------------------------------------------------
 # Immutable result descriptor returned by execute_data_deletion().
@@ -31,13 +40,14 @@ class DataDeletionResult:
 
     Attributes:
         profile_null: ``True`` iff ``users.profile`` was set to NULL.
-        platform_user_id: Post-deletion sentinel — MUST be ``"DELETED"``.
+        platform_user_id: Post-deletion sentinel (see
+            ``_PLATFORM_USER_ID_DELETED``).
         messages_redacted: ``True`` iff all user messages were redacted.
-        messages_content: Post-deletion content sentinel — MUST be
-            ``"[REDACTED]"``.
-        audit_event: Event type recorded in ``pii_audit_log`` — MUST be
-            ``"gdpr_deletion"``.
-        sla_days: SLA window in days — MUST be ``30``.
+        messages_content: Post-deletion content sentinel (see
+            ``_MESSAGES_CONTENT_REDACTED``).
+        audit_event: Event type recorded in ``pii_audit_log`` (see
+            ``_AUDIT_EVENT_GDPR_DELETION``).
+        sla_days: SLA window in days (see ``_SLA_DAYS``).
     """
 
     profile_null: bool
@@ -77,9 +87,9 @@ def execute_data_deletion(user_id: str) -> DataDeletionResult:
 
     return DataDeletionResult(
         profile_null=True,
-        platform_user_id="DELETED",
+        platform_user_id=_PLATFORM_USER_ID_DELETED,
         messages_redacted=True,
-        messages_content="[REDACTED]",
-        audit_event="gdpr_deletion",
-        sla_days=30,
+        messages_content=_MESSAGES_CONTENT_REDACTED,
+        audit_event=_AUDIT_EVENT_GDPR_DELETION,
+        sla_days=_SLA_DAYS,
     )
