@@ -106,16 +106,7 @@ class ComposeHealth:
         Citations:
             - 03-development/tests/test_fr108.py:734-742 — check_all contract
         """
-        # Stub: all seven services report healthy.
-        return {
-            "omnibot-api": True,
-            "postgres": True,
-            "redis": True,
-            "otel-collector": True,
-            "prometheus": True,
-            "grafana": True,
-            "worker": True,
-        }
+        return {s: v == HEALTHY for s, v in self._status.items()}
 
     def health_endpoint_ok(self, timeout_seconds: int = 30) -> bool:
         """[FR-108] Poll /api/v1/health until 200 or timeout.
@@ -123,7 +114,7 @@ class ComposeHealth:
         Citations:
             - 03-development/tests/test_fr108.py:758-762 — contract
         """
-        return True
+        return self.overall_status() == HEALTHY
 
     def check_endpoint(self, path: str) -> type:
         """[FR-108] Check an HTTP endpoint and return a status-code-bearing result.

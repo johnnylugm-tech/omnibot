@@ -22,56 +22,67 @@ Citations:
 
 from __future__ import annotations
 
-from prometheus_client import Counter, Gauge, Histogram, generate_latest
+from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram, generate_latest
 from prometheus_client.metrics import MetricWrapperBase
+
+OMNIBOT_REGISTRY = CollectorRegistry()
 
 PROMETHEUS_METRICS: dict[str, MetricWrapperBase] = {
     "response_duration_seconds": Histogram(
         "response_duration_seconds",
         "End-to-end response latency in seconds",
+        registry=OMNIBOT_REGISTRY,
     ),
     "requests_total": Counter(
         "requests_total",
-        "Total number of incoming requests, partitioned by platform",
-        ["platform"],
+        "Total number of incoming requests, partitioned by platform and status",
+        ["platform", "status"],
+        registry=OMNIBOT_REGISTRY,
     ),
     "fcr_total": Counter(
         "fcr_total",
         "First Contact Resolution counter (resolved vs unresolved)",
         ["outcome"],
+        registry=OMNIBOT_REGISTRY,
     ),
     "knowledge_hit_total": Counter(
         "knowledge_hit_total",
         "Knowledge-layer hit counter, partitioned by tier",
         ["tier"],
+        registry=OMNIBOT_REGISTRY,
     ),
     "pii_masked_total": Counter(
         "pii_masked_total",
         "PII masking counter, partitioned by PII type",
         ["pii_type"],
+        registry=OMNIBOT_REGISTRY,
     ),
     "escalation_queue_size": Gauge(
         "escalation_queue_size",
         "Current number of unresolved items in the escalation queue",
         ["priority"],
+        registry=OMNIBOT_REGISTRY,
     ),
     "emotion_escalation_total": Counter(
         "emotion_escalation_total",
         "Escalations triggered by the emotion module",
+        registry=OMNIBOT_REGISTRY,
     ),
     "escalation_sla_breach_total": Counter(
         "escalation_sla_breach_total",
         "Escalations that breached their SLA deadline",
         ["priority"],
+        registry=OMNIBOT_REGISTRY,
     ),
     "llm_tokens_total": Counter(
         "llm_tokens_total",
         "LLM tokens consumed, partitioned by model",
         ["model"],
+        registry=OMNIBOT_REGISTRY,
     ),
 }
 
 
 def scrape_metrics() -> bytes:
     """Render the registered Prometheus metrics as text-exposition bytes."""
-    return generate_latest()
+    return generate_latest(OMNIBOT_REGISTRY)

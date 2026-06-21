@@ -124,9 +124,9 @@ def _scrape_payload() -> str:
     imported ``prometheus_client`` at module load time — which it will
     because the GREEN module defines the metric objects directly.
     """
-    from prometheus_client import generate_latest  # local import: only GREEN has this
+    from app.infra.prometheus_metrics import scrape_metrics
 
-    raw = generate_latest()
+    raw = scrape_metrics()
     return raw.decode("utf-8") if isinstance(raw, (bytes, bytearray)) else raw
 
 

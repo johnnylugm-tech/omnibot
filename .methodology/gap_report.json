@@ -1,12 +1,12 @@
 {
   "summary": {
-    "total": 432,
+    "total": 441,
     "missing": 0,
     "incomplete": 0,
-    "orphaned": 432,
+    "orphaned": 441,
     "critical": 0,
     "major": 0,
-    "minor": 432
+    "minor": 441
   },
   "gaps": [
     {
@@ -152,6 +152,12 @@
       "severity": "minor",
       "reason": "'force_sync_status' has no corresponding specification in SPEC.md",
       "action": "Add spec for force_sync_status or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'mark_failed' has no corresponding specification in SPEC.md",
+      "action": "Add spec for mark_failed or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
@@ -456,6 +462,12 @@
     {
       "type": "ORPHANED",
       "severity": "minor",
+      "reason": "'b64url_dec' has no corresponding specification in SPEC.md",
+      "action": "Add spec for b64url_dec or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
       "reason": "'handle_jsonrpc_call' has no corresponding specification in SPEC.md",
       "action": "Add spec for handle_jsonrpc_call or remove if unnecessary"
     },
@@ -470,6 +482,30 @@
       "severity": "minor",
       "reason": "'handle_agent_takeover' has no corresponding specification in SPEC.md",
       "action": "Add spec for handle_agent_takeover or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'register_connection' has no corresponding specification in SPEC.md",
+      "action": "Add spec for register_connection or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'unregister_connection' has no corresponding specification in SPEC.md",
+      "action": "Add spec for unregister_connection or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'get_subscribers' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get_subscribers or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'is_subscribed' has no corresponding specification in SPEC.md",
+      "action": "Add spec for is_subscribed or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
@@ -558,6 +594,12 @@
     {
       "type": "ORPHANED",
       "severity": "minor",
+      "reason": "'add_parent' has no corresponding specification in SPEC.md",
+      "action": "Add spec for add_parent or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
       "reason": "'is_vector_indexed' has no corresponding specification in SPEC.md",
       "action": "Add spec for is_vector_indexed or remove if unnecessary"
     },
@@ -638,6 +680,12 @@
       "severity": "minor",
       "reason": "'classify' has no corresponding specification in SPEC.md",
       "action": "Add spec for classify or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'analyze' has no corresponding specification in SPEC.md",
+      "action": "Add spec for analyze or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
@@ -2012,6 +2060,12 @@
       "severity": "minor",
       "reason": "'A2AAdapter' has no corresponding specification in SPEC.md",
       "action": "Add spec for A2AAdapter or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'close' has no corresponding specification in SPEC.md",
+      "action": "Add spec for close or remove if unnecessary"
     },
     {
       "type": "ORPHANED",

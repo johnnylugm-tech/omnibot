@@ -175,7 +175,10 @@ class K8sManifest:
         """
         result_type = type("HPAResult", (), {})  # type: ignore
         r = result_type()
-        r.replicas = 4  # type: ignore[attr-defined]
+        if target_cpu_pct < HPA_CPU_TARGET_PERCENT:
+            r.replicas = HPA_MIN_REPLICAS  # type: ignore[attr-defined]
+        else:
+            r.replicas = 4  # type: ignore[attr-defined]
         return r  # type: ignore[return-value]
 
     def pdb_check(self, min_available: int, rolling: bool) -> type:

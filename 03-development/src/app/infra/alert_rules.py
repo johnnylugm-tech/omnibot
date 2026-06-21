@@ -88,8 +88,8 @@ ALERT_RULES: Mapping[str, AlertRule] = {
         threshold=0.90,  # SLA compliance ratio (90%)
         for_duration="0m",  # IMMEDIATE per spec
         expression=(
-            "1 - (rate(escalation_sla_breach_total[5m]) / "
-            "rate(escalation_sla_breach_total[5m])) < 0.90"
+            "sum(rate(escalation_sla_breach_total[5m])) / "
+            "sum(rate(requests_total[5m])) > 0.10"
         ),
     ),
 }
