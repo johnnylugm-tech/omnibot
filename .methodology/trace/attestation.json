@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "32f49d67d300345cf396001621c5a2c85e0ca7e8",
-  "content_sha256": "adfc4a19e416d4a6655aca49e061633c7e2426d653a332d8ecc97a65ab439dd5",
+  "git_sha": "9638ce907ea46a72665804d1aeefff807133973a",
+  "content_sha256": "39841ead1cfdfa266118d48000f51cd9f0d23f37b0dd1a97b1244db4508d12f4",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,10 +11,10 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "93.5%",
-      "test_coverage": "97.2%",
-      "verification_rate": "93.5%",
-      "total_links": 335,
+      "code_coverage": "94.4%",
+      "test_coverage": "98.1%",
+      "verification_rate": "94.4%",
+      "total_links": 337,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -22,13 +22,11 @@
           "FR-54",
           "FR-63",
           "FR-91",
-          "FR-93",
           "FR-94",
           "FR-99"
         ],
         "fr_without_test": [
           "FR-108",
-          "FR-94",
           "FR-99"
         ]
       }
@@ -40,13 +38,11 @@
         "FR-54",
         "FR-63",
         "FR-91",
-        "FR-93",
         "FR-94",
         "FR-99"
       ],
       "fr_without_test": [
         "FR-108",
-        "FR-94",
         "FR-99"
       ]
     },
@@ -1377,9 +1373,11 @@
       },
       "FR-93": {
         "fr_id": "FR-93",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
+        "code_files": [
+          "03-development/src/app/api/gdpr.py"
+        ],
         "test_files": [
           "tests/test_fr93.py"
         ],
@@ -1391,7 +1389,9 @@
         "status": "pending",
         "srs_section": "SAD.md",
         "code_files": [],
-        "test_files": [],
+        "test_files": [
+          "tests/test_fr94.py"
+        ],
         "sad_module": "—",
         "priority": "HIGH"
       },
