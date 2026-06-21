@@ -1,4 +1,3 @@
-from __future__ import annotations
 """[FR-57/FR-58/FR-59] /ws/agent + /ws/user WebSocket — JWT Bearer,
 event dispatch, heartbeat + subscribe flow.
 
@@ -81,6 +80,7 @@ Citations:
       /ws/agent + /ws/user handlers.
 """
 
+from __future__ import annotations
 
 import base64
 import hashlib

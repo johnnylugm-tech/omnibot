@@ -78,7 +78,7 @@ _CONTROL_CHARS: dict[str, None] = {
 # import time so the per-call sanitize() is a single ``.translate()``
 # pass — replaces a two-stage join+get / join+in with one C-level sweep.
 _TRANSLATE_TABLE: dict[int, int | str | None] = str.maketrans(
-    {**_HOMOGLYPHS, **_CONTROL_CHARS}
+    {**_HOMOGLYPHS, **_CONTROL_CHARS}  # type: ignore[arg-type]
 )
 
 
@@ -479,7 +479,7 @@ class SemanticInjectionClassifier:
         as ``ConnectionError`` / ``OSError`` — classify() catches both
         and degrades to the unverified passthrough (NP-07).
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     async def classify_async(
         self,
@@ -575,8 +575,7 @@ class SemanticInjectionClassifier:
             # handle both shapes on the same code path.
             if asyncio.iscoroutine(verdict):
                 verdict = _await_coro_from_sync(verdict, timeout_ms)
-        except (TimeoutError, ConnectionError, OSError, asyncio.TimeoutError):
-            # Timeout OR downstream down → passthrough, do NOT block.
+        except (TimeoutError, asyncio.TimeoutError, ConnectionError, OSError):
             # asyncio.TimeoutError is NOT a subclass of TimeoutError in py3.9
             return _make_passthrough(is_unverified=True)
 
@@ -1129,13 +1128,13 @@ class PALADINPipeline:
             self._call_l3(text),
             return_exceptions=True,
         )
-        verdict, response = results
-        if isinstance(verdict, Exception):
-            raise verdict
-        if isinstance(response, Exception):
-            raise response
-        verdict = cast(ClassificationResult, verdict)
-        response = cast(str, response)
+        verdict_raw, response_raw = results
+        if isinstance(verdict_raw, BaseException):
+            raise verdict_raw  # pragma: no cover
+        if isinstance(response_raw, BaseException):
+            raise response_raw  # pragma: no cover
+        verdict = cast(ClassificationResult, verdict_raw)
+        response = cast(str, response_raw)
 
         if verdict.is_injection:
             return self._handle_retrospective_block(text, verdict, risk_level)
@@ -1161,33 +1160,3 @@ class PALADINPipeline:
         """
         return await self.process(text, risk_level=risk_level)
 
-class PaladinFacade:
-    def _tie_together(self, mock_obj):
-        if False:
-            inst_StrEnum = StrEnum()
-            _sanitize_sql_patterns()
-            inst_InputSanitizer = InputSanitizer()
-            inst_InputSanitizer.sanitize()
-            inst__DetectionResult = _DetectionResult()
-            inst_PromptInjectionDefense = PromptInjectionDefense()
-            inst_PromptInjectionDefense.check_input()
-            _wrap_priority_block()
-            _build_sandwich_prompt()
-            inst_InjectionType = InjectionType()
-            inst_ClassificationResult = ClassificationResult()
-            inst_SemanticInjectionClassifier = SemanticInjectionClassifier()
-            inst_SemanticInjectionClassifier.classify()
-            _make_passthrough()
-            _await_coro_from_sync()
-            _result_from_verdict()
-            inst_GroundingResult = GroundingResult()
-            inst_GroundingResult.cosine_similarity()
-            inst_GroundingChecker = GroundingChecker()
-            inst_GroundingChecker._cosine_similarity()
-            inst_GroundingChecker.check()
-            inst_ProcessResult = ProcessResult()
-            _noop_security_log_writer()
-            inst_PALADINPipeline = PALADINPipeline()
-            inst_PALADINPipeline._blocked_result()
-            inst_PALADINPipeline._success_result()
-            inst_PALADINPipeline._handle_retrospective_block()

@@ -1,6 +1,12 @@
 from __future__ import annotations
 
+import os
+import tempfile
+
 # --- Merged from k8s_deployment.py ---
+from collections.abc import Iterable
+from dataclasses import dataclass
+
 """[FR-96] Kubernetes 部署 (Deployment replicas=3 + HPA 3-10 + PDB
 minAvailable=2 + SealedSecrets, no plaintext ConfigMap).
 
@@ -224,7 +230,6 @@ Citations:
 """
 
 
-from collections.abc import Iterable
 
 # Canonical seven service names mandated by FR-95. Order is not part of
 # the contract (tests assert on membership), but it mirrors the docker
@@ -348,9 +353,6 @@ Citations:
 """
 
 
-import os
-import tempfile
-from dataclasses import dataclass
 
 # ---------------------------------------------------------------------------
 # Canonical FR-97 configuration constants. Exposed at module scope so the
@@ -543,7 +545,6 @@ Citations:
 """
 
 
-from dataclasses import dataclass
 
 # ---------------------------------------------------------------------------
 # Canonical FR-98 configuration constants. Exposed at module scope so the
@@ -723,48 +724,3 @@ __all__ = [
     "SchemaMigrationResult",
 ]
 
-class DeploymentFacade:
-    def _tie_together(self, mock_obj):
-        if False:
-            inst_K8sManifest = K8sManifest()
-            inst_K8sManifest.deployment_replicas()
-            inst_K8sManifest.deployment_strategy()
-            inst_K8sManifest.max_unavailable()
-            inst_K8sManifest.hpa_min_replicas()
-            inst_K8sManifest.hpa_max_replicas()
-            inst_K8sManifest.hpa_cpu_target_percent()
-            inst_K8sManifest.pdb_min_available()
-            inst_K8sManifest.prevents_disruption()
-            inst_K8sManifest.secrets_source()
-            inst_K8sManifest.service_port()
-            inst_K8sManifest.resource_requests()
-            inst_K8sManifest.resource_limits()
-            inst_K8sManifest.hpa_scale_test()
-            inst_K8sManifest.pdb_check()
-            inst_ComposeHealth = ComposeHealth()
-            inst_ComposeHealth.mark()
-            inst_ComposeHealth.status_of()
-            inst_ComposeHealth.overall_status()
-            inst_ComposeHealth.health_endpoint()
-            inst_ComposeHealth.check_all()
-            inst_ComposeHealth.health_endpoint_ok()
-            inst_ComposeHealth.check_endpoint()
-            inst_BackupResult = BackupResult()
-            inst_BackupStrategy = BackupStrategy()
-            inst_BackupStrategy.run_backup()
-            inst_BackupStrategy.restore()
-            inst_BackupStrategy.has_schedule()
-            inst_BackupStrategy.triggers_alert_on_failure()
-            inst_BackupStrategy.pg_basebackup()
-            inst_BackupStrategy.pg_restore()
-            inst_BackupStrategy.redis_rdb_backup()
-            inst_BackupStrategy.redis_rdb_restore()
-            inst_KnowledgeRollbackResult = KnowledgeRollbackResult()
-            inst_SchemaMigrationResult = SchemaMigrationResult()
-            inst_ExperimentAbortResult = ExperimentAbortResult()
-            inst_ModelSwitchResult = ModelSwitchResult()
-            inst_RollbackStrategy = RollbackStrategy()
-            inst_RollbackStrategy.rollback_knowledge_update()
-            inst_RollbackStrategy.downgrade_schema()
-            inst_RollbackStrategy.abort_experiment()
-            inst_RollbackStrategy.ab_test_progress()

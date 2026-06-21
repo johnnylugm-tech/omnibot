@@ -1,4 +1,3 @@
-from __future__ import annotations
 """[FR-52, FR-63, FR-64] ABTestManager — SHA-256 deterministic A/B variant assignment
 and automatic winner promotion.
 
@@ -69,6 +68,7 @@ Citations:
     - SRS.md FR-64 -- implementation_functions: "ABTestManager.auto_promote()" (line 147).
 """
 
+from __future__ import annotations
 
 import hashlib
 from typing import Any

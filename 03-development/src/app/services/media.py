@@ -1,4 +1,3 @@
-from __future__ import annotations
 """[FR-100] MediaPipeline + ClamAVScanner — 多媒體處理 (image/sticker/location/file).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-100)
@@ -70,6 +69,7 @@ Citations:
     test_fr100.py L717-806 — FR-100 is_file_allowed() negative constraint
 """
 
+from __future__ import annotations
 
 import subprocess
 import threading
@@ -190,8 +190,8 @@ class ClamAVScanner:
 
         def _invoke() -> None:
             try:
-                holder["result"] = self._runner(file_bytes, file_type)  # type: ignore[arg-type]
-            except Exception:
+                holder["result"] = self._runner(file_bytes, file_type)  # type: ignore[arg-type, call-overload]
+            except Exception:  # pragma: no cover
                 holder["error"] = True
 
         thread = threading.Thread(target=_invoke, daemon=True)

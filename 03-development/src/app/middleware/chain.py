@@ -1,4 +1,3 @@
-from __future__ import annotations
 """[FR-24] Middleware chain orchestrator.
 
 Acceptance criteria (SRS FR-24):
@@ -15,6 +14,7 @@ Citations:
   rate_limit_after_platform_parse, middleware_chain_full_order)
 """
 
+from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any

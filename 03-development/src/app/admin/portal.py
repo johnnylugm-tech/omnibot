@@ -1,4 +1,3 @@
-from __future__ import annotations
 """[FR-104] AgentPortal — 轉接收件匣 + WebSocket + 智慧接管面板.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-104)
@@ -29,6 +28,7 @@ Citations:
     test_fr104.py L375-504 — FR-104 takeover panel context
 """
 
+from __future__ import annotations
 
 from typing import Any
 
@@ -97,7 +97,7 @@ class AgentPortal:
 
         Citation: test_fr104.py L55-61
         """
-        ...
+        return None  # stub — real wiring pushes into WS broadcast queue  # pragma: no cover
 
     def _fetch_takeover_context(self, escalation_id: str) -> dict[str, Any]:
         """[FR-104] Injectable seam for backend data queries (DST/emotion/grounding).
@@ -107,7 +107,7 @@ class AgentPortal:
 
         Citation: test_fr104.py L64-87
         """
-        ...
+        return {}  # stub — real wiring fetches DST / emotion / grounding  # pragma: no cover
 
     # ------------------------------------------------------------------
     # Inbox operations

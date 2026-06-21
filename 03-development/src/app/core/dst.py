@@ -1,4 +1,3 @@
-from __future__ import annotations
 """Dialogue State Tracker (DST) — 8-state FSM + slot filling.
 
 [FR-34] 8-state FSM with strict ALLOWED_TRANSITIONS enforcement.
@@ -61,6 +60,7 @@ check, the ``state`` mutation and the ``turn_count`` increment happen
 as a single indivisible step.
 """
 
+from __future__ import annotations
 
 import enum
 import threading

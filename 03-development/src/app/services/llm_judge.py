@@ -1,4 +1,3 @@
-from __future__ import annotations
 """[FR-65] LLMJudge — Ensemble Judge 平行呼叫 (gpt-4o-mini + claude-3-5-haiku).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-65)
@@ -53,6 +52,7 @@ Citations:
     - SAD.md -- module→FR mapping "app.services.llm_judge → FR-65" (line 813).
 """
 
+from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass

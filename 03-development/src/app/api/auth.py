@@ -1,4 +1,3 @@
-from __future__ import annotations
 """[FR-86] Auth & User API — JWT login, refresh, and role management endpoints.
 
 Citations:
@@ -11,6 +10,7 @@ Citations:
         assign_role_to_user(user_id, role, caller_role) -> int.
 """
 
+from __future__ import annotations
 
 import hmac
 import json

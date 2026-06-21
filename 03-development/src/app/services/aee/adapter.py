@@ -1,4 +1,3 @@
-from __future__ import annotations
 """[FR-39] ActionAdapter 抽象介面 + 結果 / 工具定義資料契約。
 
 Citations:
@@ -13,6 +12,7 @@ Citations:
     ``error_message``，非 ``error`` / ``error_msg``）。
 """
 
+from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass

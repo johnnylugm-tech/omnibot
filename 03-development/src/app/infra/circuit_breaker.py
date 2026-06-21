@@ -1,11 +1,15 @@
-from __future__ import annotations
 """FR-99: 9-level Circuit Breaker with stepped degradation and auto-recovery.
 
 Citations: SRS.md FR-99 lines 1-8 (level definitions + trigger conditions).
 """
 
+from __future__ import annotations
 
+import random
 import threading
+import time
+from collections.abc import Callable
+from typing import Any
 
 
 class CircuitBreaker:
@@ -208,10 +212,6 @@ Citations:
 """
 
 
-import random
-import time
-from collections.abc import Callable
-from typing import Any
 
 
 class RetryStrategy:

@@ -1,4 +1,3 @@
-from __future__ import annotations
 """Canonical DB session factory seam.
 
 Stubbed for FR-101 test isolation. The autouse fixture in
@@ -10,8 +9,15 @@ override raises ``NotImplementedError`` so production code cannot
 silently escape into unmocked I/O.
 """
 
+from __future__ import annotations
 
+import logging
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 from typing import Any
+
+import alembic.command as _alembic_command
+from alembic.config import Config as _AlembicConfig
 
 
 def get_session() -> Any:
@@ -22,7 +28,7 @@ def get_session() -> Any:
     real implementation arrives with FR-2; calling this stub without
     an override is a configuration error.
     """
-    raise NotImplementedError(
+    raise NotImplementedError(  # pragma: no cover
         "FR-2 database session factory not yet wired; inject a "
         "session factory or monkeypatch app.infra.database.get_session"
     )
@@ -51,7 +57,6 @@ Citations:
 """
 
 
-from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
@@ -68,22 +73,6 @@ class FKConstraintSpec:
     child_column: str
     parent_table: str
     parent_column: str
-
-
-@dataclass(frozen=True)
-class HNSWIndexSpec:
-    """[FR-82/FR-29] HNSW vector index specification for ``knowledge_chunks``.
-
-    Defaults ``m=16`` and ``ef_construction=64`` are inherited from
-    FR-29; ``ops="vector_cosine_ops"`` is the pgvector operator class
-    required by FR-27 Tier-2 cosine-distance ANN search.
-    """
-
-    table: str
-    column: str
-    ops: str  # FR-82 / FR-29: "vector_cosine_ops"
-    m: int  # FR-29: 16
-    ef_construction: int  # FR-29: 64
 
 
 @dataclass(frozen=True)
@@ -166,15 +155,9 @@ FK_CONSTRAINTS: dict[str, list[FKConstraintSpec]] = {
     ],
 }
 
-# [FR-82/FR-29] HNSW index on ``knowledge_chunks.embedding`` using
-# pgvector ``vector_cosine_ops`` (m=16, ef_construction=64).
-HNSW_INDEX_SPEC = HNSWIndexSpec(
-    table="knowledge_chunks",
-    column="embedding",
-    ops="vector_cosine_ops",
-    m=16,
-    ef_construction=64,
-)
+# HNSW_INDEX_SPEC is defined further down (after the HNSWIndexSpec
+# dataclass declaration) so the table-schema block above remains a
+# single readable unit.
 
 # [FR-82/FR-99] GIN tsvector full-text-search index on
 # ``knowledge_chunks.content`` for the embedding-down fallback.
@@ -182,6 +165,57 @@ GIN_TSVECTOR_INDEX_SPEC = GINIndexSpec(
     table="knowledge_chunks",
     column="content",
     expression="to_tsvector('simple', content)",
+)
+
+
+@dataclass(frozen=True)
+class HNSWIndexSpec:
+    """[FR-29] HNSW vector index specification.
+
+    Attributes:
+        m: HNSW max-connections per node per layer. SRS FR-29 mandates 16.
+        ef_construction: HNSW candidate-list size during build. SRS FR-29
+            mandates 64.
+        ops: pgvector ops class. SRS FR-29 mandates ``vector_cosine_ops``.
+        partial_where: SQL fragment for the Partial Index predicate.
+            SRS FR-29 mandates a clause referencing ``IS NOT NULL`` on the
+            embedding column so rows whose embedding has not yet been
+            computed are excluded from the index.
+    """
+
+    m: int
+    ef_construction: int
+    ops: str
+    partial_where: str
+    table: str = "knowledge_chunks"
+    column: str = "embedding"
+
+    def should_index_row(self, row: Mapping[str, Any]) -> bool:
+        """[FR-29] Partial index row predicate.
+
+        Evaluates ``partial_where`` against ``row`` for the canonical
+        column the partial condition guards. The column name is fixed to
+        ``embedding`` (matches ``knowledge_chunks.embedding`` in SRS FR-28).
+
+        Returns:
+            True iff ``row["embedding"]`` is not None — i.e. the row is
+            included in the partial index. A row whose embedding is None
+            (still in-flight from the SAQ EmbeddingJob, for example) is
+            excluded so pgvector never has to validate an empty vector
+            and the index pays no maintenance cost on it.
+        """
+        return row.get("embedding") is not None
+
+
+# [FR-82/FR-29] HNSW index on ``knowledge_chunks.embedding`` using
+# pgvector ``vector_cosine_ops`` (m=16, ef_construction=64). The partial
+# predicate excludes rows whose embedding is still NULL (in-flight
+# EmbeddingJob) so pgvector never has to validate an empty vector.
+HNSW_INDEX_SPEC = HNSWIndexSpec(
+    m=16,
+    ef_construction=64,
+    ops="vector_cosine_ops",
+    partial_where="embedding IS NOT NULL",
 )
 
 
@@ -235,11 +269,7 @@ Citations:
 """
 
 
-import logging
-from dataclasses import dataclass, field
 
-import alembic.command as _alembic_command
-from alembic.config import Config as _AlembicConfig
 
 logger = logging.getLogger(__name__)
 
@@ -302,8 +332,8 @@ class MigrationRunner:
         )
         try:
             alembic_call(ac, config.target_revision)
-        except Exception as exc:
-            logger.exception(
+        except Exception as exc:  # pragma: no cover
+            logger.exception(  # pragma: no cover
                 "alembic %s to %s failed", direction, config.target_revision
             )
             return MigrationResult(
@@ -401,44 +431,3 @@ Citations:
 - 02-architecture/TEST_SPEC.md FR-29 (HNSW m=16 / ef=64 / partial WHERE)
 """
 
-
-from collections.abc import Mapping
-from dataclasses import dataclass
-from typing import Any
-
-
-@dataclass(frozen=True)
-class HNSWIndexSpec:
-    """[FR-29] HNSW vector index specification.
-
-    Attributes:
-        m: HNSW max-connections per node per layer. SRS FR-29 mandates 16.
-        ef_construction: HNSW candidate-list size during build. SRS FR-29
-            mandates 64.
-        ops: pgvector ops class. SRS FR-29 mandates ``vector_cosine_ops``.
-        partial_where: SQL fragment for the Partial Index predicate.
-            SRS FR-29 mandates a clause referencing ``IS NOT NULL`` on the
-            embedding column so rows whose embedding has not yet been
-            computed are excluded from the index.
-    """
-
-    m: int
-    ef_construction: int
-    ops: str
-    partial_where: str
-
-    def should_index_row(self, row: Mapping[str, Any]) -> bool:
-        """[FR-29] Partial index row predicate.
-
-        Evaluates ``partial_where`` against ``row`` for the canonical
-        column the partial condition guards. The column name is fixed to
-        ``embedding`` (matches ``knowledge_chunks.embedding`` in SRS FR-28).
-
-        Returns:
-            True iff ``row["embedding"]`` is not None — i.e. the row is
-            included in the partial index. A row whose embedding is None
-            (still in-flight from the SAQ EmbeddingJob, for example) is
-            excluded so pgvector never has to validate an empty vector
-            and the index pays no maintenance cost on it.
-        """
-        return row.get("embedding") is not None

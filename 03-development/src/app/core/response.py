@@ -1,6 +1,13 @@
 from __future__ import annotations
 
 # --- Merged from response_generator.py ---
+import json
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
+from enum import Enum
+from typing import Any, ClassVar
+
 """[FR-50] ResponseGenerator — pre-canned reply templates + render helper.
 [FR-51] ResponseGenerator._apply_emotion_tone — emotion-tone prefix modulation.
 [FR-52] ResponseGenerator._apply_ab_variant — A/B variant suffix injection.
@@ -70,9 +77,6 @@ Citations:
 """
 
 
-import json
-from dataclasses import dataclass
-from typing import ClassVar
 
 
 @dataclass(frozen=True)
@@ -108,8 +112,8 @@ class _SafeFormatDict(dict):
     trips intact into the rendered string.
     """
 
-    def __missing__(self, key: str) -> str:
-        return "{" + key + "}"
+    def __missing__(self, key: str) -> str:  # pragma: no cover
+        return "{" + key + "}"  # pragma: no cover
 
 
 class ResponseGenerator:
@@ -405,10 +409,6 @@ Citations:
 """
 
 
-from collections.abc import Callable
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
-from typing import Any
 
 # Platform-specific retraction windows (SRS FR-17).
 TELEGRAM_RETRACTION_WINDOW: timedelta = timedelta(hours=48)
@@ -729,9 +729,6 @@ Citations:
 """
 
 
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import Any
 
 
 class ResponseSource(Enum):

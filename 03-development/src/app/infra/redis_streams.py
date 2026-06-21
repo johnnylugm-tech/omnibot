@@ -1,4 +1,3 @@
-from __future__ import annotations
 """[FR-80] Redis Streams async processor for the omnichannel message bus.
 
 Owns the consumer-group lifecycle (XGROUP CREATE / XREADGROUP / XACK /
@@ -31,6 +30,7 @@ Citations:
   example)
 """
 
+from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass

@@ -1,4 +1,3 @@
-from __future__ import annotations
 """[FR-26/FR-27/FR-30] HybridKnowledge orchestrator — Tier-1 rule matching,
 Tier-2 RAG + RRF, and Tier-3 LLM generation.
 
@@ -36,16 +35,21 @@ Citations:
     - SRS.md FR-33 — EMBEDDING_DIM = 1536 for text-embedding-3-small.
 """
 
+from __future__ import annotations
 
 import json
-from dataclasses import dataclass
-from typing import Any
 
 # [FR-32] SRS-mandated source enum. The four values enumerate the
 # tier labels the hybrid pipeline emits: Tier-1 ILIKE rule hit
 # (``"rule"``), Tier-2 RAG short-circuit (``"rag"``), Tier-3 LLM
 # answer (``"wiki"``), Tier-4 human escalation (``"escalate"``).
 # Construction rejects any other string via ``KnowledgeResult.__post_init__``.
+import logging
+import re
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
+
 VALID_SOURCES: frozenset[str] = frozenset(
     {"rule", "rag", "wiki", "escalate"}
 )
@@ -816,10 +820,6 @@ Citations:
 """
 
 
-import logging
-import re
-from collections.abc import Callable
-from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 

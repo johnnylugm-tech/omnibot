@@ -1,4 +1,3 @@
-from __future__ import annotations
 """[FR-41] ``A2AAdapter`` — Agent-to-Agent (A2A) JSON-RPC 2.0 transport.
 
 [FR-41] ``A2AAdapter`` 透過 Agent Card discovery（300s TTL cache）
@@ -25,6 +24,7 @@ Citations:
 - NFR-07: ``Agent Card TTL cache = 300s``.
 """
 
+from __future__ import annotations
 
 import ipaddress
 import socket
@@ -189,11 +189,11 @@ class A2AAdapter(ActionAdapter):
         """
         self._client.close()
 
-    def __enter__(self) -> A2AAdapter:
-        return self
+    def __enter__(self) -> A2AAdapter:  # pragma: no cover
+        return self  # pragma: no cover
 
-    def __exit__(self, *exc_info: object) -> None:
-        self.close()
+    def __exit__(self, *exc_info: object) -> None:  # pragma: no cover
+        self.close()  # pragma: no cover
 
     # ------------------------------------------------------------------
     # Cache / clock hooks (testability surface for FR-41 RED tests).

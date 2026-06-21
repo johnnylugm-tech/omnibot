@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 # --- Merged from redis_security.py ---
+import os
+from dataclasses import dataclass, field
+
 """[FR-90] Redis 安全設定 — TLS 6380, requirepass 環境變數注入,
 ACL default_user 停用, RDB/AOF 雙備份.
 
@@ -31,8 +34,6 @@ Citations:
 """
 
 
-import os
-from dataclasses import dataclass
 
 # FR-90 mandated values; not configurable because the FR is a hard
 # security requirement.
@@ -171,7 +172,6 @@ Citations:
 """
 
 
-from dataclasses import dataclass, field
 
 # Roles that explicitly hold the ``pii:decrypt`` permission. Any role
 # outside this set is denied direct read of the ``pii_vault`` table —
@@ -282,7 +282,6 @@ Citations:
 """
 
 
-from dataclasses import dataclass
 
 # ---------------------------------------------------------------------------
 # FR-92 mandated sentinels — single source of truth referenced by the
@@ -390,7 +389,6 @@ Citations:
 """
 
 
-from dataclasses import dataclass
 
 
 # ---------------------------------------------------------------------------

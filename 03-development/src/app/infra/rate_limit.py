@@ -1,4 +1,3 @@
-from __future__ import annotations
 """[FR-21][FR-22] Sliding window rate limiter with Redis fail-open.
 
 Per-platform sliding-window rate limiter.
@@ -21,6 +20,7 @@ Citations:
 - 02-architecture/TEST_SPEC.md FR-22 (fail-open on Redis outage)
 """
 
+from __future__ import annotations
 
 import logging
 import threading
