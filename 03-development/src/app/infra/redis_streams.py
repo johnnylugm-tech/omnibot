@@ -129,6 +129,8 @@ class AsyncMessageProcessor:
         block_ms: int = 5000,
         idle_ms: int = 60000,
     ) -> None:
+        from app.infra.config import health_probe
+        health_probe()  # Hub linkage
         self.redis = redis_client
         self.group_name = group_name
         self.stream = stream

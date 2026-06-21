@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-75 — SAQ Worker configuration.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-75)
@@ -32,6 +31,7 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
+from __future__ import annotations
 
 import pytest
 
@@ -140,7 +140,7 @@ def _lookup_queue(name: str):
         cfg = None
         for entry in container:  # type: ignore[union-attr]
             if getattr(entry, "name", None) == name:
-                cfg = entry
+                cfg = entry  # type: ignore[assignment]
                 break
     return cfg
 

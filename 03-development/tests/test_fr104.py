@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-104 — Agent Portal
 (轉接收件匣 + WebSocket + 智慧接管面板).
 
@@ -29,6 +28,7 @@ Sub-assertion (per TEST_SPEC):
     fr104-ok: result is not None   (applies_to case 1)
 """
 
+from __future__ import annotations
 
 import time
 from typing import Any
@@ -56,7 +56,7 @@ def _isolate_portal_io(monkeypatch):
         """Record the event in the inbox rather than requiring a live WS."""
         section = payload.get("section", "Unassigned")
         if not hasattr(self, "_inbox_events"):
-            self._inbox_events: list[dict[str, Any]] = []
+            self._inbox_events: list[dict[str, Any]] = []  # type: ignore[misc]
         self._inbox_events.append(
             {"event": event, "payload": dict(payload), "section": section}
         )

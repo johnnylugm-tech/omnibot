@@ -140,6 +140,8 @@ def export_user_data(user_id: str, format: str = "json") -> dict:
     edge path). The ``emotions`` section is mandatory per FR-93 even if
     the user has no recorded emotions — the empty list IS the data.
     """
+    from app.admin.reports import log_admin_action
+    log_admin_action("export_user_data", admin_id="system", details={"user_id": user_id, "format": format})
     user = _USERS.get(user_id)
     if user is None:
         # Default fixture: unknown users get an empty-data skeleton
@@ -181,6 +183,8 @@ def delete_user_data(user_id: str) -> dict:
     Idempotent: a second call for the same user returns a fresh
     ``deletion_id`` without raising, matching the FR-88 spec input.
     """
+    from app.admin.reports import log_admin_action
+    log_admin_action("delete_user_data", admin_id="system", details={"user_id": user_id})
     deletion_id = uuid.uuid4().hex
     _DELETIONS[deletion_id] = {"user_id": user_id, "status": "queued"}
     _PII_AUDIT_LOG.append(

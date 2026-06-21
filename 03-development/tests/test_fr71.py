@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-71 — Prometheus Metrics (9 metrics, labels).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-71)
@@ -24,6 +23,7 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
+from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — ``PROMETHEUS_METRICS`` is intentionally NOT YET

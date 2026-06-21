@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-01 — Telegram Webhook Adapter.
 
 FR-01 requires HMAC-SHA256 signature verification for the Telegram webhook
@@ -33,8 +32,13 @@ Sub-assertion (per TEST_SPEC):
     fr01-ok: result is not None   (applies_to case 1)
 """
 
+from __future__ import annotations
 
 import pytest
+from app.api.webhooks import (
+    TelegramWebhookAdapter,
+    TelegramWebhookVerifier,
+)
 
 # ---------------------------------------------------------------------------
 # Imports — unguarded on purpose.
@@ -47,19 +51,13 @@ import pytest
 # ``UnifiedMessage`` / ``Platform`` / ``MessageType`` at ``app.core.unified_message``
 # already exist and provide the contracts that GREEN must wire together.
 # ---------------------------------------------------------------------------
-from app.core.pipeline import (
+from app.core.unified_message import (
     MessageType,
     Platform,
     UnifiedMessage,
 )
 from app.infra.rate_limit import (
     RateLimiter,
-)
-from app.api.webhooks import (
-    TelegramWebhookAdapter,
-)
-from app.api.webhooks import (
-    TelegramWebhookVerifier,
 )
 
 

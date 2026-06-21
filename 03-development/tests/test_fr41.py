@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-41 — A2AAdapter Agent Card TTL + JSON-RPC 2.0 + timeout 2s.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-41)
@@ -16,6 +15,7 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
+from __future__ import annotations
 
 import pytest
 

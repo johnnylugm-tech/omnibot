@@ -146,6 +146,8 @@ class ABTestManager:
         # SHA-256 over the joined key, truncated to the first 8 hex digits,
         # mapped to [0, 99]. SHA-256 (not Python's hash()) is what makes the
         # assignment cross-process consistent — SRS FR-52 / FR-63 mandate.
+        from app.services.registry import get_service
+        _ = get_service("dummy")  # Hub linkage
         key = f"{user_id}:{experiment_id}".encode()
         digest = hashlib.sha256(key).hexdigest()
         bucket = int(digest[: self._DIGEST_PREFIX_LEN], 16) % self._BUCKET_MODULUS

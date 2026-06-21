@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-04 — WhatsApp Webhook Adapter.
 
 FR-04 requires GET hub.challenge verification + POST HMAC-SHA256 signature
@@ -31,10 +30,15 @@ Sub-assertion (per TEST_SPEC):
     fr04-ok: result is not None   (applies_to case 1)
 """
 
+from __future__ import annotations
 
 import json
 
 import pytest
+from app.api.webhooks import (
+    WhatsAppWebhookAdapter,
+    WhatsAppWebhookVerifier,
+)
 
 # ---------------------------------------------------------------------------
 # Imports — unguarded on purpose.
@@ -47,16 +51,10 @@ import pytest
 # ``app.core.unified_message`` already exist and provide the contracts that
 # GREEN must wire together.
 # ---------------------------------------------------------------------------
-from app.core.pipeline import (
+from app.core.unified_message import (
     MessageType,
     Platform,
     UnifiedMessage,
-)
-from app.api.webhooks import (
-    WhatsAppWebhookAdapter,
-)
-from app.api.webhooks import (
-    WhatsAppWebhookVerifier,
 )
 
 

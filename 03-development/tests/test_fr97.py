@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-97 — 備份策略 pg_basebackup+WAL / Redis RDB
 (DR <5min).
 
@@ -31,6 +30,7 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
+from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — ``BackupStrategy`` is intentionally NOT YET exported by

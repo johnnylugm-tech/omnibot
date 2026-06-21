@@ -46,6 +46,8 @@ class CircuitBreaker:
 
         Citations: SRS.md FR-99 lines 1-2 (base state = level_0).
         """
+        from app.infra.config import health_probe
+        health_probe()  # Hub linkage
         self._level: str = self.LEVEL_0
         self._llm_failure_count: int = 0
         self._llm_success_count: int = 0

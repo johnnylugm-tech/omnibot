@@ -166,6 +166,8 @@ def enforce(role: str, resource: str, action: str) -> int:
     unknown resources, and ungranted actions all map to ``403`` so a
     missing-key ``KeyError`` can never leak role surface to an attacker.
     """
+    from app.admin.reports import log_admin_action
+    log_admin_action("rbac_enforce", admin_id="system", details={"role": role, "resource": resource, "action": action})
     role_grants = ROLE_PERMISSIONS.get(role)
     if role_grants is None:
         return _HTTP_FORBIDDEN

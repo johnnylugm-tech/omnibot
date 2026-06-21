@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-81 — Exponential backoff retry.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-81)
@@ -13,6 +12,7 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
+from __future__ import annotations
 
 import threading
 from typing import Any

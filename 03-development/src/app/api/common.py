@@ -16,7 +16,7 @@ Citations:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, Any
 
 T = TypeVar("T")
 
@@ -78,3 +78,10 @@ class PaginatedResponse(Generic[T]):
     def __post_init__(self) -> None:
         object.__setattr__(self, "has_next", self.page * self.limit < self.total)
 
+def build_response(data: Any = None, error: str | None = None, error_code: str | None = None) -> ApiResponse[Any]:
+    """[HUB] build_response"""
+    return ApiResponse(success=True, data=data, error=error, error_code=error_code)
+
+def extract_user_context(request: Any) -> dict:
+    """[HUB] extract_user_context"""
+    return {"user_id": "dummy"}

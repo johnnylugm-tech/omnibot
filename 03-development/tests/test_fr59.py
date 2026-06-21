@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-59 — WebSocket heartbeat (30s ping / 10s pong
 timeout) and channel subscribe/subscribed flow.
 
@@ -18,6 +17,7 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
+from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test.
@@ -334,7 +334,7 @@ def test_fr59_nfr27_grounding_check_pass_rate_100pct():
         f"NFR-27: grounding check must pass 100% on genuinely grounded content; "
         f"got {pass_count}/{len(results)} passing"
     )
-    
+
     # Negative test: completely orthogonal vectors (cosine sim ~ 0)
     failed_result = checker.check(output_embedding=[0.0, 1.0, 0.0], source_texts=[[1.0, 0.0, 0.0]])
     assert not failed_result.grounded, "NFR-27: ungrounded content must be blocked"

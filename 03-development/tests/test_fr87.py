@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-87 — M2M Token API (create, list, revoke).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-87)
@@ -14,6 +13,7 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
+from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test.

@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-17 — Per-Platform L4 Retraction + fail-secure.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-17)
@@ -28,6 +27,7 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
+from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -279,7 +279,7 @@ def _call_retract_with_frozen_now(
         def now(cls, tz=None):
             return fixed_now if tz is None else fixed_now.astimezone(tz)
 
-    retraction_mod.datetime = _FrozenDateTime  # type: ignore[attr-defined]
+    retraction_mod.datetime = _FrozenDateTime  # type: ignore[attr-defined, misc]
     try:
         return retract(
             platform=platform,
@@ -294,7 +294,7 @@ def _call_retract_with_frozen_now(
             security_log_writer=security_log_writer,
         )
     finally:
-        retraction_mod.datetime = _dt  # type: ignore[attr-defined]
+        retraction_mod.datetime = _dt  # type: ignore[attr-defined, misc]
 
 
 # ---------------------------------------------------------------------------

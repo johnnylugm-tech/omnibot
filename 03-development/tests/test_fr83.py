@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-83 — Alembic Schema 遷移 (upgrade/downgrade 雙向測試).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-83)
@@ -24,6 +23,7 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
+from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — ``MigrationRunner`` / ``MigrationConfig`` /

@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-90 — Redis 安全設定 (TLS 6380 +
 requirepass 環境變數 + ACL default_user 停用 + RDB/AOF 雙備份).
 
@@ -27,6 +26,7 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
+from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — ``RedisTLSConfig`` / ``RedisAuthConfig`` /

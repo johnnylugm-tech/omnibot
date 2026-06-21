@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-62 — RBACEnforcer decorator Middleware
 that turns insufficient-role requests into HTTP 403
 ``AUTHZ_INSUFFICIENT_ROLE``.
@@ -17,6 +16,7 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-
 check performs an exact-match lookup, so do not rename or alias.
 """
 
+from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test.

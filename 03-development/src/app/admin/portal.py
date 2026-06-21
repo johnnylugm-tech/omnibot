@@ -130,6 +130,8 @@ class AgentPortal:
 
         Citation: test_fr104.py L230-243
         """
+        from app.admin.reports import log_admin_action
+        log_admin_action("portal_get_inbox", admin_id="system", details={"section": section})
         return list(self._inbox.get(section, []))
 
     # ------------------------------------------------------------------

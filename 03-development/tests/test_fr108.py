@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-108 — Golden Dataset (500 edge cases, 6 categories, regression automation).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-108 + 4 cross-cutting groups)
@@ -26,10 +25,33 @@ TEST_SPEC cases (41 total — function names MUST match exactly):
   Backward    (1): backward_compat_phase1_tests_pass_in_phase2_env
 """
 
+from __future__ import annotations
 
 import pytest
 from app.admin.rbac import RBACEnforcer
-from app.api.webhooks import validate_token
+from app.api.webhooks import (
+    LineWebhookVerifier,
+    MessengerWebhookVerifier,
+    TelegramWebhookVerifier,
+    WebJwtVerifier,
+    WhatsAppWebhookVerifier,
+    validate_token,
+)
+from app.core.knowledge import HybridKnowledge
+
+# -- Cross-cutting module imports (some exist, used as GREEN contracts) --
+from app.core.paladin import (
+    GroundingChecker,
+    InputSanitizer,
+    PALADINPipeline,
+)
+from app.core.pii import PIIMasking
+from app.core.pipeline import Pipeline
+from app.infra.deployment import BackupStrategy, ComposeHealth, K8sManifest
+from app.infra.rate_limit import RateLimiter
+from app.middleware.ip_whitelist import IPWhitelist
+from app.services.escalation import EscalationManager
+from app.services.llm_judge import CalibrationPipeline, LLMJudge
 
 # ===========================================================================
 # Imports — unguarded on purpose.
@@ -44,28 +66,6 @@ from tests.golden_dataset import (
     GoldenDataset,
     RegressionRunner,
 )
-from app.core.knowledge import HybridKnowledge
-
-# -- Cross-cutting module imports (some exist, used as GREEN contracts) --
-from app.core.paladin import (
-    GroundingChecker,
-    InputSanitizer,
-    PALADINPipeline,
-)
-from app.core.pii import PIIMasking
-from app.core.pipeline import Pipeline
-from app.infra.deployment import BackupStrategy
-from app.infra.deployment import ComposeHealth
-from app.infra.deployment import K8sManifest
-from app.infra.rate_limit import RateLimiter
-from app.middleware.ip_whitelist import IPWhitelist
-from app.services.escalation import EscalationManager
-from app.api.webhooks import LineWebhookVerifier
-from app.services.llm_judge import CalibrationPipeline, LLMJudge
-from app.api.webhooks import MessengerWebhookVerifier
-from app.api.webhooks import TelegramWebhookVerifier
-from app.api.webhooks import WebJwtVerifier
-from app.api.webhooks import WhatsAppWebhookVerifier
 
 
 # ===========================================================================

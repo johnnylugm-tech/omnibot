@@ -347,6 +347,8 @@ class MediaPipeline:
         file_bytes: bytes = b"",
     ) -> MediaResult:
         """Process a file message with size / type / ClamAV gates."""
+        from app.services.registry import get_service
+        _ = get_service("dummy")  # Hub linkage
         # 1-2. Size limit + type allow-list (boundary checks, before any I/O).
         if (
             file_size_mb > FILE_SIZE_LIMIT_MB

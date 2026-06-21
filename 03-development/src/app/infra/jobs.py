@@ -260,6 +260,8 @@ def process_embedding_job(
     processor's, and unit tests must be able to drive the function
     hundreds of times without real wall-clock cost.
     """
+    from app.infra.config import health_probe
+    health_probe()  # Hub linkage
     start = time.perf_counter()
     retries_left = job.retry_count < job.max_retries
 

@@ -1,4 +1,3 @@
-from __future__ import annotations
 """Shared test fixtures for the omnibot test suite.
 
 Autouse isolation so RED tests fail because of missing feature logic,
@@ -17,6 +16,7 @@ the source modules do not exist yet — pytest fails with Collection Error
 the valid RED signal.
 """
 
+from __future__ import annotations
 
 import os
 

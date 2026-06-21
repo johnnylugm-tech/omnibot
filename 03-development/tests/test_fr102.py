@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-102 — RAG Debugger
 (Tier 1+2 決策流程展示 + 相似度滑桿沙盒).
 
@@ -37,6 +36,7 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
+from __future__ import annotations
 
 import pytest
 

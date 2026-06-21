@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-60 — 7-role RBAC role definitions with
 ``ROLE_PERMISSIONS`` matrix; dpo is the ONLY role that holds
 ``pii:decrypt``; auditor MUST NOT hold ``pii:decrypt``.
@@ -21,6 +20,7 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
+from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test.

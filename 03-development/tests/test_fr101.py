@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-101 — Knowledge 管理 WebUI
 (CRUD + CSV 匯入 + Embedding 狀態顯示).
 
@@ -30,6 +29,7 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
+from __future__ import annotations
 
 import pytest
 

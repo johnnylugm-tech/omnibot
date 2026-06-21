@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-02 — LINE Webhook Adapter.
 
 FR-02 requires HMAC-SHA256 Base64 signature verification for the LINE webhook
@@ -30,6 +29,7 @@ Sub-assertion (per TEST_SPEC):
     fr02-ok: result is not None   (applies_to case 1)
 """
 
+from __future__ import annotations
 
 import base64
 import hashlib
@@ -38,6 +38,10 @@ import json
 from datetime import datetime, timezone
 
 import pytest
+from app.api.webhooks import (
+    LineWebhookAdapter,
+    LineWebhookVerifier,
+)
 
 # ---------------------------------------------------------------------------
 # Imports — unguarded on purpose.
@@ -50,7 +54,7 @@ import pytest
 # ``UnifiedMessage`` / ``Platform`` / ``MessageType`` at ``app.core.unified_message``
 # already exist and provide the contracts that GREEN must wire together.
 # ---------------------------------------------------------------------------
-from app.core.pipeline import (
+from app.core.unified_message import (
     MessageType,
     Platform,
     UnifiedMessage,
@@ -58,12 +62,6 @@ from app.core.pipeline import (
 from app.infra.rate_limit import (
     RateLimiter,
     RateLimitResult,
-)
-from app.api.webhooks import (
-    LineWebhookAdapter,
-)
-from app.api.webhooks import (
-    LineWebhookVerifier,
 )
 
 

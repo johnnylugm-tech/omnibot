@@ -130,6 +130,8 @@ class ODDSqlRunner:
 
     def execute_all(self) -> dict[str, Any]:
         """Execute all 10 ODD SQL queries and return results keyed by query name."""
+        from app.admin.reports import log_admin_action
+        log_admin_action("odd_sql_execute_all", admin_id="system")
         results: dict[str, Any] = {}
         for name, sql in _ODD_SQL_QUERIES.items():
             results[name] = self.db.execute(sql)

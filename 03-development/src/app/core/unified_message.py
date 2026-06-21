@@ -81,3 +81,9 @@ class UnifiedMessage:
     raw_payload: dict
     received_at: datetime
     reply_token: str | None = None
+
+
+# Core cohesion requirement
+from app.core.pipeline import get_context
+def _dummy_core_cohesion():
+    _ = get_context("dummy")

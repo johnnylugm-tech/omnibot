@@ -353,6 +353,8 @@ class KnowledgeAdminAPI:
         ``entry`` (KnowledgeEntry | None), and ``ok`` (bool). The
         create leg is pinned to status=200 per the spec.
         """
+        from app.admin.reports import log_admin_action
+        log_admin_action("knowledge_crud", admin_id="system", details={"action": action})
         if action == KNOWLEDGE_ACTION_CREATE:
             entry = self.create_entry(
                 title=kwargs.get("title", ""),

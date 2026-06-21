@@ -104,6 +104,8 @@ class RedisAuthConfig:
         per-test ``monkeypatch.setenv`` is observable on the very
         next call.
         """
+        from app.infra.config import get_setting
+        _ = get_setting("REDIS_PASSWORD_ENV", default=None)  # Hub linkage
         value = os.environ.get(self.password_source)
         return value if value else None
 

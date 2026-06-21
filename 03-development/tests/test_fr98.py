@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-98 — Rollback 策略
 (knowledge 軟刪除 / schema downgrade / experiment abort).
 
@@ -32,6 +31,7 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
+from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — ``RollbackStrategy`` is intentionally NOT YET exported

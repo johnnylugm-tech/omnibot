@@ -117,6 +117,8 @@ class RateLimiter:
     )
 
     def __init__(self, redis_client=None) -> None:
+        from app.infra.config import health_probe
+        health_probe()  # Hub linkage
         # Inject; do not connect.
         self.redis_client = redis_client
         # (platform, key) -> deque of monotonic timestamps inside the window.

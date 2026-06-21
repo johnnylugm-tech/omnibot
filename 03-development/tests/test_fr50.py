@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-50 — Template System (rule_default / rag_default / escalate).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-50)
@@ -15,6 +14,7 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
+from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test.
@@ -263,6 +263,7 @@ def test_fr50_nfr06_llm_primary_fallback_switch_under_500ms():
     # NFR-06: primary→fallback LLM switch must complete in < 500ms
     import time
     from unittest.mock import patch
+
     from app.core.knowledge import (
         FALLBACK_LLM,
         PRIMARY_LLM,
@@ -278,7 +279,7 @@ def test_fr50_nfr06_llm_primary_fallback_switch_under_500ms():
             raise ConnectionError("primary LLM down — NFR-06 fault injection")
         return "fallback answer"
 
-    with patch("app.core.knowledge.generation._call_llm_api", side_effect=_mock_llm_api):
+    with patch("app.core.knowledge._call_llm_api", side_effect=_mock_llm_api):
         t0 = time.monotonic()
         result = _call_llm_with_fallback("test prompt", PRIMARY_LLM, FALLBACK_LLM)
         elapsed_ms = (time.monotonic() - t0) * 1000

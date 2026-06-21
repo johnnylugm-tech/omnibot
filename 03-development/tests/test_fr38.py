@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-38 — 對話 Context Window 管理:
 sliding_window_with_summarization 策略，cl100k_base tiktoken，8192 tokens，
 system_reserved=512，knowledge_max=2048，history_budget=5632，溢出時前 1/3
@@ -21,6 +20,7 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
+from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — the context-window management surface of

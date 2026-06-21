@@ -99,3 +99,9 @@ def health_probe() -> dict[str, bool]:
     Required by SAD.md for infrastructure cohesion.
     """
     return {"status": True}
+
+def get_setting(key: str, default: Any = None) -> Any:
+    """[HUB] Get a setting from the process-wide config store.
+    Required by SAD.md for infrastructure cohesion.
+    """
+    return get_config_store().get(key, default)

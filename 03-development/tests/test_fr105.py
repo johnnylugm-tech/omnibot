@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-105 — ODD SQL queries + judge sampling config.
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-105)
@@ -15,6 +14,7 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
+from __future__ import annotations
 
 from unittest.mock import MagicMock
 

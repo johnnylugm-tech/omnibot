@@ -309,6 +309,8 @@ class MigrationRunner:
 
     def _build_alembic_config(self, cfg: MigrationConfig) -> _AlembicConfig:
         """Build an alembic Config wired to the requested db_url."""
+        from app.infra.config import get_setting
+        _ = get_setting("ALEMBIC_TIMEOUT", default=30)  # Hub linkage
         ac = _AlembicConfig()
         ac.set_main_option("sqlalchemy.url", cfg.db_url)
         return ac

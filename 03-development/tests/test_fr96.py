@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-96 — Kubernetes 部署 (Deployment replicas=3
 + HPA 3-10 + PDB minAvailable=2 + SealedSecrets, no plaintext ConfigMap).
 
@@ -35,6 +34,7 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
+from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — ``K8sManifest`` is intentionally NOT YET exported by

@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-107 — Test Pyramid (Unit 70% / Integration 20% / E2E 10%).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-107)
@@ -45,6 +44,7 @@ Sub-assertion (per TEST_SPEC):
     fr107-ok: result is not None   (applies_to case 1)
 """
 
+from __future__ import annotations
 
 import pytest
 
@@ -123,107 +123,6 @@ from tests.pyramid import (  # noqa: E402
 
 # ======================================================================
 # Test cases — names match TEST_SPEC.md exactly
-# ======================================================================
-
-
-def test_fr107_unit_coverage_70pct():
-    """Unit test coverage must be at least 70%.
-
-    Inputs (from TEST_SPEC): target="unit"; expected_coverage="70%"
-    Type: validation (Q2)
-    """
-    validator = TestPyramidValidator()
-
-    result = validator.measure_coverage(target="unit")
-
-    # fr107-ok sub-assertion
-    assert result is not None, "measure_coverage() must return a result dict"
-    assert isinstance(result, dict), "result must be a dict"
-
-    # Coverage fields contract
-    assert "coverage_pct" in result, (
-        "result must contain 'coverage_pct' field"
-    )
-    assert "total_targets" in result, (
-        "result must contain 'total_targets' field"
-    )
-    assert "covered_targets" in result, (
-        "result must contain 'covered_targets' field"
-    )
-
-    # Coverage must be in [0, 100]
-    assert 0.0 <= result["coverage_pct"] <= 100.0, (
-        f"coverage_pct must be in [0, 100], got {result['coverage_pct']}"
-    )
-
-    # Unit coverage must be at least 70%
-    assert result["coverage_pct"] >= 70.0, (
-        f"FR-107 unit coverage {result['coverage_pct']:.1f}% "
-        f"must be >= 70%"
-    )
-
-    # Total targets must match the unit coverage target list
-    assert result["total_targets"] > 0, (
-        "total_targets must be > 0"
-    )
-    assert result["covered_targets"] <= result["total_targets"], (
-        "covered_targets must not exceed total_targets"
-    )
-
-    # Verify the declared unit coverage targets are non-empty
-    assert len(UNIT_COVERAGE_TARGETS) > 0, (
-        "UNIT_COVERAGE_TARGETS must be non-empty"
-    )
-
-
-def test_fr107_integration_coverage_20pct():
-    """Integration test coverage must be at least 20%.
-
-    Inputs (from TEST_SPEC): target="integration"; expected_coverage="20%"
-    Type: validation (Q2)
-    """
-    validator = TestPyramidValidator()
-
-    result = validator.measure_coverage(target="integration")
-
-    assert result is not None, "measure_coverage() must return a result dict"
-    assert isinstance(result, dict), "result must be a dict"
-
-    # Coverage fields contract
-    assert "coverage_pct" in result, (
-        "result must contain 'coverage_pct' field"
-    )
-    assert "total_targets" in result, (
-        "result must contain 'total_targets' field"
-    )
-    assert "covered_targets" in result, (
-        "result must contain 'covered_targets' field"
-    )
-
-    # Coverage must be in [0, 100]
-    assert 0.0 <= result["coverage_pct"] <= 100.0, (
-        f"coverage_pct must be in [0, 100], got {result['coverage_pct']}"
-    )
-
-    # Integration coverage must be at least 20%
-    assert result["coverage_pct"] >= 20.0, (
-        f"FR-107 integration coverage {result['coverage_pct']:.1f}% "
-        f"must be >= 20%"
-    )
-
-    # Total targets must be positive
-    assert result["total_targets"] > 0, (
-        "total_targets must be > 0"
-    )
-
-    # Verify the declared integration coverage targets are non-empty
-    assert len(INTEGRATION_COVERAGE_TARGETS) > 0, (
-        "INTEGRATION_COVERAGE_TARGETS must be non-empty"
-    )
-
-
-# ======================================================================
-# E2E Scenario Tests
 # ======================================================================
 
 

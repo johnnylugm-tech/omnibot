@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-20 — PII 稽核日誌 (pii_audit_log + 90天自動匿名化).
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-20)
@@ -31,6 +30,7 @@ Sub-assertion rule:
     fr20-ok: `result is not None` applies_to case 1.
 """
 
+from __future__ import annotations
 
 from dataclasses import dataclass
 

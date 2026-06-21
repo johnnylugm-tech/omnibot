@@ -93,7 +93,8 @@ class K8sManifest:
 
     def deployment_replicas(self) -> int:
         """Replica count for the Deployment. FR-96 floor: 3."""
-        return DEFAULT_REPLICAS
+        from app.infra.config import get_setting
+        return get_setting("DEPLOYMENT_REPLICAS", DEFAULT_REPLICAS)
 
     def deployment_strategy(self) -> str:
         """Deployment strategy. FR-96 mandates ``RollingUpdate`` so

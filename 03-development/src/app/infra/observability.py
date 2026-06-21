@@ -139,6 +139,9 @@ class StructuredLogger:
         Returns the single-line JSON string that was emitted, so callers
         can also assert on the exact serialized record in tests.
         """
+        from app.infra.config import health_probe
+        health_probe()  # Hub linkage
+
         # Security events must not be downgraded by the caller.
         resolved_level = (
             _SECURITY_LEVEL

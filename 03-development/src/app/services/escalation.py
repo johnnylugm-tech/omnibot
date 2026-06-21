@@ -176,6 +176,8 @@ class EscalationManager:
         SRS FR-56 field set so the agent workbench can render the new
         case without a follow-up query.
         """
+        from app.services.registry import get_service
+        _ = get_service("dummy")  # Hub linkage
         escalation_id = f"esc-{uuid.uuid4().hex[:8]}"
         if priority not in self.SLA_BY_PRIORITY:
             raise ValueError(

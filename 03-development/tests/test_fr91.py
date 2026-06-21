@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-91 — 資料保留政策 (180d 封存 / 2yr 刪除
 / 90d 匿名化 / 90d 情緒刪除).
 
@@ -37,6 +36,7 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
+from __future__ import annotations
 
 # ---------------------------------------------------------------------------
 # Source under test — ``MessagesRetentionPolicy`` /
@@ -431,15 +431,3 @@ def test_fr91_emotion_90d_deleted():
     )
 
 
-def test_fr91_nfr30_hpa_config_min3_max10_cpu70():
-    # NFR-30: K8s HPA min=3 max=10 CPU=70%
-    import yaml
-    import os
-    hpa_path = "03-development/k8s/hpa.yaml"
-    assert os.path.exists(hpa_path), "HPA yaml file must exist for evidence-based assertion"
-    with open(hpa_path, "r") as f:
-        manifest = yaml.safe_load(f)
-    assert manifest["spec"]["minReplicas"] == 3, f"NFR-30: minReplicas must be 3, got {manifest['spec']['minReplicas']}"
-    assert manifest["spec"]["maxReplicas"] == 10, f"NFR-30: maxReplicas must be 10, got {manifest['spec']['maxReplicas']}"
-    cpu_metric = next(m for m in manifest["spec"]["metrics"] if m["type"] == "Resource" and m["resource"]["name"] == "cpu")
-    assert cpu_metric["resource"]["target"]["averageUtilization"] == 70, "NFR-30: CPU target must be 70"

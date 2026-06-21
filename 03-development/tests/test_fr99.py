@@ -1,4 +1,3 @@
-from __future__ import annotations
 """TDD-RED: failing tests for FR-99 — 階梯式降級策略 (9-level Circuit Breaker
 with tsvector fallback).
 
@@ -40,6 +39,7 @@ Function names below MUST match TEST_SPEC.md exactly — spec-coverage-check
 performs an exact-match lookup, so do not rename or alias.
 """
 
+from __future__ import annotations
 
 import threading
 
@@ -583,7 +583,7 @@ def test_fr99_nfr09_load_test_exists_in_load_folder():
     import os
     script_path = os.path.join(os.path.dirname(__file__), "load", "k6_nfr09_2000tps.js")
     assert os.path.exists(script_path), f"NFR-09: load test script {script_path} must exist"
-    
+
     # Check that it asserts HTTP thresholds
     with open(script_path) as f:
         content = f.read()
