@@ -31,7 +31,7 @@ from __future__ import annotations
 import csv
 import io
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 # ---------------------------------------------------------------------------
 # In-memory data stores — test-visible surrogates for DB tables.
@@ -79,7 +79,7 @@ _DELETION_JOBS: dict[str, dict] = {}
 
 # Canonical field lists — shared by CSV export and PII-clear logic.
 _PII_FIELDS = ("name", "email", "phone", "address")
-_PROFILE_HEADERS = ("user_id",) + _PII_FIELDS
+_PROFILE_HEADERS = ("user_id", *_PII_FIELDS)
 _CONVERSATION_HEADERS = ("conversation_id", "topic", "created_at")
 _MESSAGE_HEADERS = ("message_id", "conversation_id", "content", "timestamp")
 
@@ -133,7 +133,7 @@ def export_user_data(user_id: str, format: str = "json") -> dict:
         csv_data = csv_buffer.getvalue()
         filename = (
             f"{user_id}_data_"
-            f"{datetime.now(timezone.utc).strftime('%Y-%m-%d')}.csv"
+            f"{datetime.now(UTC).strftime('%Y-%m-%d')}.csv"
         )
         return {"csv_data": csv_data, "filename": filename}
 
@@ -169,7 +169,7 @@ def delete_user_data(user_id: str) -> dict:
         03-development/tests/test_fr88.py:251-324 — case 4 audit log entry
     """
     deletion_id = str(uuid.uuid4())
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
 
     # Clear PII fields from the user profile.
     if user_id in _USER_PROFILES:

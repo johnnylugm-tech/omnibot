@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "0865b95b3e945571600ece5aef2360f9e09e887d",
-  "content_sha256": "e75a37aa6bef7a78a7a0e8deafd07c212af00d5017e22c3d21453f5cc633a4f9",
+  "git_sha": "5a8b92945295cb34f526343d6f1a555f976a4b68",
+  "content_sha256": "5b7399f603c67b618697ccc199e5382ae064d1bea76719ee3a24e5fccb8ca5aa",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,17 +11,16 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "91.7%",
+      "code_coverage": "92.6%",
       "test_coverage": "95.4%",
-      "verification_rate": "91.7%",
-      "total_links": 331,
+      "verification_rate": "92.6%",
+      "total_links": 332,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
           "FR-108",
           "FR-54",
           "FR-63",
-          "FR-88",
           "FR-91",
           "FR-92",
           "FR-93",
@@ -43,7 +42,6 @@
         "FR-108",
         "FR-54",
         "FR-63",
-        "FR-88",
         "FR-91",
         "FR-92",
         "FR-93",
@@ -1322,9 +1320,11 @@
       },
       "FR-88": {
         "fr_id": "FR-88",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
+        "code_files": [
+          "03-development/src/app/api/gdpr.py"
+        ],
         "test_files": [
           "tests/test_fr88.py"
         ],
