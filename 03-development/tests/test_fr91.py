@@ -433,17 +433,17 @@ def test_fr91_emotion_90d_deleted():
 
 def test_fr91_nfr30_hpa_config_min3_max10_cpu70():
     # NFR-30: K8s HPA min=3 max=10 CPU=70%
-    from app.infra.k8s_deployment import (
-        HPA_CPU_TARGET_PERCENT,
-        HPA_MAX_REPLICAS,
-        HPA_MIN_REPLICAS,
+    from app.infra.k8s_deployment import K8sManifest
+    manifest = K8sManifest()
+    assert manifest.hpa_min_replicas() == 3, (
+        f"NFR-30: K8sManifest.hpa_min_replicas() must return 3; "
+        f"got {manifest.hpa_min_replicas()}"
     )
-    assert HPA_MIN_REPLICAS == 3, (
-        f"NFR-30: HPA_MIN_REPLICAS must be 3; got {HPA_MIN_REPLICAS}"
+    assert manifest.hpa_max_replicas() == 10, (
+        f"NFR-30: K8sManifest.hpa_max_replicas() must return 10; "
+        f"got {manifest.hpa_max_replicas()}"
     )
-    assert HPA_MAX_REPLICAS == 10, (
-        f"NFR-30: HPA_MAX_REPLICAS must be 10; got {HPA_MAX_REPLICAS}"
-    )
-    assert HPA_CPU_TARGET_PERCENT == 70, (
-        f"NFR-30: HPA_CPU_TARGET_PERCENT must be 70; got {HPA_CPU_TARGET_PERCENT}"
+    assert manifest.hpa_cpu_target_percent() == 70, (
+        f"NFR-30: K8sManifest.hpa_cpu_target_percent() must return 70; "
+        f"got {manifest.hpa_cpu_target_percent()}"
     )

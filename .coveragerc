@@ -1,0 +1,7 @@
+[run]
+source = 03-development/src
+
+[report]
+omit =
+    */test_*.py
+    */__pycache__/*

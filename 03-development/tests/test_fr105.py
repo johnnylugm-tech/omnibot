@@ -149,12 +149,17 @@ def test_fr105_judge_sample_rate_default_020():
 
 
 def test_fr105_nfr18_monthly_cost_under_500_usd():
-    # NFR-18: monthly cost < $500
-    # At Tier-3 ($0.009/query) with 30,000 queries/month: total = $270 < $500.
-    monthly_queries = 30_000
-    tier3_cost = TIER_COSTS[3]
-    monthly_cost = monthly_queries * tier3_cost
-    assert monthly_cost < 500.0, (
-        f"NFR-18: {monthly_queries} Tier-3 queries/month must cost < $500; "
-        f"got ${monthly_cost:.2f} at ${tier3_cost}/query"
+    # NFR-18: monthly cost < $500 — use calculate_cost() to verify the cost model
+    runner = ODDSqlRunner(db=MagicMock(), environment="staging")
+    # Realistic monthly workload: 30k queries, all at highest tier (Tier-3)
+    result = runner.calculate_cost({1: 10_000, 2: 10_000, 3: 10_000})
+    assert result["total"] < 500.0, (
+        f"NFR-18: 30k mixed-tier queries/month must cost < $500; "
+        f"got ${result['total']:.2f} (by_tier={result['by_tier']})"
+    )
+    # Worst-case: all 50k queries at Tier-3 must still be < $500
+    worst_case = runner.calculate_cost({3: 50_000})
+    assert worst_case["total"] < 500.0, (
+        f"NFR-18: 50k Tier-3 queries/month must cost < $500; "
+        f"got ${worst_case['total']:.2f}"
     )

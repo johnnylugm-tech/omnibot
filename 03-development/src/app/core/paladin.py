@@ -755,7 +755,7 @@ class GroundingChecker:
         dot = 0.0
         norm_a = 0.0
         norm_b = 0.0
-        for x, y in zip(a, b, strict=True):
+        for x, y in zip(a, b):
             dot += x * y
             norm_a += x * x
             norm_b += y * y

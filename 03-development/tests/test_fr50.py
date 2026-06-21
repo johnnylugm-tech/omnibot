@@ -259,15 +259,34 @@ def test_fr50_variable_interpolation_correct():
     )
 
 
-def test_fr50_nfr06_llm_fallback_switch_under_500ms():
-    # NFR-06: LLM fallback switch < 500ms
+def test_fr50_nfr06_llm_primary_fallback_switch_under_500ms():
+    # NFR-06: primary→fallback LLM switch must complete in < 500ms
     import time
-    tmpl = ResponseGenerator.DEFAULT_TEMPLATES.get("rule_default")
-    assert tmpl is not None, "NFR-06: rule_default fallback template must exist"
-    t0 = time.monotonic()
-    result = ResponseGenerator.render(tmpl.template, answer="fallback")
-    elapsed_ms = (time.monotonic() - t0) * 1000
-    assert result is not None, "NFR-06: fallback render must return a non-None result"
+    from unittest.mock import patch
+    from app.core.knowledge import (
+        FALLBACK_LLM,
+        PRIMARY_LLM,
+        _call_llm_with_fallback,
+    )
+    call_sequence: list[str] = []
+
+    def _mock_llm_api(model: str, prompt: str) -> str:
+        call_sequence.append(model)
+        if model == PRIMARY_LLM:
+            raise ConnectionError("primary LLM down — NFR-06 fault injection")
+        return "fallback answer"
+
+    with patch("app.core.knowledge._call_llm_api", side_effect=_mock_llm_api):
+        t0 = time.monotonic()
+        result = _call_llm_with_fallback("test prompt", PRIMARY_LLM, FALLBACK_LLM)
+        elapsed_ms = (time.monotonic() - t0) * 1000
+
+    assert result == "fallback answer", (
+        f"NFR-06: fallback must return a valid answer; got {result!r}"
+    )
+    assert call_sequence == [PRIMARY_LLM, FALLBACK_LLM], (
+        f"NFR-06: must try primary then fallback in order; got {call_sequence}"
+    )
     assert elapsed_ms < 500.0, (
-        f"NFR-06: fallback switch must complete in < 500ms; took {elapsed_ms:.2f}ms"
+        f"NFR-06: primary→fallback switch took {elapsed_ms:.2f}ms (must be < 500ms)"
     )

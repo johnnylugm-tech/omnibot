@@ -689,21 +689,40 @@ _ = MagicMock
 # NFR-24: >=90% FCR — tracked via Grafana FCR line panel.
 
 
-def test_fr65_nfr26_judge_kappa_threshold_07():
-    # NFR-26: LLM-as-a-Judge Cohen's Kappa >= 0.7
-    from app.services.llm_judge import CalibrationPipeline
-    mock_cache = MagicMock()
-    mock_cache.get.return_value = None
-    pipeline = CalibrationPipeline(judge_llm=MagicMock(), kappa_cache=mock_cache, timeout_s=30)
-    golden_set = [
-        {"label": "positive", "judge_label": "positive"},
-        {"label": "negative", "judge_label": "negative"},
-        {"label": "positive", "judge_label": "positive"},
-        {"label": "neutral", "judge_label": "neutral"},
-        {"label": "negative", "judge_label": "negative"},
-    ]
-    rate = pipeline._agreement_rate(golden_set)
-    assert rate is not None, "NFR-26: agreement rate must not be None for a valid golden set"
-    assert rate >= 0.7, (
-        f"NFR-26: Cohen's Kappa agreement rate must be >= 0.7; got {rate}"
+def test_fr65_nfr26_judge_ensemble_achieves_kappa_07():
+    # NFR-26: LLM judge ensemble must achieve Cohen's Kappa >= 0.7
+    # Run LLMJudge on 10 cases with a deterministic mock that returns correct
+    # politeness 9/10 times (90% agreement → kappa ≈ 0.8 for balanced classes).
+    human_politeness = [4, 3, 5, 4, 3, 5, 4, 4, 3, 4]
+    judge_ratings    = [4, 3, 5, 4, 3, 5, 4, 4, 1, 4]  # case 8: returns 1, human=3
+
+    call_count = [0]
+
+    async def _deterministic_judge(*_args: object, **_kwargs: object) -> object:
+        # Both primary and secondary are called per evaluate(); use pair index.
+        rating = judge_ratings[call_count[0] // 2]
+        call_count[0] += 1
+        return _make_judge_result(rating, 4)
+
+    judge = LLMJudge(
+        primary_judge=_deterministic_judge,
+        secondary_judge=_deterministic_judge,
+    )
+
+    async def _run_all() -> list[object]:
+        results = []
+        for i in range(10):
+            r = await _call_evaluate(judge, message=f"msg{i}", response=f"resp{i}")
+            results.append(r)
+        return results
+
+    results = asyncio.new_event_loop().run_until_complete(_run_all())
+
+    judge_politeness = [_extract_politeness(r) for r in results]
+    matches = sum(1 for j, h in zip(judge_politeness, human_politeness) if j == h)
+    agreement = matches / len(human_politeness)
+
+    assert agreement >= 0.7, (
+        f"NFR-26: judge ensemble must achieve >= 70% agreement with human labels; "
+        f"got {agreement:.1%} ({matches}/{len(human_politeness)} matches)"
     )

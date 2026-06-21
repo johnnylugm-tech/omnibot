@@ -284,10 +284,23 @@ def test_fr31_reason_enum_valid_values():
         )
 
 
-def test_fr31_nfr08_embedding_timeout_within_30s_nfr_ceiling():
+def test_fr31_nfr08_embedding_job_p95_under_30s():
     # NFR-08: embedding job p95 < 30s
-    from app.infra.jobs import EMBEDDING_TIMEOUT_S
-    assert EMBEDDING_TIMEOUT_S <= 30.0, (
-        f"NFR-08: EMBEDDING_TIMEOUT_S must be <= 30s (NFR ceiling); "
-        f"got {EMBEDDING_TIMEOUT_S}s"
+    from app.infra.jobs import EmbeddingJob, process_embedding_job
+    job = EmbeddingJob(
+        chunk_id="nfr08_test",
+        knowledge_id="kb_nfr08",
+        content="knowledge chunk for embedding latency measurement",
+        model="text-embedding-3-small",
+        jitter=False,
+    )
+    latencies = [
+        process_embedding_job(job, queue_status="available").duration_seconds
+        for _ in range(20)
+    ]
+    latencies.sort()
+    p95 = latencies[min(int(0.95 * len(latencies)), len(latencies) - 1)]
+    assert p95 < 30.0, (
+        f"NFR-08: embedding job p95 latency must be < 30s; "
+        f"got {p95:.4f}s over {len(latencies)} runs"
     )
