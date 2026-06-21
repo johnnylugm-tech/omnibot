@@ -21,24 +21,10 @@ Citations:
 
 from __future__ import annotations
 
-import base64
-
 # ------------------------------------------------------------------
 # Module-level constants
 # ------------------------------------------------------------------
-import base64 as _base64
-import hashlib
-import hmac
-import json
-import secrets
-import time
-import urllib.request
-from datetime import datetime, timedelta, timezone
-from typing import Any
-
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import padding, rsa
-from fastapi import APIRouter, FastAPI
+from datetime import datetime, timezone
 
 from app.core.unified_message import (
     MessageType,
@@ -65,7 +51,7 @@ _UNKNOWN_AGENT = "unknown-agent"
 
 
 
-from app.api.adapters.base import BaseWebhookAdapter
+from app.api.adapters.base import BaseWebhookAdapter  # noqa: E402
 
 
 class TelegramWebhookAdapter(BaseWebhookAdapter):

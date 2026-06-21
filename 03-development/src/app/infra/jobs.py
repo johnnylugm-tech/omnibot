@@ -63,15 +63,16 @@ Citations:
 
 from __future__ import annotations
 
-import asyncio
-import logging
 import random
 import time
-import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Literal
+
+from app.core.knowledge import batch_import_knowledge, create_knowledge_with_chunks
+
+__all__ = ["batch_import_knowledge", "create_knowledge_with_chunks"]
 
 # ---------------------------------------------------------------------------
 # Public configuration shapes (FR-75).
@@ -343,15 +344,6 @@ def enqueue_embedding_job(job: EmbeddingJob) -> EmbeddingJob:
     return job
 
 
-from app.core.knowledge import (
-    EMBEDDING_TIMEOUT_S,
-    _EMBED_DIM_DEFAULT,
-    CreateKnowledgeResult,
-    _embed_first_chunk,
-    create_knowledge_with_chunks,
-    BatchImportResult,
-    batch_import_knowledge,
-)
 
 # ---------------------------------------------------------------------------
 # [FR-79] Embedding sync status UI + embedding_synced_at.

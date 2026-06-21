@@ -1107,10 +1107,10 @@ escalate = _escalate
 
 
 
-import asyncio
-import time
-import uuid
-from datetime import datetime, timezone
+import asyncio  # noqa: E402
+import time  # noqa: E402
+import uuid  # noqa: E402
+from datetime import datetime, timezone  # noqa: E402
 
 # SRS FR-77 — the asyncio.wait_for budget pinned at 2.0s. Single source
 # of truth; tests import the symbol name and assert the value.
@@ -1159,7 +1159,7 @@ class CreateKnowledgeResult:
     fallback: str | None = None
     # Exposed for tests / observability that want to inspect the
     # embedding job that was enqueued on the fallback path.
-    enqueued_job: EmbeddingJob | None = None
+    enqueued_job: Any | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -1235,7 +1235,7 @@ async def create_knowledge_with_chunks(
     fallback: str | None = None
     embedding_synced = False
     embedding_synced_at: datetime | None = None
-    enqueued_job: EmbeddingJob | None = None
+    enqueued_job: Any | None = None
 
     def _fallback_to_async(log_msg: str, *log_args: object) -> None:
         """Enqueue the first chunk for async embedding and log a warning.

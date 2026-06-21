@@ -575,7 +575,7 @@ class SemanticInjectionClassifier:
             # handle both shapes on the same code path.
             if asyncio.iscoroutine(verdict):
                 verdict = _await_coro_from_sync(verdict, timeout_ms)
-        except (TimeoutError, asyncio.TimeoutError, ConnectionError, OSError):
+        except (TimeoutError, ConnectionError, OSError):
             # asyncio.TimeoutError is NOT a subclass of TimeoutError in py3.9
             return _make_passthrough(is_unverified=True)
 
@@ -754,7 +754,7 @@ class GroundingChecker:
         dot = 0.0
         norm_a = 0.0
         norm_b = 0.0
-        for x, y in zip(a, b):
+        for x, y in zip(a, b, strict=False):
             dot += x * y
             norm_a += x * x
             norm_b += y * y

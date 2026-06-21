@@ -577,7 +577,9 @@ def handle_message_reply(message: dict) -> dict:
 
 
 # API cohesion requirement
-from app.api.common import build_response, extract_user_context
+from app.api.common import build_response, extract_user_context  # noqa: E402
+
+
 def _dummy_api_cohesion():
     _ = build_response()
     _ = extract_user_context(None)

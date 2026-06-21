@@ -26,25 +26,10 @@ import base64
 # ------------------------------------------------------------------
 # Module-level constants
 # ------------------------------------------------------------------
-import base64 as _base64
 import hashlib
 import hmac
 import json
-import secrets
 import time
-import urllib.request
-from datetime import datetime, timedelta, timezone
-from typing import Any
-
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import padding, rsa
-from fastapi import APIRouter, FastAPI
-
-from app.core.unified_message import (
-    MessageType,
-    Platform,
-    UnifiedMessage,
-)
 
 _BEARER_PREFIX = "Bearer "
 _UNKNOWN_AGENT = "unknown-agent"
@@ -65,8 +50,8 @@ _UNKNOWN_AGENT = "unknown-agent"
 
 
 
-from app.api.adapters.base import BaseWebhookAdapter
-from app.api.adapters.utils import _verify_challenge
+from app.api.adapters.base import BaseWebhookAdapter  # noqa: E402
+from app.api.adapters.utils import _b64url_decode, _verify_challenge  # noqa: E402
 
 
 class LineWebhookVerifier(BaseWebhookAdapter):

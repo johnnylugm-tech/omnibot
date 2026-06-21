@@ -1,8 +1,7 @@
-import base64
+from __future__ import annotations
+
 import base64 as _base64
-import hmac
-import hashlib
-from fastapi import Request, HTTPException
+
 
 def _b64url_encode(data: bytes) -> str:
     """[FR-05] base64url encode WITHOUT padding (JWT spec).

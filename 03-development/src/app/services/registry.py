@@ -3,6 +3,7 @@
 Citations: SAD.md L3 Services Hub.
 """
 from __future__ import annotations
+
 from typing import Any
 
 _registry: dict[str, Any] = {}

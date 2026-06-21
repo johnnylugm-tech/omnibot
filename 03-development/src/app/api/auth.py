@@ -19,7 +19,7 @@ import secrets
 import time
 
 from app.admin.rbac import RBACEnforcer
-from app.api.webhooks import _b64url_encode
+from app.api.adapters.utils import _b64url_encode
 
 
 def _make_jwt(username: str) -> str:
@@ -99,7 +99,9 @@ def assign_role_to_user(user_id: str, role: str, caller_role: str) -> int:
 
 
 # API cohesion requirement
-from app.api.common import build_response, extract_user_context
+from app.api.common import build_response, extract_user_context  # noqa: E402
+
+
 def _dummy_api_cohesion():
     _ = build_response()
     _ = extract_user_context(None)
