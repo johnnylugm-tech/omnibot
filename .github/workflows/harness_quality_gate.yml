@@ -628,4 +628,10 @@ jobs:
           if [ -f ".methodology/crg_baseline_p4.json" ]; then
             BASELINE="--baseline .methodology/crg_baseline_p4.json"
           fi
-          python harness/harness_cli.py crg-arch-check --project . --threshold 80 $BASELINE
+          python harness/harness_cli.py crg-arch-check --project . --threshold 80 $BASELINE || {
+            echo "CRG Architecture Check Failed. Dumping debug info..."
+            cat .sessi-work/crg_metrics.json || true
+            git ls-files > git_ls_files_output.txt
+            cat git_ls_files_output.txt || true
+            exit 1
+          }

@@ -1159,10 +1159,3 @@ class PALADINPipeline:
             - 03-development/tests/test_fr108.py:307-313 — monkeypatch
         """
         return await self.process(text, risk_level=risk_level)
-
-
-
-# Core cohesion requirement
-from app.core.pipeline import get_context
-def _dummy_core_cohesion():
-    _ = get_context("dummy")

@@ -794,8 +794,3 @@ class UnifiedResponse:
     # [FR-08] list[str] per TEST_SPEC.md FR-08 contract (test asserts == []).
     quick_replies: list[str] = field(default_factory=list)
 
-
-# Core cohesion requirement
-from app.core.pipeline import get_context
-def _dummy_core_cohesion():
-    _ = get_context("dummy")
