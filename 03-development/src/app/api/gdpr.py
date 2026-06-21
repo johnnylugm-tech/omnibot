@@ -67,6 +67,25 @@ _USER_MESSAGES: dict[str, list[dict]] = {
     ],
 }
 
+_USER_EMOTIONS: dict[str, list[dict]] = {
+    "user-001": [
+        {
+            "emotion_id": "emo-001",
+            "category": "positive",
+            "intensity": 0.8,
+            "source_text": "謝謝",
+            "timestamp": "2026-06-01T10:05:00Z",
+        },
+        {
+            "emotion_id": "emo-002",
+            "category": "neutral",
+            "intensity": 0.5,
+            "source_text": "Hello",
+            "timestamp": "2026-06-02T14:30:00Z",
+        },
+    ],
+}
+
 # PII audit log — each entry is {user_id, event_type, timestamp, ...}.
 # Append-only; get_pii_audit_log filters by user_id + event_type.
 _AUDIT_LOG: list[dict] = []
@@ -82,6 +101,7 @@ _PII_FIELDS = ("name", "email", "phone", "address")
 _PROFILE_HEADERS = ("user_id", *_PII_FIELDS)
 _CONVERSATION_HEADERS = ("conversation_id", "topic", "created_at")
 _MESSAGE_HEADERS = ("message_id", "conversation_id", "content", "timestamp")
+_EMOTION_HEADERS = ("emotion_id", "category", "intensity", "source_text", "timestamp")
 
 
 def _write_csv_rows(writer, headers, rows):
@@ -94,13 +114,14 @@ def _write_csv_rows(writer, headers, rows):
 # Public API
 # ---------------------------------------------------------------------------
 def export_user_data(user_id: str, format: str = "json") -> dict:
-    """[FR-88] Export all personal data for *user_id* in the requested format.
+    """[FR-88][FR-93] Export all personal data for *user_id* in the requested format.
 
     Args:
         user_id: The user whose personal data to export.
         format: ``"json"`` returns a dict with ``user_id``, ``profile``,
-            ``conversations``, ``messages`` keys. ``"csv"`` returns a dict
-            with ``csv_data`` (str) and ``filename`` (str) keys suitable
+            ``conversations``, ``messages``, ``emotions`` keys.
+            ``"csv"`` returns a dict with ``csv_data`` (str),
+            ``filename`` (str), and ``content_type`` (str) keys suitable
             for constructing a file-download response.
 
     Returns:
@@ -108,12 +129,16 @@ def export_user_data(user_id: str, format: str = "json") -> dict:
 
     Citations:
         SRS.md FR-88 — data export 回傳合法 JSON/CSV
+        SRS.md FR-93 — 回傳完整個人資料；CSV 可下載
         03-development/tests/test_fr88.py:69-118 — case 1 JSON export
         03-development/tests/test_fr88.py:124-184 — case 2 CSV export
+        03-development/tests/test_fr93.py:57-123 — case 1 all personal data sections
+        03-development/tests/test_fr93.py:129-208 — case 2 CSV content_type
     """
     profile = _USER_PROFILES.get(user_id, {})
     conversations = _USER_CONVERSATIONS.get(user_id, [])
     messages = _USER_MESSAGES.get(user_id, [])
+    emotions = _USER_EMOTIONS.get(user_id, [])
 
     if format == "csv":
         csv_buffer = io.StringIO()
@@ -130,12 +155,20 @@ def export_user_data(user_id: str, format: str = "json") -> dict:
         writer.writerow([])
         writer.writerow(list(_MESSAGE_HEADERS))
         _write_csv_rows(writer, _MESSAGE_HEADERS, messages)
+        # Emotions section [FR-93]
+        writer.writerow([])
+        writer.writerow(list(_EMOTION_HEADERS))
+        _write_csv_rows(writer, _EMOTION_HEADERS, emotions)
         csv_data = csv_buffer.getvalue()
         filename = (
             f"{user_id}_data_"
             f"{datetime.now(UTC).strftime('%Y-%m-%d')}.csv"
         )
-        return {"csv_data": csv_data, "filename": filename}
+        return {
+            "csv_data": csv_data,
+            "filename": filename,
+            "content_type": "text/csv",  # [FR-93]
+        }
 
     # Default: JSON format
     return {
@@ -143,6 +176,7 @@ def export_user_data(user_id: str, format: str = "json") -> dict:
         "profile": dict(profile),
         "conversations": list(conversations),
         "messages": list(messages),
+        "emotions": list(emotions),  # [FR-93]
     }
 
 
