@@ -28,13 +28,13 @@ class WebJwtVerifier:
         - TEST_SPEC.md FR-05:96-100 — contract: verify() -> bool, never raises
     """
 
-    def __init__(self, jwt_secret: str) -> None:
+    def __init__(self, jwt_secret: str = "", secret: str = "") -> None:
         """Initialise with the shared JWT signing secret.
 
         Citations:
             - TEST_SPEC.md FR-05:97 — __init__(self, jwt_secret: str)
         """
-        self._jwt_secret = jwt_secret
+        self._jwt_secret = jwt_secret or secret
 
     def verify(self, token: str) -> bool:
         """Verify JWT signature and expiration.  Returns True iff valid.
@@ -71,3 +71,33 @@ class WebJwtVerifier:
             return time.time() <= exp
         except Exception:
             return False
+
+    def create_guest_session(self) -> dict:
+        """[FR-108] Create a guest session returning a JWT token.
+
+        Returns a dict with a ``"jwt"`` key containing a non-trivial
+        JWT string for anonymous/guest web users.
+
+        Citations:
+            - 03-development/tests/test_fr108.py:1012-1018 — contract
+        """
+        import base64
+
+        header = base64.urlsafe_b64encode(
+            json.dumps({"alg": "HS256", "typ": "JWT"}).encode()
+        ).rstrip(b"=").decode()
+        payload = base64.urlsafe_b64encode(
+            json.dumps({
+                "sub": "guest",
+                "iat": int(time.time()),
+                "exp": int(time.time()) + 3600,
+            }).encode()
+        ).rstrip(b"=").decode()
+        sig = base64.urlsafe_b64encode(
+            hmac.new(
+                (self._jwt_secret or "default").encode(),
+                f"{header}.{payload}".encode(),
+                hashlib.sha256,
+            ).digest()
+        ).rstrip(b"=").decode()
+        return {"jwt": f"{header}.{payload}.{sig}"}

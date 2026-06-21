@@ -18,6 +18,8 @@ from __future__ import annotations
 import hashlib
 import hmac
 
+from app.services._webhook_utils import _verify_challenge
+
 
 class MessengerWebhookVerifier:
     """[FR-03] HMAC-SHA256 hex signature verifier for Messenger webhook requests.
@@ -31,13 +33,14 @@ class MessengerWebhookVerifier:
         - TEST_SPEC.md FR-03:104-106 — verifier contract
     """
 
-    def __init__(self, app_secret: str) -> None:
-        """Initialise with the Facebook App secret.
+    def __init__(self, app_secret: str = "", verify_token: str = "") -> None:
+        """Initialise with the Facebook App secret and optional verify_token.
 
         Citations:
             - TEST_SPEC.md FR-03:102 — __init__(self, app_secret: str)
         """
         self._app_secret = app_secret
+        self._verify_token = verify_token
 
     def verify(self, raw_body: bytes, received_signature: str) -> bool:
         """Compute HMAC-SHA256(app_secret, raw_body) hex digest and compare.
@@ -57,3 +60,16 @@ class MessengerWebhookVerifier:
             hashlib.sha256,
         ).hexdigest()
         return hmac.compare_digest(computed, expected)
+
+    def verify_challenge(
+        self, mode: str, token: str, challenge: str
+    ) -> str | None:
+        """[FR-108] Handle GET hub.challenge verification.
+
+        Returns ``challenge`` when ``mode == "subscribe"`` and ``token``
+        matches the configured verify_token; otherwise returns ``None``.
+
+        Citations:
+            - 03-development/tests/test_fr108.py:968-975 — contract
+        """
+        return _verify_challenge(mode, token, challenge, self._verify_token)
