@@ -14,7 +14,7 @@ Citations:
     - 02-architecture/TEST_SPEC.md FR-06 — test_fr06_a2a_valid_m2m_token_200,
       test_fr06_a2a_invalid_m2m_token_401,
       test_fr06_a2a_rpc_ask_customer_service_end_to_end
-    - agent_card.py:12-16 — A2A method list (ask_customer_service,
+    - webhooks.py:468-486 — A2A method list (ask_customer_service,
       escalate_to_human) pinned here as well
     - 02-architecture/SAD.md — "A2AAdapter JSON-RPC 2.0 entry → FR-06"
 """
@@ -74,7 +74,7 @@ _UNKNOWN_AGENT = "unknown-agent"
 # ------------------------------------------------------------------
 # JWT / base64url helpers (FR-05 / FR-03 / FR-04)
 #
-# Module-level functions (NOT BaseWebhookAdapter methods) so any
+# Module-level functions so any
 # adapter or verifier can call them without instantiating the class.
 # Previously these helpers lived in WebJwtVerifier and were
 # self-imported via ``from app.api.webhooks import _b64url_decode``;

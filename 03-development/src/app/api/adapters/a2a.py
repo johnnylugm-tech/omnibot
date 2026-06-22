@@ -14,7 +14,7 @@ Citations:
     - 02-architecture/TEST_SPEC.md FR-06 — test_fr06_a2a_valid_m2m_token_200,
       test_fr06_a2a_invalid_m2m_token_401,
       test_fr06_a2a_rpc_ask_customer_service_end_to_end
-    - agent_card.py:12-16 — A2A method list (ask_customer_service,
+    - webhooks.py:468-486 — A2A method list (ask_customer_service,
       escalate_to_human) pinned here as well
     - 02-architecture/SAD.md — "A2AAdapter JSON-RPC 2.0 entry → FR-06"
 """
@@ -97,7 +97,7 @@ class A2AAdapter:
         - SRS.md FR-06 — M2M OAuth2/JWT token verification for A2A JSON-RPC 2.0
         - 02-architecture/TEST_SPEC.md FR-06 — test cases covering
           valid/invalid M2M token and ask_customer_service end-to-end
-        - agent_card.py:12-16 — method routing table:
+        - webhooks.py:468-486 — method routing table:
           ask_customer_service, escalate_to_human
     """
 

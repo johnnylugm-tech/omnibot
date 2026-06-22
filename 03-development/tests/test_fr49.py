@@ -205,8 +205,7 @@ def test_fr49_handle_message_returns_unified_response():
 # 4. get_context: returns empty history for unknown conversation_id.
 # ---------------------------------------------------------------------------
 def test_fr49_get_context_empty_history():
-    from app.core.pipeline import get_context, _CONTEXT_HISTORY
-    _CONTEXT_HISTORY.clear()
+    from app.core.pipeline import get_context
     result = get_context("conv-99")
     assert result["conversation_id"] == "conv-99"
     assert result["history"] == []

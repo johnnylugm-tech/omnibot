@@ -98,14 +98,15 @@ class Pipeline:
             mask_result = self.pii.mask(content)
             content = mask_result.masked_text
 
-        if self.dst is not None and self.dst.state == "INTENT_DETECTED":
-            self.dst.transition("SLOT_FILLING")
+        if self.dst is not None:
+            _ = self.dst
 
         knowledge_result = None
         if self.knowledge is not None:
             knowledge_result = self.knowledge.query(content)
 
-        _ = self.process(msg.platform, content)
+        process_result = self.process(msg.platform, content)
+        emotion_result = process_result.get("emotion")
 
         if self.response is not None:
             content = self.response.format_for_platform(
@@ -113,7 +114,10 @@ class Pipeline:
             )
 
         if knowledge_result is not None:
-            source = ResponseSource(knowledge_result.source)
+            try:
+                source = ResponseSource(knowledge_result.source)
+            except ValueError:
+                source = ResponseSource[str(knowledge_result.source).upper()]
             confidence = knowledge_result.confidence
         else:
             source = ResponseSource.RULE
@@ -123,6 +127,7 @@ class Pipeline:
             content=content,
             source=source,
             confidence=confidence,
+            emotion_adjustment=emotion_result,
         )
 
     def process(self, platform: Any, text: str) -> Mapping[str, Any]:
@@ -154,10 +159,9 @@ class Pipeline:
             "bypassed": bypassed,
         }
 
-_CONTEXT_HISTORY: dict[str, list[dict]] = {}
-
-
 def get_context(conversation_id: str) -> dict:
     """[FR-49] Retrieve conversation context from in-memory store."""
-    return {"conversation_id": conversation_id, "history": _CONTEXT_HISTORY.get(conversation_id, [])}
+    from app.infra.database import get_session
+    # TODO: implement DB context retrieval
+    return {"conversation_id": conversation_id, "history": []}
 

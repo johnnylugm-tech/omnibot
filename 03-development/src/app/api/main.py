@@ -9,12 +9,16 @@ from fastapi import FastAPI
 from app.api.auth import router as auth_router
 from app.api.management import router as mgmt_router
 from app.api.webhooks import router as webhooks_router
+from app.api.webhooks import agent_card_app
+from app.api.websocket import router as websocket_router
 
 app = FastAPI(title="OmniBot", version="0.1.0")
 
 app.include_router(webhooks_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(mgmt_router, prefix="/api/v1")
+app.include_router(websocket_router, prefix="/api/v1")
+app.mount("/", agent_card_app)
 
 
 @app.get("/api/v1/health")

@@ -183,3 +183,6 @@ paths_to_exclude = [
 backup = false
 runner = "python -m pytest -x --tb=short -q"
 tests_dir = "03-development/tests/"
+
+[project.scripts]
+omnibot = "uvicorn:run"
