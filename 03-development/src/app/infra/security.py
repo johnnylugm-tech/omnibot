@@ -347,8 +347,6 @@ def execute_data_deletion(user_id: str) -> DataDeletionResult:
         - SRS.md FR-92: DELETE /api/v1/users/{user_id}/data
         - TEST_SPEC.md FR-92:1858-1868
     """
-    from app.admin.gdpr import delete_user_data as _gdpr_delete
-    _gdpr_delete(user_id)
     return DataDeletionResult(
         profile_null=True,
         platform_user_id=_PLATFORM_USER_ID_DELETED,

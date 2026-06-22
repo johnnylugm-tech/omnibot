@@ -55,7 +55,7 @@ INTEGRATION_COVERAGE_TARGETS: frozenset[str] = frozenset(
 # ---------------------------------------------------------------------------
 
 _UNIT_MODULE_MAP: dict[str, str] = {
-    "InputSanitizer": "app.core.chunking",
+    "InputSanitizer": "app.core.paladin",
     "PromptInjectionDefense": "app.core.paladin",
     "PIIMasking": "app.core.pii",
     "DST": "app.core.dst",

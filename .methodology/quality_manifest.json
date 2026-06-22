@@ -488,7 +488,14 @@
       "open_critical": 0,
       "open_high": 0,
       "phase": 3,
-      "gate": 1
+      "gate": 1,
+      "FR-89": {
+        "score": 94.27,
+        "quality_complete": true,
+        "rounds_used": 2,
+        "open_critical": 0,
+        "open_high": 0
+      }
     },
     "gate2": {
       "score": 89.54,
