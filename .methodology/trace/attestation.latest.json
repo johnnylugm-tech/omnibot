@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "430758fd1786cfc6a2c0ec43aab27d20bc22a408",
-  "content_sha256": "283938c4c39ffee6942653f574cd8a7d7ea27b20a26562e5b03fcd7f5c84f83f",
+  "git_sha": "cea2244dad31cde45835e6d73b595916a21c1a6b",
+  "content_sha256": "7826aab0ef7d8e9c1217fb09123786b551f1545b155f11ab94b86e33922da84a",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -14,7 +14,7 @@
       "code_coverage": "97.2%",
       "test_coverage": "100.0%",
       "verification_rate": "97.2%",
-      "total_links": 366,
+      "total_links": 367,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -72,7 +72,8 @@
         "code_files": [
           "03-development/src/app/api/adapters/messenger.py",
           "03-development/src/app/api/adapters/verifiers.py",
-          "03-development/src/app/api/webhooks.py"
+          "03-development/src/app/api/webhooks.py",
+          "03-development/tests/test_fr03.py"
         ],
         "test_files": [
           "tests/test_fr03.py"
