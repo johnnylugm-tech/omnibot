@@ -47,7 +47,7 @@ _UNKNOWN_AGENT = "unknown-agent"
 # ------------------------------------------------------------------
 # JWT / base64url helpers (FR-05 / FR-03 / FR-04)
 #
-# Module-level functions (NOT BaseWebhookAdapter methods) so any
+# Module-level functions so any
 # adapter or verifier can call them without instantiating the class.
 # Previously these helpers lived in WebJwtVerifier and were
 # self-imported via ``from app.api.webhooks import _b64url_decode``;
@@ -59,7 +59,6 @@ _UNKNOWN_AGENT = "unknown-agent"
 
 
 
-from app.api.adapters.base import BaseWebhookAdapter  # noqa: E402
 
 
 class A2AAuthError(Exception):
@@ -82,7 +81,7 @@ class A2AAuthError(Exception):
         self.error_code = error_code
         super().__init__(error_code)
 
-class A2AAdapter(BaseWebhookAdapter):
+class A2AAdapter:
     """[FR-06] Inbound A2A JSON-RPC 2.0 handler with M2M JWT verification.
 
     Accepts JSON-RPC 2.0 requests, verifies the Bearer M2M token via JWKS,

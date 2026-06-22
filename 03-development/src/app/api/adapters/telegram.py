@@ -39,7 +39,7 @@ _UNKNOWN_AGENT = "unknown-agent"
 # ------------------------------------------------------------------
 # JWT / base64url helpers (FR-05 / FR-03 / FR-04)
 #
-# Module-level functions (NOT BaseWebhookAdapter methods) so any
+# Module-level functions so any
 # adapter or verifier can call them without instantiating the class.
 # Previously these helpers lived in WebJwtVerifier and were
 # self-imported via ``from app.api.webhooks import _b64url_decode``;
@@ -51,10 +51,9 @@ _UNKNOWN_AGENT = "unknown-agent"
 
 
 
-from app.api.adapters.base import BaseWebhookAdapter  # noqa: E402
 
 
-class TelegramWebhookAdapter(BaseWebhookAdapter):
+class TelegramWebhookAdapter:
     """[FR-01] Parses Telegram Bot API Update into UnifiedMessage.
 
     Citations:

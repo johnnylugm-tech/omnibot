@@ -388,3 +388,60 @@ Two implementation decisions diverged from the original SAD §2.1 plan:
 ## Consequences
 - Positive: AEE adapters independently testable; api/ cohesion maintained
 - Negative: 6 adapter docstrings reference `agent_card.py:12-16` — these cross-refs are stale; they point to the `AGENT_CARD` dict in `webhooks.py` lines 468–486
+
+---
+
+## ADR-017: Drop BaseWebhookAdapter Abstract Class — Flat Adapter Inheritance
+
+## Status
+Accepted
+
+## Context
+
+When `webhooks.py` (1036 LOC) was refactored into `app/api/adapters/{a2a,line,messenger,telegram,verifiers,web,whatsapp}.py` (commit `0c9f79e`), the refactor introduced `app/api/adapters/base.py` containing `class BaseWebhookAdapter: pass` as a placeholder for a future abstract base class. The intent at the time was to centralise shared JWT / base64url helpers at module scope (see `base.py` original docstring lines 26–37 describing the move of `_b64url_decode/_b64url_encode` from `WebJwtVerifier`).
+
+In practice:
+- The shared helpers landed in `utils.py` instead, not `base.py`
+- `BaseWebhookAdapter` was never given any abstract methods or shared logic
+- All 13 adapter/verifier classes (`A2AAdapter`, `LineWebhookAdapter`, `MessengerWebhookAdapter`, `TelegramWebhookAdapter`, `WhatsAppWebhookAdapter`, `WebAdapter`, `LineWebhookVerifier`, `MessengerWebhookVerifier`, `TelegramWebhookVerifier`, `WhatsAppWebhookVerifier`, `WebJwtVerifier`) inherited from it but never called any superclass method
+- The unused imports were stripped by ruff in commit `0dbcb0f` (26 minutes after the initial split), leaving a 51-line module that contains one `class: pass` declaration plus two module constants (`_BEARER_PREFIX`, `_UNKNOWN_AGENT`) that no other module imports
+- SAD.md §2.1 and §2.2 never specified a base class; the `adapters/` subdirectory itself is a refactor-time addition not in the original SAD
+
+Concrete consequences of leaving `base.py` in this state:
+- `mutmut` reports zero killable mutants in `base.py` (no logic to mutate)
+- `test_fr06` and other adapter tests do not import `base.py` — there is no test surface for the empty class
+- New developers reading the code encounter `class BaseWebhookAdapter: pass` and must trace git history to understand it is a vestigial placeholder
+
+## Decision
+
+Delete `app/api/adapters/base.py` entirely and remove the inheritance from all 7 adapter modules. The 13 affected classes now declare `class X:` (no superclass). Each adapter already implements its own `verify()` / `parse_payload()` / `to_unified_message()` / `process_message()` methods without relying on any shared base.
+
+Module-level constants `_BEARER_PREFIX` and `_UNKNOWN_AGENT` were never imported by any module in the codebase, so their removal is safe.
+
+The historical docstring comment "Module-level functions (NOT BaseWebhookAdapter methods) so any adapter or verifier can call them without instantiating the class." is updated to remove the now-stale `BaseWebhookAdapter` reference.
+
+## Rationale
+
+- **No SAD design**: `BaseWebhookAdapter` was never part of the architecture baseline; it was a refactor artifact, not a contract
+- **No shared logic to inherit**: All shared JWT/base64url logic lives in `utils.py` (already correctly factored); base class inheritance was adding import overhead without behavioural benefit
+- **Eliminates dead abstraction**: An empty class is an anti-pattern that misleads readers about the actual coupling between adapters
+- **Restores mutation-testing signal**: Removing `base.py` from `paths_to_mutate` eliminates a non-actionable noise source
+- **Low risk**: 13 class declaration changes + 7 import removals + 1 file deletion; no production logic touched. All 924 baseline tests still pass at the same rate (3 pre-existing test-isolation failures are unrelated to this change)
+
+## Consequences
+
+- Positive: No more dead abstraction in the API layer; mutation testing targets real production code
+- Positive: One fewer module to maintain; one fewer file to register in SAB
+- Negative: If a future adapter needs shared base behaviour (e.g. JWKS fetching, common request normalisation), the developer must reintroduce an explicit ABC and update all 13 classes — but at that point the contract will be backed by real shared code, not a placeholder
+- Negative: SAD §2.1 directory layout must be updated to remove `adapters/base.py` from the listing (or alternatively, document that `adapters/` contains 7 files, not 8)
+
+## Implementation Notes
+
+The deletion was performed in this order to minimise diff churn and keep each step reversible:
+
+1. Remove `from app.api.adapters.base import BaseWebhookAdapter` from 7 adapter files
+2. Replace `class X(BaseWebhookAdapter):` with `class X:` in 13 class declarations across 7 files
+3. Delete `app/api/adapters/base.py`
+4. Update historical docstring comments to drop the `BaseWebhookAdapter` reference
+5. Run pytest (924 tests pass — 3 pre-existing test-isolation failures unrelated to this change)
+6. Run ruff (clean) and pyright (0 errors)

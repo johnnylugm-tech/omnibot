@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "c0cf7dc8de6be479cea3a420e749d96077cb1bfc",
-  "content_sha256": "de5a33276c507d21c37188f578b8e70f9b279ada38de71553385d4acb46e47e0",
+  "git_sha": "f599b7bd94ea080f470982bc3a88346e34f1f38b",
+  "content_sha256": "9d6d4f37ef3823876dc215852d1616b047fdb0e4a091d69fab6f4251dd8ed557",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -14,7 +14,7 @@
       "code_coverage": "97.2%",
       "test_coverage": "100.0%",
       "verification_rate": "97.2%",
-      "total_links": 370,
+      "total_links": 369,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -118,7 +118,6 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/app/api/adapters/a2a.py",
-          "03-development/src/app/api/adapters/base.py",
           "03-development/src/app/api/adapters/line.py",
           "03-development/src/app/api/adapters/messenger.py",
           "03-development/src/app/api/adapters/telegram.py",

@@ -38,7 +38,7 @@ _UNKNOWN_AGENT = "unknown-agent"
 # ------------------------------------------------------------------
 # JWT / base64url helpers (FR-05 / FR-03 / FR-04)
 #
-# Module-level functions (NOT BaseWebhookAdapter methods) so any
+# Module-level functions so any
 # adapter or verifier can call them without instantiating the class.
 # Previously these helpers lived in WebJwtVerifier and were
 # self-imported via ``from app.api.webhooks import _b64url_decode``;
@@ -50,11 +50,10 @@ _UNKNOWN_AGENT = "unknown-agent"
 
 
 
-from app.api.adapters.base import BaseWebhookAdapter  # noqa: E402
 from app.api.adapters.utils import _b64url_decode, _verify_challenge  # noqa: E402
 
 
-class LineWebhookVerifier(BaseWebhookAdapter):
+class LineWebhookVerifier:
     """[FR-02] HMAC-SHA256 Base64 signature verifier for LINE webhook requests.
 
     Citations:
@@ -89,7 +88,7 @@ class LineWebhookVerifier(BaseWebhookAdapter):
         ).decode()
         return hmac.compare_digest(computed, received_signature)
 
-class MessengerWebhookVerifier(BaseWebhookAdapter):
+class MessengerWebhookVerifier:
     """[FR-03] HMAC-SHA256 hex signature verifier for Messenger webhook requests.
 
     Computes ``hmac.new(app_secret, raw_body, sha256).hexdigest()`` and
@@ -144,7 +143,7 @@ class MessengerWebhookVerifier(BaseWebhookAdapter):
         """
         return _verify_challenge(mode, token, challenge, self._verify_token)
 
-class TelegramWebhookVerifier(BaseWebhookAdapter):
+class TelegramWebhookVerifier:
     """[FR-01] HMAC-SHA256 signature verifier for Telegram webhook requests.
 
     Citations:
@@ -176,7 +175,7 @@ class TelegramWebhookVerifier(BaseWebhookAdapter):
         ).hexdigest()
         return hmac.compare_digest(computed, received_signature)
 
-class WebJwtVerifier(BaseWebhookAdapter):
+class WebJwtVerifier:
     """[FR-05] Validates JWT Bearer tokens signed with HS256.
 
     Citations:
@@ -264,7 +263,7 @@ class WebJwtVerifier(BaseWebhookAdapter):
         ).rstrip(b"=").decode()
         return {"jwt": f"{header}.{payload}.{sig}"}
 
-class WhatsAppWebhookVerifier(BaseWebhookAdapter):
+class WhatsAppWebhookVerifier:
     """[FR-04] HMAC-SHA256 hex signature verifier for WhatsApp webhook requests.
 
     Computes ``hmac.new(app_secret, raw_body, sha256).hexdigest()`` and
