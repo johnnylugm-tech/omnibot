@@ -19,7 +19,6 @@ Citations:
 from __future__ import annotations
 
 import functools
-import os
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any

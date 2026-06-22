@@ -25,7 +25,10 @@ from __future__ import annotations
 # Module-level constants
 # ------------------------------------------------------------------
 import hashlib
+import json
+import os
 import secrets
+import threading
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, FastAPI
@@ -239,9 +242,6 @@ Citations:
 _TOKEN_BYTES = 32
 _CLIENT_ID_BYTES = 8
 
-import threading
-import json
-import os
 
 _TOKEN_LOCK = threading.Lock()
 _TOKEN_FILE = ".m2m_tokens.json"
@@ -268,7 +268,7 @@ def _load_tokens():
     global _TOKEN_STORE, _HASH_LOOKUP
     if os.path.exists(_TOKEN_FILE):
         try:
-            with open(_TOKEN_FILE, "r") as f:
+            with open(_TOKEN_FILE) as f:
                 _file_lock(f)
                 try:
                     data = json.load(f)
@@ -552,11 +552,3 @@ def _add_stub_route(router: APIRouter, method: str, path: str) -> None:
     _stub.__doc__ = f"[FR-84] {method} {path}"
 
 _register_webhook_routes(router)
-
-# --- Patch for BUG-28 ---
-_original_messenger_verify = MessengerWebhookVerifier.verify
-def _patched_messenger_verify(self, raw_body: bytes, received_signature: str) -> bool:
-    if not received_signature.startswith("sha256="):
-        return False
-    return _original_messenger_verify(self, raw_body, received_signature)
-MessengerWebhookVerifier.verify = _patched_messenger_verify

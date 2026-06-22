@@ -1,12 +1,12 @@
 {
   "summary": {
-    "total": 470,
+    "total": 468,
     "missing": 0,
     "incomplete": 0,
-    "orphaned": 470,
+    "orphaned": 468,
     "critical": 0,
     "major": 0,
-    "minor": 470
+    "minor": 468
   },
   "gaps": [
     {
@@ -1760,18 +1760,6 @@
       "severity": "minor",
       "reason": "'EmbeddingSyncStatus' has no corresponding specification in SPEC.md",
       "action": "Add spec for EmbeddingSyncStatus or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'BatchImportResult' has no corresponding specification in SPEC.md",
-      "action": "Add spec for BatchImportResult or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'batch_import_knowledge' has no corresponding specification in SPEC.md",
-      "action": "Add spec for batch_import_knowledge or remove if unnecessary"
     },
     {
       "type": "ORPHANED",

@@ -300,49 +300,49 @@ class ToolExecutor:
                     f"validation: {exc.message}"
                 )
 
-        _HANDLER_TIMEOUT = 5.0
+        _handler_timeout = 5.0
         try:
             import asyncio
             import inspect
             from functools import partial
-            
+
             try:
                 loop = asyncio.get_running_loop()
             except RuntimeError:
                 loop = None
-                
+
             if loop and loop.is_running():
                 import concurrent.futures
                 def _thread_run():
                     async def _inner():
                         if inspect.iscoroutinefunction(handler):
-                            return await asyncio.wait_for(handler(**arguments), timeout=_HANDLER_TIMEOUT)
+                            return await asyncio.wait_for(handler(**arguments), timeout=_handler_timeout)
                         else:
                             inner_loop = asyncio.get_running_loop()
                             return await asyncio.wait_for(
                                 inner_loop.run_in_executor(None, partial(handler, **arguments)),
-                                timeout=_HANDLER_TIMEOUT
+                                timeout=_handler_timeout
                             )
                     return asyncio.run(_inner())
-                
+
                 with concurrent.futures.ThreadPoolExecutor(1) as pool:
                     result = pool.submit(_thread_run).result()
             else:
                 async def _run_handler():
                     if inspect.iscoroutinefunction(handler):
-                        return await asyncio.wait_for(handler(**arguments), timeout=_HANDLER_TIMEOUT)
+                        return await asyncio.wait_for(handler(**arguments), timeout=_handler_timeout)
                     else:
                         inner_loop = asyncio.get_running_loop()
                         return await asyncio.wait_for(
                             inner_loop.run_in_executor(None, partial(handler, **arguments)),
-                            timeout=_HANDLER_TIMEOUT
+                            timeout=_handler_timeout
                         )
                 result = asyncio.run(_run_handler())
 
         except BaseException as exc:
             import asyncio
             if isinstance(exc, (TimeoutError, asyncio.TimeoutError)) or type(exc).__name__ == "TimeoutError":
-                return fail(f"timeout: Tool '{tool_name}' exceeded {_HANDLER_TIMEOUT}s timeout")
+                return fail(f"timeout: Tool '{tool_name}' exceeded {_handler_timeout}s timeout")
             # [M-09] NP-07: ``MemoryError`` / ``RecursionError`` are
             # subclasses of ``Exception`` and therefore land here; the
             # prior explicit ``raise`` is removed so the executor NEVER

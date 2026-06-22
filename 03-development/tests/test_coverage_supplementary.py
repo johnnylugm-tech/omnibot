@@ -202,6 +202,58 @@ def test_chain_rbac_fails():
     assert result.status == 403
 
 
+def test_chain_signature_validator_raises_returns_401():
+    """chain.py — signature_validator.verify raising any exception → 401.
+
+    Per chain.py lines 143-146, the framework catches any Exception from
+    ``signature_validator.verify`` and treats the request as unauthorized
+    (status=401, reason='SIGNATURE_INVALID'). Without this guard a buggy
+    verifier that raises (e.g. on malformed input) would propagate a 500.
+    """
+    from unittest.mock import MagicMock
+
+    from app.middleware.chain import MiddlewareChain
+
+    sig_val = MagicMock()
+    sig_val.verify.side_effect = RuntimeError("verify boom")
+
+    ip_wl = MagicMock()
+    ip_result = MagicMock(status=200, allowed=True, body=b"")
+    ip_wl.is_allowed.return_value = ip_result
+
+    adapter = MagicMock()
+    ctx = MagicMock(platform="telegram", user_id="u1")
+    adapter.parse.return_value = ctx
+
+    rl = MagicMock()
+    rl_out = MagicMock(status=200, allowed=True)
+    rl.allow.return_value = rl_out
+
+    rb = MagicMock()
+    rb_out = MagicMock(allowed=True)
+    rb.enforce.return_value = rb_out
+
+    req = MagicMock()
+    req.headers = {"x-forwarded-for": "1.2.3.4"}
+    req.client = MagicMock(host="1.2.3.4")
+
+    chain = MiddlewareChain(
+        ip_whitelist=ip_wl,
+        signature_validator=sig_val,
+        platform_adapter=adapter,
+        rate_limiter=rl,
+        rbac_enforcer=rb,
+    )
+    result = chain.process(req)
+    assert result.status == 401, (
+        f"chain.process must return 401 when signature_validator raises; "
+        f"got status={result.status}"
+    )
+    assert result.reason == "SIGNATURE_INVALID", (
+        f"chain.process reason must be SIGNATURE_INVALID; got {result.reason!r}"
+    )
+
+
 # ===========================================================================
 # app.services.llm_judge  — CalibrationPipeline timeout path
 # ===========================================================================

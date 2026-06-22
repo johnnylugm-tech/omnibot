@@ -640,10 +640,8 @@ def _await_coro_from_sync(coro, timeout_ms: float):
     if t.is_alive():
         loop = holder.get("loop")
         if loop is not None and not loop.is_closed():
-            try:
+            with contextlib.suppress(RuntimeError):
                 loop.call_soon_threadsafe(loop.stop)
-            except RuntimeError:
-                pass
         raise TimeoutError(f"FR-15: _await_coro_from_sync timed out after {timeout_ms}ms")
     if "e" in holder:
         raise holder["e"]

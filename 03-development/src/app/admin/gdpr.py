@@ -214,10 +214,10 @@ def delete_user_data(user_id: str) -> dict:
     if user_id in _MESSAGES:
         for msg in _MESSAGES[user_id]:
             msg["content"] = "[REDACTED]"
-            
+
     for entry_id in _VAULT_BY_USER.pop(user_id, []):
         _VAULT.pop(entry_id, None)
-        
+
     return {"deletion_id": deletion_id, "status": "queued"}
 
 

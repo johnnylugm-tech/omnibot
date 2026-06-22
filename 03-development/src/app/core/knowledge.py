@@ -518,12 +518,7 @@ class HybridKnowledge:
 
         # --- Tier 4: human escalation sentinel (terminal) ---
         sequence.append("t4")
-        if tier2 is None:
-            _reason = "low_confidence"
-        elif tier3 is None:
-            _reason = "low_confidence"
-        else:
-            _reason = "low_confidence"
+        _reason = "low_confidence"
         tier4 = _escalate(
             tier1_result=tier1,
             tier2_result=tier2,

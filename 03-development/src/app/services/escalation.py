@@ -318,7 +318,7 @@ class EscalationManager:
         if not resolved:
             return 1.0
         met_sla = [
-            r for r in resolved 
+            r for r in resolved
             if r.get("sla_deadline") and r["resolved_at"] <= r["sla_deadline"]
         ]
         return float(len(met_sla)) / len(resolved)

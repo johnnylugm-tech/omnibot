@@ -257,6 +257,29 @@ def test_fr03_messenger_webhook_invalid_signature_401(monkeypatch):
     )
 
 
+def test_fr03_messenger_invalid_signature_prefix_401():
+    """[FR-03] Validation: signature without the `sha256=` prefix is rejected.
+
+    Mirrors the WhatsApp contract (test_fr04) — when the received header
+    uses a different prefix (e.g. `md5=...` or no prefix at all), the
+    verifier MUST return False without computing HMAC. Guards against
+    header-spoofing bypasses.
+    """
+    verifier = MessengerWebhookVerifier(app_secret="real-app-secret")
+    raw_body = b'{"object":"page","entry":[]}'
+
+    # No prefix at all.
+    assert verifier.verify(raw_body, "deadbeef") is False, (
+        "FR-03: bare hex signature (no sha256= prefix) must be rejected; "
+        "got True"
+    )
+    # Wrong prefix.
+    assert verifier.verify(raw_body, "md5=deadbeef") is False, (
+        "FR-03: md5= prefix must be rejected — only sha256= is accepted; "
+        "got True"
+    )
+
+
 # GREEN TODO: ``MessengerWebhookAdapter`` must have
 #   parse_entries(self, entries: list[dict]) -> list[UnifiedMessage] that:
 #   - Iterates over the Messenger webhook entry array

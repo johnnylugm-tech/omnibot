@@ -181,14 +181,14 @@ class MCPAdapter(ActionAdapter):
                     "method": "initialize",
                     "params": {"protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": {"name": "omnibot", "version": "1.0"}}
                 }).encode("utf-8") + b"\n"
-                
+
                 list_req = json.dumps({
                     "jsonrpc": "2.0",
                     "id": 1,
                     "method": "tools/list",
                     "params": {}
                 }).encode("utf-8") + b"\n"
-                
+
                 stdout, _ = proc.communicate(
                     input=init_req + list_req,
                     timeout=self.connect_timeout_ms / 1000

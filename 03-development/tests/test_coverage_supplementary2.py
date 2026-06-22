@@ -2879,3 +2879,1287 @@ def test_retention_policy_should_anonymize_keep():
 
     p = RetentionPolicy()
     assert p.should_anonymize("other_table", days_old=999, retention_days=10).action == "keep"
+
+
+# ===========================================================================
+# Gap-coverage tests — lines the existing test suite didn't reach.
+# Each test targets a specific uncovered line so the suite meets the
+# advance-phase --cov-fail-under=100 contract without resorting to
+# `# pragma: no cover` on testable logic.
+# ===========================================================================
+
+
+def test_gdpr_delete_user_data_with_messages_and_vault():
+    """gdpr.py lines 215-216, 219 — delete_user_data must also redact
+    messages and purge the pii_vault entries for the user."""
+    from app.admin.gdpr import (
+        _MESSAGES,
+        _VAULT_BY_USER,
+        delete_user_data,
+        store_pii_entry,
+    )
+
+    user_id = "user-coverage-001"
+    # Pre-populate messages for the user (exercises line 215-216 redacting
+    # msg["content"] to "[REDACTED]").
+    _MESSAGES[user_id] = [
+        {"content": "secret content"},
+        {"content": "another secret"},
+    ]
+    # Pre-populate vault (exercises line 219 popping _VAULT entries).
+    store_pii_entry(
+        user_id=user_id,
+        original_text="0912345678",
+        masked_text="[masked]",
+        category="PHONE",
+        encryption_key_id="kms-coverage-key",
+    )
+    assert user_id in _VAULT_BY_USER, "fixture setup sanity"
+
+    result = delete_user_data(user_id=user_id)
+    assert result["status"] == "queued"
+    # Messages redacted in-place (line 215-216).
+    assert all(
+        m["content"] == "[REDACTED]" for m in _MESSAGES.get(user_id, [])
+    ), f"messages not redacted after delete: {_MESSAGES.get(user_id)}"
+    # Vault entries purged (line 219).
+    assert user_id not in _VAULT_BY_USER, (
+        f"_VAULT_BY_USER still references {user_id} after delete"
+    )
+
+
+def test_rbac_enforce_swallows_log_failure():
+    """rbac.py lines 172-173 — log_admin_action failure must NOT abort
+    the enforcement decision. Permission check proceeds regardless."""
+    from unittest.mock import patch
+
+    import app.admin.rbac as rbac_mod
+
+    # rbac.enforce imports log_admin_action lazily inside the function
+    # body; patch the source module so the import inside enforce picks
+    # up the broken callable.
+    with patch("app.admin.reports.log_admin_action", side_effect=RuntimeError("log boom")):
+        # admin/customer are real roles; admin holds system:write so this
+        # returns 200 even when logging raises.
+        result = rbac_mod.enforce("admin", "system", "write")
+    assert result == 200, (
+        f"FR-62 enforce must return 200 even when log_admin_action raises; "
+        f"got {result}"
+    )
+
+
+def test_observability_json_default_set_with_uncomparable_items():
+    """observability.py lines 92-93 — JSON encoder of a set containing
+    heterogeneous types (int + str) raises TypeError on direct sort;
+    falls back to ``sorted(obj, key=str)``."""
+    from app.infra.observability import _json_default
+
+    # {1, "a"} cannot be sorted directly because int < str comparison is
+    # TypeError in Python 3 — the fallback to key=str must engage.
+    result = _json_default({1, "a"})
+    assert sorted(str(x) for x in result) == ["1", "a"], (
+        f"_json_default must fall back to key=str for mixed-type sets; "
+        f"got {result!r}"
+    )
+
+
+def test_observability_log_unknown_level_falls_back_to_warning():
+    """observability.py lines 165-166 — unknown log level string logs a
+    warning and re-emits the record at WARNING severity."""
+    import logging
+
+    from app.infra.observability import StructuredLogger
+
+    captured: list[str] = []
+    sink = logging.Handler()
+    sink.setLevel(logging.DEBUG)
+    sink.emit = lambda record: captured.append(record.getMessage())
+    log = logging.getLogger("omnibot-coverage-observability")
+    log.setLevel(logging.DEBUG)
+    log.addHandler(sink)
+    try:
+        result = StructuredLogger(service="test")._logger = log or None  # noqa
+        sl = StructuredLogger(service="test")
+        sl._logger = log
+        line = sl.log(level="MYSTERY", message="hi")
+    finally:
+        log.removeHandler(sink)
+
+    assert any("MYSTERY" in line for line in captured), (
+        f"unknown-level record should still be emitted at WARNING; "
+        f"captured={captured!r}"
+    )
+    assert line, "log() must return the emitted line"
+
+
+def test_pipeline_emotion_analyzer_exception_returns_none():
+    """pipeline.py lines 92-93 — Pipeline._process() must catch any
+    exception from emotion.analyze() and continue with emotion_result=None
+    instead of crashing the pipeline."""
+    from unittest.mock import MagicMock
+
+    from app.core.pipeline import Pipeline
+
+    pipe = Pipeline(emotion=MagicMock())
+    pipe.emotion.analyze.side_effect = RuntimeError("emotion boom")
+
+    # Safe inputs to keep the pipeline alive past the emotion call.
+    result = pipe.process(platform="telegram", text="hi")
+    assert result is not None, (
+        "Pipeline.process must return a result even when emotion.analyze "
+        "raises; got None"
+    )
+    assert result.get("emotion") is None, (
+        f"emotion_result should be None after exception; got {result.get('emotion')!r}"
+    )
+
+
+def test_dst_state_machine_max_awaiting_rounds_escalated():
+    """dst.py line 455 — DialogueState escalates when awaiting_rounds
+    exceeds MAX_AWAITING_CONFIRMATION_ROUNDS and the response is None."""
+    from app.core.dst import MAX_AWAITING_CONFIRMATION_ROUNDS, DialogueState
+
+    state = DialogueState(initial_state="AWAITING_CONFIRMATION")
+    next_state = state.handle_confirmation(
+        user_response=None,
+        awaiting_rounds=MAX_AWAITING_CONFIRMATION_ROUNDS + 1,
+    )
+    assert next_state == "ESCALATED", (
+        f"DialogueState must ESCALATE when awaiting_rounds > MAX and "
+        f"response is None; got {next_state!r}"
+    )
+
+
+def test_websocket_verify_jwt_returns_false_on_malformed_payload():
+    """websocket.py lines 202-203 — verify_jwt returns False when JSON
+    parsing of the payload raises (e.g. malformed base64)."""
+    # Malformed token: header decodes but payload is not valid base64.
+    # b64decode will raise binascii.Error on the payload segment.
+    import base64
+    import json
+
+    from app.api.websocket import verify_jwt
+    header = base64.urlsafe_b64encode(
+        json.dumps({"alg": "HS256"}).encode()
+    ).rstrip(b"=")
+    payload = b"!!!not-base64!!!"
+    sig = b"sig"
+    bad_token = f"{header.decode()}.{payload.decode()}.{sig.decode()}"
+
+    assert verify_jwt(bad_token) is False, (
+        "verify_jwt must return False on malformed payload (exception path)"
+    )
+
+
+def test_database_migration_roundtrip_returns_failure_on_step_failure():
+    """database.py line 407 — MigrationRunner.run_roundtrip() returns a
+    MigrationResult(success=False) when any step in the cycle fails."""
+    from unittest.mock import MagicMock
+
+    from app.infra.database import MigrationConfig, MigrationRunner
+
+    runner = MigrationRunner()
+    # Force _step to fail on the first upgrade step.
+    runner._step = MagicMock(
+        return_value=MagicMock(
+            success=False,
+            direction="upgrade",
+            target_revision="head",
+            rows_affected=0,
+            error="forced failure",
+            snapshot_path=None,
+            steps=("upgrade",),
+        )
+    )
+    result = runner.run_roundtrip(MigrationConfig(db_url="sqlite:///:memory:", target_revision="head"))
+    assert result.success is False, (
+        f"MigrationResult must be success=False when a step fails; "
+        f"got success={result.success!r}"
+    )
+    assert result.direction == "roundtrip"
+
+
+# ===========================================================================
+# Batch 7: precision coverage — remaining 3.5% gap (2026-06-22)
+# ===========================================================================
+
+# --- knowledge.py:523-524 (elif tier3 is None: _reason = "low_confidence") ---
+
+
+def test_knowledge_query_tier4_tier2_set_tier3_none():
+    """knowledge.py:523-524 — tier4 reached with tier2 set but tier3=None."""
+    from app.core.knowledge import HybridKnowledge, KnowledgeResult, RAGFallback
+
+    hk = HybridKnowledge(session=None)
+    # RAG returns low-confidence result → _record_tier_hit returns None → tier2 not returned early
+    low_conf_rag = KnowledgeResult(id=2, content="rag answer", confidence=0.20, source="rag", knowledge_id=20)
+    with patch.object(hk, "_rule_match", return_value=None), \
+         patch.object(hk, "_rag_search_with_fallback", return_value=RAGFallback(search_path="vector")), \
+         patch.object(hk, "_rag_search_top_k", return_value=[1, 2]), \
+         patch.object(hk, "_rag_search", return_value=low_conf_rag), \
+         patch.object(hk, "_llm_call", return_value=None):
+        result = hk.query("test")
+    assert result.source == "escalate"
+    assert "t4" in result.tier_sequence
+
+
+# --- knowledge.py:525-526 (else: _reason = "low_confidence" — both tier2 and tier3 set) ---
+
+
+def test_knowledge_query_tier4_both_tier2_tier3_set():
+    """knowledge.py:525-526 — tier4 reached with both tier2 and tier3 set but low confidence."""
+    from app.core.knowledge import HybridKnowledge, KnowledgeResult, RAGFallback
+
+    hk = HybridKnowledge(session=None)
+    low_conf_rag = KnowledgeResult(id=2, content="rag answer", confidence=0.20, source="rag", knowledge_id=20)
+    low_conf_llm = KnowledgeResult(id=3, content="llm answer", confidence=0.20, source="wiki", knowledge_id=30)
+    with patch.object(hk, "_rule_match", return_value=None), \
+         patch.object(hk, "_rag_search_with_fallback", return_value=RAGFallback(search_path="vector")), \
+         patch.object(hk, "_rag_search_top_k", return_value=[1, 2]), \
+         patch.object(hk, "_rag_search", return_value=low_conf_rag), \
+         patch.object(hk, "_llm_call", return_value=low_conf_llm):
+        result = hk.query("test")
+    assert result.source == "escalate"
+    assert "t4" in result.tier_sequence
+
+
+# --- knowledge.py:1406-1407 (except Exception: pass in batch_import_knowledge) ---
+
+
+def test_knowledge_batch_import_enqueue_exception_swallowed():
+    """knowledge.py:1406-1407 — enqueue_embedding_job exception is swallowed."""
+    from app.core.knowledge import batch_import_knowledge
+
+    entries = [{"content": "text", "knowledge_id": "kb-1"}]
+    with patch("app.infra.jobs.enqueue_embedding_job", side_effect=RuntimeError("queue down")):
+        result = batch_import_knowledge(entries)
+    assert result.entry_count == 1
+    assert result.enqueued_count == 0
+
+
+# --- paladin.py:645-646 (except RuntimeError: pass in _await_coro_from_sync loop.stop) ---
+
+
+@pytest.mark.asyncio
+async def test_await_coro_from_sync_loop_stop_runtime_error():
+    """paladin.py:645-646 — RuntimeError from loop.call_soon_threadsafe is swallowed."""
+    import threading as _threading
+
+    from app.core.paladin import _await_coro_from_sync
+
+    allow_finish = _threading.Event()
+
+    class _FakeLoop:
+        def is_closed(self):
+            return False
+        def close(self):
+            allow_finish.set()
+        def set_exception_handler(self, h):
+            pass
+        def run_until_complete(self, coro):
+            allow_finish.wait(timeout=5)
+        def call_soon_threadsafe(self, callback):
+            raise RuntimeError("loop is closing")
+        def stop(self):
+            pass
+
+    fake_loop = _FakeLoop()
+
+    async def _hanging():
+        await asyncio.Event().wait()
+
+    with patch("asyncio.new_event_loop", return_value=fake_loop), \
+         patch("asyncio.set_event_loop"):
+        with pytest.raises(TimeoutError, match="FR-15"):
+            _await_coro_from_sync(_hanging(), timeout_ms=200)
+    allow_finish.set()
+
+
+# --- paladin.py:663-665 (ValueError in _result_from_verdict) ---
+
+
+def test_result_from_verdict_invalid_injection_type():
+    """paladin.py:663-665 — InjectionType(bad_value) raises ValueError → is_unverified=True."""
+    from app.core.paladin import InjectionType, _result_from_verdict
+
+    result = _result_from_verdict({"injection_type": "not_a_valid_type", "confidence": 0.9})
+    assert result.injection_type == InjectionType.NONE
+    assert result.is_unverified is True
+
+
+# --- paladin.py:806 (cosine_score = 0.0 when resp_tokens empty) ---
+
+
+def test_grounding_checker_empty_response_cosine_zero():
+    """paladin.py:806 — cosine_score=0.0 when response is empty."""
+    from app.core.paladin import GroundingChecker
+
+    checker = GroundingChecker()
+    result = checker.check(response="", sources=["some source text"])
+    assert result.grounded is False
+    assert result.cosine_score == 0.0
+
+
+# --- circuit_breaker.py:82-83 (LEVEL_1 → LEVEL_2 on second high-latency call) ---
+
+
+def test_circuit_breaker_latency_level1_to_level2():
+    """circuit_breaker.py:82-83 — second high-latency call steps LEVEL_1 → LEVEL_2."""
+    from app.infra.circuit_breaker import CircuitBreaker
+
+    cb = CircuitBreaker()
+    cb.record_llm_latency(1000.0)  # LEVEL_0 → LEVEL_1
+    level = cb.record_llm_latency(1000.0)  # LEVEL_1 → LEVEL_2 (line 82-83)
+    assert level == cb.LEVEL_2
+
+
+# --- circuit_breaker.py:123-131 (_step_down_level) ---
+
+
+def test_circuit_breaker_step_down_level():
+    """circuit_breaker.py:123-131 — _step_down_level steps level down correctly."""
+    from app.infra.circuit_breaker import CircuitBreaker
+
+    cb = CircuitBreaker()
+    assert cb._step_down_level(cb.LEVEL_3) == cb.LEVEL_2
+    assert cb._step_down_level(cb.LEVEL_1) == cb.LEVEL_0
+    assert cb._step_down_level(cb.LEVEL_0) == cb.LEVEL_0  # already at min
+    assert cb._step_down_level("unknown_level") == cb.LEVEL_0  # ValueError path (line 130-131)
+
+
+# --- circuit_breaker.py:151-154 (record_embedding_success) ---
+
+
+def test_circuit_breaker_embedding_success_recovery():
+    """circuit_breaker.py:151-154 — record_embedding_success resets counter and down flag."""
+    from app.infra.circuit_breaker import CircuitBreaker
+
+    cb = CircuitBreaker()
+    cb.record_embedding_failure()
+    cb.record_embedding_failure()
+    cb.record_embedding_failure()  # _embedding_down = True
+    assert cb._embedding_down is True
+    cb.record_embedding_success()  # lines 151-154
+    assert cb._embedding_down is False
+    assert cb._embedding_failure_count == 0
+
+
+# --- circuit_breaker.py:195-198 (record_classifier_success) ---
+
+
+def test_circuit_breaker_classifier_success_recovery():
+    """circuit_breaker.py:195-198 — record_classifier_success resets counter and down flag."""
+    from app.infra.circuit_breaker import CircuitBreaker
+
+    cb = CircuitBreaker()
+    cb.record_classifier_failure()
+    cb.record_classifier_failure()
+    cb.record_classifier_failure()  # _classifier_down = True
+    assert cb._classifier_down is True
+    cb.record_classifier_success()  # lines 195-198
+    assert cb._classifier_down is False
+    assert cb._classifier_failure_count == 0
+
+
+# --- redis_streams.py:284 (break when cursor fails to advance) ---
+
+
+@pytest.mark.asyncio
+async def test_redis_streams_cursor_no_advance_breaks():
+    """redis_streams.py:284 — break when _next_stream_id(last) == cursor (stuck).
+
+    Requires a full batch (_PEL_BATCH_SIZE entries) so the short-batch break
+    at line 276 is skipped. The last entry has message_id="-" so
+    _next_stream_id("-") == "-" == initial cursor → break at line 284.
+    """
+    from app.infra.redis_streams import _PEL_BATCH_SIZE, AsyncMessageProcessor
+
+    redis = AsyncMock()
+    redis.xpending = AsyncMock(return_value={"pending": _PEL_BATCH_SIZE})
+    # Build a full batch: first _PEL_BATCH_SIZE-1 normal entries + last with id="-"
+    entries = [
+        {"message_id": f"1-{i}", "time_since_delivered": 0}
+        for i in range(_PEL_BATCH_SIZE - 1)
+    ]
+    entries.append({"message_id": "-", "time_since_delivered": 0})
+    # idle_ms=999999 → all entries fail idle check → xclaim never called
+    redis.xpending_range = AsyncMock(return_value=entries)
+    redis.xclaim = AsyncMock(return_value=[])
+    proc = AsyncMessageProcessor(redis_client=redis, idle_ms=999999)
+    # _next_stream_id("-") == "-" == cursor "-" → breaks at line 284
+    result = await proc.claim_pending("consumer1")
+    assert result == []
+
+
+# --- redis_streams.py:311-321 (consume_loop body) ---
+
+
+@pytest.mark.asyncio
+async def test_redis_streams_consume_loop_single_iteration():
+    """redis_streams.py:311-321 — consume_loop processes pending + new messages then exits.
+
+    Lines 313-315: for-loop body executes when claim_pending returns messages.
+    """
+    from app.infra.redis_streams import AsyncMessageProcessor, Message
+
+    redis = AsyncMock()
+    redis.xpending = AsyncMock(return_value={"pending": 0})
+
+    raw_msg = Message(message_id="1-0", fields={"event_type": "test"})
+
+    handled = []
+
+    async def handler(msg):
+        handled.append(msg)
+
+    proc = AsyncMessageProcessor(redis_client=redis)
+
+    claim_call = [0]
+
+    async def mock_claim(consumer):
+        claim_call[0] += 1
+        if claim_call[0] == 1:
+            return [raw_msg]  # first iteration has a pending message → lines 313-315
+        return []
+
+    read_call = [0]
+
+    async def mock_read(consumer):
+        read_call[0] += 1
+        if read_call[0] == 1:
+            return [raw_msg]
+        raise asyncio.CancelledError()
+
+    with patch.object(proc, "claim_pending", side_effect=mock_claim), \
+         patch.object(proc, "read", side_effect=mock_read), \
+         patch.object(proc, "ack", AsyncMock()):
+        with pytest.raises(asyncio.CancelledError):
+            await proc.consume_loop("consumer1", handler)
+
+    assert len(handled) >= 2  # at least: 1 pending + 1 new message
+
+
+# --- a2a_adapter.py:219 (_check_ip_pinning early return when no hostname) ---
+
+
+def test_a2a_check_ip_pinning_no_hostname():
+    """a2a_adapter.py:219 — _check_ip_pinning returns early when URL has no hostname."""
+    from app.services.aee.a2a_adapter import A2AAdapter
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    # URL with no hostname → _urlparse("file:///path").hostname is None
+    adapter._check_ip_pinning("file:///path/to/file")  # should not raise
+
+
+# --- a2a_adapter.py:224-226 (_check_ip_pinning pinned=None → store IPs) ---
+
+
+def test_a2a_check_ip_pinning_first_visit_stores_ips():
+    """a2a_adapter.py:224-226 — _check_ip_pinning stores IPs on first visit."""
+    from app.services.aee.a2a_adapter import A2AAdapter
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    with patch("app.services.aee.a2a_adapter._validate_agent_url"), \
+         patch("app.services.aee.a2a_adapter._resolve_addresses", return_value=["127.0.0.1"]):
+        adapter._check_ip_pinning("http://example.com/api")
+    assert "example.com" in adapter._validated_ips
+
+
+# --- a2a_adapter.py:227-231 (_check_ip_pinning DNS rebinding detection) ---
+
+
+def test_a2a_check_ip_pinning_rebinding_raises():
+    """a2a_adapter.py:227-231 — _check_ip_pinning raises ValueError on IP change."""
+    from app.services.aee.a2a_adapter import A2AAdapter
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {"example.com": frozenset({"10.0.0.1"})}
+    with patch("app.services.aee.a2a_adapter._validate_agent_url"), \
+         patch("app.services.aee.a2a_adapter._resolve_addresses", return_value=["192.168.1.1"]):
+        with pytest.raises(ValueError, match="DNS rebinding"):
+            adapter._check_ip_pinning("http://example.com/api")
+
+
+# --- mcp_adapter.py:61 (list_tools returns [] when server unreachable) ---
+
+
+def test_mcp_list_tools_unreachable_server():
+    """mcp_adapter.py:61 — list_tools returns [] when _is_server_unreachable() is True."""
+    from app.services.aee.mcp_adapter import MCPAdapter
+
+    # 'down' in command → _is_server_unreachable returns True → line 61: return []
+    adapter = MCPAdapter(transport="stdio", command="server_down_service")
+    tools = adapter.list_tools()
+    assert tools == []
+
+
+# --- mcp_adapter.py:155-157 (JSON-RPC error in _execute_stdio_call) ---
+
+
+def test_mcp_execute_stdio_call_jsonrpc_error():
+    """mcp_adapter.py:155-157 — _execute_stdio_call raises RuntimeError on JSON-RPC error."""
+    from app.services.aee.mcp_adapter import MCPAdapter
+
+    adapter = MCPAdapter(transport="stdio", command="echo")
+    mock_proc = MagicMock()
+    mock_proc.communicate.return_value = (b'{"error": {"message": "tool not found"}}', b"")
+    mock_proc.returncode = 0
+    with patch("subprocess.Popen", return_value=mock_proc), pytest.raises(RuntimeError, match="JSON-RPC error"):
+        adapter._execute_stdio_call("bad_tool", {})
+
+
+# --- mcp_adapter.py:239-243, 246 (JSON-RPC error in _execute_sse_call) ---
+
+
+def test_mcp_execute_sse_call_jsonrpc_error_reraises():
+    """mcp_adapter.py:239-243, 246 — _execute_sse_call re-raises RuntimeError on JSON-RPC error."""
+    from app.services.aee.mcp_adapter import MCPAdapter
+
+    adapter = MCPAdapter(transport="sse", url="http://example.com")
+    mock_response = MagicMock()
+    mock_response.raise_for_status = MagicMock()
+    mock_response.json.return_value = {"error": {"message": "method not found"}}
+    mock_client = MagicMock()
+    mock_client.__enter__ = MagicMock(return_value=mock_client)
+    mock_client.__exit__ = MagicMock(return_value=False)
+    mock_client.post.return_value = mock_response
+    with patch("httpx.Client", return_value=mock_client), pytest.raises(RuntimeError, match="JSON-RPC error"):
+        adapter._execute_sse_call("tool1", {})
+
+
+def test_mcp_execute_sse_call_success_returns_data():
+    """mcp_adapter.py:243 — _execute_sse_call returns data dict on successful JSON-RPC response."""
+    from app.services.aee.mcp_adapter import MCPAdapter
+
+    adapter = MCPAdapter(transport="sse", url="http://example.com")
+    mock_response = MagicMock()
+    mock_response.raise_for_status = MagicMock()
+    # No "error" key → success path → line 243: return data
+    mock_response.json.return_value = {"result": {"content": [{"text": "ok"}]}}
+    mock_client = MagicMock()
+    mock_client.__enter__ = MagicMock(return_value=mock_client)
+    mock_client.__exit__ = MagicMock(return_value=False)
+    mock_client.post.return_value = mock_response
+    with patch("httpx.Client", return_value=mock_client):
+        data = adapter._execute_sse_call("tool1", {})
+    assert "result" in data
+
+
+# --- mcp_adapter.py:258-269 (_parse_tool_list success path) ---
+
+
+def test_mcp_parse_tool_list_success():
+    """mcp_adapter.py:258-269 — _parse_tool_list returns ToolDefinitions on valid MCP response."""
+    import json as _j
+
+    from app.services.aee.mcp_adapter import MCPAdapter
+
+    adapter = MCPAdapter()
+    raw = _j.dumps({
+        "result": {
+            "tools": [
+                {"name": "my_tool", "description": "does stuff", "inputSchema": {"type": "object"}},
+                {"name": "other_tool", "description": "other stuff"},
+            ]
+        }
+    }).encode()
+    tools = adapter._parse_tool_list(raw)
+    assert len(tools) == 2
+    assert tools[0].name == "my_tool"
+    assert tools[1].name == "other_tool"
+
+
+# --- mcp_adapter.py:288, 291 (stdio _is_server_unreachable via shutil.which) ---
+
+
+def test_mcp_is_server_unreachable_command_not_found():
+    """mcp_adapter.py:290-291 — _is_server_unreachable returns True when exe not in PATH."""
+    from app.services.aee.mcp_adapter import MCPAdapter
+
+    adapter = MCPAdapter(transport="stdio", command="nonexistent_mcp_exe_xyz_abc")
+    with patch("shutil.which", return_value=None):
+        assert adapter._is_server_unreachable() is True
+
+
+def test_mcp_is_server_unreachable_down_in_command_word():
+    """mcp_adapter.py:288 — _is_server_unreachable returns True when command matches \\bdown\\b."""
+    from app.services.aee.mcp_adapter import MCPAdapter
+
+    # "down" as a standalone word matches re.search(r'\bdown\b', ...) → line 288: return True
+    adapter = MCPAdapter(transport="stdio", command="down")
+    assert adapter._is_server_unreachable() is True
+
+
+# --- mcp_adapter.py:296 (sse _is_server_unreachable via 65535 port) ---
+
+
+def test_mcp_is_server_unreachable_sse_port_65535():
+    """mcp_adapter.py:296 — _is_server_unreachable returns True for SSE with port 65535."""
+    from app.services.aee.mcp_adapter import MCPAdapter
+
+    adapter = MCPAdapter(transport="sse", url="http://example.com:65535/mcp")
+    assert adapter._is_server_unreachable() is True
+
+
+# --- tool_executor.py:315-329 (async handler in thread when event loop running) ---
+
+
+@pytest.mark.asyncio
+async def test_tool_executor_sync_handler_in_running_loop():
+    """tool_executor.py:315-329 — execute() runs handler in thread when event loop is running."""
+    from app.services.aee.tool_executor import ToolDefinition, ToolExecutor
+
+    def sync_handler(**kwargs):
+        return f"sync_result_{kwargs.get('x', '')}"
+
+    tool_def = ToolDefinition(name="sync_tool", description="s", parameters_schema={}, protocol="internal", handler_ref="s")
+    executor = ToolExecutor(default_tools=False)
+    executor.register(tool_def, sync_handler)
+    # In async test context, asyncio.get_running_loop() returns running loop → hits lines 315-329
+    result = executor.execute("sync_tool", arguments_json='{"x": "val"}')
+    assert result.success is True
+
+
+# --- tool_executor.py:333 (non-async handler in run_in_executor, no running loop) ---
+
+
+def test_tool_executor_sync_handler_no_running_loop():
+    """tool_executor.py:335 — execute() runs sync handler via run_in_executor when no event loop."""
+    from app.services.aee.tool_executor import ToolDefinition, ToolExecutor
+
+    def sync_handler(**kwargs):
+        return "result"
+
+    tool_def = ToolDefinition(name="sync_nloop", description="s", parameters_schema={}, protocol="internal", handler_ref="s")
+    executor = ToolExecutor(default_tools=False)
+    executor.register(tool_def, sync_handler)
+    # Sync test context: asyncio.get_running_loop() raises RuntimeError → loop = None → else branch
+    result = executor.execute("sync_nloop", arguments_json="{}")
+    assert result.success is True
+
+
+def test_tool_executor_async_handler_no_running_loop():
+    """tool_executor.py:333 — execute() runs async handler via asyncio.run in no-loop context.
+
+    Line 333: return await asyncio.wait_for(handler(**arguments), ...)
+    Reached when: no running event loop (sync test) AND handler is a coroutine function.
+    """
+    from app.services.aee.tool_executor import ToolDefinition, ToolExecutor
+
+    async def async_handler(**kwargs):
+        return "async_result"
+
+    tool_def = ToolDefinition(name="async_nloop", description="s", parameters_schema={}, protocol="internal", handler_ref="s")
+    executor = ToolExecutor(default_tools=False)
+    executor.register(tool_def, async_handler)
+    # Sync test: no running loop → else branch → asyncio.run(_run_handler())
+    # Inside _run_handler: iscoroutinefunction(async_handler) → True → line 333
+    result = executor.execute("async_nloop", arguments_json="{}")
+    assert result.success is True
+
+
+# --- tool_executor.py:345 (timeout error return) ---
+
+
+@pytest.mark.asyncio
+async def test_tool_executor_timeout_returns_fail():
+    """tool_executor.py:345 — execute() returns fail on asyncio.TimeoutError from handler."""
+    from app.services.aee.tool_executor import ToolDefinition, ToolExecutor
+
+    async def timeout_handler(**kwargs):
+        raise TimeoutError("handler simulated timeout")
+
+    tool_def = ToolDefinition(name="timeout_tool", description="s", parameters_schema={}, protocol="internal", handler_ref="s")
+    executor = ToolExecutor(default_tools=False)
+    executor.register(tool_def, timeout_handler)
+    result = executor.execute("timeout_tool", arguments_json="{}")
+    assert result.success is False
+    assert "timeout" in (result.error_message or "")
+
+
+# --- escalation.py:254 (already-assigned raise ValueError) ---
+
+
+def test_escalation_assign_raises_when_already_assigned():
+    """escalation.py:254 — assign raises ValueError when different agent already assigned."""
+    from app.services.escalation import EscalationManager
+
+    mgr = EscalationManager()
+    eid = mgr.create("conv-1", priority=0)
+    mgr.assign(eid, "agent-A")
+    with pytest.raises(ValueError, match="Already assigned"):
+        mgr.assign(eid, "agent-B")
+
+
+# --- escalation.py:320-324 (compute_sla_compliance with met_sla) ---
+
+
+def test_escalation_compute_sla_compliance_partial():
+    """escalation.py:320-324 — compute_sla_compliance correctly measures SLA compliance."""
+    from datetime import datetime, timedelta, timezone
+
+    from app.services.escalation import EscalationManager
+
+    mgr = EscalationManager()
+    now = datetime.now(timezone.utc)
+
+    eid1 = mgr.create("conv-2", priority=0)
+    mgr.rows[eid1]["sla_deadline"] = now + timedelta(hours=1)
+    mgr.rows[eid1]["resolved_at"] = now  # resolved before deadline → SLA met (lines 320-324)
+    eid2 = mgr.create("conv-3", priority=0)
+    mgr.rows[eid2]["sla_deadline"] = now - timedelta(hours=1)
+    mgr.rows[eid2]["resolved_at"] = now  # resolved after deadline → SLA breached
+
+    compliance = mgr.compute_sla_compliance()
+    assert 0.0 <= compliance <= 1.0
+    assert compliance == 0.5  # 1 of 2 met SLA
+
+
+# ---------------------------------------------------------------------------
+# Batch 8: Remaining uncovered lines (api/adapters, webhooks, websocket)
+# ---------------------------------------------------------------------------
+
+# --- api/adapters/verifiers.py:125 (return False when prefix != sha256=) ---
+
+
+def test_messenger_verifier_original_verify_non_sha256_prefix():
+    """verifiers.py:125 — verify() returns False when signature prefix is not sha256=."""
+    from app.api.adapters.verifiers import MessengerWebhookVerifier
+
+    verifier = MessengerWebhookVerifier(app_secret="test-secret")
+    raw_body = b"test-body"
+    result = verifier.verify(raw_body, "md5=deadbeef")
+    assert result is False
+
+
+# --- api/webhooks.py:257-258 (_file_lock except ImportError/OSError) ---
+
+
+def test_webhooks_file_lock_exception_is_suppressed():
+    """webhooks.py:257-258 — _file_lock silently suppresses ImportError/OSError."""
+    import app.api.webhooks as wh
+
+    mock_file = MagicMock()
+    with patch("fcntl.flock", side_effect=OSError("flock not supported")):
+        wh._file_lock(mock_file)  # must not raise
+
+
+# --- api/webhooks.py:264-265 (_file_unlock except ImportError/OSError) ---
+
+
+def test_webhooks_file_unlock_exception_is_suppressed():
+    """webhooks.py:264-265 — _file_unlock silently suppresses ImportError/OSError."""
+    import app.api.webhooks as wh
+
+    mock_file = MagicMock()
+    with patch("fcntl.flock", side_effect=OSError("flock not supported")):
+        wh._file_unlock(mock_file)  # must not raise
+
+
+# --- api/webhooks.py:281-282 (_load_tokens except Exception) ---
+
+
+def test_webhooks_load_tokens_corrupt_file_is_suppressed():
+    """webhooks.py:281-282 — _load_tokens swallows Exception on corrupt file."""
+    import io
+
+    import app.api.webhooks as wh
+
+    mock_file = io.StringIO("invalid json {{{")
+    with patch("os.path.exists", return_value=True), \
+         patch("builtins.open", return_value=mock_file), \
+         patch("fcntl.flock"):
+        wh._load_tokens()  # must not raise
+
+
+# --- api/webhooks.py:292-293 (_save_tokens except Exception) ---
+
+
+def test_webhooks_save_tokens_io_error_is_suppressed():
+    """webhooks.py:292-293 — _save_tokens swallows Exception on write failure."""
+    import app.api.webhooks as wh
+
+    with patch("builtins.open", side_effect=OSError("permission denied")):
+        wh._save_tokens()  # must not raise
+
+
+# --- api/websocket.py:202-203 (except Exception: return False in second try block) ---
+
+
+def test_websocket_verify_jwt_exception_in_second_try():
+    """websocket.py:202-203 — verify_jwt returns False when exception in sig/payload check.
+
+    Craft a token with valid HS256 header, correct HMAC, but payload that
+    is valid base64 yet invalid JSON → json.loads raises → except catches → False.
+    """
+    import base64
+    import hashlib
+    import hmac
+    import json
+    import os
+
+    from app.api.websocket import verify_jwt
+
+    header = {"alg": "HS256", "typ": "JWT"}
+    header_b64 = base64.urlsafe_b64encode(json.dumps(header).encode()).rstrip(b"=").decode()
+
+    # Payload bytes that are NOT valid JSON (raw binary)
+    payload_bytes_raw = b"\xff\xfe\xfd"
+    payload_b64 = base64.urlsafe_b64encode(payload_bytes_raw).rstrip(b"=").decode()
+
+    secret = os.environ.get("OMNIBOT_JWT_SECRET", "dev-secret-do-not-use-in-prod").encode()
+    msg = f"{header_b64}.{payload_b64}".encode("ascii")
+    sig = hmac.new(secret, msg, hashlib.sha256).digest()
+    sig_b64 = base64.urlsafe_b64encode(sig).rstrip(b"=").decode()
+
+    token = f"{header_b64}.{payload_b64}.{sig_b64}"
+    # HMAC matches → passes compare_digest → json.loads(b"\xff\xfe\xfd") raises → line 202-203
+    result = verify_jwt(token)
+    assert result is False
+
+
+# --- api/adapters/a2a.py:190-235 (averify_m2m_token async method) ---
+
+
+@pytest.mark.asyncio
+async def test_a2a_averify_m2m_token_no_bearer():
+    """a2a.py:190-192 — averify_m2m_token returns False when no Bearer token."""
+    from app.api.adapters.a2a import A2AAdapter
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._jwks_url = "http://example.com/.well-known/jwks.json"
+    adapter._expected_audience = "omnibot"
+    adapter._expected_issuer = ""
+    result = await adapter.averify_m2m_token("not-a-bearer-token")
+    assert result is False
+
+
+@pytest.mark.asyncio
+async def test_a2a_averify_m2m_token_not_three_segments():
+    """a2a.py:196-197 — averify_m2m_token returns False for non-3-segment JWT."""
+    from app.api.adapters.a2a import A2AAdapter
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._jwks_url = "http://example.com/.well-known/jwks.json"
+    adapter._expected_audience = "omnibot"
+    adapter._expected_issuer = ""
+    result = await adapter.averify_m2m_token("Bearer only.twoparts")
+    assert result is False
+
+
+@pytest.mark.asyncio
+async def test_a2a_averify_m2m_token_exception_path():
+    """a2a.py:234-235 — averify_m2m_token catches Exception and returns False.
+
+    Triggers via httpx raising an error during JWKS fetch.
+    """
+    import base64
+    import json
+
+    from app.api.adapters.a2a import A2AAdapter
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._jwks_url = "http://example.com/.well-known/jwks.json"
+    adapter._expected_audience = "omnibot"
+    adapter._expected_issuer = ""
+
+    # Craft a token that passes 3-segment, audience checks, then fails at httpx
+    header = base64.urlsafe_b64encode(b'{"alg":"RS256"}').rstrip(b"=").decode()
+    payload_data = {"aud": "omnibot", "iss": ""}
+    payload = base64.urlsafe_b64encode(json.dumps(payload_data).encode()).rstrip(b"=").decode()
+    sig = base64.urlsafe_b64encode(b"fakesig").rstrip(b"=").decode()
+    token = f"Bearer {header}.{payload}.{sig}"
+
+    with patch("httpx.AsyncClient") as mock_cls:
+        mock_cls.return_value.__aenter__ = AsyncMock(side_effect=Exception("network error"))
+        mock_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+        result = await adapter.averify_m2m_token(token)
+    assert result is False
+
+
+# --- api/adapters/a2a.py:290-298 (ahandle_jsonrpc_call) ---
+
+
+@pytest.mark.asyncio
+async def test_a2a_ahandle_jsonrpc_call_auth_failure_raises():
+    """a2a.py:290-291 — ahandle_jsonrpc_call raises A2AAuthError when token invalid."""
+    from app.api.adapters.a2a import A2AAdapter, A2AAuthError
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._jwks_url = "http://x.com/jwks"
+    adapter._expected_audience = "omnibot"
+    adapter._expected_issuer = ""
+    adapter._validated_ips = {}
+
+    with patch.object(adapter, "averify_m2m_token", AsyncMock(return_value=False)):
+        with pytest.raises(A2AAuthError):
+            await adapter.ahandle_jsonrpc_call(
+                body={"method": "chat", "params": {"text": "hi"}, "id": 1},
+                authorization="Bearer invalid",
+            )
+
+
+@pytest.mark.asyncio
+async def test_a2a_ahandle_jsonrpc_call_success():
+    """a2a.py:293-307 — ahandle_jsonrpc_call returns UnifiedMessage when token valid."""
+    from app.api.adapters.a2a import A2AAdapter
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._jwks_url = "http://x.com/jwks"
+    adapter._expected_audience = "omnibot"
+    adapter._expected_issuer = ""
+    adapter._validated_ips = {}
+
+    with patch.object(adapter, "averify_m2m_token", AsyncMock(return_value=True)), \
+         patch.object(adapter, "_aextract_sub_from_token", AsyncMock(return_value="agent-1")):
+        result = await adapter.ahandle_jsonrpc_call(
+            body={"method": "chat", "params": {"text": "hello"}, "id": 1},
+            authorization="Bearer valid",
+        )
+    assert result.content == "hello"
+    assert result.platform_user_id == "agent-1"
+
+
+# --- api/adapters/a2a.py:360-374 (_aextract_sub_from_token) ---
+
+
+@pytest.mark.asyncio
+async def test_a2a_aextract_sub_no_token():
+    """a2a.py:360-362 — _aextract_sub_from_token returns _UNKNOWN_AGENT when no bearer."""
+    from app.api.adapters.a2a import _UNKNOWN_AGENT, A2AAdapter
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._jwks_url = "http://x.com/jwks"
+    adapter._expected_audience = "omnibot"
+    adapter._expected_issuer = ""
+    result = await adapter._aextract_sub_from_token("not-bearer")
+    assert result == _UNKNOWN_AGENT
+
+
+@pytest.mark.asyncio
+async def test_a2a_aextract_sub_verify_fails():
+    """a2a.py:364-365 — _aextract_sub_from_token returns _UNKNOWN_AGENT when verify fails."""
+    from app.api.adapters.a2a import _UNKNOWN_AGENT, A2AAdapter
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._jwks_url = "http://x.com/jwks"
+    adapter._expected_audience = "omnibot"
+    adapter._expected_issuer = ""
+    with patch.object(adapter, "averify_m2m_token", AsyncMock(return_value=False)):
+        result = await adapter._aextract_sub_from_token("Bearer header.payload.sig")
+    assert result == _UNKNOWN_AGENT
+
+
+@pytest.mark.asyncio
+async def test_a2a_aextract_sub_success():
+    """a2a.py:367-372 — _aextract_sub_from_token returns sub claim on success."""
+    import base64
+    import json
+
+    from app.api.adapters.a2a import A2AAdapter
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._jwks_url = "http://x.com/jwks"
+    adapter._expected_audience = "omnibot"
+    adapter._expected_issuer = ""
+
+    payload_data = {"sub": "agent-42"}
+    payload_b64 = base64.urlsafe_b64encode(json.dumps(payload_data).encode()).decode().rstrip("=")
+    token = f"Bearer header.{payload_b64}.sig"
+
+    with patch.object(adapter, "averify_m2m_token", AsyncMock(return_value=True)):
+        result = await adapter._aextract_sub_from_token(token)
+    assert result == "agent-42"
+
+
+@pytest.mark.asyncio
+async def test_a2a_aextract_sub_exception():
+    """a2a.py:373-374 — _aextract_sub_from_token returns _UNKNOWN_AGENT on decode error."""
+    import base64
+
+    from app.api.adapters.a2a import _UNKNOWN_AGENT, A2AAdapter
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._jwks_url = "http://x.com/jwks"
+    adapter._expected_audience = "omnibot"
+    adapter._expected_issuer = ""
+
+    # Payload is base64 of non-UTF8 bytes → json.loads raises UnicodeDecodeError
+    payload_b64 = base64.urlsafe_b64encode(b"\xff\xfe").decode().rstrip("=")
+    token = f"Bearer header.{payload_b64}.sig"
+
+    with patch.object(adapter, "averify_m2m_token", AsyncMock(return_value=True)):
+        result = await adapter._aextract_sub_from_token(token)
+    assert result == _UNKNOWN_AGENT
+
+
+# --- api/adapters/a2a.py:204, 207, 209, 213-233 (averify_m2m_token deeper paths) ---
+
+
+@pytest.mark.asyncio
+async def test_a2a_averify_m2m_token_expired():
+    """a2a.py:204 — averify_m2m_token returns False when token is expired."""
+    import base64
+    import json
+    import time
+
+    from app.api.adapters.a2a import A2AAdapter
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._jwks_url = "http://x.com/jwks"
+    adapter._expected_audience = "omnibot"
+    adapter._expected_issuer = ""
+
+    header_b64 = base64.urlsafe_b64encode(b'{"alg":"RS256"}').rstrip(b"=").decode()
+    payload_data = {"aud": "omnibot", "exp": int(time.time()) - 3600}  # expired 1h ago
+    payload_b64 = base64.urlsafe_b64encode(json.dumps(payload_data).encode()).rstrip(b"=").decode()
+    sig_b64 = base64.urlsafe_b64encode(b"fakesig").rstrip(b"=").decode()
+    token = f"Bearer {header_b64}.{payload_b64}.{sig_b64}"
+
+    result = await adapter.averify_m2m_token(token)
+    assert result is False
+
+
+@pytest.mark.asyncio
+async def test_a2a_averify_m2m_token_wrong_audience():
+    """a2a.py:207 — averify_m2m_token returns False when audience doesn't match."""
+    import base64
+    import json
+
+    from app.api.adapters.a2a import A2AAdapter
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._jwks_url = "http://x.com/jwks"
+    adapter._expected_audience = "omnibot"
+    adapter._expected_issuer = ""
+
+    header_b64 = base64.urlsafe_b64encode(b'{"alg":"RS256"}').rstrip(b"=").decode()
+    payload_data = {"aud": "wrong-audience"}
+    payload_b64 = base64.urlsafe_b64encode(json.dumps(payload_data).encode()).rstrip(b"=").decode()
+    sig_b64 = base64.urlsafe_b64encode(b"fakesig").rstrip(b"=").decode()
+    token = f"Bearer {header_b64}.{payload_b64}.{sig_b64}"
+
+    result = await adapter.averify_m2m_token(token)
+    assert result is False
+
+
+@pytest.mark.asyncio
+async def test_a2a_averify_m2m_token_wrong_issuer():
+    """a2a.py:209 — averify_m2m_token returns False when issuer doesn't match."""
+    import base64
+    import json
+
+    from app.api.adapters.a2a import A2AAdapter
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._jwks_url = "http://x.com/jwks"
+    adapter._expected_audience = "omnibot"
+    adapter._expected_issuer = "https://auth.example.com"  # non-empty → issuer check active
+
+    header_b64 = base64.urlsafe_b64encode(b'{"alg":"RS256"}').rstrip(b"=").decode()
+    payload_data = {"aud": "omnibot", "iss": "https://other-issuer.com"}
+    payload_b64 = base64.urlsafe_b64encode(json.dumps(payload_data).encode()).rstrip(b"=").decode()
+    sig_b64 = base64.urlsafe_b64encode(b"fakesig").rstrip(b"=").decode()
+    token = f"Bearer {header_b64}.{payload_b64}.{sig_b64}"
+
+    result = await adapter.averify_m2m_token(token)
+    assert result is False
+
+
+@pytest.mark.asyncio
+async def test_a2a_averify_m2m_token_no_matching_jwk():
+    """a2a.py:213-220 — averify_m2m_token returns False when JWKS has no matching key."""
+    import base64
+    import json
+
+    from app.api.adapters.a2a import A2AAdapter
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._jwks_url = "http://x.com/jwks"
+    adapter._expected_audience = "omnibot"
+    adapter._expected_issuer = ""
+
+    header_data = {"alg": "RS256", "kid": "my-key"}
+    header_b64 = base64.urlsafe_b64encode(json.dumps(header_data).encode()).rstrip(b"=").decode()
+    payload_data = {"aud": "omnibot"}
+    payload_b64 = base64.urlsafe_b64encode(json.dumps(payload_data).encode()).rstrip(b"=").decode()
+    sig_b64 = base64.urlsafe_b64encode(b"fakesig").rstrip(b"=").decode()
+    token = f"Bearer {header_b64}.{payload_b64}.{sig_b64}"
+
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"keys": [{"kid": "different-key", "kty": "RSA"}]}
+
+    with patch("httpx.AsyncClient") as mock_cls:
+        mock_instance = AsyncMock()
+        mock_cls.return_value.__aenter__ = AsyncMock(return_value=mock_instance)
+        mock_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+        mock_instance.get = AsyncMock(return_value=mock_response)
+
+        result = await adapter.averify_m2m_token(token)
+    assert result is False
+
+
+@pytest.mark.asyncio
+async def test_a2a_averify_m2m_token_rsa_verify_success():
+    """a2a.py:222-233 — averify_m2m_token returns True when RSA signature verifies.
+
+    Mocks the RSA public key verification to not raise so line 233 (return True) is hit.
+    """
+    import base64
+    import json
+
+    from app.api.adapters.a2a import A2AAdapter
+
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._jwks_url = "http://x.com/jwks"
+    adapter._expected_audience = "omnibot"
+    adapter._expected_issuer = ""
+
+    header_data = {"alg": "RS256", "kid": "my-key"}
+    header_b64 = base64.urlsafe_b64encode(json.dumps(header_data).encode()).rstrip(b"=").decode()
+    payload_data = {"aud": "omnibot"}
+    payload_b64 = base64.urlsafe_b64encode(json.dumps(payload_data).encode()).rstrip(b"=").decode()
+    sig_b64 = base64.urlsafe_b64encode(b"fakesig").rstrip(b"=").decode()
+    token = f"Bearer {header_b64}.{payload_b64}.{sig_b64}"
+
+    # n and e must be valid base64 for int.from_bytes to work; use minimal values
+    n_bytes = (65537).to_bytes(4, "big")
+    e_bytes = (65537).to_bytes(4, "big")
+    n_b64 = base64.urlsafe_b64encode(n_bytes).rstrip(b"=").decode()
+    e_b64 = base64.urlsafe_b64encode(e_bytes).rstrip(b"=").decode()
+
+    mock_response = MagicMock()
+    mock_response.json.return_value = {
+        "keys": [{"kid": "my-key", "kty": "RSA", "n": n_b64, "e": e_b64}]
+    }
+
+    mock_public_key = MagicMock()
+    mock_public_key.verify = MagicMock()  # does NOT raise → line 233: return True
+
+    with patch("httpx.AsyncClient") as mock_cls, \
+         patch("app.api.adapters.a2a.rsa") as mock_rsa:
+        mock_instance = AsyncMock()
+        mock_cls.return_value.__aenter__ = AsyncMock(return_value=mock_instance)
+        mock_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+        mock_instance.get = AsyncMock(return_value=mock_response)
+
+        mock_numbers = MagicMock()
+        mock_numbers.public_key.return_value = mock_public_key
+        mock_rsa.RSAPublicNumbers.return_value = mock_numbers
+
+        result = await adapter.averify_m2m_token(token)
+    assert result is True
+
+
+# --- unified_message.py — mutation-killing enum value assertions ---
+
+
+def test_unified_message_platform_enum_values():
+    """Kill string-mutation survivors: assert exact .value for every Platform member."""
+    from app.core.unified_message import Platform
+
+    assert Platform.TELEGRAM.value == "telegram"
+    assert Platform.LINE.value == "line"
+    assert Platform.MESSENGER.value == "messenger"
+    assert Platform.WHATSAPP.value == "whatsapp"
+    assert Platform.WEB.value == "web"
+    assert Platform.A2A.value == "a2a"
+    assert Platform.AGENT.value == "agent"
+    assert len(Platform) == 7
+
+
+def test_unified_message_messagetype_enum_values():
+    """Kill string-mutation survivors: assert exact .value for every MessageType member."""
+    from app.core.unified_message import MessageType
+
+    assert MessageType.TEXT.value == "text"
+    assert MessageType.IMAGE.value == "image"
+    assert MessageType.STICKER.value == "sticker"
+    assert MessageType.LOCATION.value == "location"
+    assert MessageType.AUDIO.value == "audio"
+    assert MessageType.VIDEO.value == "video"
+    assert MessageType.FILE.value == "file"
+    assert len(MessageType) == 7
+
+
+def test_unified_message_reply_token_default_is_none():
+    """Kill None-mutation survivors: reply_token default must be None."""
+    import dataclasses
+    from datetime import datetime, timezone
+
+    from app.core.unified_message import MessageType, Platform, UnifiedMessage
+
+    msg = UnifiedMessage(
+        platform=Platform.TELEGRAM,
+        platform_user_id="u1",
+        unified_user_id=None,
+        message_type=MessageType.TEXT,
+        content="hi",
+        raw_payload={},
+        received_at=datetime.now(timezone.utc),
+    )
+    assert msg.reply_token is None
+
+    fields = {f.name: f.default for f in dataclasses.fields(UnifiedMessage)}
+    assert fields["reply_token"] is None
+
+
+def test_unified_message_platform_str_mixin():
+    """Platform str-mixin: member equals its string value directly."""
+    from app.core.unified_message import Platform
+
+    assert Platform.TELEGRAM == "telegram"
+    assert Platform.LINE == "line"
+    assert Platform.MESSENGER == "messenger"
+    assert Platform.WHATSAPP == "whatsapp"
+    assert Platform.WEB == "web"
+    assert Platform.A2A == "a2a"
+    assert Platform.AGENT == "agent"
+
+
+def test_unified_message_messagetype_str_mixin():
+    """MessageType str-mixin: member equals its string value directly."""
+    from app.core.unified_message import MessageType
+
+    assert MessageType.TEXT == "text"
+    assert MessageType.IMAGE == "image"
+    assert MessageType.STICKER == "sticker"
+    assert MessageType.LOCATION == "location"
+    assert MessageType.AUDIO == "audio"
+    assert MessageType.VIDEO == "video"
+    assert MessageType.FILE == "file"
+
+
+def test_unified_message_platform_roundtrip_all():
+    """Platform('X') roundtrip for every value — kills mutations that change enum strings."""
+    from app.core.unified_message import Platform
+
+    for expected in ("telegram", "line", "messenger", "whatsapp", "web", "a2a", "agent"):
+        member = Platform(expected)
+        assert member.value == expected
+
+
+def test_unified_message_messagetype_roundtrip_all():
+    """MessageType('X') roundtrip for every value — kills mutations that change enum strings."""
+    from app.core.unified_message import MessageType
+
+    for expected in ("text", "image", "sticker", "location", "audio", "video", "file"):
+        member = MessageType(expected)
+        assert member.value == expected
+
+
+def test_unified_message_reply_token_type_annotation():
+    """Kill annotation mutation str & None: check raw annotation string directly.
+
+    With 'from __future__ import annotations' (PEP 563), annotations are stored
+    as strings. __annotations__["reply_token"] is "str | None" in the original;
+    mutmut changes it to "str & None", which this assertion detects.
+    """
+    import dataclasses
+
+    from app.core.unified_message import UnifiedMessage
+
+    field_types = {f.name: f.type for f in dataclasses.fields(UnifiedMessage)}
+    assert field_types["reply_token"] == "str | None"
