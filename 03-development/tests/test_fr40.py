@@ -90,6 +90,8 @@ def _stub_transport_io(monkeypatch):
     """
 
     def _fake_stdio_connect(self):
+        if self.command and "down_server.py" in self.command:
+            raise RuntimeError("down server simulated error")
         return [
             ToolDefinition(
                 name="get_data",

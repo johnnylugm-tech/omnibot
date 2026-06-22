@@ -200,7 +200,7 @@ class IPWhitelist:
     ) -> str | None:
         """Return the caller IP per FR-23 resolution order, or ``None``."""
         tcp_client = ip if ip else client_host
-        is_trusted = False
+        is_trusted = tcp_client is None
         if tcp_client:
             try:
                 addr = ipaddress.ip_address(tcp_client.strip())

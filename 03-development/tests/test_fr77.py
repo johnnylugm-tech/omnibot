@@ -121,7 +121,7 @@ def _isolate_kb_io(monkeypatch):
 # is not yet defined in ``app.infra.jobs``. That is the valid RED
 # signal — GREEN adds the coroutine.
 # ---------------------------------------------------------------------------
-from app.infra.jobs import create_knowledge_with_chunks  # noqa: E402
+from app.core.knowledge import create_knowledge_with_chunks  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Spec-pinned trigger values — keep these in lock-step with TEST_SPEC.md.

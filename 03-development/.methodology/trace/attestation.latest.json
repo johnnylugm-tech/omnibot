@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "1d3323651300a44703fa74fd239b0df223c96e3e",
-  "content_sha256": "58df5b9bd861c421ccf0254998a11903212a7e7abb887c86ec10c1a6d459b08e",
+  "git_sha": "430758fd1786cfc6a2c0ec43aab27d20bc22a408",
+  "content_sha256": "80ed0a5120ca942fe34b457940334741fcb32e9510617ed6e49144b9f961a9e7",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -9,15 +9,20 @@
     "schema_version": "harness/traceability/overlay/v1",
     "project_id": "03-development",
     "completeness": {
-      "total_requirements": 85,
+      "total_requirements": 108,
       "srs_coverage": "0.0%",
-      "code_coverage": "95.3%",
+      "code_coverage": "97.2%",
       "test_coverage": "100.0%",
-      "verification_rate": "95.3%",
-      "total_links": 181,
+      "verification_rate": "97.2%",
+      "total_links": 257,
       "missing_mappings": {
         "fr_without_srs": [
           "FR-01",
+          "FR-02",
+          "FR-03",
+          "FR-04",
+          "FR-05",
+          "FR-06",
           "FR-07",
           "FR-08",
           "FR-09",
@@ -30,6 +35,7 @@
           "FR-105",
           "FR-106",
           "FR-107",
+          "FR-108",
           "FR-11",
           "FR-12",
           "FR-13",
@@ -79,6 +85,9 @@
           "FR-57",
           "FR-58",
           "FR-59",
+          "FR-60",
+          "FR-61",
+          "FR-62",
           "FR-63",
           "FR-64",
           "FR-65",
@@ -91,23 +100,36 @@
           "FR-72",
           "FR-73",
           "FR-74",
+          "FR-75",
+          "FR-76",
+          "FR-77",
+          "FR-78",
+          "FR-79",
           "FR-80",
           "FR-81",
           "FR-82",
           "FR-83",
+          "FR-84",
+          "FR-85",
+          "FR-86",
+          "FR-87",
+          "FR-88",
           "FR-89",
           "FR-90",
           "FR-91",
+          "FR-92",
+          "FR-93",
+          "FR-94",
           "FR-95",
           "FR-96",
           "FR-97",
-          "FR-98"
+          "FR-98",
+          "FR-99"
         ],
         "fr_without_code": [
-          "FR-01",
           "FR-54",
           "FR-63",
-          "FR-91"
+          "FR-93"
         ],
         "fr_without_test": []
       }
@@ -115,6 +137,11 @@
     "missing": {
       "fr_without_srs": [
         "FR-01",
+        "FR-02",
+        "FR-03",
+        "FR-04",
+        "FR-05",
+        "FR-06",
         "FR-07",
         "FR-08",
         "FR-09",
@@ -127,6 +154,7 @@
         "FR-105",
         "FR-106",
         "FR-107",
+        "FR-108",
         "FR-11",
         "FR-12",
         "FR-13",
@@ -176,6 +204,9 @@
         "FR-57",
         "FR-58",
         "FR-59",
+        "FR-60",
+        "FR-61",
+        "FR-62",
         "FR-63",
         "FR-64",
         "FR-65",
@@ -188,34 +219,133 @@
         "FR-72",
         "FR-73",
         "FR-74",
+        "FR-75",
+        "FR-76",
+        "FR-77",
+        "FR-78",
+        "FR-79",
         "FR-80",
         "FR-81",
         "FR-82",
         "FR-83",
+        "FR-84",
+        "FR-85",
+        "FR-86",
+        "FR-87",
+        "FR-88",
         "FR-89",
         "FR-90",
         "FR-91",
+        "FR-92",
+        "FR-93",
+        "FR-94",
         "FR-95",
         "FR-96",
         "FR-97",
-        "FR-98"
+        "FR-98",
+        "FR-99"
       ],
       "fr_without_code": [
-        "FR-01",
         "FR-54",
         "FR-63",
-        "FR-91"
+        "FR-93"
       ],
       "fr_without_test": []
     },
     "requirements": {
       "FR-01": {
         "fr_id": "FR-01",
-        "status": "not_implemented",
+        "status": "verified",
         "srs_section": null,
-        "code_files": [],
+        "code_files": [
+          "src/app/api/adapters/telegram.py",
+          "src/app/api/adapters/verifiers.py",
+          "src/app/api/webhooks.py"
+        ],
         "test_files": [
           "tests/test_fr01.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-02": {
+        "fr_id": "FR-02",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/api/adapters/line.py",
+          "src/app/api/adapters/verifiers.py",
+          "src/app/api/webhooks.py"
+        ],
+        "test_files": [
+          "tests/test_fr02.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-03": {
+        "fr_id": "FR-03",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/api/adapters/messenger.py",
+          "src/app/api/adapters/verifiers.py",
+          "src/app/api/webhooks.py"
+        ],
+        "test_files": [
+          "tests/test_fr03.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-04": {
+        "fr_id": "FR-04",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/api/adapters/verifiers.py",
+          "src/app/api/adapters/whatsapp.py",
+          "src/app/api/webhooks.py"
+        ],
+        "test_files": [
+          "tests/test_fr04.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-05": {
+        "fr_id": "FR-05",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/api/adapters/utils.py",
+          "src/app/api/adapters/verifiers.py",
+          "src/app/api/adapters/web.py",
+          "src/app/api/webhooks.py"
+        ],
+        "test_files": [
+          "tests/test_fr05.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-06": {
+        "fr_id": "FR-06",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/api/adapters/a2a.py",
+          "src/app/api/adapters/base.py",
+          "src/app/api/adapters/line.py",
+          "src/app/api/adapters/messenger.py",
+          "src/app/api/adapters/telegram.py",
+          "src/app/api/adapters/verifiers.py",
+          "src/app/api/adapters/web.py",
+          "src/app/api/adapters/whatsapp.py",
+          "src/app/api/webhooks.py"
+        ],
+        "test_files": [
+          "tests/test_fr06.py"
         ],
         "sad_module": "—",
         "priority": "HIGH"
@@ -238,7 +368,7 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/core/unified_response.py"
+          "src/app/core/response.py"
         ],
         "test_files": [
           "tests/test_fr08.py"
@@ -251,7 +381,7 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/core/api_response.py",
+          "src/app/api/common.py",
           "tests/test_fr09.py"
         ],
         "test_files": [
@@ -305,7 +435,7 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/infra/config_store.py"
+          "src/app/infra/config.py"
         ],
         "test_files": [
           "tests/test_fr102.py"
@@ -370,10 +500,31 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "tests/pyramid.py"
+          "tests/pyramid.py",
+          "tests/test_fr107.py"
         ],
         "test_files": [
           "tests/test_fr107.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-108": {
+        "fr_id": "FR-108",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/admin/rbac.py",
+          "src/app/api/adapters/verifiers.py",
+          "src/app/core/knowledge.py",
+          "src/app/core/paladin.py",
+          "src/app/infra/deployment.py",
+          "src/app/services/escalation.py",
+          "src/app/services/llm_judge.py",
+          "tests/golden_dataset.py"
+        ],
+        "test_files": [
+          "tests/test_fr108.py"
         ],
         "sad_module": "—",
         "priority": "HIGH"
@@ -467,7 +618,7 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/core/retraction.py",
+          "src/app/core/response.py",
           "tests/test_fr17.py"
         ],
         "test_files": [
@@ -508,7 +659,7 @@
         "srs_section": null,
         "code_files": [
           "src/app/core/pii.py",
-          "src/app/infra/data_retention.py"
+          "src/app/infra/security.py"
         ],
         "test_files": [
           "tests/test_fr20.py"
@@ -612,7 +763,7 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/core/chunking.py"
+          "src/app/core/knowledge.py"
         ],
         "test_files": [
           "tests/test_fr28.py"
@@ -625,7 +776,7 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/infra/vector_index.py"
+          "src/app/infra/database.py"
         ],
         "test_files": [
           "tests/test_fr29.py"
@@ -824,7 +975,7 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/api/agent_card.py"
+          "src/app/api/webhooks.py"
         ],
         "test_files": [
           "tests/test_fr44.py"
@@ -902,7 +1053,7 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/core/response_generator.py"
+          "src/app/core/response.py"
         ],
         "test_files": [
           "tests/test_fr50.py"
@@ -915,7 +1066,7 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/core/response_generator.py"
+          "src/app/core/response.py"
         ],
         "test_files": [
           "tests/test_fr51.py"
@@ -928,7 +1079,7 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/core/response_generator.py"
+          "src/app/core/response.py"
         ],
         "test_files": [
           "tests/test_fr52.py"
@@ -941,7 +1092,7 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/core/response_generator.py"
+          "src/app/core/response.py"
         ],
         "test_files": [
           "tests/test_fr53.py"
@@ -1022,6 +1173,45 @@
         ],
         "test_files": [
           "tests/test_fr59.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-60": {
+        "fr_id": "FR-60",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/admin/rbac.py"
+        ],
+        "test_files": [
+          "tests/test_fr60.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-61": {
+        "fr_id": "FR-61",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/admin/rbac.py"
+        ],
+        "test_files": [
+          "tests/test_fr61.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-62": {
+        "fr_id": "FR-62",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/admin/rbac.py"
+        ],
+        "test_files": [
+          "tests/test_fr62.py"
         ],
         "sad_module": "—",
         "priority": "HIGH"
@@ -1133,7 +1323,7 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/infra/prometheus_metrics.py"
+          "src/app/infra/observability.py"
         ],
         "test_files": [
           "tests/test_fr71.py"
@@ -1146,7 +1336,7 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/infra/tracing.py"
+          "src/app/infra/observability.py"
         ],
         "test_files": [
           "tests/test_fr72.py"
@@ -1159,7 +1349,7 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/infra/alert_rules.py"
+          "src/app/infra/observability.py"
         ],
         "test_files": [
           "tests/test_fr73.py"
@@ -1172,10 +1362,76 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/infra/grafana_dashboard.py"
+          "src/app/infra/observability.py"
         ],
         "test_files": [
           "tests/test_fr74.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-75": {
+        "fr_id": "FR-75",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/infra/jobs.py"
+        ],
+        "test_files": [
+          "tests/test_fr75.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-76": {
+        "fr_id": "FR-76",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/infra/jobs.py"
+        ],
+        "test_files": [
+          "tests/test_fr76.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-77": {
+        "fr_id": "FR-77",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/infra/jobs.py"
+        ],
+        "test_files": [
+          "tests/test_fr77.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-78": {
+        "fr_id": "FR-78",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/core/knowledge.py",
+          "src/app/infra/jobs.py"
+        ],
+        "test_files": [
+          "tests/test_fr78.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-79": {
+        "fr_id": "FR-79",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/infra/jobs.py"
+        ],
+        "test_files": [
+          "tests/test_fr79.py"
         ],
         "sad_module": "—",
         "priority": "HIGH"
@@ -1198,7 +1454,7 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/infra/retry.py"
+          "src/app/infra/circuit_breaker.py"
         ],
         "test_files": [
           "tests/test_fr81.py"
@@ -1211,7 +1467,7 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/infra/schema.py"
+          "src/app/infra/database.py"
         ],
         "test_files": [
           "tests/test_fr82.py"
@@ -1224,10 +1480,75 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/infra/migrations.py"
+          "src/app/infra/database.py"
         ],
         "test_files": [
           "tests/test_fr83.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-84": {
+        "fr_id": "FR-84",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/api/webhooks.py"
+        ],
+        "test_files": [
+          "tests/test_fr84.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-85": {
+        "fr_id": "FR-85",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/api/management.py"
+        ],
+        "test_files": [
+          "tests/test_fr85.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-86": {
+        "fr_id": "FR-86",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/api/auth.py"
+        ],
+        "test_files": [
+          "tests/test_fr86.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-87": {
+        "fr_id": "FR-87",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/api/webhooks.py"
+        ],
+        "test_files": [
+          "tests/test_fr87.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-88": {
+        "fr_id": "FR-88",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/admin/gdpr.py"
+        ],
+        "test_files": [
+          "tests/test_fr88.py"
         ],
         "sad_module": "—",
         "priority": "HIGH"
@@ -1237,7 +1558,7 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/infra/tde.py"
+          "src/app/infra/security.py"
         ],
         "test_files": [
           "tests/test_fr89.py"
@@ -1250,7 +1571,7 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/infra/redis_security.py"
+          "src/app/infra/security.py"
         ],
         "test_files": [
           "tests/test_fr90.py"
@@ -1260,11 +1581,51 @@
       },
       "FR-91": {
         "fr_id": "FR-91",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/admin/gdpr.py",
+          "tests/test_fr91.py"
+        ],
+        "test_files": [
+          "tests/test_fr91.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-92": {
+        "fr_id": "FR-92",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/infra/security.py"
+        ],
+        "test_files": [
+          "tests/test_fr92.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-93": {
+        "fr_id": "FR-93",
         "status": "not_implemented",
         "srs_section": null,
         "code_files": [],
         "test_files": [
-          "tests/test_fr91.py"
+          "tests/test_fr93.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-94": {
+        "fr_id": "FR-94",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/admin/gdpr.py"
+        ],
+        "test_files": [
+          "tests/test_fr94.py"
         ],
         "sad_module": "—",
         "priority": "HIGH"
@@ -1274,7 +1635,7 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/infra/compose.py"
+          "src/app/infra/deployment.py"
         ],
         "test_files": [
           "tests/test_fr95.py"
@@ -1287,7 +1648,7 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/infra/k8s_deployment.py"
+          "src/app/infra/deployment.py"
         ],
         "test_files": [
           "tests/test_fr96.py"
@@ -1300,7 +1661,7 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/infra/backup_strategy.py"
+          "src/app/infra/deployment.py"
         ],
         "test_files": [
           "tests/test_fr97.py"
@@ -1313,10 +1674,23 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/infra/rollback_strategy.py"
+          "src/app/infra/deployment.py"
         ],
         "test_files": [
           "tests/test_fr98.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-99": {
+        "fr_id": "FR-99",
+        "status": "verified",
+        "srs_section": null,
+        "code_files": [
+          "src/app/infra/circuit_breaker.py"
+        ],
+        "test_files": [
+          "tests/test_fr99.py"
         ],
         "sad_module": "—",
         "priority": "HIGH"

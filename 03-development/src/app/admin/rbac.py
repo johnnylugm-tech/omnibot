@@ -199,7 +199,8 @@ def _resolve_role(
     """
     if "role" in kwargs:
         override = kwargs.pop("role")
-        if override is not None:
+        import os
+        if override is not None and os.environ.get("TESTING") == "1":
             return str(override), args
     request = kwargs.get("request")
     if request is not None and getattr(request, "user_role", None) is not None:

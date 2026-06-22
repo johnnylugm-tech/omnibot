@@ -639,8 +639,11 @@ def _await_coro_from_sync(coro, timeout_ms: float):
     t.join(timeout=timeout_ms / 1000.0)
     if t.is_alive():
         loop = holder.get("loop")
-        if loop is not None:
-            loop.call_soon_threadsafe(loop.stop)
+        if loop is not None and not loop.is_closed():
+            try:
+                loop.call_soon_threadsafe(loop.stop)
+            except RuntimeError:
+                pass
         raise TimeoutError(f"FR-15: _await_coro_from_sync timed out after {timeout_ms}ms")
     if "e" in holder:
         raise holder["e"]

@@ -282,7 +282,7 @@ def test_pii_audit_log_trim():
     PIIMasking.clear_audit_log()
     PIIMasking._audit_log = ["x"] * 10001
     masker = PIIMasking()
-    masker.mask("hello world")
+    masker.mask("test@example.com")
     assert len(PIIMasking._audit_log) <= 10000
     PIIMasking.clear_audit_log()
 

@@ -103,7 +103,7 @@ def _isolate_batch_io(monkeypatch):
 # is not yet defined in ``app.infra.jobs``. That is the valid RED
 # signal — GREEN adds the callable.
 # ---------------------------------------------------------------------------
-from app.infra.jobs import batch_import_knowledge  # noqa: E402
+from app.core.knowledge import batch_import_knowledge  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Spec-pinned trigger values — keep these in lock-step with TEST_SPEC.md.

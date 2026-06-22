@@ -44,11 +44,11 @@ def _derive_fernet_key(encryption_key_id: str) -> bytes:
 
 
 def store_pii_entry(
-    user_id: str,
     original_text: str,
     masked_text: str,
     category: str,
     encryption_key_id: str,
+    user_id: str = "unknown",
 ) -> dict:
     """[FR-94] Encrypt and store a PII vault entry at the application layer.
 

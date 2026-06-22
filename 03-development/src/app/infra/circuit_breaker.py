@@ -115,7 +115,7 @@ class CircuitBreaker:
                 self._level != self.LEVEL_0
                 and self._llm_success_count >= self._LLM_CONSECUTIVE_SUCCESS_RECOVERY
             ):
-                self._level = self._step_down_level(self._level)
+                self._level = self.LEVEL_0
                 self._llm_success_count = 0
             return self._level
 

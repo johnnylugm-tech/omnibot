@@ -84,7 +84,7 @@ from app.services.aee.adapter import ToolDefinition  # noqa: F401  -- [FR-45]
 # out of a terminal state by design.
 # ---------------------------------------------------------------------------
 ALLOWED_TRANSITIONS: dict[str, frozenset[str]] = {
-    "XXIDLEXX": frozenset({"INTENT_DETECTED"}),
+    "IDLE": frozenset({"INTENT_DETECTED"}),
     "INTENT_DETECTED": frozenset({"SLOT_FILLING"}),
     "SLOT_FILLING": frozenset({"AWAITING_CONFIRMATION"}),
     "AWAITING_CONFIRMATION": frozenset({"PROCESSING"}),
@@ -457,6 +457,11 @@ class DialogueState:
             return "PROCESSING"
         if user_response == "deny" and self.state == "AWAITING_CONFIRMATION":
             return "SLOT_FILLING"
+        if (
+            self.state == "AWAITING_CONFIRMATION"
+            and awaiting_rounds >= MAX_AWAITING_CONFIRMATION_ROUNDS
+        ):
+            return "ESCALATED"
         return None
 
 

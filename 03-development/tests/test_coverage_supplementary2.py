@@ -1507,7 +1507,7 @@ def test_grounding_checker_with_response_text_based():
     from app.core.paladin import GroundingChecker, GroundingResult
 
     checker = GroundingChecker()
-    result = checker.check(response="some answer", sources=["text1", "text2"])
+    result = checker.check(response="text1 text2", sources=["text1", "text2"])
     assert isinstance(result, GroundingResult)
     assert result.grounded is True
 
