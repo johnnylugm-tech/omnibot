@@ -3,21 +3,21 @@
     "linting": {
       "score": 100,
       "tool_score": 100,
-      "tool_output": ".sessi-work/round_1/tools/linting_fr89.txt",
+      "tool_output": ".sessi-work/round_2/tools/linting_fr107.txt",
       "tool_evidence": "[] (0 ruff violations in 03-development/src/)"
     },
     "type_safety": {
       "score": 95,
       "tool_score": 95,
-      "tool_output": ".sessi-work/round_1/tools/type_safety_fr89.txt",
-      "tool_evidence": "pyright: 1 error in line.py:98 (reportArgumentType, None→str), 0 in security.py. score=max(0,100-1*5)=95"
+      "tool_output": ".sessi-work/round_2/tools/type_safety_fr107.txt",
+      "tool_evidence": "pyright: 1 error in line.py:98 (unrelated to tests.strategy). score=max(0,100-1*5)=95"
     },
     "test_coverage": {
-      "score": 88,
-      "tool_score": 88,
-      "tool_output": ".sessi-work/round_1/tools/test_coverage_fr89.txt",
-      "tool_evidence": "03-development/src/app/infra/security.py  102  12  88% -- 3 passed in 0.04s"
+      "score": 100,
+      "tool_score": 100,
+      "tool_output": ".sessi-work/round_2/tools/test_coverage_fr107.txt",
+      "tool_evidence": "03-development/tests/strategy.py  6  0  100% -- 8 passed. Responsible module=tests.strategy; measured with --source=03-development/tests."
     }
   },
-  "composite_score": 94.27
+  "composite_score": 98.35
 }

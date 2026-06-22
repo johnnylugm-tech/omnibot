@@ -65,10 +65,57 @@ class Pipeline:
     other platform MUST invoke the analyzer exactly once.
     """
 
-    def __init__(self, emotion: Any | None = None) -> None:
-        # Emotion analyzer is injected so tests can count invocations
-        # without standing up a real model.
+    def __init__(
+        self,
+        emotion: Any | None = None,
+        paladin: Any | None = None,
+        pii: Any | None = None,
+        dst: Any | None = None,
+        knowledge: Any | None = None,
+        response: Any | None = None,
+    ) -> None:
         self.emotion = emotion
+        self.paladin = paladin
+        self.pii = pii
+        self.dst = dst
+        self.knowledge = knowledge
+        self.response = response
+
+    def handle_message(self, msg: Any) -> Any:
+        """[FR-49] Orchestrate PALADIN→PII→DST→Knowledge→Emotion→Response.
+
+        Order enforced by SAD architecture constraints:
+          paladin_executes_before_pii, knowledge_query_after_dst_slot_resolution.
+        """
+        from app.core.response import ResponseSource, UnifiedResponse
+
+        content: str = msg.content
+
+        if self.paladin is not None:
+            self.paladin.check(content)
+
+        if self.pii is not None:
+            mask_result = self.pii.mask(content)
+            content = mask_result.masked_text
+
+        if self.dst is not None:
+            self.dst.transition("SLOT_FILLING")
+
+        if self.knowledge is not None:
+            self.knowledge.query(content)
+
+        self.process(msg.platform, content)
+
+        if self.response is not None:
+            content = self.response.format_for_platform(
+                str(getattr(msg.platform, "value", msg.platform)), content
+            )
+
+        return UnifiedResponse(
+            content=content,
+            source=ResponseSource.RULE,
+            confidence=1.0,
+        )
 
     def process(self, platform: Any, text: str) -> Mapping[str, Any]:
         """Route ``text`` through the pipeline, honouring the FR-49 bypass.
@@ -99,10 +146,10 @@ class Pipeline:
             "bypassed": bypassed,
         }
 
+_CONTEXT_HISTORY: dict[str, list[dict]] = {}
+
+
 def get_context(conversation_id: str) -> dict:
-    """[HUB] Retrieve conversation context.
-    Required by SAD.md for core cohesion.
-    """
-    from app.admin.gdpr import _MESSAGES
-    return {"conversation_id": conversation_id, "history": _MESSAGES.get(conversation_id, [])}
+    """[FR-49] Retrieve conversation context from in-memory store."""
+    return {"conversation_id": conversation_id, "history": _CONTEXT_HISTORY.get(conversation_id, [])}
 

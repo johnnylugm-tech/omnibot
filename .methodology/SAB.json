@@ -11,7 +11,8 @@
         "app.api.webhooks",
         "app.api.management",
         "app.api.auth",
-        "app.api.websocket"
+        "app.api.websocket",
+        "app.api.main"
       ],
       "allowed_dependencies": [
         "core",
@@ -71,7 +72,8 @@
         "app.admin.rbac",
         "app.admin.gdpr",
         "app.admin.webui",
-        "app.admin.odd_sql"
+        "app.admin.odd_sql",
+        "app.admin.portal"
       ],
       "allowed_dependencies": [
         "infra"

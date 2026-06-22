@@ -35,7 +35,7 @@ from typing import Any
 # ---------------------------------------------------------------------------
 # Priority colour constants (SRS FR-104: urgent=紅 / high=橙 / normal=藍)
 # ---------------------------------------------------------------------------
-PRIORITY_URGENT_COLOR: str = None       # [FR-104] urgent=紅
+PRIORITY_URGENT_COLOR: str = "red"       # [FR-104] urgent=紅
 PRIORITY_HIGH_COLOR: str = "orange"      # [FR-104] high=橙
 PRIORITY_NORMAL_COLOR: str = "blue"      # [FR-104] normal=藍
 
@@ -80,9 +80,7 @@ class AgentPortal:
 
         Citation: test_fr104.py L171
         """
-        self._inbox: dict[str, list[dict[str, Any]]] = {
-            section: [] for section in INBOX_SECTIONS
-        }
+        self._inbox: dict[str, list[dict[str, Any]]] = None
 
     # ------------------------------------------------------------------
     # Injectable seams — patched by the autouse fixture in test_fr104.py

@@ -382,6 +382,10 @@ tests/
 - Operations Dashboard (FCR/latency/knowledge/cost, 24hr/7d/30d) → FR-103
 - Agent Portal (inbox/WS/takeover, priority colors urgent=red/high=orange/normal=blue, DST slot sidebar) → FR-104
 
+#### Module: portal.py
+- Agent Portal: inbox sections (Unassigned/My Chats/Resolved), WebSocket realtime push, priority colours (urgent=red/high=orange/normal=blue), smart takeover panel (emotion history, conversation timeline, DST slot sidebar, grounding highlight) → FR-104
+- 166 LOC
+
 #### Module: odd_sql.py
 - 10 ODD SQL queries (FCR/p95-latency/knowledge-hit/CSAT/feedback/SLA/emotion/security-block/cost/PII-audit) → FR-105
 - Judge sampling: default 20% (0.01–1.0 configurable), `judge_sample_rate` stored in experiments table → FR-105

@@ -176,3 +176,37 @@ def test_fr49_telegram_platform_emotion_module_runs():
         f"FR-49: expected_emotion_calls sentinel must be '1'; "
         f"got {expected_emotion_calls!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# 3. handle_message: thin orchestrator returns UnifiedResponse with the
+#    original content when no sub-modules are injected.
+# ---------------------------------------------------------------------------
+def test_fr49_handle_message_returns_unified_response():
+    from datetime import datetime, timezone
+    from app.core.unified_message import UnifiedMessage, Platform, MessageType
+    from app.core.response import UnifiedResponse
+
+    msg = UnifiedMessage(
+        platform=Platform.LINE,
+        platform_user_id="U123",
+        unified_user_id=None,
+        message_type=MessageType.TEXT,
+        content="hello",
+        raw_payload={},
+        received_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+    )
+    result = Pipeline().handle_message(msg)
+    assert isinstance(result, UnifiedResponse)
+    assert result.content == "hello"
+
+
+# ---------------------------------------------------------------------------
+# 4. get_context: returns empty history for unknown conversation_id.
+# ---------------------------------------------------------------------------
+def test_fr49_get_context_empty_history():
+    from app.core.pipeline import get_context, _CONTEXT_HISTORY
+    _CONTEXT_HISTORY.clear()
+    result = get_context("conv-99")
+    assert result["conversation_id"] == "conv-99"
+    assert result["history"] == []

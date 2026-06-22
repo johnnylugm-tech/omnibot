@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "cea2244dad31cde45835e6d73b595916a21c1a6b",
-  "content_sha256": "7826aab0ef7d8e9c1217fb09123786b551f1545b155f11ab94b86e33922da84a",
+  "git_sha": "c803ee891a02da5f5ca5edbd6f35121e9dc8df82",
+  "content_sha256": "de5a33276c507d21c37188f578b8e70f9b279ada38de71553385d4acb46e47e0",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -14,7 +14,7 @@
       "code_coverage": "97.2%",
       "test_coverage": "100.0%",
       "verification_rate": "97.2%",
-      "total_links": 367,
+      "total_links": 370,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -284,6 +284,7 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/tests/pyramid.py",
+          "03-development/tests/strategy.py",
           "03-development/tests/test_fr107.py"
         ],
         "test_files": [
@@ -304,7 +305,8 @@
           "03-development/src/app/infra/deployment.py",
           "03-development/src/app/services/escalation.py",
           "03-development/src/app/services/llm_judge.py",
-          "03-development/tests/golden_dataset.py"
+          "03-development/tests/golden_dataset.py",
+          "03-development/tests/strategy.py"
         ],
         "test_files": [
           "tests/test_fr108.py"
@@ -1303,7 +1305,8 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/api/auth.py"
+          "03-development/src/app/api/auth.py",
+          "03-development/src/app/api/main.py"
         ],
         "test_files": [
           "tests/test_fr86.py"

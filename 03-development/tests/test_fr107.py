@@ -6,32 +6,37 @@ emotion escalation, prompt injection block, and fallback escalation.
 """
 from __future__ import annotations
 
+from tests.strategy import TestStrategy
+
 
 def test_fr107_unit_coverage_70pct():
     """FR-107: unit test coverage target = 70%."""
-    # Verify the spec-mandated coverage target is met
-    # NFR coverage: NFR-30 (K8s HPA min=3 max=10 — deployment sizing
-    # ensures test infrastructure can scale to meet coverage targets)
     unit_target = 0.70
     assert unit_target == 0.70
+    assert TestStrategy().validate_pyramid(unit_target, 0.20, 0.10) is True
 
 
 def test_fr107_integration_coverage_20pct():
     """FR-107: integration test coverage target = 20%."""
     integration_target = 0.20
     assert integration_target == 0.20
+    assert TestStrategy().validate_pyramid(0.70, integration_target, 0.10) is True
 
 
 def test_fr107_e2e_faq_exact_match():
     """FR-107: E2E — FAQ exact-match query returns rule-based result (source=rule)."""
     expected_source = "rule"
     assert expected_source == "rule"
+    result = TestStrategy().run_e2e_pipeline("faq_exact_match")
+    assert result["status"] == "pass"
 
 
 def test_fr107_e2e_semantic_search():
     """FR-107: E2E — semantic similarity query returns RAG result (source=rag)."""
     expected_source = "rag"
     assert expected_source == "rag"
+    result = TestStrategy().run_e2e_pipeline("semantic_search")
+    assert result["status"] == "pass"
 
 
 def test_fr107_e2e_multi_turn_dst():
@@ -42,6 +47,8 @@ def test_fr107_e2e_multi_turn_dst():
     assert turns == 3
     assert intent == "return_request"
     assert "order_id" in slots and "reason" in slots
+    result = TestStrategy().run_e2e_pipeline("multi_turn_dst")
+    assert result["status"] == "pass"
 
 
 def test_fr107_e2e_emotion_escalation():
@@ -50,6 +57,8 @@ def test_fr107_e2e_emotion_escalation():
     expected_action = "escalate"
     assert consecutive_negative == 3
     assert expected_action == "escalate"
+    result = TestStrategy().run_e2e_pipeline("emotion_escalation")
+    assert result["status"] == "pass"
 
 
 def test_fr107_e2e_prompt_injection_blocked():
@@ -58,6 +67,8 @@ def test_fr107_e2e_prompt_injection_blocked():
     expected_blocked = "true"
     assert "instructions" in text
     assert expected_blocked == "true"
+    result = TestStrategy().run_e2e_pipeline("prompt_injection_blocked")
+    assert result["status"] == "pass"
 
 
 def test_fr107_e2e_fallback_escalation():
@@ -68,3 +79,5 @@ def test_fr107_e2e_fallback_escalation():
     expected_action = "escalate"
     assert tier1 == "miss" and tier2 == "miss" and tier3 == "miss"
     assert expected_action == "escalate"
+    result = TestStrategy().run_e2e_pipeline("fallback_escalation")
+    assert result["status"] == "pass"
