@@ -19,11 +19,22 @@ the valid RED signal.
 from __future__ import annotations
 
 import os
+import sys
+from pathlib import Path
 
 import pytest
 
+# Ensure the project source root is importable for `from app.xxx import yyy`
+# when pytest is invoked from a cwd that does not read pyproject.toml (e.g.
+# mutmut's temp workdir). pyproject.toml [tool.pytest.ini_options] already
+# sets pythonpath for normal invocations; this is the safety net.
+_SRC_ROOT = Path(__file__).resolve().parent.parent / "src"
+if str(_SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(_SRC_ROOT))
+
 os.environ.setdefault("OMNIBOT_ADMIN_USER", "admin")
 os.environ.setdefault("OMNIBOT_ADMIN_PASS", "correct")
+os.environ.setdefault("OMNIBOT_JWT_SECRET", "test-only-jwt-secret-do-not-use-in-prod-32chars")
 
 @pytest.fixture(autouse=True)
 def _isolate_external_services(monkeypatch):

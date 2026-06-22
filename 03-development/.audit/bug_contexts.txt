@@ -1,0 +1,1398 @@
+Found 60 bugs to extract context for.
+
+========================================
+Evaluating: BUG-01 (03-development/src/app/core/paladin.py:656, 578)
+========================================
+   573:             # ``_call_llm`` is an ``async def`` in production but tests
+   574:             # monkeypatch it with sync fakes that return dicts directly;
+   575:             # handle both shapes on the same code path.
+   576:             if asyncio.iscoroutine(verdict):
+   577:                 verdict = _await_coro_from_sync(verdict, timeout_ms)  # pragma: no cover — async coroutine dispatch path covered by test_fr13
+>> 578:         except (TimeoutError, ConnectionError, OSError):
+   579:             # asyncio.TimeoutError is NOT a subclass of TimeoutError in py3.9
+   580:             return _make_passthrough(is_unverified=True)
+   581: 
+   582:         return _result_from_verdict(verdict)
+   583: 
+   584: 
+   585: def _make_passthrough(*, is_unverified: bool) -> ClassificationResult:
+   586:     """[FR-13] Safe default — used by both the low-risk skip path and
+   587:     the timeout / outage path.
+   588: 
+   589:     Both paths share the same field values (``is_injection=False``,
+   590:     ``confidence=0.0``, ``injection_type=NONE``); the only difference is
+   591:     the ``is_unverified`` flag, which the pipeline reads to decide
+   592:     whether to treat the call as a clean pass-through (low-risk skip)
+   593:     or as a degraded fallback (timeout / outage).
+   594:     """
+   595:     return ClassificationResult(
+   596:         is_injection=False,
+   597:         confidence=0.0,
+   598:         injection_type=InjectionType.NONE,
+   599:         is_unverified=is_unverified,
+   600:     )
+   601: 
+   602: 
+   603: def _await_coro_from_sync(coro, timeout_ms: float):
+   604:     """[FR-15] Drive an async coroutine to completion from sync code.
+   605: 
+   606:     ``classify`` is sync (FR-13 calls it without ``asyncio.run``), but
+   607:     FR-15's ``PALADINPipeline.process`` is async and calls ``classify``
+   608:     from inside a running event loop. Python forbids
+   609:     ``asyncio.run``/``loop.run_until_complete`` from within a running
+   610:     loop, so we fall back to a worker thread with a fresh event loop
+   611:     when one is already running. The no-running-loop case keeps the
+   612:     cheap ``asyncio.run`` path (preserves FR-13's sync-call
+   613:     performance budget).
+   614:     """
+   615:     try:
+   616:         asyncio.get_running_loop()
+   617:     except RuntimeError:
+   618:         # No running loop — safe to use asyncio.run (FR-13 sync path).
+   619:         return asyncio.run(asyncio.wait_for(coro, timeout=timeout_ms / 1000.0))
+   620: 
+   621:     # Running loop already exists (FR-15 async path). Run the
+   622:     # coroutine on a worker thread with its own fresh event loop.
+   623:     holder: dict = {}
+   624: 
+   625:     def _runner() -> None:
+   626:         new_loop = asyncio.new_event_loop()
+   627:         try:
+   628:             holder["v"] = new_loop.run_until_complete(
+   629:                 asyncio.wait_for(coro, timeout=timeout_ms / 1000.0)
+   630:             )
+   631:         except BaseException as exc:  # propagate TimeoutError etc.
+   632:             holder["e"] = exc
+   633:         finally:
+   634:             new_loop.close()
+   635: 
+   636:     t = threading.Thread(target=_runner, daemon=True)
+   637:     t.start()
+   638:     t.join(timeout=timeout_ms / 1000.0)
+   639:     if t.is_alive():
+   640:         raise TimeoutError(f"FR-15: _await_coro_from_sync timed out after {timeout_ms}ms")
+   641:     if "e" in holder:
+   642:         raise holder["e"]
+   643:     return holder["v"]
+   644: 
+   645: 
+   646: def _result_from_verdict(verdict: dict) -> ClassificationResult:
+   647:     """[FR-13] Map an upstream JSON-like dict to ``ClassificationResult``.
+   648: 
+   649:     Centralizes the field-by-field coercion so ``classify`` stays a
+   650:     flat routing function and any future normalization (range clamping,
+   651:     enum aliasing) lives in exactly one place.
+   652:     """
+   653:     return ClassificationResult(
+   654:         is_injection=bool(verdict.get("is_injection", False)),
+   655:         confidence=float(verdict.get("confidence", 0.0)),
+>> 656:         injection_type=InjectionType(verdict.get("injection_type", "none")),
+   657:         is_unverified=False,
+   658:     )
+   659: 
+   660: 
+   661: # ---------------------------------------------------------------------------
+
+========================================
+Evaluating: BUG-02 (03-development/src/app/admin/gdpr.py:177-205)
+========================================
+   172:             "filename": f"user_data_{user_id}.csv",
+   173:             "content_type": "text/csv",
+   174:         }
+   175:     return payload
+   176: 
+>> 177: 
+>> 178: def delete_user_data(user_id: str) -> dict:
+>> 179:     """[FR-88/FR-92] Queue a Right-to-Erasure deletion job.
+>> 180: 
+>> 181:     The actual deletion is asynchronous (30-day SLA per FR-92); this
+>> 182:     function persists the job record, writes a ``gdpr_deletion`` entry
+>> 183:     to the PII audit log, and returns ``deletion_id`` / ``status="queued"``.
+>> 184:     Idempotent: a second call for the same user returns a fresh
+>> 185:     ``deletion_id`` without raising, matching the FR-88 spec input.
+>> 186:     """
+>> 187:     from app.admin.reports import log_admin_action
+>> 188:     log_admin_action("delete_user_data", admin_id="system", details={"user_id": user_id})
+>> 189:     deletion_id = uuid.uuid4().hex
+>> 190:     _DELETIONS[deletion_id] = {"user_id": user_id, "status": "queued"}
+>> 191:     _PII_AUDIT_LOG.append(
+>> 192:         {
+>> 193:             "user_id": user_id,
+>> 194:             "event_type": "gdpr_deletion",
+>> 195:             "deletion_id": deletion_id,
+>> 196:             "timestamp": datetime.now(timezone.utc).isoformat(),
+>> 197:         }
+>> 198:     )
+>> 199:     # Mark the user as deleted in-memory so subsequent exports reflect
+>> 200:     # the post-deletion state. Real wiring keeps the row for 30 days
+>> 201:     # but masks PII fields.
+>> 202:     _USERS[user_id] = {
+>> 203:         "profile": None,
+>> 204:         "platform_user_id": "DELETED",
+>> 205:     }
+   206:     return {"deletion_id": deletion_id, "status": "queued"}
+   207: 
+   208: 
+   209: def get_user_profile(user_id: str) -> dict | None:
+   210:     """[FR-88] Return the current profile for ``user_id``.
+
+========================================
+Evaluating: BUG-03 (03-development/src/app/admin/gdpr.py:27, 68-73)
+========================================
+   22: from cryptography.fernet import Fernet
+   23: 
+   24: from app.admin.rbac import enforce as _rbac_enforce
+   25: 
+   26: # In-memory PII vault — isolation-safe store for test runs.
+>> 27: # Keys are UUID strings (entry_id); values are the encrypted record dicts.
+   28: _VAULT: dict[str, dict] = {}
+   29: 
+   30: def _derive_fernet_key(encryption_key_id: str) -> bytes:
+   31:     """Derive a deterministic Fernet-compatible 32-byte key from a KMS key ID.
+   32: 
+   33:     Uses SHA-256 so the same ``encryption_key_id`` always yields the same
+   34:     Fernet key, enabling round-trip encrypt/decrypt without an external KMS.
+   35:     """
+   36:     digest = hashlib.sha256(encryption_key_id.encode()).digest()
+   37:     return base64.urlsafe_b64encode(digest)
+   38: 
+   39: 
+   40: # ---------------------------------------------------------------------------
+   41: # Public API — the two functions imported by test_fr94.py
+   42: # ---------------------------------------------------------------------------
+   43: 
+   44: 
+   45: def store_pii_entry(
+   46:     original_text: str,
+   47:     masked_text: str,
+   48:     category: str,
+   49:     encryption_key_id: str,
+   50: ) -> dict:
+   51:     """[FR-94] Encrypt and store a PII vault entry at the application layer.
+   52: 
+   53:     Both ``original_text`` and ``masked_text`` are encrypted with a
+   54:     Fernet key derived from ``encryption_key_id``.  No plaintext ever
+   55:     reaches the in-memory store.
+   56: 
+   57:     Returns a dict with ``entry_id`` (str), ``encrypted_original``
+   58:     (bytes), ``encrypted_masked`` (bytes), ``category`` (str), and
+   59:     ``encryption_key_id`` (str).
+   60:     """
+   61:     key = _derive_fernet_key(encryption_key_id)
+   62:     fernet = Fernet(key)
+   63: 
+   64:     encrypted_original = fernet.encrypt(original_text.encode("utf-8"))
+   65:     encrypted_masked = fernet.encrypt(masked_text.encode("utf-8"))
+   66: 
+   67:     entry_id = str(uuid.uuid4())
+>> 68: 
+>> 69:     _VAULT[entry_id] = {
+>> 70:         "encrypted_original": encrypted_original,
+>> 71:         "encrypted_masked": encrypted_masked,
+>> 72:         "category": category,
+>> 73:         "encryption_key_id": encryption_key_id,
+   74:     }
+   75: 
+   76:     return {
+   77:         "entry_id": entry_id,
+   78:         "encrypted_original": encrypted_original,
+
+========================================
+Evaluating: BUG-04 (03-development/src/app/services/escalation.py:249-253)
+========================================
+   244:                 preview={},
+   245:                 now=self._utcnow(),
+   246:             )
+   247:         return self.rows[escalation_id]
+   248: 
+>> 249:     def assign(self, escalation_id: str, agent_id: str) -> None:
+>> 250:         """Update assigned_agent + picked_at — SRS FR-54 assign()."""
+>> 251:         row = self._ensure_row(escalation_id)
+>> 252:         row["assigned_agent"] = agent_id
+>> 253:         row["picked_at"] = self._utcnow()
+   254: 
+   255:     def resolve(self, escalation_id: str) -> None:
+   256:         """Update resolved_at — SRS FR-54 resolve()."""
+   257:         row = self._ensure_row(escalation_id)
+   258:         row["resolved_at"] = self._utcnow()
+
+========================================
+Evaluating: BUG-05 (03-development/src/app/infra/jobs.py:73-75)
+========================================
+   68: from collections.abc import Mapping
+   69: from dataclasses import dataclass, field
+   70: from datetime import datetime
+   71: from typing import Literal
+   72: 
+>> 73: from app.core.knowledge import batch_import_knowledge, create_knowledge_with_chunks
+>> 74: 
+>> 75: __all__ = ["batch_import_knowledge", "create_knowledge_with_chunks"]
+   76: 
+   77: # ---------------------------------------------------------------------------
+   78: # Public configuration shapes (FR-75).
+   79: # ---------------------------------------------------------------------------
+   80: Priority = Literal["high", "medium", "low"]
+
+========================================
+Evaluating: BUG-06 (auth.py:43)
+========================================
+   38:         "iat": int(time.time()),
+   39:         "exp": int(time.time()) + 3600,
+   40:     }
+   41:     payload_b64 = _b64url_encode(json.dumps(payload).encode())
+   42: 
+>> 43:     secret = os.environ.get("OMNIBOT_JWT_SECRET", "dev-secret-do-not-use-in-prod").encode()
+   44:     msg = f"{header_b64}.{payload_b64}".encode()
+   45:     sig_b64 = _b64url_encode(hmac.new(secret, msg, "sha256").digest())
+   46: 
+   47:     return f"{header_b64}.{payload_b64}.{sig_b64}"
+   48: 
+
+========================================
+Evaluating: BUG-07 (auth.py:50-51)
+========================================
+   45:     sig_b64 = _b64url_encode(hmac.new(secret, msg, "sha256").digest())
+   46: 
+   47:     return f"{header_b64}.{payload_b64}.{sig_b64}"
+   48: 
+   49: 
+>> 50: _ADMIN_USER = os.environ["OMNIBOT_ADMIN_USER"]
+>> 51: _ADMIN_PASS = os.environ["OMNIBOT_ADMIN_PASS"]
+   52: 
+   53: 
+   54: def login(username: str, password: str) -> dict | int:
+   55:     """[FR-86] Authenticate *username* / *password* and issue tokens.
+   56: 
+
+========================================
+Evaluating: BUG-08 (ip_whitelist.py:202-205)
+========================================
+   197:         x_forwarded_for: str | None,
+   198:         ip: str | None,
+   199:         client_host: str | None,
+   200:     ) -> str | None:
+   201:         """Return the caller IP per FR-23 resolution order, or ``None``."""
+>> 202:         if x_forwarded_for:
+>> 203:             leftmost = x_forwarded_for.split(",", 1)[0].strip()
+>> 204:             if leftmost:
+>> 205:                 return leftmost
+   206:         if ip:
+   207:             return ip.strip()
+   208:         if client_host:
+   209:             return client_host.strip()
+   210:         return None
+
+========================================
+Evaluating: BUG-09 (security.py:331-359)
+========================================
+   326: # Synchronous wrapper that triggers (or simulates) the async data-deletion
+   327: # flow for the given user.  In unit-test context this returns a pre-
+   328: # populated result; in production the same function would dispatch a Celery
+   329: # task and return the result once the worker completes.
+   330: # ---------------------------------------------------------------------------
+>> 331: def execute_data_deletion(user_id: str) -> DataDeletionResult:
+>> 332:     """[FR-92] Trigger data deletion for *user_id* and return the outcome.
+>> 333: 
+>> 334:     In the unit-test / stub shape, the function returns a hard-coded
+>> 335:     ``DataDeletionResult`` whose every field matches the FR-mandated
+>> 336:     sentinels.  The production path will delegate to an async worker
+>> 337:     (e.g. Celery) that performs the actual DB mutations and writes the
+>> 338:     ``pii_audit_log`` entry.
+>> 339: 
+>> 340:     Args:
+>> 341:         user_id: The platform user identifier whose data should be erased.
+>> 342: 
+>> 343:     Returns:
+>> 344:         ``DataDeletionResult`` summarising the deletion outcome.
+>> 345: 
+>> 346:     Citations:
+>> 347:         - SRS.md FR-92: DELETE /api/v1/users/{user_id}/data
+>> 348:         - TEST_SPEC.md FR-92:1858-1868
+>> 349:     """
+>> 350:     del user_id  # unused in stub — kept as contract surface
+>> 351: 
+>> 352:     return DataDeletionResult(
+>> 353:         profile_null=True,
+>> 354:         platform_user_id=_PLATFORM_USER_ID_DELETED,
+>> 355:         messages_redacted=True,
+>> 356:         messages_content=_MESSAGES_CONTENT_REDACTED,
+>> 357:         audit_event=_AUDIT_EVENT_GDPR_DELETION,
+>> 358:         sla_days=_SLA_DAYS,
+>> 359:     )
+   360: 
+   361: # --- Merged from data_retention.py ---
+   362: """[FR-91, FR-20] Data retention policy descriptors (180d archive / 2yr
+   363: delete / 90d anonymize / 90d emotion delete) AND the discoverable
+   364: ``RETENTION_POLICIES`` registry that the FR-20 90-day pii_audit_log
+
+========================================
+Evaluating: BUG-10 (paladin.py:90-103)
+========================================
+   85: # [FR-108] SQL-injection keywords and characters to strip from user input
+   86: # after NFKC normalization. Applied as a post-processing step in
+   87: # ``InputSanitizer.sanitize()`` so common injection payloads like
+   88: # ``'; DROP TABLE users;--`` are neutralized before reaching downstream
+   89: # query builders.
+>> 90: _SQL_INJECTION_RE = re.compile(
+>> 91:     r"(?i)\b(DROP\s+TABLE|ALTER\s+TABLE|DELETE\s+FROM|INSERT\s+INTO|"
+>> 92:     r"UPDATE\s+\w+\s+SET|UNION\s+SELECT|EXEC\s*\(|EXECUTE\s*\(|"
+>> 93:     r"--|/\*|\*/|;|')"
+>> 94: )
+>> 95: 
+>> 96: 
+>> 97: def _sanitize_sql_patterns(text: str) -> str:
+>> 98:     """[FR-108] Remove SQL-injection keywords and special characters.
+>> 99: 
+>> 100:     Citations:
+>> 101:         - 03-development/tests/test_fr108.py:517-532 (SQL injection case)
+>> 102:     """
+>> 103:     return _SQL_INJECTION_RE.sub("", text)
+   104: 
+   105: 
+   106: class InputSanitizer:
+   107:     """[FR-10] PALADIN L1 — NFKC + homoglyph + control-char sanitizer.
+   108: 
+
+========================================
+Evaluating: BUG-11 (rate_limit.py:114)
+========================================
+   109:     _WINDOW_SECONDS: float = 1.0
+   110: 
+   111:     # Sliding window: trim expired, add this request, return count. Atomic.
+   112:     _SCRIPT = (
+   113:         "redis.call('ZREMRANGEBYSCORE', KEYS[1], '-inf', tonumber(ARGV[1]));"
+>> 114:         "redis.call('ZADD', KEYS[1], tonumber(ARGV[2]), ARGV[3]);"
+   115:         "redis.call('EXPIRE', KEYS[1], 2);"
+   116:         "return redis.call('ZCARD', KEYS[1]);"
+   117:     )
+   118: 
+   119:     def __init__(self, redis_client=None) -> None:
+
+========================================
+Evaluating: BUG-12 (redis_streams.py:198-202)
+========================================
+   193:         for _stream, entries in rows or []:
+   194:             for msg_id, fields in entries:
+   195:                 out.append(Message(message_id=msg_id, fields=fields))
+   196:         return out
+   197: 
+>> 198:     async def ack(self, message_id: str) -> int:
+>> 199:         """[FR-80] XACK the message id; returns 1 on success, 0 on miss."""
+>> 200:         return await self.redis.xack(
+>> 201:             self.stream, self.group_name, message_id,
+>> 202:         )
+   203: 
+   204:     async def _fetch_message_fields(
+   205:         self, message_id: str,
+   206:     ) -> dict[str, str] | None:
+   207:         """[FR-80] XRANGE lookup for the fields of a single message id.
+
+========================================
+Evaluating: BUG-13 (knowledge.py:169-176)
+========================================
+   164:         self._session = session
+   165: 
+   166:     # SQL template for the Tier-1 rule lookup. ``:limit`` is bound at
+   167:     # execute-time so the constant ``RULE_LIMIT`` stays the single source
+   168:     # of truth (test assertions grep the rendered statement for LIMIT).
+>> 169:     _RULE_SQL = (
+>> 170:         "SELECT id, knowledge_id, content, match_type "
+>> 171:         "FROM knowledge_base "
+>> 172:         "WHERE content ILIKE :pattern "
+>> 173:         "   OR :query = ANY(keywords) "
+>> 174:         "ORDER BY id "
+>> 175:         "LIMIT :limit"
+>> 176:     )
+   177: 
+   178:     def _rule_match(self, query: str) -> KnowledgeResult | None:
+   179:         """[FR-26] Tier-1 ILIKE search, capped at LIMIT ``RULE_LIMIT``.
+   180: 
+   181:         Issues a single SQL statement against ``knowledge_base`` using
+
+========================================
+Evaluating: BUG-14 (knowledge.py:1386-1397)
+========================================
+   1381:     test pyramid, not here.
+   1382:     """
+   1383:     start = time.perf_counter()
+   1384:     enqueued = 0
+   1385: 
+>> 1386:     for entry in entries:
+>> 1387:         chunk_id = f"chunk_{uuid.uuid4().hex[:12]}"
+>> 1388:         knowledge_id = entry.get("knowledge_id", f"kb_{uuid.uuid4().hex[:12]}")
+>> 1389:         from app.infra.jobs import EmbeddingJob, enqueue_embedding_job
+>> 1390:         job = EmbeddingJob(
+>> 1391:             chunk_id=chunk_id,
+>> 1392:             knowledge_id=knowledge_id,
+>> 1393:             content=entry.get("content", ""),
+>> 1394:             model=entry.get("model", "text-embedding-3-small"),
+>> 1395:         )
+>> 1396:         enqueue_embedding_job(job)
+>> 1397:         enqueued += 1
+   1398: 
+   1399:     elapsed = time.perf_counter() - start
+   1400:     count = len(entries)
+   1401:     per_entry_ms = (elapsed / count) * 1000.0 if count > 0 else 0.0
+   1402: 
+
+========================================
+Evaluating: BUG-15 (a2a_adapter.py:340-345)
+========================================
+   335:         try:
+   336:             body: Any = response.json()
+   337:         except Exception as exc:
+   338:             return fail(f"{_TIMEOUT_FAILURE_PREFIX}invalid JSON-RPC response: {exc}")
+   339: 
+>> 340:         if isinstance(body, dict) and "error" in body and "result" not in body:
+>> 341:             err = body.get("error")
+>> 342:             message = err.get("message") if isinstance(err, dict) else str(err)
+>> 343:             return fail(f"jsonrpc_error: JSON-RPC error: {message}")
+>> 344: 
+>> 345:         return ok(body)
+   346: 
+   347:     # ------------------------------------------------------------------
+   348:     # JSON-RPC 2.0 payload builder (FR-41 case 2: payload format).
+   349:     # ------------------------------------------------------------------
+   350:     def _build_jsonrpc_payload(
+
+========================================
+Evaluating: BUG-16 (response.py:569-575)
+========================================
+   564:         window=MESSENGER_RETRACTION_WINDOW,
+   565:         security_log_writer=security_log_writer,
+   566:     )
+   567: 
+   568: 
+>> 569: def _retract_line(message_id: str) -> RetractionResult:
+>> 570:     """[FR-17] LINE path: platform-default apology, no failure log.
+>> 571: 
+>> 572:     LINE Messaging API does not expose a delete-message endpoint;
+>> 573:     this is the platform contract, not a fault of our pipeline, so
+>> 574:     we do NOT emit a ``retraction_failed`` audit event.
+>> 575:     """
+   576:     return _apology_result("line", message_id)
+   577: 
+   578: 
+   579: def _retract_whatsapp(message_id: str) -> RetractionResult:
+   580:     """[FR-17] WhatsApp path: platform-default correction, no failure log.
+
+========================================
+Evaluating: BUG-17 (pii.py:63)
+========================================
+   58: # happily slice the first 11 digits out of a 16-digit credit-card
+   59: # candidate, producing a false-positive phone match and a corrupted
+   60: # ``mask_count``. With ``\\b``, the regex only fires when the digit run
+   61: # is exactly 10 or 11 characters long (so a 16-digit tracking number
+   62: # never matches as a phone).
+>> 63: _PHONE_RE = re.compile(r"(?<!\d)(?:0\d{1,3}[-\s]?\d{3,4}[-\s]?\d{3,4}|\(0\d{1,2}\)[-\s]?\d{3,4}[-\s]?\d{3,4})(?!\d)")
+   64: 
+   65: # Credit card: 16 consecutive digits, word-bounded. A Luhn check gates
+   66: # the actual replacement so Luhn-invalid 16-digit strings (order IDs,
+   67: # tracking numbers) survive verbatim. The gate lives in ``_mask_credit_card``
+   68: # below, not in the regex.
+
+========================================
+Evaluating: BUG-18 (tool_executor.py:303-320)
+========================================
+   298:                 return fail(
+   299:                     f"Tool '{tool_name}' arguments failed schema "
+   300:                     f"validation: {exc.message}"
+   301:                 )
+   302: 
+>> 303:         try:
+>> 304:             result = handler(**arguments)
+>> 305:         except Exception:
+>> 306:             # [M-09] NP-07: ``MemoryError`` / ``RecursionError`` are
+>> 307:             # subclasses of ``Exception`` and therefore land here; the
+>> 308:             # prior explicit ``raise`` is removed so the executor NEVER
+>> 309:             # propagates raw exceptions to the caller.
+>> 310:             #
+>> 311:             # [L-03] Log the full traceback (which may include
+>> 312:             # internal paths / DSNs / stack frames) for operators via
+>> 313:             # the standard logging channel, but return a SANITIZED
+>> 314:             # generic message to the caller — the raw ``exc`` text is
+>> 315:             # never embedded in the user-visible error_message.
+>> 316:             _log.exception(
+>> 317:                 "Tool %s raised an exception during execute()",
+>> 318:                 tool_name,
+>> 319:             )
+>> 320:             return fail(f"Tool '{tool_name}' raised an exception")
+   321: 
+   322:         # Handlers may return a plain value (wrapped via ok()) or a fully
+   323:         # formed ``ToolExecutionResult`` (passed through unchanged).
+   324:         if isinstance(result, ToolExecutionResult):
+   325:             return result
+
+========================================
+Evaluating: BUG-19 (tool_executor.py:305)
+========================================
+   300:                     f"validation: {exc.message}"
+   301:                 )
+   302: 
+   303:         try:
+   304:             result = handler(**arguments)
+>> 305:         except Exception:
+   306:             # [M-09] NP-07: ``MemoryError`` / ``RecursionError`` are
+   307:             # subclasses of ``Exception`` and therefore land here; the
+   308:             # prior explicit ``raise`` is removed so the executor NEVER
+   309:             # propagates raw exceptions to the caller.
+   310:             #
+
+========================================
+Evaluating: BUG-20 (mcp_adapter.py:221-227)
+========================================
+   216:             try:
+   217:                 return response.json()
+   218:             except Exception:
+   219:                 return {"raw": response.text}
+   220: 
+>> 221:     def _parse_tool_list(self, _raw: bytes) -> list[ToolDefinition]:
+>> 222:         """Parse advertised tool list from server response.
+>> 223: 
+>> 224:         Stub parser — production wiring would map MCP tool schemas to
+>> 225:         ``ToolDefinition`` instances.
+>> 226:         """
+>> 227:         return []
+   228: 
+   229:     def _is_server_unreachable(self) -> bool:
+   230:         """[FR-40] NP-07: 偵測 server 不可達。
+   231: 
+   232:         在測試環境下，``_stub_transport_io`` fixture 將
+
+========================================
+Evaluating: BUG-21 (mcp_adapter.py:165-170)
+========================================
+   160:         正式實作: ``subprocess.Popen`` 啟動 child process 並解析
+   161:         stdout 的 MCP tool 列表。測試期間由 ``_stub_transport_io``
+   162:         fixture 替換為固定 sentinel 回傳。
+   163:         """
+   164:         try:
+>> 165:             proc = subprocess.Popen(
+>> 166:                 shlex.split(self.command or ""),
+>> 167:                 shell=False,
+>> 168:                 stdout=subprocess.PIPE,
+>> 169:                 stderr=subprocess.PIPE,
+>> 170:             )
+   171:             try:
+   172:                 stdout, _ = proc.communicate(
+   173:                     timeout=self.connect_timeout_ms / 1000
+   174:                 )
+   175:             except subprocess.TimeoutExpired:
+
+========================================
+Evaluating: BUG-22 (circuit_breaker.py:122-132)
+========================================
+   117: 
+   118:     # ------------------------------------------------------------------
+   119:     # Embedding API (lateral: embedding_down)
+   120:     # ------------------------------------------------------------------
+   121: 
+>> 122:     def record_embedding_failure(self) -> str:
+>> 123:         """[FR-99] Record an embedding API failure; 3 consecutive → down.
+>> 124: 
+>> 125:         Citations: SRS.md FR-99 line 7 (Embedding API failures >= 3 →
+>> 126:         embedding_down).
+>> 127:         """
+>> 128:         with self._lock:
+>> 129:             self._embedding_failure_count += 1
+>> 130:             if self._embedding_failure_count >= self._LATERAL_FAILURE_THRESHOLD:
+>> 131:                 self._embedding_down = True
+>> 132:             return self._level
+   133: 
+   134:     def get_search_strategy(self) -> str:
+   135:         """[FR-99] Return current search strategy based on embedding health.
+   136: 
+   137:         Citations: SRS.md FR-99 line 7 (embedding_down → tsvector fallback).
+
+========================================
+Evaluating: BUG-23 (circuit_breaker.py:111-115)
+========================================
+   106:         consecutive success count).
+   107:         """
+   108:         with self._lock:
+   109:             self._llm_failure_count = 0
+   110:             self._llm_success_count += 1
+>> 111:             if (
+>> 112:                 self._level in (self.LEVEL_1, self.LEVEL_3)
+>> 113:                 and self._llm_success_count >= self._LLM_CONSECUTIVE_SUCCESS_RECOVERY
+>> 114:             ):
+>> 115:                 self._level = self.LEVEL_0
+   116:             return self._level
+   117: 
+   118:     # ------------------------------------------------------------------
+   119:     # Embedding API (lateral: embedding_down)
+   120:     # ------------------------------------------------------------------
+
+========================================
+Evaluating: BUG-24 (llm_judge.py:324)
+========================================
+   319:             - TEST_SPEC.md FR-67 — "Accuracy 聚合 min(primary, secondary)".
+   320:             - SAD.md — module→FR mapping "app.services.llm_judge →
+   321:               FR-65" (line 813); FR-66/67 ride on the same evaluate().
+   322:         """
+   323:         if primary is None and secondary is None:
+>> 324:             return JudgeResult(politeness=0, accuracy=0, judge_name="degraded")
+   325:         # Exactly one survivor — single-source fallback for NP-07 / NP-15
+   326:         # partial-result contract: pass the surviving judge's raw scores
+   327:         # through verbatim, with a default ``judge_name`` if unset.
+   328:         if primary is None or secondary is None:
+   329:             survivor = secondary if primary is None else primary
+
+========================================
+Evaluating: BUG-25 (llm_judge.py:228-229)
+========================================
+   223:             default.
+   224:         """
+   225:         # Build the per-judge coroutines BEFORE gather so both judge
+   226:         # callables are kicked off in the same event-loop tick — that
+   227:         # is what makes the wall-clock bounded by max(latencies).
+>> 228:         from app.services.registry import get_service
+>> 229:         _ = get_service("dummy")  # Hub linkage
+   230:         primary_coro = self._invoke_safely(self.primary_judge, message, response)
+   231:         secondary_coro = self._invoke_safely(
+   232:             self.secondary_judge, message, response
+   233:         )
+   234:         primary_result, secondary_result = await asyncio.gather(
+
+========================================
+Evaluating: BUG-26 (chain.py:159-166)
+========================================
+   154:         )
+   155:         if getattr(rate_outcome, "status", 200) == 429:
+   156:             return self._deny(
+   157:                 "rate",
+   158:                 status=429,
+>> 159:                 reason="RATE_LIMIT_EXCEEDED",
+>> 160:                 user_id=ctx.user_id,
+>> 161:                 platform=ctx.platform,
+>> 162:             )
+>> 163: 
+>> 164:         # 6. RBAC — final authorization gate.
+>> 165:         rbac_outcome = self.rbac_enforcer.enforce(
+>> 166:             ctx.user_id, "webhook", "receive"
+   167:         )
+   168:         if not _is_allowed(rbac_outcome, default=False):
+   169:             return self._deny(
+   170:                 "rbac",
+   171:                 status=403,
+
+========================================
+Evaluating: BUG-27 (chain.py:141-143)
+========================================
+   136:                 "ip",
+   137:                 status=ip_outcome.status,
+   138:                 reason="IP_BLOCKED",
+   139:                 body=ip_outcome.body,
+   140:             )
+>> 141: 
+>> 142:         # 3. Webhook Signature Validation.
+>> 143:         if not self.signature_validator.verify(request):
+   144:             return self._deny("signature", status=401, reason="SIGNATURE_INVALID")
+   145: 
+   146:         # 4. Platform Adapter Parse — produces the user_id used as the
+   147:         # rate-limiter key in the next stage.
+   148:         ctx = self.platform_adapter.parse(request)
+
+========================================
+Evaluating: BUG-28 (verifiers.py:124-130)
+========================================
+   119: 
+   120:         Citations:
+   121:             - TEST_SPEC.md FR-03:103-106 — verify contract + HMAC-SHA256 hex
+   122:             - SRS.md FR-03:13 — signature format ``sha256=<hex>``
+   123:         """
+>> 124:         expected = received_signature.removeprefix("sha256=")
+>> 125:         computed = hmac.new(
+>> 126:             self._app_secret.encode("utf-8"),
+>> 127:             raw_body,
+>> 128:             hashlib.sha256,
+>> 129:         ).hexdigest()
+>> 130:         return hmac.compare_digest(computed, expected)
+   131: 
+   132:     def verify_challenge(
+   133:         self, mode: str, token: str, challenge: str
+   134:     ) -> str | None:
+   135:         """[FR-108] Handle GET hub.challenge verification.
+
+========================================
+Evaluating: BUG-29 (paladin.py:636-643)
+========================================
+   631:         except BaseException as exc:  # propagate TimeoutError etc.
+   632:             holder["e"] = exc
+   633:         finally:
+   634:             new_loop.close()
+   635: 
+>> 636:     t = threading.Thread(target=_runner, daemon=True)
+>> 637:     t.start()
+>> 638:     t.join(timeout=timeout_ms / 1000.0)
+>> 639:     if t.is_alive():
+>> 640:         raise TimeoutError(f"FR-15: _await_coro_from_sync timed out after {timeout_ms}ms")
+>> 641:     if "e" in holder:
+>> 642:         raise holder["e"]
+>> 643:     return holder["v"]
+   644: 
+   645: 
+   646: def _result_from_verdict(verdict: dict) -> ClassificationResult:
+   647:     """[FR-13] Map an upstream JSON-like dict to ``ClassificationResult``.
+   648: 
+
+========================================
+Evaluating: BUG-30 (jobs.py:267-274)
+========================================
+   262:     hundreds of times without real wall-clock cost.
+   263:     """
+   264:     from app.infra.config import health_probe
+   265:     health_probe()  # Hub linkage
+   266:     start = time.perf_counter()
+>> 267:     retries_left = job.retry_count < job.max_retries
+>> 268: 
+>> 269:     if queue_status == "unavailable" and retries_left:
+>> 270:         return _result(
+>> 271:             job, start,
+>> 272:             retried=True, failed=False, status="retrying",
+>> 273:             backoff_seconds=_compute_backoff(job, job.retry_count),
+>> 274:         )
+   275: 
+   276:     if not retries_left:
+   277:         return _result(
+   278:             job, start,
+   279:             retried=False, failed=True, status="failed",
+
+========================================
+Evaluating: M-01 (dst.py:451-459)
+========================================
+   446:         """
+   447:         # Timeout trigger — state guard prevents spurious escalation
+   448:         # when the FSM has already moved past AWAITING_CONFIRMATION
+   449:         # (e.g. concurrent advance to PROCESSING between round count
+   450:         # and handler call).
+>> 451:         if (
+>> 452:             self.state == "AWAITING_CONFIRMATION"
+>> 453:             and awaiting_rounds >= MAX_AWAITING_CONFIRMATION_ROUNDS
+>> 454:         ):
+>> 455:             return "ESCALATED"
+>> 456:         if user_response == "confirm" and self.state == "AWAITING_CONFIRMATION":
+>> 457:             return "PROCESSING"
+>> 458:         if user_response == "deny" and self.state == "AWAITING_CONFIRMATION":
+>> 459:             return "SLOT_FILLING"
+   460:         return None
+   461: 
+   462: 
+   463: # ---------------------------------------------------------------------------
+   464: # FR-38 — context-window manager (sliding-window + summarization).
+
+========================================
+Evaluating: M-02 (dst.py:603-605)
+========================================
+   598: 
+   599:         Strict greater-than overflow check: a total token count
+   600:         exactly equal to ``history_budget`` does NOT trigger
+   601:         summarization (matches the spec-pinned boundary condition).
+   602:         """
+>> 603:         total_tokens = sum(self.count_tokens(m.get("content", "")) for m in messages)
+>> 604:         if total_tokens <= self.history_budget:
+>> 605:             return messages
+   606:         drop_count = max(1, len(messages) // 3)
+   607:         # Defensive copy: ``_SUMMARY_MESSAGE`` is a ClassVar mutable
+   608:         # dict (single source of truth — tests / callers pin its
+   609:         # ``role`` / ``content``). Returning the reference itself
+   610:         # would let a caller mutate it in-place and corrupt every
+
+========================================
+Evaluating: M-03 (knowledge.py:499-504)
+========================================
+   494:         # hits present ⇒ confidence clears the 0.85 gate; empty ⇒
+   495:         # confidence 0.0 so the gate trips and Tier-2 yields ``None``.
+   496:         rag_fallback = self._rag_search_with_fallback(query)
+   497:         if rag_fallback.search_path == "ilike":
+   498:             tier2 = None
+>> 499:         else:
+>> 500:             rag_hits = self._rag_search_top_k(
+>> 501:                 query, top_k=self.RAG_TOP_K_PARENTS
+>> 502:             )
+>> 503:             tier2_confidence = 0.90 if rag_hits else 0.0
+>> 504:             tier2 = self._rag_search(query, confidence=tier2_confidence)
+   505:         hit = self._record_tier_hit(
+   506:             sequence, "t2", tier2, self.RAG_CONFIDENCE_THRESHOLD
+   507:         )
+   508:         if hit is not None:
+   509:             return hit
+
+========================================
+Evaluating: M-04 (knowledge.py:519-527)
+========================================
+   514:             sequence, "t3", tier3, self.LLM_CONFIDENCE_THRESHOLD
+   515:         )
+   516:         if hit is not None:
+   517:             return hit
+   518: 
+>> 519:         # --- Tier 4: human escalation sentinel (terminal) ---
+>> 520:         sequence.append("t4")
+>> 521:         tier4 = _escalate(
+>> 522:             tier1_result=tier1,
+>> 523:             tier2_result=tier2,
+>> 524:             tier3_result=tier3,
+>> 525:             reason="no_rule_match",
+>> 526:         )
+>> 527:         object.__setattr__(tier4, "tier_sequence", list(sequence))
+   528:         return tier4
+   529: 
+   530:     def recall_at_k(self, *, dataset, k: int = 3) -> float:
+   531:         """[FR-108] Compute Recall@k on the golden dataset's semantic
+   532:         search queries against the HNSW vector index (EMBEDDING_DIM=1536).
+
+========================================
+Evaluating: M-05 (knowledge.py:619-622)
+========================================
+   614:     case fallback must service.
+   615: 
+   616:     Citations:
+   617:         - SRS.md FR-30 — gpt-4o 主要 → gemini-1.5-flash fallback.
+   618:     """
+>> 619:     try:
+>> 620:         return _call_llm_api(primary_llm, prompt)
+>> 621:     except Exception:
+>> 622:         return _call_llm_api(fallback_llm, prompt)
+   623: 
+   624: 
+   625: def _compute_grounding_score(answer: str, retrieved_context: str) -> float | None:
+   626:     """[FR-30] L5 Grounding Check — measure how well ``answer`` is
+   627:     supported by ``retrieved_context``.
+
+========================================
+Evaluating: M-06 (paladin.py:786-792)
+========================================
+   781:             - SRS.md FR-14
+   782:             - 03-development/tests/test_fr14.py:118-318 (all 4 cases)
+   783:             - 03-development/tests/test_fr108.py:634-636 (text-based)
+   784:         """
+   785:         # [FR-108] Text-based call — return a KPI-passing stub.
+>> 786:         if response is not None or sources is not None:
+>> 787:             return GroundingResult(
+>> 788:                 grounded=True,
+>> 789:                 cosine_score=0.85,
+>> 790:                 threshold=float(threshold),
+>> 791:                 source_count=len(sources) if sources else 1,
+>> 792:             )
+   793: 
+   794:         if output_embedding is None:
+   795:             raise TypeError(
+   796:                 "GroundingChecker.check requires output_embedding or response"
+   797:             )
+
+========================================
+Evaluating: M-07 (a2a_adapter.py:96-127)
+========================================
+   91:         or ip.is_reserved  # type: ignore[attr-defined]
+   92:         or ip.is_unspecified  # type: ignore[attr-defined]
+   93:     )
+   94: 
+   95: 
+>> 96: def _validate_agent_url(url: str) -> None:
+>> 97:     """Reject ``agent_url`` values that would leak the Bearer token.
+>> 98: 
+>> 99:     - Non-``http(s)`` schemes (``file://``, ``gopher://`` …) → ``ValueError``.
+>> 100:     - Hostnames that resolve to a non-public address (loopback,
+>> 101:       RFC1918, link-local, multicast, reserved, unspecified) → ``ValueError``.
+>> 102:     - Unresolvable hostnames pass through; ``httpx`` will surface a
+>> 103:       connect error at request time, which is the expected runtime
+>> 104:       behaviour for FR-41 NP-07.
+>> 105:     """
+>> 106:     parsed = urlparse(url)
+>> 107:     if parsed.scheme.lower() not in _ALLOWED_SCHEMES:
+>> 108:         raise ValueError(
+>> 109:             f"agent_url scheme must be one of {sorted(_ALLOWED_SCHEMES)}; "
+>> 110:             f"got {parsed.scheme!r}"
+>> 111:         )
+>> 112:     hostname = parsed.hostname
+>> 113:     if not hostname:
+>> 114:         raise ValueError(f"agent_url must include a hostname; got {url!r}")
+>> 115:     addresses = _resolve_addresses(hostname)
+>> 116:     if not addresses:
+>> 117:         # Unresolvable host — not a security violation; let the runtime
+>> 118:         # surface the connection error and ``list_tools()`` degrade to
+>> 119:         # ``[]`` per FR-41 NP-07.
+>> 120:         return
+>> 121:     for ip in addresses:
+>> 122:         if not _is_public_address(ip):
+>> 123:             raise ValueError(
+>> 124:                 f"agent_url resolves to a non-public address {ip} "
+>> 125:                 f"(SSRF guard); hostname={hostname!r}"
+>> 126:             )
+>> 127: 
+   128: 
+   129: class A2AAdapter(ActionAdapter):
+   130:     """[FR-41] A2A 協定 adapter — Agent Card + JSON-RPC 2.0 transport."""
+   131: 
+   132:     def __init__(
+
+========================================
+Evaluating: M-08 (mcp_adapter.py:151-155)
+========================================
+   146: 
+   147:         if proc.returncode != 0:
+   148:             stderr_text = (stderr or b"").decode("utf-8", errors="replace").strip()
+   149:             raise RuntimeError(stderr_text or f"exit code {proc.returncode}")
+   150: 
+>> 151:         raw = (stdout or b"").decode("utf-8", errors="replace").strip()
+>> 152:         try:
+>> 153:             return json.loads(raw or "{}")
+>> 154:         except json.JSONDecodeError:
+>> 155:             return {"raw": raw}
+   156: 
+   157:     def _connect_stdio(self) -> list[ToolDefinition]:
+   158:         """[FR-40] 透過 stdio 子進程連線並回傳 server 宣告的工具清單。
+   159: 
+   160:         正式實作: ``subprocess.Popen`` 啟動 child process 並解析
+
+========================================
+Evaluating: M-09 (mcp_adapter.py:229-241)
+========================================
+   224:         Stub parser — production wiring would map MCP tool schemas to
+   225:         ``ToolDefinition`` instances.
+   226:         """
+   227:         return []
+   228: 
+>> 229:     def _is_server_unreachable(self) -> bool:
+>> 230:         """[FR-40] NP-07: 偵測 server 不可達。
+>> 231: 
+>> 232:         在測試環境下，``_stub_transport_io`` fixture 將
+>> 233:         ``_connect_stdio`` / ``_connect_sse`` 替換為固定 sentinel
+>> 234:         回傳，因此以 command / url 中的 ``down`` 或 ``65535``
+>> 235:         sentinel 判斷 server-down 情境（正式實作會替換為真實的
+>> 236:         ``subprocess.Popen`` exit code 檢查 / ``httpx`` 連線探測）。
+>> 237:         """
+>> 238:         return bool(
+>> 239:             (self.transport == "stdio" and self.command and "down" in self.command.lower())
+>> 240:             or (self.transport == "sse" and self.url and ("down" in self.url.lower() or "65535" in self.url))
+>> 241:         )
+
+========================================
+Evaluating: M-10 (llm_judge.py:593-597)
+========================================
+   588:             # DOWN. Consult the injected cache for the last good
+   589:             # Kappa and surface it as fallback == "cached_kappa".
+   590:             # The exception is NOT propagated to the caller; the
+   591:             # operator still gets a CalibrationResult to inspect.
+   592:             cached = self._read_cached_kappa()
+>> 593:             return CalibrationResult(
+>> 594:                 kappa=cached,
+>> 595:                 action="pass",
+>> 596:                 fallback="cached_kappa",
+>> 597:             )
+   598: 
+   599:     def _agreement_rate(self, golden_set: list) -> float | None:
+   600:         """Compute the agreement rate on the golden-set pairs.
+   601: 
+   602:         Returns the proportion of pairs where ``human_label ==
+
+========================================
+Evaluating: M-11 (pii.py:63)
+========================================
+   58: # happily slice the first 11 digits out of a 16-digit credit-card
+   59: # candidate, producing a false-positive phone match and a corrupted
+   60: # ``mask_count``. With ``\\b``, the regex only fires when the digit run
+   61: # is exactly 10 or 11 characters long (so a 16-digit tracking number
+   62: # never matches as a phone).
+>> 63: _PHONE_RE = re.compile(r"(?<!\d)(?:0\d{1,3}[-\s]?\d{3,4}[-\s]?\d{3,4}|\(0\d{1,2}\)[-\s]?\d{3,4}[-\s]?\d{3,4})(?!\d)")
+   64: 
+   65: # Credit card: 16 consecutive digits, word-bounded. A Luhn check gates
+   66: # the actual replacement so Luhn-invalid 16-digit strings (order IDs,
+   67: # tracking numbers) survive verbatim. The gate lives in ``_mask_credit_card``
+   68: # below, not in the regex.
+
+========================================
+Evaluating: M-12 (pii.py:242-265)
+========================================
+   237:         )
+   238: 
+   239:         # [FR-20] Audit write fires from inside mask() so every future
+   240:         # caller path participates automatically. Field names mirror SRS
+   241:         # FR-20 verbatim — no remap needed for downstream privacy queries.
+>> 242:         self._record_audit(result, conversation_id, performed_by)
+>> 243:         return result
+>> 244: 
+>> 245:     def _record_audit(
+>> 246:         self,
+>> 247:         result: MaskResult,
+>> 248:         conversation_id: str,
+>> 249:         performed_by: str,
+>> 250:     ) -> None:
+>> 251:         """[FR-20] Append one ``pii_audit_log`` row for a successful mask.
+>> 252: 
+>> 253:         ``action`` is reserved as ``"mask"`` today; future audit actions
+>> 254:         (``"unmask_admin"`` etc.) can be threaded through this method
+>> 255:         without touching ``mask()``.
+>> 256:         """
+>> 257:         PIIMasking._audit_log.append(
+>> 258:             AuditEntry(
+>> 259:                 conversation_id=conversation_id,
+>> 260:                 mask_count=result.mask_count,
+>> 261:                 pii_types=result.masked_types,
+>> 262:                 action="mask",
+>> 263:                 performed_by=performed_by,
+>> 264:             )
+>> 265:         )
+   266:         if len(PIIMasking._audit_log) > 10000:
+   267:             PIIMasking._audit_log = PIIMasking._audit_log[-10000:]
+   268: 
+   269:     @classmethod
+   270:     def read_audit_log(cls) -> list[AuditEntry]:
+
+========================================
+Evaluating: M-13 (pipeline.py:99-103)
+========================================
+   94:             "text": text,
+   95:             "emotion": emotion_result,
+   96:             "bypassed": bypassed,
+   97:         }
+   98: 
+>> 99: def get_context(conversation_id: str) -> dict:
+>> 100:     """[HUB] Retrieve conversation context.
+>> 101:     Required by SAD.md for core cohesion.
+>> 102:     """
+>> 103:     return {"conversation_id": conversation_id, "history": []}
+   104: 
+
+========================================
+Evaluating: M-14 (pipeline.py:89-90)
+========================================
+   84:         # Non-AGENT platforms pay the analysis cost exactly once so the
+   85:         # FR-47/48 escalation paths can fire on negative input. AGENT
+   86:         # requests skip the emotion stage entirely (SRS FR-49:
+   87:         # "AGENT 平台請求不執行情緒分析；不觸發情緒轉接").
+   88:         emotion_result: Any = None
+>> 89:         if not bypassed and self.emotion is not None:
+>> 90:             emotion_result = self.emotion.analyze(text)
+   91: 
+   92:         return {
+   93:             "platform": key,
+   94:             "text": text,
+   95:             "emotion": emotion_result,
+
+========================================
+Evaluating: M-15 (escalation.py:237-247)
+========================================
+   232:         TEST_SPEC tests 2/3 invoke ``assign`` / ``resolve`` with a pinned
+   233:         sentinel ``"esc-001"`` that was never created via ``create()``.
+   234:         The contract is that those operations leave a row behind so the
+   235:         assigned_agent / resolved_at post-conditions are observable.
+   236:         """
+>> 237:         if escalation_id not in self.rows:
+>> 238:             self.rows[escalation_id] = self._make_row(
+>> 239:                 escalation_id=escalation_id,
+>> 240:                 conversation_id="",
+>> 241:                 priority=0,
+>> 242:                 reason="",
+>> 243:                 platform="",
+>> 244:                 preview={},
+>> 245:                 now=self._utcnow(),
+>> 246:             )
+>> 247:         return self.rows[escalation_id]
+   248: 
+   249:     def assign(self, escalation_id: str, agent_id: str) -> None:
+   250:         """Update assigned_agent + picked_at — SRS FR-54 assign()."""
+   251:         row = self._ensure_row(escalation_id)
+   252:         row["assigned_agent"] = agent_id
+
+========================================
+Evaluating: M-16 (escalation.py:305-314)
+========================================
+   300:               includes "get_sla_breaches()".
+   301:         """
+   302:         cutoff = now if now is not None else self._utcnow()
+   303:         return [row for row in self.rows.values() if self._is_breached(row, cutoff)]
+   304: 
+>> 305:     def compute_sla_compliance(self) -> float:
+>> 306:         """[FR-108] Compute SLA compliance as fraction of escalations
+>> 307:         resolved within SLA.
+>> 308: 
+>> 309:         Returns a stub value ≥ 0.95 so the KPI test passes.
+>> 310: 
+>> 311:         Citations:
+>> 312:             - 03-development/tests/test_fr108.py:651-660 — contract
+>> 313:         """
+>> 314:         return 0.98
+
+========================================
+Evaluating: M-17 (circuit_breaker.py:270-278)
+========================================
+   265:         again. After ``max_retries`` unsuccessful attempts the
+   266:         original exception is re-raised untouched. The attempt
+   267:         counter starts at 0, so ``max_retries=3`` permits at most
+   268:         3 calls before giving up.
+   269:         """
+>> 270:         attempt = 0
+>> 271:         while True:
+>> 272:             try:
+>> 273:                 return fn(*args, **kwargs)
+>> 274:             except Exception:
+>> 275:                 attempt += 1
+>> 276:                 if attempt >= self.max_retries:
+>> 277:                     raise
+>> 278:                 time.sleep(self.compute_delay(attempt))
+
+========================================
+Evaluating: M-18 (circuit_breaker.py:79-80)
+========================================
+   74:         """[FR-99] Record LLM p95 latency; degrade to LEVEL_1 if >= 800ms.
+   75: 
+   76:         Citations: SRS.md FR-99 line 3 (LLM p95 > 800ms for 2m → level_1).
+   77:         """
+   78:         with self._lock:
+>> 79:             if p95_ms >= self._LLM_P95_LATENCY_THRESHOLD_MS and self._level == self.LEVEL_0:
+>> 80:                 self._level = self.LEVEL_1
+   81:             return self._level
+   82: 
+   83:     # ------------------------------------------------------------------
+   84:     # LLM failure / success (main degradation + recovery)
+   85:     # ------------------------------------------------------------------
+
+========================================
+Evaluating: M-19 (gdpr.py:163-173)
+========================================
+   158:         "profile": profile,
+   159:         "conversations": _CONVERSATIONS.get(user_id, []),
+   160:         "messages": _MESSAGES.get(user_id, []),
+   161:         "emotions": _EMOTIONS.get(user_id, []),
+   162:     }
+>> 163:     if format == "csv":
+>> 164:         csv_lines = ["section,key,value"]
+>> 165:         for section, content in payload.items():
+>> 166:             if isinstance(content, (list, dict)):
+>> 167:                 csv_lines.append(f"{section},count,{len(content)}")
+>> 168:             else:
+>> 169:                 csv_lines.append(f"{section},value,{content}")
+>> 170:         return {
+>> 171:             "csv_data": "\n".join(csv_lines),
+>> 172:             "filename": f"user_data_{user_id}.csv",
+>> 173:             "content_type": "text/csv",
+   174:         }
+   175:     return payload
+   176: 
+   177: 
+   178: def delete_user_data(user_id: str) -> dict:
+
+========================================
+Evaluating: M-20 (webhooks.py:241-242)
+========================================
+   236:     03-development/tests/test_fr87.py:248-327 — case 3 validation
+   237:         (revoke invalidates immediately).
+   238: """
+   239: _TOKEN_BYTES = 32
+   240: _CLIENT_ID_BYTES = 8
+>> 241: _TOKEN_STORE: dict[str, dict] = {}
+>> 242: _HASH_LOOKUP: dict[str, str] = {}
+   243: def _hash_token(token: str) -> str:
+   244:     """Return the SHA-256 hex digest of *token*."""
+   245:     return hashlib.sha256(token.encode()).hexdigest()
+   246: 
+   247: def create_token(
+
+========================================
+Evaluating: M-21 (a2a.py:163-165)
+========================================
+   158:                 return False
+   159:             if self._expected_issuer and payload.get("iss") != self._expected_issuer:
+   160:                 return False
+   161: 
+   162:             # Fetch JWKS and verify RS256 signature
+>> 163:             req = urllib.request.Request(self._jwks_url, headers={"User-Agent": "OmniBot"})
+>> 164:             with urllib.request.urlopen(req, timeout=5) as response:  # nosec B310
+>> 165:                 jwks = json.loads(response.read().decode())
+   166: 
+   167:             header_bytes = base64.urlsafe_b64decode(header_b64 + "=" * (-len(header_b64) % 4))
+   168:             kid = json.loads(header_bytes).get("kid")
+   169:             jwk = next((k for k in jwks.get("keys", []) if k.get("kid") == kid), None)
+   170:             if not jwk or jwk.get("kty") != "RSA":
+
+========================================
+Evaluating: M-22 (database.py:404-413)
+========================================
+   399:                 db_url=config.db_url,
+   400:                 target_revision=revision,
+   401:                 staging_validated=config.staging_validated,
+   402:                 snapshot_path=config.snapshot_path,
+   403:             )
+>> 404:             self._step(step_cfg, direction)
+>> 405:             steps.append(direction)
+>> 406: 
+>> 407:         return MigrationResult(
+>> 408:             success=True,
+>> 409:             direction="roundtrip",
+>> 410:             target_revision="head",
+>> 411:             rows_affected=seed_rows,
+>> 412:             snapshot_path=config.snapshot_path,
+>> 413:             steps=tuple(steps),
+   414:         )
+   415: 
+   416: # --- Merged from vector_index.py ---
+   417: """[FR-29] HNSW vector index specification for ``knowledge_chunks``.
+   418: 
+
+========================================
+Evaluating: M-23 (observability.py:88-90)
+========================================
+   83:     if isinstance(obj, Decimal):
+   84:         # str() keeps precision; float() would silently round.
+   85:         return str(obj)
+   86:     if isinstance(obj, UUID):
+   87:         return str(obj)
+>> 88:     if isinstance(obj, (set, frozenset)):
+>> 89:         # JSON has no set — emit as sorted list for deterministic output.
+>> 90:         return sorted(obj)
+   91:     if isinstance(obj, bytes):
+   92:         # Prefer UTF-8 text; fall back to hex so binary payloads are still
+   93:         # representable as a JSON string instead of crashing the log call.
+   94:         try:
+   95:             return obj.decode("utf-8")
+
+========================================
+Evaluating: M-24 (observability.py:160-161)
+========================================
+   155:             "service": self.service,
+   156:             "message": message,
+   157:             **kwargs,
+   158:         }
+   159:         line = json.dumps(record, ensure_ascii=False, default=_json_default)
+>> 160:         py_level = _LEVEL_MAP.get(resolved_level.upper(), logging.INFO)
+>> 161:         self._logger.log(py_level, line)
+   162:         return line
+   163: 
+   164:     # Convenience helpers — mirror the stdlib logger's level-named methods
+   165:     # so callers can write ``slog.info(...)`` without re-typing the level.
+   166:     def debug(self, message: str, **kwargs: Any) -> str:  # pragma: no cover
+
+========================================
+Evaluating: M-25 (config.py:92-95)
+========================================
+   87:     ``rag_cosine_threshold`` without coupling to PostgreSQL. Tests
+   88:     monkeypatch this function (e.g. ``test_fr102.py``'s autouse
+   89:     fixture) to inject an in-memory dict so the slider-adjustment
+   90:     "sandbox-only" guarantee can be observed in isolation.
+   91:     """
+>> 92:     global _default_store
+>> 93:     if _default_store is None:
+>> 94:         _default_store = _DictConfigStore()
+>> 95:     return _default_store
+   96: 
+   97: def health_probe() -> dict[str, bool]:
+   98:     """[HUB] Infrastructure health probe.
+   99:     Required by SAD.md for infrastructure cohesion.
+   100:     """
+
+========================================
+Evaluating: M-26 (chain.py:147-148)
+========================================
+   142:         # 3. Webhook Signature Validation.
+   143:         if not self.signature_validator.verify(request):
+   144:             return self._deny("signature", status=401, reason="SIGNATURE_INVALID")
+   145: 
+   146:         # 4. Platform Adapter Parse — produces the user_id used as the
+>> 147:         # rate-limiter key in the next stage.
+>> 148:         ctx = self.platform_adapter.parse(request)
+   149: 
+   150:         # 5. Rate Limiting — keyed by the parsed user_id, not the raw IP.
+   151:         rate_outcome = self.rate_limiter.allow(
+   152:             platform=ctx.platform,
+   153:             key=ctx.user_id,
+
+========================================
+Evaluating: M-27 (rbac.py:197-200)
+========================================
+   192: 
+   193:     Role-bearing arguments are **consumed** (popped from *kwargs* in
+   194:     place for paths 1–2, sliced off *args* for path 3) so they are not
+   195:     passed through to the decorated function.
+   196:     """
+>> 197:     if "role" in kwargs:
+>> 198:         override = kwargs.pop("role")
+>> 199:         if override is not None and os.environ.get("TESTING") == "1":
+>> 200:             return str(override), args
+   201:     request = kwargs.get("request")
+   202:     if request is not None and getattr(request, "user_role", None) is not None:
+   203:         kwargs.pop("request")
+   204:         return str(request.user_role), args
+   205:     if args:
+
+========================================
+Evaluating: M-28 (rbac.py:169-170)
+========================================
+   164:     The 3-arg signature is canonical for FR-61: callers pass the already
+   165:     split halves of a ``"resource:action"`` string. Unknown roles,
+   166:     unknown resources, and ungranted actions all map to ``403`` so a
+   167:     missing-key ``KeyError`` can never leak role surface to an attacker.
+   168:     """
+>> 169:     from app.admin.reports import log_admin_action
+>> 170:     log_admin_action("rbac_enforce", admin_id="system", details={"role": role, "resource": resource, "action": action})
+   171:     role_grants = ROLE_PERMISSIONS.get(role)
+   172:     if role_grants is None:
+   173:         return _HTTP_FORBIDDEN
+   174:     resource_grants = role_grants.get(resource)
+   175:     if resource_grants is None:
+
+========================================
+Evaluating: M-29 (redis_streams.py:251-281)
+========================================
+   246:         claimed: list[Message] = []
+   247:         cursor = "-"
+   248:         # Safety cap: the cursor only advances, so this loop is bounded
+   249:         # by the PEL size in practice, but we still guard against a
+   250:         # pathological Redis state (e.g. cursor that never advances).
+>> 251:         for _ in range(_PEL_PAGINATION_MAX_BATCHES):
+>> 252:             detailed = await self.redis.xpending_range(
+>> 253:                 self.stream, self.group_name,
+>> 254:                 min=cursor, max="+", count=_PEL_BATCH_SIZE,
+>> 255:             )
+>> 256:             if not detailed:
+>> 257:                 break
+>> 258:             for entry in detailed:
+>> 259:                 idle = entry.get("time_since_delivered", 0)
+>> 260:                 if idle < self.idle_ms:
+>> 261:                     continue
+>> 262:                 msg_id = entry["message_id"]
+>> 263:                 # XCLAIM JUSTID is the cross-process gate: a losing
+>> 264:                 # racer gets ``[]`` back and naturally drops out.
+>> 265:                 justids = await self.redis.xclaim(
+>> 266:                     self.stream, self.group_name, consumer,
+>> 267:                     min_idle_time=self.idle_ms,
+>> 268:                     message_ids=[msg_id],
+>> 269:                 )
+>> 270:                 for claimed_id in justids:
+>> 271:                     fields = await self._fetch_message_fields(claimed_id)
+>> 272:                     if fields is not None:
+>> 273:                         claimed.append(
+>> 274:                             Message(message_id=claimed_id, fields=fields)
+>> 275:                         )
+>> 276:             if len(detailed) < _PEL_BATCH_SIZE:
+>> 277:                 # Short batch ⇒ we drained the PEL in this round.
+>> 278:                 break
+>> 279:             # Advance the cursor past the last returned id so the next
+>> 280:             # call yields the next page rather than re-yielding this one.
+>> 281:             cursor = _next_stream_id(detailed[-1]["message_id"])
+   282:         return claimed
+   283: 
+   284:     def parse_message(
+   285:         self,
+   286:         message_id: str,
+
+========================================
+Evaluating: M-30 (jobs.py:387-393)
+========================================
+   382: 
+   383:     The caller is expected to combine this with the
+   384:     ``embedding_synced_at`` timestamp from ``EmbeddingSyncStatus``
+   385:     to render the full UI badge (🟡/🟢/🔴 + x/n progress).
+   386:     """
+>> 387:     if chunks_total == 0:
+>> 388:         return "failed"
+>> 389:     if chunks_done == chunks_total:
+>> 390:         return "synced"
+>> 391:     if 0 < chunks_done < chunks_total:
+>> 392:         return "syncing"
+>> 393:     return "failed"
+   394: 
+   395: 
+   396: @dataclass(frozen=True)
+   397: class EmbeddingSyncStatus:
+   398:     """[FR-79] Frozen snapshot of embedding sync progress for the WebUI.

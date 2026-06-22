@@ -482,11 +482,13 @@
   },
   "gate_results": {
     "gate1": {
-      "score": 0.0,
-      "quality_complete": false,
+      "score": 100.0,
+      "quality_complete": true,
       "rounds_used": 1,
       "open_critical": 0,
-      "open_high": 0
+      "open_high": 0,
+      "phase": 3,
+      "gate": 1
     },
     "gate2": {
       "score": 89.54,

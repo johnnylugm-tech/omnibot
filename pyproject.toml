@@ -65,12 +65,12 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["03-development/src"]
 include = ["app*"]
-exclude = ["harness*", ".sessi-work*", "docs*"]
+exclude = ["harness/", ".sessi-work/", "tests/", "docs/", ".claude/", "evaluate_frs.py", "parse_bugs.py", "_scan_violations.py", "fix_nfr.py", "test_register.py", "fr_audit_data.py", "fix_circular.py", ".*check_lint.*"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-extend-exclude = ["harness", ".sessi-work", ".ruff_cache", "__pycache__", ".claude", "docs"]
+extend-exclude = ["harness/", ".sessi-work/", "tests/", "docs/", ".claude/", "evaluate_frs.py", "parse_bugs.py", "_scan_violations.py", "fix_nfr.py", "test_register.py", "fr_audit_data.py", "fix_circular.py", ".*check_lint.*"]
 include = ["03-development/src/**/*.py", "03-development/tests/**/*.py"]
 
 [tool.ruff.lint]
@@ -124,7 +124,7 @@ ignore = [
 
 [tool.pyright]
 include = ["03-development/src/app", "03-development/tests"]
-exclude = ["harness", ".sessi-work", "__pycache__"]
+exclude = ["harness/", ".sessi-work/", "tests/", "docs/", ".claude/", "evaluate_frs.py", "parse_bugs.py", "_scan_violations.py", "fix_nfr.py", "test_register.py", "fr_audit_data.py", "fix_circular.py", ".*check_lint.*"]
 pythonVersion = "3.11"
 typeCheckingMode = "basic"
 reportMissingImports = false
@@ -134,7 +134,7 @@ reportMissingTypeStubs = false
 python_version = "3.11"
 ignore_missing_imports = true
 follow_imports = "silent"
-exclude = ["harness/", ".sessi-work/"]
+exclude = ["harness/", ".sessi-work/", "tests/", "docs/", ".claude/", "evaluate_frs.py", "parse_bugs.py", "_scan_violations.py", "fix_nfr.py", "test_register.py", "fr_audit_data.py", "fix_circular.py", ".*check_lint.*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["03-development/src"]

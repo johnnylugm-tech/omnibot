@@ -1,12 +1,12 @@
 {
   "summary": {
-    "total": 458,
+    "total": 470,
     "missing": 0,
     "incomplete": 0,
-    "orphaned": 458,
+    "orphaned": 470,
     "critical": 0,
     "major": 0,
-    "minor": 458
+    "minor": 470
   },
   "gaps": [
     {
@@ -44,6 +44,36 @@
       "severity": "minor",
       "reason": "'get_pii_audit_log' has no corresponding specification in SPEC.md",
       "action": "Add spec for get_pii_audit_log or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'RetentionResult' has no corresponding specification in SPEC.md",
+      "action": "Add spec for RetentionResult or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'RetentionPolicy' has no corresponding specification in SPEC.md",
+      "action": "Add spec for RetentionPolicy or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'should_archive' has no corresponding specification in SPEC.md",
+      "action": "Add spec for should_archive or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'should_delete' has no corresponding specification in SPEC.md",
+      "action": "Add spec for should_delete or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'should_anonymize' has no corresponding specification in SPEC.md",
+      "action": "Add spec for should_anonymize or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
@@ -390,8 +420,26 @@
     {
       "type": "ORPHANED",
       "severity": "minor",
+      "reason": "'averify_m2m_token' has no corresponding specification in SPEC.md",
+      "action": "Add spec for averify_m2m_token or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'b64url_dec' has no corresponding specification in SPEC.md",
+      "action": "Add spec for b64url_dec or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
       "reason": "'handle_jsonrpc_call' has no corresponding specification in SPEC.md",
       "action": "Add spec for handle_jsonrpc_call or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'ahandle_jsonrpc_call' has no corresponding specification in SPEC.md",
+      "action": "Add spec for ahandle_jsonrpc_call or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
@@ -428,12 +476,6 @@
       "severity": "minor",
       "reason": "'parse_entries' has no corresponding specification in SPEC.md",
       "action": "Add spec for parse_entries or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'WebhookRegistry' has no corresponding specification in SPEC.md",
-      "action": "Add spec for WebhookRegistry or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
@@ -1260,6 +1302,12 @@
     {
       "type": "ORPHANED",
       "severity": "minor",
+      "reason": "'record_embedding_success' has no corresponding specification in SPEC.md",
+      "action": "Add spec for record_embedding_success or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
       "reason": "'get_search_strategy' has no corresponding specification in SPEC.md",
       "action": "Add spec for get_search_strategy or remove if unnecessary"
     },
@@ -1274,6 +1322,12 @@
       "severity": "minor",
       "reason": "'record_classifier_failure' has no corresponding specification in SPEC.md",
       "action": "Add spec for record_classifier_failure or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'record_classifier_success' has no corresponding specification in SPEC.md",
+      "action": "Add spec for record_classifier_success or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
@@ -1710,6 +1764,18 @@
     {
       "type": "ORPHANED",
       "severity": "minor",
+      "reason": "'BatchImportResult' has no corresponding specification in SPEC.md",
+      "action": "Add spec for BatchImportResult or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'batch_import_knowledge' has no corresponding specification in SPEC.md",
+      "action": "Add spec for batch_import_knowledge or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
       "reason": "'StructuredLogger' has no corresponding specification in SPEC.md",
       "action": "Add spec for StructuredLogger or remove if unnecessary"
     },
@@ -1934,6 +2000,12 @@
       "severity": "minor",
       "reason": "'parse_message' has no corresponding specification in SPEC.md",
       "action": "Add spec for parse_message or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'consume_loop' has no corresponding specification in SPEC.md",
+      "action": "Add spec for consume_loop or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
