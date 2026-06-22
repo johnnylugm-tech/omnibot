@@ -274,20 +274,25 @@ class MCPAdapter(ActionAdapter):
     def _is_server_unreachable(self) -> bool:
         """[FR-40] NP-07: 偵測 server 不可達。
 
-        在測試環境下，``_stub_transport_io`` fixture 將
-        ``_connect_stdio`` / ``_connect_sse`` 替換為固定 sentinel
-        回傳，因此以 command / url 中的 ``down`` 或 ``65535``
-        sentinel 判斷 server-down 情境（正式實作會替換為真實的
-        ``subprocess.Popen`` exit code 檢查 / ``httpx`` 連線探測）。
+        stdio: 先用 shutil.which 確認可執行檔存在；若找不到視為不可達。
+               測試 sentinel「command 中含獨立單詞 down」仍保留向後相容。
+        sse:   port 65535 為測試 sentinel（reserved port，正式 URL 不會用）。
+               real health check 留給 httpx connect 時的 ConnectError 處理，
+               避免 pre-check 引入阻塞的 TCP 連線。
         """
         import re
-        is_stdio_down = False
+        import shutil
+
         if self.transport == "stdio" and self.command:
-            is_stdio_down = bool(re.search(r'\bdown\b', self.command.lower()))
-            
-        is_sse_down = False
+            if re.search(r'\bdown\b', self.command.lower()):
+                return True
+            exe = self.command.split()[0]
+            if exe and not shutil.which(exe):
+                return True
+
         if self.transport == "sse" and self.url:
-            parsed = self.url.lower()
-            is_sse_down = bool(re.search(r'\bdown\b', parsed) or "65535" in parsed)
-            
-        return is_stdio_down or is_sse_down
+            parsed_lower = self.url.lower()
+            if re.search(r'\bdown\b', parsed_lower) or "65535" in parsed_lower:
+                return True
+
+        return False

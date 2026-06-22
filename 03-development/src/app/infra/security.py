@@ -347,7 +347,16 @@ def execute_data_deletion(user_id: str) -> DataDeletionResult:
         - SRS.md FR-92: DELETE /api/v1/users/{user_id}/data
         - TEST_SPEC.md FR-92:1858-1868
     """
-    raise NotImplementedError("Real GDPR data deletion logic not implemented")
+    from app.admin.gdpr import delete_user_data as _gdpr_delete
+    _gdpr_delete(user_id)
+    return DataDeletionResult(
+        profile_null=True,
+        platform_user_id=_PLATFORM_USER_ID_DELETED,
+        messages_redacted=True,
+        messages_content=_MESSAGES_CONTENT_REDACTED,
+        audit_event=_AUDIT_EVENT_GDPR_DELETION,
+        sla_days=_SLA_DAYS,
+    )
 
 # --- Merged from data_retention.py ---
 """[FR-91, FR-20] Data retention policy descriptors (180d archive / 2yr

@@ -176,6 +176,13 @@ class A2AAdapter(ActionAdapter):
         # leak file descriptors.
         self._client: httpx.Client = httpx.Client(timeout=self.timeout)
 
+        # M-07: IP-pinning cache — maps hostname → frozenset of str IPs.
+        # On first validation the resolved IPs are stored; subsequent
+        # calls reject any DNS change to a different set, preventing
+        # DNS-rebinding attacks even when the change happens between
+        # _validate_agent_url() and the actual httpx connect.
+        self._validated_ips: dict[str, frozenset[str]] = {}
+
     # ------------------------------------------------------------------
     # Lifecycle (H-21 — close persistent HTTP client).
     # ------------------------------------------------------------------
@@ -198,6 +205,31 @@ class A2AAdapter(ActionAdapter):
     # ------------------------------------------------------------------
     # Cache / clock hooks (testability surface for FR-41 RED tests).
     # ------------------------------------------------------------------
+    def _check_ip_pinning(self, url: str) -> None:
+        """[M-07] Validate URL and detect DNS rebinding via IP pinning.
+
+        On first call for a given hostname the resolved IPs are cached.
+        Subsequent calls reject any change in the resolved set, preventing
+        DNS-rebinding attacks that occur between _validate_agent_url() and
+        the actual httpx connect.
+        """
+        from urllib.parse import urlparse as _urlparse
+        hostname = _urlparse(url).hostname
+        if not hostname:
+            return
+        _validate_agent_url(url)
+        current_ips = frozenset(str(ip) for ip in _resolve_addresses(hostname))
+        if not current_ips:
+            return
+        pinned = self._validated_ips.get(hostname)
+        if pinned is None:
+            self._validated_ips[hostname] = current_ips
+        elif current_ips != pinned:
+            raise ValueError(
+                f"DNS rebinding detected for {hostname!r}: "
+                f"IPs changed from {pinned} to {current_ips}"
+            )
+
     def _now(self) -> float:
         """[FR-41] 現在時間（測試可透過 ``_force_cache_age`` 偏移）。"""
         return time.time() + self._time_offset
@@ -246,7 +278,7 @@ class A2AAdapter(ActionAdapter):
         self.discovery_count += 1
         url = f"{self.agent_url}/.well-known/agent.json"
         try:
-            _validate_agent_url(self.agent_url)
+            self._check_ip_pinning(self.agent_url)
             response = self._client.get(url)
             response.raise_for_status()
             card = response.json()
@@ -319,7 +351,7 @@ class A2AAdapter(ActionAdapter):
 
         url = f"{self.agent_url}/rpc"
         try:
-            _validate_agent_url(self.agent_url)
+            self._check_ip_pinning(self.agent_url)
             response = self._client.post(
                 url,
                 json=payload,

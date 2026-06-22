@@ -498,10 +498,10 @@ class HybridKnowledge:
             tier2 = None
         else:
             rag_hits = self._rag_search_top_k(
-                query, top_k=self.RAG_TOP_K_PARENTS
+                query, top_k=self.RAG_TOP_K_CHILDREN
             )
             tier2_confidence = 0.90 if rag_hits else 0.0
-            tier2 = self._rag_search(query, confidence=tier2_confidence, top_k=self.RAG_TOP_K_PARENTS)
+            tier2 = self._rag_search(query, confidence=tier2_confidence)
         hit = self._record_tier_hit(
             sequence, "t2", tier2, self.RAG_CONFIDENCE_THRESHOLD
         )
@@ -518,11 +518,17 @@ class HybridKnowledge:
 
         # --- Tier 4: human escalation sentinel (terminal) ---
         sequence.append("t4")
+        if tier2 is None:
+            _reason = "embedding_api_down"
+        elif tier3 is None:
+            _reason = "llm_unavailable"
+        else:
+            _reason = "all_tiers_low_confidence"
         tier4 = _escalate(
             tier1_result=tier1,
             tier2_result=tier2,
             tier3_result=tier3,
-            reason="all_tiers_failed",
+            reason=_reason,
         )
         object.__setattr__(tier4, "tier_sequence", list(sequence))
         return tier4
@@ -1353,6 +1359,7 @@ class BatchImportResult:
 
     entry_count: int
     enqueued_count: int
+    failed_count: int
     sync_wait: bool
     per_entry_ms: float
 
@@ -1406,6 +1413,7 @@ def batch_import_knowledge(
     return BatchImportResult(
         entry_count=count,
         enqueued_count=enqueued,
+        failed_count=count - enqueued,
         sync_wait=False,
         per_entry_ms=per_entry_ms,
     )

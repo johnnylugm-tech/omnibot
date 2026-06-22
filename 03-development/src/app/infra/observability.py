@@ -160,7 +160,10 @@ class StructuredLogger:
             **kwargs,
         }
         line = json.dumps(record, ensure_ascii=False, default=_json_default)
-        py_level = _LEVEL_MAP.get(resolved_level.upper(), logging.ERROR)
+        py_level = _LEVEL_MAP.get(resolved_level.upper())
+        if py_level is None:
+            self._logger.warning("Unknown log level %r; emitting as WARNING", resolved_level)
+            py_level = logging.WARNING
         self._logger.log(py_level, line)
         return line
 

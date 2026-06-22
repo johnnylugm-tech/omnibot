@@ -28,7 +28,6 @@ import base64
 # ------------------------------------------------------------------
 import json
 import time
-import urllib.request
 from datetime import datetime, timezone
 from typing import Any
 
@@ -160,9 +159,10 @@ class A2AAdapter(BaseWebhookAdapter):
                 return False
 
             # Fetch JWKS and verify RS256 signature
-            req = urllib.request.Request(self._jwks_url, headers={"User-Agent": "OmniBot"})
-            with urllib.request.urlopen(req, timeout=5) as response:  # nosec B310
-                jwks = json.loads(response.read().decode())
+            import httpx
+            with httpx.Client(timeout=5.0) as _client:
+                _resp = _client.get(self._jwks_url, headers={"User-Agent": "OmniBot"})
+                jwks = _resp.json()
 
             header_bytes = base64.urlsafe_b64decode(header_b64 + "=" * (-len(header_b64) % 4))
             kid = json.loads(header_bytes).get("kid")

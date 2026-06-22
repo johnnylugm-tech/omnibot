@@ -793,9 +793,22 @@ class GroundingChecker:
             - 03-development/tests/test_fr14.py:118-318 (all 4 cases)
             - 03-development/tests/test_fr108.py:634-636 (text-based)
         """
-        # [FR-108] Text-based call — return a KPI-passing stub.
+        # [FR-108] Text-based call — word-overlap Jaccard similarity.
         if response is not None or sources is not None:
-            raise NotImplementedError("Text-based grounding check not implemented")
+            resp_tokens = set((response or "").lower().split())
+            src_tokens: set[str] = set()
+            for s in (sources or []):
+                src_tokens.update(s.lower().split())
+            if not resp_tokens or not src_tokens:
+                cosine_score = 0.0
+            else:
+                cosine_score = len(resp_tokens & src_tokens) / max(len(resp_tokens), len(src_tokens))
+            return GroundingResult(
+                grounded=cosine_score >= threshold,
+                cosine_score=float(cosine_score),
+                threshold=float(threshold),
+                source_count=len(sources or []),
+            )
 
         if output_embedding is None:
             raise TypeError(

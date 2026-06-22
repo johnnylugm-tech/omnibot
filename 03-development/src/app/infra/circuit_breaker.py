@@ -100,10 +100,10 @@ class CircuitBreaker:
             return self._level
 
     def record_llm_success(self) -> str:
-        """[FR-99] Record an LLM success for recovery; auto-rise on streak.
+        """[FR-99] Record an LLM success for recovery; step-down one level per streak.
 
-        After the required consecutive success count, auto-rises the
-        degradation level back toward LEVEL_0.
+        After the required consecutive success count, steps down one level
+        toward LEVEL_0 and resets the streak counter for the next step.
 
         Citations: SRS.md FR-99 lines 1-8 (recovery: auto-rise on
         consecutive success count).
@@ -115,8 +115,20 @@ class CircuitBreaker:
                 self._level != self.LEVEL_0
                 and self._llm_success_count >= self._LLM_CONSECUTIVE_SUCCESS_RECOVERY
             ):
-                self._level = self.LEVEL_0
+                self._level = self._step_down_level(self._level)
+                self._llm_success_count = 0
             return self._level
+
+    def _step_down_level(self, level: str) -> str:
+        _order = [
+            self.LEVEL_0, self.LEVEL_1, self.LEVEL_2,
+            self.LEVEL_3, self.LEVEL_4, self.LEVEL_5,
+        ]
+        try:
+            idx = _order.index(level)
+            return _order[max(0, idx - 1)]
+        except ValueError:
+            return self.LEVEL_0
 
     # ------------------------------------------------------------------
     # Embedding API (lateral: embedding_down)

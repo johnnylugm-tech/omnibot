@@ -249,23 +249,46 @@ _TOKEN_FILE = ".m2m_tokens.json"
 _TOKEN_STORE: dict[str, dict] = {}
 _HASH_LOOKUP: dict[str, str] = {}
 
+def _file_lock(f):
+    """Advisory exclusive lock for cross-process safety (POSIX only)."""
+    try:
+        import fcntl
+        fcntl.flock(f, fcntl.LOCK_EX)
+    except (ImportError, OSError):
+        pass
+
+def _file_unlock(f):
+    try:
+        import fcntl
+        fcntl.flock(f, fcntl.LOCK_UN)
+    except (ImportError, OSError):
+        pass
+
 def _load_tokens():
     global _TOKEN_STORE, _HASH_LOOKUP
     if os.path.exists(_TOKEN_FILE):
         try:
             with open(_TOKEN_FILE, "r") as f:
-                data = json.load(f)
-                _TOKEN_STORE.clear()
-                _TOKEN_STORE.update(data.get("store", {}))
-                _HASH_LOOKUP.clear()
-                _HASH_LOOKUP.update(data.get("lookup", {}))
+                _file_lock(f)
+                try:
+                    data = json.load(f)
+                    _TOKEN_STORE.clear()
+                    _TOKEN_STORE.update(data.get("store", {}))
+                    _HASH_LOOKUP.clear()
+                    _HASH_LOOKUP.update(data.get("lookup", {}))
+                finally:
+                    _file_unlock(f)
         except Exception:
             pass
 
 def _save_tokens():
     try:
         with open(_TOKEN_FILE, "w") as f:
-            json.dump({"store": _TOKEN_STORE, "lookup": _HASH_LOOKUP}, f)
+            _file_lock(f)
+            try:
+                json.dump({"store": _TOKEN_STORE, "lookup": _HASH_LOOKUP}, f)
+            finally:
+                _file_unlock(f)
     except Exception:
         pass
 

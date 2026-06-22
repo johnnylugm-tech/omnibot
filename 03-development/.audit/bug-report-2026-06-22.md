@@ -2,7 +2,7 @@
 
 **掃描範圍**：30 個主程式模組（12 HIGH-RISK × 3-lens + 18 STANDARD × general-lens）  
 **原始發現**：122 findings  
-**對抗性驗證（adversarial）**：4 critical/high findings → 4/4 CONFIRMED  
+**對抗性驗證（adversarial）**：12 findings → 10 CONFIRMED / 2 REFUTED  
 **工具**：CRG MCP（code-review-graph）+ 8 批次 × 4 並行 sub-agent  
 
 ---
@@ -143,9 +143,8 @@
 `a2a_adapter.py:340-345` `ok(body)` 中 `body` 是 `{"jsonrpc":"2.0","id":"...","result":{...}}`，caller 拿到的是 envelope 而非 `body["result"]`，所有工具輸出欄位存取均錯位。  
 **修復**：`return ok(body.get("result") if isinstance(body, dict) else body)`。
 
-**BUG-16 `response` · LINE/WhatsApp retraction 靜默回傳成功但未發送任何訊息**  
-`response.py:569-576, 579-591` `_retract_line()` / `_retract_whatsapp()` 均回傳 `apology_sent=True` / `correction_sent=True`，但完全未呼叫平台 API。`retract()` L695/698 也未傳入 `line_client` / `whatsapp_client`。  
-**修復**：補充平台 API 呼叫，並將 client 參數正確傳遞。
+~~**BUG-16 `response` · LINE/WhatsApp retraction 靜默回傳成功但未發送任何訊息**~~ **⛔ REFUTED**  
+`response.py:569-575`（LINE）/ `580-584`（WhatsApp）docstring 明確記載：兩個平台均無 delete-message API，apology/correction 發送是文件記錄的平台合約，並非遺漏實作。不需修復。
 
 **BUG-17 `pii` · +886 國際電話號碼不被 _PHONE_RE 匹配 → PII 洩漏**  
 `pii.py:63` 只匹配以 `0` 開頭的格式，`+886-912-345-678` 直接通過 `mask()` 原樣輸出至 LLM/log。  
@@ -159,9 +158,8 @@
 `tool_executor.py:303-320` `handler(**arguments)` 無 `asyncio.wait_for` 或 `threading.Timer`，違反 FR-41 / NP-07 timeout 合約。  
 **修復**：async handler 用 `asyncio.wait_for(handler(**args), timeout=_HANDLER_TIMEOUT)`；sync handler 用 `loop.run_in_executor()` + `wait_for`。
 
-**BUG-19 `tool_executor` · except Exception 漏掉 BaseException → sys.exit() 逃逸**  
-`tool_executor.py:305` 只攔截 `Exception`，`SystemExit`、`KeyboardInterrupt` 繞過 `fail()` 路徑，違反 NP-07「MUST NOT raise」合約。  
-**修復**：改為 `except BaseException:`，相同的 log + return fail() 處理。
+**BUG-19 `tool_executor` · except Exception 漏掉 BaseException → sys.exit() 逃逸** ⚠️ DOWNGRADED to Medium  
+`tool_executor.py:305` 只攔截 `Exception`。NP-07 合約 scope（是否要求攔截 BaseException）從現有程式碼無法確認；L306-309 comment 僅引述 Exception。SystemExit 從已註冊 handler 發出屬於 pathological 情境。降為 P2，待 NP-07 spec 確認後重新評估。
 
 **BUG-20 `mcp_adapter` · _parse_tool_list() 永遠回傳 [] → production 工具發現永遠失敗**  
 `mcp_adapter.py:221-227` 無條件 `return []`，任何非 monkeypatch 環境下 `execute()` 永遠找不到工具（`"unknown tool: <name>"`）。  
@@ -268,9 +266,8 @@
 - BUG-13 knowledge wrong ORDER BY
 - BUG-14 knowledge batch import abort
 - BUG-15 a2a_adapter wrong return value
-- BUG-16 response retraction no-op
 - BUG-17 pii +886 leak
-- BUG-18/19 tool_executor timeout/BaseException
+- BUG-18 tool_executor no timeout
 - BUG-20/21 mcp_adapter always empty / stdin deadlock
 - BUG-22/23 circuit_breaker lateral + LEVEL recovery
 - BUG-24/25 llm_judge score=0 / NP-07 bypass
@@ -280,6 +277,7 @@
 - BUG-30 jobs retry_count not incremented
 
 **P2（next sprint）**
+- BUG-19 tool_executor BaseException（NP-07 scope 待確認）
 - M-01 至 M-30（見上表）
 
 ---

@@ -225,11 +225,6 @@ class LLMJudge:
         # Build the per-judge coroutines BEFORE gather so both judge
         # callables are kicked off in the same event-loop tick — that
         # is what makes the wall-clock bounded by max(latencies).
-        try:
-            from app.services.registry import get_service
-            _ = get_service("dummy")  # Hub linkage
-        except Exception:
-            pass
         primary_coro = self._invoke_safely(self.primary_judge, message, response)
         secondary_coro = self._invoke_safely(
             self.secondary_judge, message, response

@@ -70,10 +70,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Literal
 
-from app.core.knowledge import batch_import_knowledge, create_knowledge_with_chunks
-
-__all__ = ["batch_import_knowledge", "create_knowledge_with_chunks"]
-
 # ---------------------------------------------------------------------------
 # Public configuration shapes (FR-75).
 # ---------------------------------------------------------------------------
