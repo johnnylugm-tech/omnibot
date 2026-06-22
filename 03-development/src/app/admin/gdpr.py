@@ -26,6 +26,7 @@ from app.admin.rbac import enforce as _rbac_enforce
 # In-memory PII vault — isolation-safe store for test runs.
 # Keys are UUID strings (entry_id); values are the encrypted record dicts.
 _VAULT: dict[str, dict] = {}
+_VAULT_BY_USER: dict[str, list[str]] = {}
 
 def _derive_fernet_key(encryption_key_id: str) -> bytes:
     """Derive a deterministic Fernet-compatible 32-byte key from a KMS key ID.
@@ -43,6 +44,7 @@ def _derive_fernet_key(encryption_key_id: str) -> bytes:
 
 
 def store_pii_entry(
+    user_id: str,
     original_text: str,
     masked_text: str,
     category: str,
@@ -72,6 +74,8 @@ def store_pii_entry(
         "category": category,
         "encryption_key_id": encryption_key_id,
     }
+
+    _VAULT_BY_USER.setdefault(user_id, []).append(entry_id)
 
     return {
         "entry_id": entry_id,
@@ -161,12 +165,14 @@ def export_user_data(user_id: str, format: str = "json") -> dict:
         "emotions": _EMOTIONS.get(user_id, []),
     }
     if format == "csv":
+        import json
         csv_lines = ["section,key,value"]
         for section, content in payload.items():
             if isinstance(content, (list, dict)):
-                csv_lines.append(f"{section},count,{len(content)}")
+                val = json.dumps(content).replace('"', '""')
+                csv_lines.append(f'{section},content,"{val}"')
             else:
-                csv_lines.append(f"{section},value,{content}")
+                csv_lines.append(f'{section},value,"{content}"')
         return {
             "csv_data": "\n".join(csv_lines),
             "filename": f"user_data_{user_id}.csv",
@@ -203,6 +209,15 @@ def delete_user_data(user_id: str) -> dict:
         "profile": None,
         "platform_user_id": "DELETED",
     }
+    _CONVERSATIONS.pop(user_id, None)
+    _EMOTIONS.pop(user_id, None)
+    if user_id in _MESSAGES:
+        for msg in _MESSAGES[user_id]:
+            msg["content"] = "[REDACTED]"
+            
+    for entry_id in _VAULT_BY_USER.pop(user_id, []):
+        _VAULT.pop(entry_id, None)
+        
     return {"deletion_id": deletion_id, "status": "queued"}
 
 

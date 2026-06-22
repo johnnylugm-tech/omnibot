@@ -84,7 +84,7 @@ from app.services.aee.adapter import ToolDefinition  # noqa: F401  -- [FR-45]
 # out of a terminal state by design.
 # ---------------------------------------------------------------------------
 ALLOWED_TRANSITIONS: dict[str, frozenset[str]] = {
-    "XXIDLEXX": frozenset({"INTENT_DETECTED"}),
+    "IDLE": frozenset({"INTENT_DETECTED"}),
     "INTENT_DETECTED": frozenset({"SLOT_FILLING"}),
     "SLOT_FILLING": frozenset({"AWAITING_CONFIRMATION"}),
     "AWAITING_CONFIRMATION": frozenset({"PROCESSING"}),
@@ -450,7 +450,7 @@ class DialogueState:
         # and handler call).
         if (
             self.state == "AWAITING_CONFIRMATION"
-            and awaiting_rounds > MAX_AWAITING_CONFIRMATION_ROUNDS
+            and awaiting_rounds >= MAX_AWAITING_CONFIRMATION_ROUNDS
         ):
             return "ESCALATED"
         if user_response == "confirm" and self.state == "AWAITING_CONFIRMATION":
@@ -602,7 +602,7 @@ class ContextWindowManager:
         """
         total_tokens = sum(self.count_tokens(m.get("content", "")) for m in messages)
         if total_tokens <= self.history_budget:
-            return list(messages)
+            return messages
         drop_count = max(1, len(messages) // 3)
         # Defensive copy: ``_SUMMARY_MESSAGE`` is a ClassVar mutable
         # dict (single source of truth — tests / callers pin its

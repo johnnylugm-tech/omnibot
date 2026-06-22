@@ -176,12 +176,13 @@ class RateLimiter:
         # Caller (_check_and_record) already gated on `redis_client is not None`,
         # but pyright can't narrow the type across that method boundary — assert
         # so the subsequent attribute access is type-safe.
+        import uuid
         assert self.redis_client is not None
         client = self.redis_client
         sha = client.script_load(self._SCRIPT)
         now = time.time()
         window_start = now - self._WINDOW_SECONDS
-        member = f"{now}:{key}"
+        member = f"{now}:{key}:{uuid.uuid4().hex}"
         result = client.evalsha(
             sha,
             1,

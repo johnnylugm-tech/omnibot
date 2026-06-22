@@ -278,7 +278,11 @@ class AsyncMessageProcessor:
                 break
             # Advance the cursor past the last returned id so the next
             # call yields the next page rather than re-yielding this one.
-            cursor = _next_stream_id(detailed[-1]["message_id"])
+            next_cursor = _next_stream_id(detailed[-1]["message_id"])
+            if next_cursor == cursor:
+                # [M-29] Cursor failed to advance
+                break
+            cursor = next_cursor
         return claimed
 
     def parse_message(
@@ -296,6 +300,25 @@ class AsyncMessageProcessor:
         """
         known = {k: v for k, v in fields.items() if k in _FR80_KNOWN_FIELDS}
         return ParsedMessage(message_id=message_id, known=known)
+
+    async def consume_loop(
+        self,
+        consumer: str,
+        handler: Any,
+    ) -> None:
+        """[BUG-12] Consumer loop that reads and acks messages."""
+        while True:
+            pending = await self.claim_pending(consumer)
+            for msg in pending:
+                parsed = self.parse_message(msg.message_id, msg.fields)
+                await handler(parsed)
+                await self.ack(msg.message_id)
+
+            messages = await self.read(consumer)
+            for msg in messages:
+                parsed = self.parse_message(msg.message_id, msg.fields)
+                await handler(parsed)
+                await self.ack(msg.message_id)
 
 
 __all__ = [

@@ -185,6 +185,55 @@ class A2AAdapter(BaseWebhookAdapter):
         except Exception:
             return False
 
+    async def averify_m2m_token(self, authorization_header: str) -> bool:
+        """Async counterpart to verify_m2m_token."""
+        token = self._extract_bearer_token(authorization_header)
+        if not token:
+            return False
+
+        try:
+            segments = token.split(".")
+            if len(segments) != 3:
+                return False
+            header_b64, payload_b64, sig_b64 = segments
+
+            payload_bytes = base64.urlsafe_b64decode(payload_b64 + "=" * (-len(payload_b64) % 4))
+            payload = json.loads(payload_bytes)
+
+            if "exp" in payload and time.time() > payload["exp"]:
+                return False
+
+            if payload.get("aud") != self._expected_audience:
+                return False
+            if self._expected_issuer and payload.get("iss") != self._expected_issuer:
+                return False
+
+            import httpx
+            async with httpx.AsyncClient() as client:
+                response = await client.get(self._jwks_url, headers={"User-Agent": "OmniBot"}, timeout=5.0)
+                jwks = response.json()
+
+            header_bytes = base64.urlsafe_b64decode(header_b64 + "=" * (-len(header_b64) % 4))
+            kid = json.loads(header_bytes).get("kid")
+            jwk = next((k for k in jwks.get("keys", []) if k.get("kid") == kid), None)
+            if not jwk or jwk.get("kty") != "RSA":
+                return False
+
+            def b64url_dec(s: str) -> bytes:
+                return base64.urlsafe_b64decode(s + "=" * (-len(s) % 4))
+
+            n_int = int.from_bytes(b64url_dec(jwk["n"]), byteorder="big")
+            e_int = int.from_bytes(b64url_dec(jwk["e"]), byteorder="big")
+            public_key = rsa.RSAPublicNumbers(e=e_int, n=n_int).public_key()
+
+            msg = f"{header_b64}.{payload_b64}".encode("ascii")
+            sig = b64url_dec(sig_b64)
+            public_key.verify(sig, msg, padding.PKCS1v15(), hashes.SHA256())
+
+            return True
+        except Exception:
+            return False
+
     def handle_jsonrpc_call(
         self,
         body: dict[str, Any],
@@ -220,6 +269,31 @@ class A2AAdapter(BaseWebhookAdapter):
 
         # Extract the calling agent ID from the M2M JWT "sub" claim.
         platform_user_id = self._extract_sub_from_token(authorization)
+
+        return UnifiedMessage(
+            platform=Platform.A2A,
+            platform_user_id=platform_user_id,
+            unified_user_id=None,
+            message_type=MessageType.TEXT,
+            content=content,
+            raw_payload=body,
+            received_at=datetime.now(timezone.utc),
+            reply_token=None,
+        )
+
+    async def ahandle_jsonrpc_call(
+        self,
+        body: dict[str, Any],
+        authorization: str,
+    ) -> UnifiedMessage:
+        """Async counterpart to handle_jsonrpc_call."""
+        if not await self.averify_m2m_token(authorization):
+            raise A2AAuthError(status=401, error_code="AUTH_INVALID_SIGNATURE")
+
+        params: dict[str, Any] = body.get("params", {})
+        content: str = params.get("query") or params.get("text") or ""
+
+        platform_user_id = await self._aextract_sub_from_token(authorization)
 
         return UnifiedMessage(
             platform=Platform.A2A,
@@ -274,6 +348,24 @@ class A2AAdapter(BaseWebhookAdapter):
             # JWT structure: header.payload.signature
             payload_b64: str = token.split(".")[1]
             # Restore base64 padding stripped by JWT spec
+            payload_b64 += "=" * (4 - len(payload_b64) % 4)
+            payload_bytes = base64.urlsafe_b64decode(payload_b64)
+            payload: dict[str, Any] = json.loads(payload_bytes)
+            return str(payload.get("sub", _UNKNOWN_AGENT))
+        except Exception:
+            return _UNKNOWN_AGENT
+
+    async def _aextract_sub_from_token(self, authorization_header: str) -> str:
+        """Async counterpart to _extract_sub_from_token."""
+        token = self._extract_bearer_token(authorization_header)
+        if not token:
+            return _UNKNOWN_AGENT
+
+        if not await self.averify_m2m_token(authorization_header):
+            return _UNKNOWN_AGENT
+
+        try:
+            payload_b64: str = token.split(".")[1]
             payload_b64 += "=" * (4 - len(payload_b64) % 4)
             payload_bytes = base64.urlsafe_b64decode(payload_b64)
             payload: dict[str, Any] = json.loads(payload_bytes)

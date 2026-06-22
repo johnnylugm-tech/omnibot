@@ -238,8 +238,38 @@ Citations:
 """
 _TOKEN_BYTES = 32
 _CLIENT_ID_BYTES = 8
+
+import threading
+import json
+import os
+
+_TOKEN_LOCK = threading.Lock()
+_TOKEN_FILE = ".m2m_tokens.json"
+
 _TOKEN_STORE: dict[str, dict] = {}
 _HASH_LOOKUP: dict[str, str] = {}
+
+def _load_tokens():
+    global _TOKEN_STORE, _HASH_LOOKUP
+    if os.path.exists(_TOKEN_FILE):
+        try:
+            with open(_TOKEN_FILE, "r") as f:
+                data = json.load(f)
+                _TOKEN_STORE.clear()
+                _TOKEN_STORE.update(data.get("store", {}))
+                _HASH_LOOKUP.clear()
+                _HASH_LOOKUP.update(data.get("lookup", {}))
+        except Exception:
+            pass
+
+def _save_tokens():
+    try:
+        with open(_TOKEN_FILE, "w") as f:
+            json.dump({"store": _TOKEN_STORE, "lookup": _HASH_LOOKUP}, f)
+    except Exception:
+        pass
+
+_load_tokens()
 def _hash_token(token: str) -> str:
     """Return the SHA-256 hex digest of *token*."""
     return hashlib.sha256(token.encode()).hexdigest()
@@ -290,14 +320,16 @@ def create_token(
     expires_at_dt = datetime.now(timezone.utc) + timedelta(days=expires_in_days)
     expires_at = expires_at_dt.isoformat()
 
-    _TOKEN_STORE[client_id] = {
-        "hash": token_hash,
-        "client_name": client_name,
-        "scopes": scopes,
-        "expires_at": expires_at,
-        "revoked": False,
-    }
-    _HASH_LOOKUP[token_hash] = client_id
+    with _TOKEN_LOCK:
+        _TOKEN_STORE[client_id] = {
+            "hash": token_hash,
+            "client_name": client_name,
+            "scopes": scopes,
+            "expires_at": expires_at,
+            "revoked": False,
+        }
+        _HASH_LOOKUP[token_hash] = client_id
+        _save_tokens()
 
     return {
         "client_id": client_id,
@@ -323,15 +355,16 @@ def list_tokens() -> list[dict]:
         03-development/tests/test_fr87.py:182-237 (case 2).
     """
     result: list[dict] = []
-    for client_id, data in _TOKEN_STORE.items():
-        result.append({
-            "client_id": client_id,
-            "client_name": data["client_name"],
-            "scopes": data["scopes"],
-            "expires_at": data["expires_at"],
-            "revoked": data["revoked"],
-            "token": None,
-        })
+    with _TOKEN_LOCK:
+        for client_id, data in _TOKEN_STORE.items():
+            result.append({
+                "client_id": client_id,
+                "client_name": data["client_name"],
+                "scopes": data["scopes"],
+                "expires_at": data["expires_at"],
+                "revoked": data["revoked"],
+                "token": None,
+            })
     return result
 
 def revoke_token(client_id: str) -> dict:
@@ -353,8 +386,10 @@ def revoke_token(client_id: str) -> dict:
         TEST_SPEC.md FR-87 — revoke_token contract.
         03-development/tests/test_fr87.py:248-327 (case 3).
     """
-    if client_id in _TOKEN_STORE:
-        _TOKEN_STORE[client_id]["revoked"] = True
+    with _TOKEN_LOCK:
+        if client_id in _TOKEN_STORE:
+            _TOKEN_STORE[client_id]["revoked"] = True
+            _save_tokens()
     return {"revoked": True, "client_id": client_id}
 
 def validate_token(token: str) -> bool:
@@ -377,21 +412,22 @@ def validate_token(token: str) -> bool:
         03-development/tests/test_fr87.py:299-316 (case 3 validate
             before/after revoke).
     """
-    token_hash = _hash_token(token)
-    client_id = _HASH_LOOKUP.get(token_hash)
-    if client_id is None:
-        return False
+    with _TOKEN_LOCK:
+        token_hash = _hash_token(token)
+        client_id = _HASH_LOOKUP.get(token_hash)
+        if client_id is None:
+            return False
 
-    data = _TOKEN_STORE.get(client_id)
-    if data is None:
-        return False
+        data = _TOKEN_STORE.get(client_id)
+        if data is None:
+            return False
 
-    if data["revoked"]:
-        return False
+        if data["revoked"]:
+            return False
 
-    # Check expiry.
-    expires_at = datetime.fromisoformat(data["expires_at"])
-    return not datetime.now(timezone.utc) > expires_at
+        # Check expiry.
+        expires_at = datetime.fromisoformat(data["expires_at"])
+        return not datetime.now(timezone.utc) > expires_at
 
 """OmniBot Agent Card endpoint — FR-44.
 
@@ -493,3 +529,11 @@ def _add_stub_route(router: APIRouter, method: str, path: str) -> None:
     _stub.__doc__ = f"[FR-84] {method} {path}"
 
 _register_webhook_routes(router)
+
+# --- Patch for BUG-28 ---
+_original_messenger_verify = MessengerWebhookVerifier.verify
+def _patched_messenger_verify(self, raw_body: bytes, received_signature: str) -> bool:
+    if not received_signature.startswith("sha256="):
+        return False
+    return _original_messenger_verify(self, raw_body, received_signature)
+MessengerWebhookVerifier.verify = _patched_messenger_verify

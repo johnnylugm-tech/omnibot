@@ -36,6 +36,7 @@ Citations:
 
 from __future__ import annotations
 
+import threading
 from typing import Any
 
 # ---------------------------------------------------------------------------
@@ -77,6 +78,7 @@ class _DictConfigStore:
 
 # Module-level singleton — the canonical seam the RAGDebugger reads.
 _default_store: _DictConfigStore | None = None
+_store_lock = threading.Lock()
 
 
 def get_config_store() -> _DictConfigStore:
@@ -91,7 +93,9 @@ def get_config_store() -> _DictConfigStore:
     """
     global _default_store
     if _default_store is None:
-        _default_store = _DictConfigStore()
+        with _store_lock:
+            if _default_store is None:
+                _default_store = _DictConfigStore()
     return _default_store
 
 def health_probe() -> dict[str, bool]:

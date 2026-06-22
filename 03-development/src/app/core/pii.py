@@ -53,14 +53,25 @@ Citations:
 # ---------------------------------------------------------------------------
 # Pattern catalogue
 # ---------------------------------------------------------------------------
-# Phone: word-bounded 10 or 11 consecutive digits. The word-boundary
+# Phone: word-bounded 10 to 13 consecutive digits. The word-boundary
 # anchors on BOTH sides are mandatory — without them, ``\\d{10,11}`` would
 # happily slice the first 11 digits out of a 16-digit credit-card
 # candidate, producing a false-positive phone match and a corrupted
 # ``mask_count``. With ``\\b``, the regex only fires when the digit run
 # is exactly 10 or 11 characters long (so a 16-digit tracking number
 # never matches as a phone).
-_PHONE_RE = re.compile(r"(?<!\d)(?:0\d{1,3}[-\s]?\d{3,4}[-\s]?\d{3,4}|\(0\d{1,2}\)[-\s]?\d{3,4}[-\s]?\d{3,4})(?!\d)")
+_PHONE_RE = re.compile(
+    r"(?<!\d)"
+    r"(?=(?:[-\s\(\)]*\d){10,13}(?!\d))"
+    r"(?:"
+        r"\+886[-\s]?(?:0?\d{2,3}[-\s]?\d{3,4}[-\s]?\d{3,4})"
+        r"|"
+        r"0\d{1,3}[-\s]?\d{3,4}[-\s]?\d{3,4}"
+        r"|"
+        r"\(0\d{1,2}\)[-\s]?\d{3,4}[-\s]?\d{3,4}"
+    r")"
+    r"(?!\d)"
+)
 
 # Credit card: 16 consecutive digits, word-bounded. A Luhn check gates
 # the actual replacement so Luhn-invalid 16-digit strings (order IDs,
@@ -254,6 +265,9 @@ class PIIMasking:
         (``"unmask_admin"`` etc.) can be threaded through this method
         without touching ``mask()``.
         """
+        if result.mask_count == 0:
+            return
+
         PIIMasking._audit_log.append(
             AuditEntry(
                 conversation_id=conversation_id,

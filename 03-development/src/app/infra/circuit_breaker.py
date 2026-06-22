@@ -76,8 +76,11 @@ class CircuitBreaker:
         Citations: SRS.md FR-99 line 3 (LLM p95 > 800ms for 2m → level_1).
         """
         with self._lock:
-            if p95_ms >= self._LLM_P95_LATENCY_THRESHOLD_MS and self._level == self.LEVEL_0:
-                self._level = self.LEVEL_1
+            if p95_ms >= self._LLM_P95_LATENCY_THRESHOLD_MS:
+                if self._level == self.LEVEL_0:
+                    self._level = self.LEVEL_1
+                elif self._level == self.LEVEL_1:
+                    self._level = self.LEVEL_2
             return self._level
 
     # ------------------------------------------------------------------
@@ -109,7 +112,7 @@ class CircuitBreaker:
             self._llm_failure_count = 0
             self._llm_success_count += 1
             if (
-                self._level in (self.LEVEL_1, self.LEVEL_3)
+                self._level != self.LEVEL_0
                 and self._llm_success_count >= self._LLM_CONSECUTIVE_SUCCESS_RECOVERY
             ):
                 self._level = self.LEVEL_0
@@ -129,6 +132,13 @@ class CircuitBreaker:
             self._embedding_failure_count += 1
             if self._embedding_failure_count >= self._LATERAL_FAILURE_THRESHOLD:
                 self._embedding_down = True
+            return self._level
+
+    def record_embedding_success(self) -> str:
+        """[FR-99] Record an embedding API success for recovery."""
+        with self._lock:
+            self._embedding_failure_count = 0
+            self._embedding_down = False
             return self._level
 
     def get_search_strategy(self) -> str:
@@ -166,6 +176,13 @@ class CircuitBreaker:
             self._classifier_failure_count += 1
             if self._classifier_failure_count >= self._LATERAL_FAILURE_THRESHOLD:
                 self._classifier_down = True
+            return self._level
+
+    def record_classifier_success(self) -> str:
+        """[FR-99] Record a classifier success for recovery."""
+        with self._lock:
+            self._classifier_failure_count = 0
+            self._classifier_down = False
             return self._level
 
     def is_classifier_active(self) -> bool:
@@ -275,4 +292,4 @@ class RetryStrategy:
                 attempt += 1
                 if attempt >= self.max_retries:
                     raise
-                time.sleep(self.compute_delay(attempt))
+                time.sleep(self.compute_delay(attempt - 1))

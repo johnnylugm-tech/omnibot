@@ -401,8 +401,18 @@ class MigrationRunner:
                 staging_validated=config.staging_validated,
                 snapshot_path=config.snapshot_path,
             )
-            self._step(step_cfg, direction)
+            step_result = self._step(step_cfg, direction)
             steps.append(direction)
+            if not step_result.success:
+                return MigrationResult(
+                    success=False,
+                    direction="roundtrip",
+                    target_revision="head",
+                    rows_affected=seed_rows,
+                    error=step_result.error,
+                    snapshot_path=config.snapshot_path,
+                    steps=tuple(steps),
+                )
 
         return MigrationResult(
             success=True,

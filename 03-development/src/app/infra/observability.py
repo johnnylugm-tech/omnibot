@@ -87,7 +87,10 @@ def _json_default(obj: Any) -> Any:
         return str(obj)
     if isinstance(obj, (set, frozenset)):
         # JSON has no set — emit as sorted list for deterministic output.
-        return sorted(obj)
+        try:
+            return sorted(obj)
+        except TypeError:
+            return sorted(obj, key=str)
     if isinstance(obj, bytes):
         # Prefer UTF-8 text; fall back to hex so binary payloads are still
         # representable as a JSON string instead of crashing the log call.
@@ -157,7 +160,7 @@ class StructuredLogger:
             **kwargs,
         }
         line = json.dumps(record, ensure_ascii=False, default=_json_default)
-        py_level = _LEVEL_MAP.get(resolved_level.upper(), logging.INFO)
+        py_level = _LEVEL_MAP.get(resolved_level.upper(), logging.ERROR)
         self._logger.log(py_level, line)
         return line
 

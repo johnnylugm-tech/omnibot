@@ -246,6 +246,7 @@ class A2AAdapter(ActionAdapter):
         self.discovery_count += 1
         url = f"{self.agent_url}/.well-known/agent.json"
         try:
+            _validate_agent_url(self.agent_url)
             response = self._client.get(url)
             response.raise_for_status()
             card = response.json()
@@ -318,6 +319,7 @@ class A2AAdapter(ActionAdapter):
 
         url = f"{self.agent_url}/rpc"
         try:
+            _validate_agent_url(self.agent_url)
             response = self._client.post(
                 url,
                 json=payload,
@@ -342,7 +344,7 @@ class A2AAdapter(ActionAdapter):
             message = err.get("message") if isinstance(err, dict) else str(err)
             return fail(f"jsonrpc_error: JSON-RPC error: {message}")
 
-        return ok(body)
+        return ok(body.get("result") if isinstance(body, dict) and "result" in body else body)
 
     # ------------------------------------------------------------------
     # JSON-RPC 2.0 payload builder (FR-41 case 2: payload format).

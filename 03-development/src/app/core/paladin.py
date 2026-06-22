@@ -68,9 +68,9 @@ _HOMOGLYPHS: dict[str, str] = {
     chr(0x03A5): "Y", chr(0x03A7): "X",
 }
 
-# C0 (U+0000..U+001F) + DEL (U+007F) + C1 (U+0080..U+009F).
+# C0 (U+0000..U+001F) + DEL (U+007F) + C1 (U+0080..U+009F) + format chars.
 _CONTROL_CHARS: dict[str, None] = {
-    chr(cp): None for cp in (*range(0x00, 0x20), *range(0x7F, 0xA0))
+    chr(cp): None for cp in (*range(0x00, 0x20), *range(0x7F, 0xA0), 0x200B, 0x200C, 0x200D, 0xFEFF)
 }
 
 # Pre-computed translate table: homoglyphs map to their ASCII
@@ -515,7 +515,7 @@ class SemanticInjectionClassifier:
 
         try:
             verdict = await self._call_llm(text, timeout_ms)
-        except (TimeoutError, ConnectionError, OSError):
+        except (TimeoutError, ConnectionError, OSError, ValueError):
             return _make_passthrough(is_unverified=True)
 
         return _result_from_verdict(verdict)
@@ -575,7 +575,7 @@ class SemanticInjectionClassifier:
             # handle both shapes on the same code path.
             if asyncio.iscoroutine(verdict):
                 verdict = _await_coro_from_sync(verdict, timeout_ms)  # pragma: no cover — async coroutine dispatch path covered by test_fr13
-        except (TimeoutError, ConnectionError, OSError):
+        except (TimeoutError, ConnectionError, OSError, ValueError):
             # asyncio.TimeoutError is NOT a subclass of TimeoutError in py3.9
             return _make_passthrough(is_unverified=True)
 
@@ -624,6 +624,7 @@ def _await_coro_from_sync(coro, timeout_ms: float):
 
     def _runner() -> None:
         new_loop = asyncio.new_event_loop()
+        holder["loop"] = new_loop
         try:
             holder["v"] = new_loop.run_until_complete(
                 asyncio.wait_for(coro, timeout=timeout_ms / 1000.0)
@@ -637,6 +638,9 @@ def _await_coro_from_sync(coro, timeout_ms: float):
     t.start()
     t.join(timeout=timeout_ms / 1000.0)
     if t.is_alive():
+        loop = holder.get("loop")
+        if loop is not None:
+            loop.call_soon_threadsafe(loop.stop)
         raise TimeoutError(f"FR-15: _await_coro_from_sync timed out after {timeout_ms}ms")
     if "e" in holder:
         raise holder["e"]
@@ -650,11 +654,18 @@ def _result_from_verdict(verdict: dict) -> ClassificationResult:
     flat routing function and any future normalization (range clamping,
     enum aliasing) lives in exactly one place.
     """
+    try:
+        injection_type = InjectionType(verdict.get("injection_type", "none"))
+        is_unverified = False
+    except ValueError:
+        injection_type = InjectionType.NONE
+        is_unverified = True
+
     return ClassificationResult(
         is_injection=bool(verdict.get("is_injection", False)),
         confidence=float(verdict.get("confidence", 0.0)),
-        injection_type=InjectionType(verdict.get("injection_type", "none")),
-        is_unverified=False,
+        injection_type=injection_type,
+        is_unverified=is_unverified,
     )
 
 
@@ -784,12 +795,7 @@ class GroundingChecker:
         """
         # [FR-108] Text-based call — return a KPI-passing stub.
         if response is not None or sources is not None:
-            return GroundingResult(
-                grounded=True,
-                cosine_score=0.85,
-                threshold=float(threshold),
-                source_count=len(sources) if sources else 1,
-            )
+            raise NotImplementedError("Text-based grounding check not implemented")
 
         if output_embedding is None:
             raise TypeError(

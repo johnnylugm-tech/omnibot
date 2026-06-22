@@ -171,7 +171,7 @@ class HybridKnowledge:
         "FROM knowledge_base "
         "WHERE content ILIKE :pattern "
         "   OR :query = ANY(keywords) "
-        "ORDER BY id "
+        "ORDER BY score DESC, id "
         "LIMIT :limit"
     )
 
@@ -501,7 +501,7 @@ class HybridKnowledge:
                 query, top_k=self.RAG_TOP_K_PARENTS
             )
             tier2_confidence = 0.90 if rag_hits else 0.0
-            tier2 = self._rag_search(query, confidence=tier2_confidence)
+            tier2 = self._rag_search(query, confidence=tier2_confidence, top_k=self.RAG_TOP_K_PARENTS)
         hit = self._record_tier_hit(
             sequence, "t2", tier2, self.RAG_CONFIDENCE_THRESHOLD
         )
@@ -522,7 +522,7 @@ class HybridKnowledge:
             tier1_result=tier1,
             tier2_result=tier2,
             tier3_result=tier3,
-            reason="no_rule_match",
+            reason="all_tiers_failed",
         )
         object.__setattr__(tier4, "tier_sequence", list(sequence))
         return tier4
@@ -618,7 +618,7 @@ def _call_llm_with_fallback(
     """
     try:
         return _call_llm_api(primary_llm, prompt)
-    except Exception:
+    except TimeoutError:
         return _call_llm_api(fallback_llm, prompt)
 
 
@@ -1393,8 +1393,11 @@ def batch_import_knowledge(
             content=entry.get("content", ""),
             model=entry.get("model", "text-embedding-3-small"),
         )
-        enqueue_embedding_job(job)
-        enqueued += 1
+        try:
+            enqueue_embedding_job(job)
+            enqueued += 1
+        except Exception:
+            pass
 
     elapsed = time.perf_counter() - start
     count = len(entries)

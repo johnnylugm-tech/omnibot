@@ -243,12 +243,15 @@ class EscalationManager:
                 platform="",
                 preview={},
                 now=self._utcnow(),
+                sla_minutes=self.SLA_BY_PRIORITY[0],
             )
         return self.rows[escalation_id]
 
     def assign(self, escalation_id: str, agent_id: str) -> None:
         """Update assigned_agent + picked_at — SRS FR-54 assign()."""
         row = self._ensure_row(escalation_id)
+        if row["assigned_agent"] is not None and row["assigned_agent"] != agent_id:
+            raise ValueError(f"Already assigned to {row['assigned_agent']}")
         row["assigned_agent"] = agent_id
         row["picked_at"] = self._utcnow()
 
@@ -311,4 +314,11 @@ class EscalationManager:
         Citations:
             - 03-development/tests/test_fr108.py:651-660 — contract
         """
-        return 0.98
+        resolved = [r for r in self.rows.values() if r.get("resolved_at") is not None]
+        if not resolved:
+            return 1.0
+        met_sla = [
+            r for r in resolved 
+            if r.get("sla_deadline") and r["resolved_at"] <= r["sla_deadline"]
+        ]
+        return float(len(met_sla)) / len(resolved)

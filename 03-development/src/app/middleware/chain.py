@@ -92,10 +92,6 @@ class MiddlewareChain:
         self.rate_limiter = rate_limiter
         self.rbac_enforcer = rbac_enforcer
 
-    # ------------------------------------------------------------------
-    # Result builders — collapse the repeated ChainResult(...) blocks
-    # into named helpers so the short-circuit paths read as one line.
-    # ------------------------------------------------------------------
     @staticmethod
     def _deny(stage: str, status: int, reason: str, **fields: Any) -> ChainResult:
         """Build a short-circuit ``ChainResult`` for ``stage``.
@@ -138,13 +134,17 @@ class MiddlewareChain:
         if not _is_allowed(ip_outcome, default=False):
             return self._deny(
                 "ip",
-                status=ip_outcome.status,
+                status=getattr(ip_outcome, "status", 403),
                 reason="IP_BLOCKED",
-                body=ip_outcome.body,
+                body=getattr(ip_outcome, "body", b""),
             )
 
         # 3. Webhook Signature Validation.
-        if not self.signature_validator.verify(request):
+        try:
+            is_valid = self.signature_validator.verify(request)
+        except Exception:
+            is_valid = False
+        if not is_valid:
             return self._deny("signature", status=401, reason="SIGNATURE_INVALID")
 
         # 4. Platform Adapter Parse — produces the user_id used as the
@@ -156,7 +156,7 @@ class MiddlewareChain:
             platform=ctx.platform,
             key=ctx.user_id,
         )
-        if getattr(rate_outcome, "status", 200) == 429:
+        if getattr(rate_outcome, "status", 200) == 429 or not _is_allowed(rate_outcome, default=True):
             return self._deny(
                 "rate",
                 status=429,

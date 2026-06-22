@@ -267,10 +267,12 @@ def process_embedding_job(
     retries_left = job.retry_count < job.max_retries
 
     if queue_status == "unavailable" and retries_left:
+        backoff_seconds = _compute_backoff(job, job.retry_count)
+        job.retry_count += 1
         return _result(
             job, start,
             retried=True, failed=False, status="retrying",
-            backoff_seconds=_compute_backoff(job, job.retry_count),
+            backoff_seconds=backoff_seconds,
         )
 
     if not retries_left:
@@ -386,7 +388,7 @@ def compute_sync_status(chunks_done: int, chunks_total: int) -> str:
     """
     if chunks_total == 0:
         return "failed"
-    if chunks_done == chunks_total:
+    if chunks_done >= chunks_total:
         return "synced"
     if 0 < chunks_done < chunks_total:
         return "syncing"

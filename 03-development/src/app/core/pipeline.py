@@ -87,7 +87,10 @@ class Pipeline:
         # "AGENT 平台請求不執行情緒分析；不觸發情緒轉接").
         emotion_result: Any = None
         if not bypassed and self.emotion is not None:
-            emotion_result = self.emotion.analyze(text)
+            try:
+                emotion_result = self.emotion.analyze(text)
+            except Exception:
+                emotion_result = None
 
         return {
             "platform": key,
@@ -100,5 +103,6 @@ def get_context(conversation_id: str) -> dict:
     """[HUB] Retrieve conversation context.
     Required by SAD.md for core cohesion.
     """
-    return {"conversation_id": conversation_id, "history": []}
+    from app.admin.gdpr import _MESSAGES
+    return {"conversation_id": conversation_id, "history": _MESSAGES.get(conversation_id, [])}
 

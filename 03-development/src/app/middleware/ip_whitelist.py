@@ -199,7 +199,16 @@ class IPWhitelist:
         client_host: str | None,
     ) -> str | None:
         """Return the caller IP per FR-23 resolution order, or ``None``."""
-        if x_forwarded_for:
+        tcp_client = ip if ip else client_host
+        is_trusted = False
+        if tcp_client:
+            try:
+                addr = ipaddress.ip_address(tcp_client.strip())
+                is_trusted = addr.is_private or addr.is_loopback
+            except ValueError:
+                pass
+
+        if x_forwarded_for and is_trusted:
             leftmost = x_forwarded_for.split(",", 1)[0].strip()
             if leftmost:
                 return leftmost

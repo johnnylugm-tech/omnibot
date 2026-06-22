@@ -150,7 +150,12 @@ class MCPAdapter(ActionAdapter):
 
         raw = (stdout or b"").decode("utf-8", errors="replace").strip()
         try:
-            return json.loads(raw or "{}")
+            data = json.loads(raw or "{}")
+            if "error" in data and "result" not in data:
+                err = data["error"]
+                msg = err.get("message") if isinstance(err, dict) else str(err)
+                raise RuntimeError(f"JSON-RPC error: {msg}")
+            return data
         except json.JSONDecodeError:
             return {"raw": raw}
 
@@ -165,11 +170,27 @@ class MCPAdapter(ActionAdapter):
             proc = subprocess.Popen(
                 shlex.split(self.command or ""),
                 shell=False,
+                stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
             try:
+                init_req = json.dumps({
+                    "jsonrpc": "2.0",
+                    "id": 0,
+                    "method": "initialize",
+                    "params": {"protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": {"name": "omnibot", "version": "1.0"}}
+                }).encode("utf-8") + b"\n"
+                
+                list_req = json.dumps({
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "tools/list",
+                    "params": {}
+                }).encode("utf-8") + b"\n"
+                
                 stdout, _ = proc.communicate(
+                    input=init_req + list_req,
                     timeout=self.connect_timeout_ms / 1000
                 )
             except subprocess.TimeoutExpired:
@@ -214,8 +235,15 @@ class MCPAdapter(ActionAdapter):
             )
             response.raise_for_status()
             try:
-                return response.json()
-            except Exception:
+                data = response.json()
+                if "error" in data and "result" not in data:
+                    err = data["error"]
+                    msg = err.get("message") if isinstance(err, dict) else str(err)
+                    raise RuntimeError(f"JSON-RPC error: {msg}")
+                return data
+            except Exception as exc:
+                if isinstance(exc, RuntimeError):
+                    raise
                 return {"raw": response.text}
 
     def _parse_tool_list(self, _raw: bytes) -> list[ToolDefinition]:
@@ -224,6 +252,23 @@ class MCPAdapter(ActionAdapter):
         Stub parser — production wiring would map MCP tool schemas to
         ``ToolDefinition`` instances.
         """
+        try:
+            data = json.loads(_raw.decode("utf-8"))
+            if "result" in data and "tools" in data["result"]:
+                tools = []
+                for t in data["result"]["tools"]:
+                    tools.append(
+                        ToolDefinition(
+                            name=t.get("name", ""),
+                            description=t.get("description", ""),
+                            parameters_schema=t.get("inputSchema", {}),
+                            protocol="mcp",
+                            handler_ref=t.get("name", ""),
+                        )
+                    )
+                return tools
+        except Exception:
+            pass
         return []
 
     def _is_server_unreachable(self) -> bool:
@@ -235,7 +280,14 @@ class MCPAdapter(ActionAdapter):
         sentinel 判斷 server-down 情境（正式實作會替換為真實的
         ``subprocess.Popen`` exit code 檢查 / ``httpx`` 連線探測）。
         """
-        return bool(
-            (self.transport == "stdio" and self.command and "down" in self.command.lower())
-            or (self.transport == "sse" and self.url and ("down" in self.url.lower() or "65535" in self.url))
-        )
+        import re
+        is_stdio_down = False
+        if self.transport == "stdio" and self.command:
+            is_stdio_down = bool(re.search(r'\bdown\b', self.command.lower()))
+            
+        is_sse_down = False
+        if self.transport == "sse" and self.url:
+            parsed = self.url.lower()
+            is_sse_down = bool(re.search(r'\bdown\b', parsed) or "65535" in parsed)
+            
+        return is_stdio_down or is_sse_down

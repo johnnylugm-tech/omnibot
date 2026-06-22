@@ -40,15 +40,11 @@ def _make_jwt(username: str) -> str:
     }
     payload_b64 = _b64url_encode(json.dumps(payload).encode())
 
-    secret = os.environ.get("OMNIBOT_JWT_SECRET", "dev-secret-do-not-use-in-prod").encode()
+    secret = os.environ["OMNIBOT_JWT_SECRET"].encode()
     msg = f"{header_b64}.{payload_b64}".encode()
     sig_b64 = _b64url_encode(hmac.new(secret, msg, "sha256").digest())
 
     return f"{header_b64}.{payload_b64}.{sig_b64}"
-
-
-_ADMIN_USER = os.environ["OMNIBOT_ADMIN_USER"]
-_ADMIN_PASS = os.environ["OMNIBOT_ADMIN_PASS"]
 
 
 def login(username: str, password: str) -> dict | int:
@@ -67,8 +63,11 @@ def login(username: str, password: str) -> dict | int:
         TEST_SPEC.md FR-86 case 2 (validation) — invalid creds return
             401 (int), no credential leak.
     """
-    user_match = hmac.compare_digest(username, _ADMIN_USER)
-    pass_match = hmac.compare_digest(password, _ADMIN_PASS)
+    admin_user = os.environ.get("OMNIBOT_ADMIN_USER", "")
+    admin_pass = os.environ.get("OMNIBOT_ADMIN_PASS", "")
+
+    user_match = hmac.compare_digest(username, admin_user) if admin_user else False
+    pass_match = hmac.compare_digest(password, admin_pass) if admin_pass else False
 
     if user_match and pass_match:
         access = _make_jwt(username)
