@@ -18,8 +18,12 @@ import os
 import secrets
 import time
 
+from fastapi import APIRouter, HTTPException
+
 from app.admin.rbac import RBACEnforcer
 from app.api.adapters.utils import _b64url_encode
+
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 def _make_jwt(username: str) -> str:
@@ -95,6 +99,22 @@ def assign_role_to_user(user_id: str, role: str, caller_role: str) -> int:
         return 403
     # Role assignment mutation would go here in a full implementation.
     return 200
+
+
+@router.post("/login")
+def _login_route(body: dict) -> dict:
+    result = login(body.get("username", ""), body.get("password", ""))
+    if isinstance(result, int):
+        raise HTTPException(status_code=result)
+    return result
+
+
+@router.post("/users/{user_id}/roles")
+def _assign_role_route(user_id: str, body: dict) -> dict:
+    result = assign_role_to_user(user_id, body.get("role", ""), body.get("caller_role", ""))
+    if result != 200:
+        raise HTTPException(status_code=result)
+    return {"status": result}
 
 
 # API cohesion requirement

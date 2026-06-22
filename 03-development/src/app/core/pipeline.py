@@ -105,7 +105,7 @@ class Pipeline:
         if self.knowledge is not None:
             knowledge_result = self.knowledge.query(content)
 
-        self.process(msg.platform, content)
+        _ = self.process(msg.platform, content)
 
         if self.response is not None:
             content = self.response.format_for_platform(

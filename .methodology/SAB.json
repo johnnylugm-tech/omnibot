@@ -455,7 +455,8 @@
     "api_layer_no_business_logic",
     "infra_layer_no_domain_imports",
     "paladin_executes_before_pii",
-    "knowledge_query_after_dst_slot_resolution"
+    "knowledge_query_after_dst_slot_resolution",
+    "api_layer_can_import_core_dataclasses_only"
   ],
   "high_risk_modules": [
     "app.core.paladin",

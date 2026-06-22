@@ -361,3 +361,30 @@ Each step runs in a single DB transaction with SAVEPOINT per table. Partial fail
 ## Consequences
 - Positive: GDPR Art.17(3)(d) security log retention preserved; partial failure recovery without full restart; testable step-by-step sequence
 - Negative: Application code owns referential integrity during erasure — FK constraints must be temporarily deferred; requires integration test covering partial-failure recovery path (NP-15 forced for external process coordination)
+
+---
+
+## ADR-016: AEE Package Split + Agent Card Consolidation
+
+## Status
+Accepted
+
+## Context
+Two implementation decisions diverged from the original SAD §2.1 plan:
+
+1. **AEE module split**: `app.services.aee` grew from a single `aee.py` (planned ~500 LOC) to a 5-submodule package (`MCPAdapter`, `A2AAdapter`, `CLIAdapter`, `ToolExecutor`, `ActionAdapter`). A single file would violate SAD §2.4 cohesion targets (predicted density drop to < 0.25).
+
+2. **Agent Card consolidation**: SAD planned a dedicated `app/api/agent_card.py`. In implementation, the Agent Card FastAPI sub-app (`agent_card_app`) was co-located in `webhooks.py` to avoid a 6th api-layer module that would only hold a single static endpoint, which would reduce the api/ CRG community cohesion below 0.38.
+
+## Decision
+1. **AEE**: Split into `app/services/aee/` package with `__init__.py` re-exporting the public surface. SAB.json `fr_module_traceability` entries for FR-39–45 point to `app.services.aee` (package, trailing slash variant).
+2. **Agent Card**: Keep `agent_card_app = FastAPI(...)` inside `webhooks.py`. Update SAD §2.1 and §2.2 to reflect this. The 6 adapter docstring cross-references to `agent_card.py:12-16` are historical and should be read as referring to the `AGENT_CARD` dict in `webhooks.py`.
+
+## Rationale
+- AEE split maintains cohesion ≥ 0.38 per SAD §2.4; each adapter is independently testable
+- Agent Card consolidation keeps api/ at 7 modules (not 8), preserving CRG density above threshold
+- Both decisions are additive: no SAD layer boundary is violated
+
+## Consequences
+- Positive: AEE adapters independently testable; api/ cohesion maintained
+- Negative: 6 adapter docstrings reference `agent_card.py:12-16` — these cross-refs are stale; they point to the `AGENT_CARD` dict in `webhooks.py` lines 468–486

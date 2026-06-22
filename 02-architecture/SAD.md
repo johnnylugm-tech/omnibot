@@ -66,7 +66,7 @@ app/
 │   ├── management.py    # Knowledge/experiment management API (FR-85, FR-88)
 │   ├── auth.py          # Auth/M2M/user API (FR-86, FR-87)
 │   ├── websocket.py     # WebSocket handlers (FR-57–59)
-│   └── agent_card.py    # Agent Card endpoint (FR-44)
+│   └── webhooks.py      # also hosts agent_card_app (FR-44, see ADR-016)
 ├── core/
 │   ├── pipeline.py      # HUB: request orchestrator — calls all core modules
 │   ├── paladin.py       # PALADIN L1–L5 (FR-10–17)
@@ -74,10 +74,17 @@ app/
 │   ├── knowledge.py     # Hybrid Knowledge Tier 1–4 (FR-26–33)
 │   ├── dst.py           # DST FSM + slot filling (FR-34–38)
 │   ├── response.py      # Response generation + A/B (FR-50–53)
-│   └── emotion.py       # Emotion analysis + decay (FR-46–49)
+│   ├── emotion.py       # Emotion analysis + decay (FR-46–49)
+│   └── unified_message.py  # UnifiedMessage dataclass (FR-07, see §2.2 note)
 ├── services/
 │   ├── registry.py      # HUB: service registry + shared utilities
-│   ├── aee.py           # Action Execution Engine (FR-39–43, FR-45)
+│   ├── aee/             # Action Execution Engine package (FR-39–43, FR-45, see ADR-016)
+│   │   ├── __init__.py
+│   │   ├── mcp_adapter.py
+│   │   ├── a2a_adapter.py
+│   │   ├── cli_adapter.py
+│   │   ├── tool_executor.py
+│   │   └── action_adapter.py
 │   ├── escalation.py    # Escalation queue + SLA (FR-54–56)
 │   ├── ab_testing.py    # A/B test manager (FR-63–64)
 │   ├── llm_judge.py     # LLM-as-a-Judge ensemble (FR-65–69)
@@ -92,18 +99,20 @@ app/
 │   ├── observability.py # Prometheus + OTel + alerts (FR-70–74)
 │   ├── security.py      # TDE + secrets management (FR-89)
 │   └── deployment.py    # Docker/K8s/backup configs (FR-95–98)
-└── admin/
-    ├── reports.py       # HUB: shared reporting + analytics utilities
-    ├── rbac.py          # RBAC roles + enforcer (FR-60–62)
-    ├── gdpr.py          # GDPR lifecycle + erasure (FR-91–94)
-    ├── webui.py         # Admin WebUI backend (FR-101–104)
-    └── odd_sql.py       # ODD SQL analytics queries (FR-105)
+├── admin/
+│   ├── reports.py       # HUB: shared reporting + analytics utilities
+│   ├── rbac.py          # RBAC roles + enforcer (FR-60–62)
+│   ├── gdpr.py          # GDPR lifecycle + erasure (FR-91–94)
+│   ├── webui.py         # Admin WebUI backend (FR-101–104)
+│   └── odd_sql.py       # ODD SQL analytics queries (FR-105)
+└── middleware/          # Cross-cutting: FR-24 chain (TLS/IP/Sig/Rate/RBAC)
+    ├── chain.py         # MiddlewareChain orchestrator (FR-24)
+    └── ip_whitelist.py  # IP allow-list stage (FR-22)
 
-tests/
-├── unit/               # 70% coverage target (FR-107)
-├── integration/        # 20% coverage target (FR-107)
-├── e2e/                # 10% coverage target (FR-107, FR-108)
-└── load/               # k6 load tests (FR-106)
+tests/                  # Flat layout — NFR-32 ratios measured via pytest markers
+├── test_fr*.py         # All test files co-located; classification by docstring tag
+├── strategy.py         # TestStrategy: pyramid validator + E2E runner (FR-107–108)
+└── pyramid.py          # Unit-module map for static coverage proxy
 ```
 
 **CRG Edge Budget** (per directory — architectural design targets; no tool scan until implementation):
@@ -148,13 +157,15 @@ tests/
 - Heartbeat (30s ping, 10s timeout) → FR-59
 
 #### Module: common.py (Hub)
-- `UnifiedMessage` frozen dataclass → FR-07
 - `UnifiedResponse` frozen dataclass → FR-08
 - `ApiResponse[T]`, `PaginatedResponse[T]` → FR-09
 - `build_response()`, `extract_user_context()` — called by all sibling modules per function body
 
-#### Module: agent_card.py
+> **Note**: `UnifiedMessage` (FR-07) lives in `core/unified_message.py`, not `api/common.py`. The api layer imports it as a read-only dataclass (no business logic). See `api_layer_can_import_core_dataclasses_only` in SAB architecture_constraints.
+
+#### Module: webhooks.py (also hosts agent_card_app)
 - GET /.well-known/agent.json (name/description/url/version/capabilities/methods/auth_schemes) → FR-44
+- Agent Card is implemented as `agent_card_app = FastAPI(...)` within webhooks.py (see ADR-016 for consolidation decision)
 
 #### Logical Constraints
 - Middleware chain order enforced: TLS → IP Whitelist → Webhook Signature → Platform Adapter → Rate Limiting → RBAC (FR-24)

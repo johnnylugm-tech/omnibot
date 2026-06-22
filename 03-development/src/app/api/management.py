@@ -18,9 +18,14 @@ Citations:
 from __future__ import annotations
 
 import time
+from typing import Optional
+
+from fastapi import APIRouter, HTTPException, Query
 
 from app.admin.rbac import RBACEnforcer
 from app.api.common import PaginatedResponse
+
+router = APIRouter(prefix="/management", tags=["management"])
 
 # HTTP status codes used across management endpoints.
 _HTTP_OK: int = 200
@@ -131,6 +136,29 @@ def create_experiment(role: str, payload: dict) -> int:
     if not _authorized(role, "experiment", "write"):
         return _HTTP_FORBIDDEN
     return _HTTP_OK
+
+
+@router.get("/health")
+def _health_route() -> dict:
+    return check_health()
+
+
+@router.get("/knowledge")
+def _knowledge_list_route(
+    role: str = Query("anonymous"), page: int = Query(1), limit: int = Query(20)
+) -> dict:
+    result = list_knowledge(role, page, limit)
+    if isinstance(result, int):
+        raise HTTPException(status_code=result)
+    return {"total": result.total, "page": result.page, "limit": result.limit}
+
+
+@router.post("/knowledge")
+def _knowledge_create_route(role: str = Query("anonymous"), body: Optional[dict] = None) -> dict:  # noqa: UP045
+    result = create_knowledge(role, body or {})
+    if result == _HTTP_FORBIDDEN:
+        raise HTTPException(status_code=_HTTP_FORBIDDEN)
+    return {"status": result}
 
 
 __all__ = [

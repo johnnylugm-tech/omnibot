@@ -484,8 +484,8 @@ AGENT_CARD: dict[str, object] = {
         {"type": "bearer", "scheme": "Bearer"},
     ],
 }
-app = FastAPI(title="OmniBot Agent Card", version="0.1.0")
-@app.get("/.well-known/agent.json")
+agent_card_app = FastAPI(title="OmniBot Agent Card", version="0.1.0")
+@agent_card_app.get("/.well-known/agent.json")
 def agent_card() -> dict[str, object]:
     """Return the static OmniBot Agent Card payload.
 
