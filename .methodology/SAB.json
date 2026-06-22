@@ -8,12 +8,10 @@
       "name": "api",
       "modules": [
         "app.api.common",
-        "app.api.main",
         "app.api.webhooks",
         "app.api.management",
         "app.api.auth",
-        "app.api.websocket",
-        "app.api.agent_card"
+        "app.api.websocket"
       ],
       "allowed_dependencies": [
         "core",
@@ -384,7 +382,7 @@
     "FR-41": "app.services.aee",
     "FR-42": "app.services.aee",
     "FR-43": "app.services.aee",
-    "FR-44": "app.api.agent_card",
+    "FR-44": "app.api.webhooks",
     "FR-45": "app.services.aee",
     "FR-46": "app.core.emotion",
     "FR-47": "app.core.emotion",
