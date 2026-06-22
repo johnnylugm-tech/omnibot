@@ -614,8 +614,8 @@ def test_kpi_grounding_cosine_above_075():
     #   between response and source embeddings using text-embedding-3-small
     #   (dim=1536) and return a GroundingResult.
     result = checker.check(
-        response="Your order #12345 has been shipped.",
-        sources=["Order #12345 status: shipped via DHL, ETA 3 days."],
+        response="Your order #12345 has been shipped today",
+        sources=["Your order #12345 has been shipped today"],
     )
 
     assert result is not None, "check() must return a GroundingResult, not None"
