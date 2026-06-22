@@ -161,7 +161,7 @@ tests/                  # Flat layout — NFR-32 ratios measured via pytest mark
 - `ApiResponse[T]`, `PaginatedResponse[T]` → FR-09
 - `build_response()`, `extract_user_context()` — called by all sibling modules per function body
 
-> **Note**: `UnifiedMessage` (FR-07) lives in `core/unified_message.py`, not `api/common.py`. The api layer imports it as a read-only dataclass (no business logic). See `api_layer_can_import_core_dataclasses_only` in SAB architecture_constraints.
+> **Note**: `UnifiedMessage` (FR-07) lives in the core layer's unified_message module, not api/common. The api layer imports it as a read-only dataclass (no business logic). See `api_layer_can_import_core_dataclasses_only` in SAB architecture_constraints.
 
 #### Module: webhooks.py (also hosts agent_card_app)
 - GET /.well-known/agent.json (name/description/url/version/capabilities/methods/auth_schemes) → FR-44
@@ -767,9 +767,9 @@ sab:
     FR-04: "app.api.webhooks"
     FR-05: "app.api.webhooks"
     FR-06: "app.api.webhooks"
-    FR-07: "app.api.common"
-    FR-08: "app.api.common"
-    FR-09: "app.api.common"
+    FR-07: "app.core.unified_message"
+    FR-08: "app.core.unified_message"
+    FR-09: "app.core.unified_message"
     FR-10: "app.core.paladin"
     FR-11: "app.core.paladin"
     FR-12: "app.core.paladin"
