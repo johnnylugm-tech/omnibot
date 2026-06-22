@@ -63,7 +63,7 @@ import pytest
 #   the module does not exist. That is the valid RED signal. GREEN
 #   creates ``agent_card.py`` with the surface above.
 # ---------------------------------------------------------------------------
-from app.api.webhooks import app
+from app.api.webhooks import agent_card_app as app
 
 
 # ---------------------------------------------------------------------------
