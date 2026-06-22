@@ -80,7 +80,9 @@ class AgentPortal:
 
         Citation: test_fr104.py L171
         """
-        self._inbox: dict[str, list[dict[str, Any]]] = None
+        self._inbox: dict[str, list[dict[str, Any]]] = {
+            section: [] for section in INBOX_SECTIONS
+        }
 
     # ------------------------------------------------------------------
     # Injectable seams — patched by the autouse fixture in test_fr104.py

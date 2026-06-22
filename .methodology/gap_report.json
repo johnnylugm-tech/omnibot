@@ -1,12 +1,12 @@
 {
   "summary": {
-    "total": 468,
+    "total": 473,
     "missing": 0,
     "incomplete": 0,
-    "orphaned": 468,
+    "orphaned": 473,
     "critical": 0,
     "major": 0,
-    "minor": 468
+    "minor": 473
   },
   "gaps": [
     {
@@ -648,6 +648,12 @@
     {
       "type": "ORPHANED",
       "severity": "minor",
+      "reason": "'health' has no corresponding specification in SPEC.md",
+      "action": "Add spec for health or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
       "reason": "'check_health' has no corresponding specification in SPEC.md",
       "action": "Add spec for check_health or remove if unnecessary"
     },
@@ -1184,6 +1190,12 @@
       "severity": "minor",
       "reason": "'Pipeline' has no corresponding specification in SPEC.md",
       "action": "Add spec for Pipeline or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'handle_message' has no corresponding specification in SPEC.md",
+      "action": "Add spec for handle_message or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
@@ -2726,6 +2738,24 @@
       "severity": "minor",
       "reason": "'run_fallback_escalation_scenario' has no corresponding specification in SPEC.md",
       "action": "Add spec for run_fallback_escalation_scenario or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'TestStrategy' has no corresponding specification in SPEC.md",
+      "action": "Add spec for TestStrategy or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'validate_pyramid' has no corresponding specification in SPEC.md",
+      "action": "Add spec for validate_pyramid or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'run_e2e_pipeline' has no corresponding specification in SPEC.md",
+      "action": "Add spec for run_e2e_pipeline or remove if unnecessary"
     },
     {
       "type": "ORPHANED",

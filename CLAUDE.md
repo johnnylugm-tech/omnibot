@@ -8,7 +8,7 @@
 <!-- harness:auto-start -->
 ## Harness Status _(auto-generated — do not edit this block)_
 
-> Phase: **4 — Testing** | Last Gate: **Gate 1** | Last FR: FR-89 | Updated: 2026-06-22
+> Phase: **4 — Testing** | Last Gate: **Gate 1** | Last FR: FR-107 | Updated: 2026-06-22
 
 ### Gate Progress
 | Gate | Score / FRs | Status |
@@ -38,7 +38,7 @@
 | FR-104 | — | ⬜ Pending |
 | FR-105 | — | ⬜ Pending |
 | FR-106 | — | ⬜ Pending |
-| FR-107 | — | ⬜ Pending |
+| FR-107 | 98.3 | ✅ COMPLETE |
 | FR-108 | — | ⬜ Pending |
 | FR-11 | — | ⬜ Pending |
 | FR-12 | — | ⬜ Pending |
@@ -78,7 +78,7 @@
 | FR-46 | — | ⬜ Pending |
 | FR-47 | — | ⬜ Pending |
 | FR-48 | — | ⬜ Pending |
-| FR-49 | — | ⬜ Pending |
+| FR-49 | 91.5 | ✅ COMPLETE |
 | FR-50 | — | ⬜ Pending |
 | FR-51 | — | ⬜ Pending |
 | FR-52 | — | ⬜ Pending |

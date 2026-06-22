@@ -92,17 +92,18 @@ class Pipeline:
         content: str = msg.content
 
         if self.paladin is not None:
-            self.paladin.check(content)
+            self.paladin.check_input(content)
 
         if self.pii is not None:
             mask_result = self.pii.mask(content)
             content = mask_result.masked_text
 
-        if self.dst is not None:
+        if self.dst is not None and self.dst.state == "INTENT_DETECTED":
             self.dst.transition("SLOT_FILLING")
 
+        knowledge_result = None
         if self.knowledge is not None:
-            self.knowledge.query(content)
+            knowledge_result = self.knowledge.query(content)
 
         self.process(msg.platform, content)
 
@@ -111,10 +112,17 @@ class Pipeline:
                 str(getattr(msg.platform, "value", msg.platform)), content
             )
 
+        if knowledge_result is not None:
+            source = ResponseSource(knowledge_result.source)
+            confidence = knowledge_result.confidence
+        else:
+            source = ResponseSource.RULE
+            confidence = 1.0
+
         return UnifiedResponse(
             content=content,
-            source=ResponseSource.RULE,
-            confidence=1.0,
+            source=source,
+            confidence=confidence,
         )
 
     def process(self, platform: Any, text: str) -> Mapping[str, Any]:
