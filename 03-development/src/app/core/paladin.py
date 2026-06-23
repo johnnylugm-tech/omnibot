@@ -662,9 +662,15 @@ def _result_from_verdict(verdict: dict) -> ClassificationResult:
         injection_type = InjectionType.NONE
         is_unverified = True
 
+    import math
+    c = float(verdict.get("confidence", 0.0))
+    if math.isnan(c):
+        c = 0.0
+    confidence = max(0.0, min(1.0, c))
+
     return ClassificationResult(
         is_injection=bool(verdict.get("is_injection", False)),
-        confidence=float(verdict.get("confidence", 0.0)),
+        confidence=confidence,
         injection_type=injection_type,
         is_unverified=is_unverified,
     )
@@ -1058,14 +1064,13 @@ class PALADINPipeline:
         Kept as a private helper so ``process`` stays a flat routing
         function and the audit-log schema lives in exactly one place.
         """
-        with contextlib.suppress(Exception):
-            self._security_log_writer(
-                event=_RETROSPECTIVE_BLOCK_EVENT,
-                risk_level=risk_level,
-                injection_type=verdict.injection_type.value,
-                confidence=verdict.confidence,
-                text=text,
-            )
+        self._security_log_writer(
+            event=_RETROSPECTIVE_BLOCK_EVENT,
+            risk_level=risk_level,
+            injection_type=verdict.injection_type.value,
+            confidence=verdict.confidence,
+            text=text,
+        )
         return self._blocked_result(
             block_reason=_BLOCK_REASON_INJECTION,
             tier3_called=True,

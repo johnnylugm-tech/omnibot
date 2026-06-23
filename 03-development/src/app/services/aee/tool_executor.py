@@ -319,10 +319,7 @@ class ToolExecutor:
                             return await asyncio.wait_for(handler(**arguments), timeout=_handler_timeout)
                         else:
                             inner_loop = asyncio.get_running_loop()
-                            return await asyncio.wait_for(
-                                inner_loop.run_in_executor(None, partial(handler, **arguments)),
-                                timeout=_handler_timeout
-                            )
+                            return await inner_loop.run_in_executor(None, partial(handler, **arguments))
                     return asyncio.run(_inner())
 
                 with concurrent.futures.ThreadPoolExecutor(1) as pool:
@@ -333,13 +330,12 @@ class ToolExecutor:
                         return await asyncio.wait_for(handler(**arguments), timeout=_handler_timeout)
                     else:
                         inner_loop = asyncio.get_running_loop()
-                        return await asyncio.wait_for(
-                            inner_loop.run_in_executor(None, partial(handler, **arguments)),
-                            timeout=_handler_timeout
-                        )
+                        return await inner_loop.run_in_executor(None, partial(handler, **arguments))
                 result = asyncio.run(_run_handler())
 
-        except BaseException as exc:
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
             import asyncio
             if isinstance(exc, (TimeoutError, asyncio.TimeoutError)) or type(exc).__name__ == "TimeoutError":
                 return fail(f"timeout: Tool '{tool_name}' exceeded {_handler_timeout}s timeout")

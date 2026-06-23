@@ -537,20 +537,17 @@ class CalibrationPipeline:
                 fallback=None,
             )
 
+        if golden_set:
+            # Branch 2: golden-set pass/fail.
+            kappa = self._agreement_rate(golden_set)
+            action = "pass" if (kappa is not None and kappa >= 0.7) else "recalibration"
+            return CalibrationResult(
+                kappa=kappa,
+                action=action,
+                fallback=None,
+            )
+
         try:
-            if golden_set:
-                # Branch 2: golden-set pass/fail. The golden_set
-                # tuple shape is (human_label, judge_label) — the
-                # tests pass precomputed pairs so the LLM is not
-                # consulted here (the LLM scoring step is part of
-                # production wiring but is not under test).
-                kappa = self._agreement_rate(golden_set)
-                action = "pass" if (kappa is not None and kappa >= 0.7) else "recalibration"
-                return CalibrationResult(
-                    kappa=kappa,
-                    action=action,
-                    fallback=None,
-                )
             # Branch 3: empty golden_set — perform a calibration
             # LLM call under the timeout budget. This is the
             # single call that fires NP-07 (LLM raises) and NP-15
@@ -628,7 +625,7 @@ class CalibrationPipeline:
             # Field contract: {"label": <human_label>, "judge_label": <judge_prediction>}.
             matches = sum(
                 1 for item in golden_set
-                if item.get("label") == item.get("judge_label")
+                if "label" in item and "judge_label" in item and item["label"] == item["judge_label"]
             )
             return matches / n
         else:

@@ -260,19 +260,16 @@ class AsyncMessageProcessor:
                 if idle < self.idle_ms:
                     continue
                 msg_id = entry["message_id"]
-                # XCLAIM JUSTID is the cross-process gate: a losing
-                # racer gets ``[]`` back and naturally drops out.
+                fields = await self._fetch_message_fields(msg_id)
+                if fields is None:
+                    continue
                 justids = await self.redis.xclaim(
                     self.stream, self.group_name, consumer,
                     min_idle_time=self.idle_ms,
                     message_ids=[msg_id],
                 )
                 for claimed_id in justids:
-                    fields = await self._fetch_message_fields(claimed_id)
-                    if fields is not None:
-                        claimed.append(
-                            Message(message_id=claimed_id, fields=fields)
-                        )
+                    claimed.append(Message(message_id=claimed_id, fields=fields))
             if len(detailed) < _PEL_BATCH_SIZE:
                 # Short batch ⇒ we drained the PEL in this round.
                 break

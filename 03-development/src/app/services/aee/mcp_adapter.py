@@ -193,12 +193,13 @@ class MCPAdapter(ActionAdapter):
                     input=init_req + list_req,
                     timeout=self.connect_timeout_ms / 1000
                 )
-            except subprocess.TimeoutExpired:
+                if proc.returncode != 0:
+                    return []
+                return self._parse_tool_list(stdout)
+            except Exception:
                 proc.kill()
+                proc.wait(timeout=1.0)
                 return []
-            if proc.returncode != 0:
-                return []
-            return self._parse_tool_list(stdout)
         except Exception:
             return []
 

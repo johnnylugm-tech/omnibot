@@ -171,7 +171,7 @@ class HybridKnowledge:
         "FROM knowledge_base "
         "WHERE content ILIKE :pattern "
         "   OR :query = ANY(keywords) "
-        "ORDER BY score DESC, id "
+        "ORDER BY id "
         "LIMIT :limit"
     )
 
@@ -193,10 +193,11 @@ class HybridKnowledge:
         if not query or self._session is None:
             return None
 
+        escaped_query = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         result = self._session.execute(
-            self._RULE_SQL,
+            self._RULE_SQL.replace("ILIKE :pattern", "ILIKE :pattern ESCAPE '\\\\'"),
             {
-                "pattern": f"%{query}%",
+                "pattern": f"%{escaped_query}%",
                 "query": query,
                 "limit": self.RULE_LIMIT,
             },
@@ -1398,8 +1399,9 @@ def batch_import_knowledge(
         try:
             enqueue_embedding_job(job)
             enqueued += 1
-        except Exception:
-            pass
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning("FR-78 batch enqueue failed: %r", exc)
 
     elapsed = time.perf_counter() - start
     count = len(entries)

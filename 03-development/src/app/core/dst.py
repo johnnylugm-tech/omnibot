@@ -450,18 +450,13 @@ class DialogueState:
         # and handler call).
         if (
             self.state == "AWAITING_CONFIRMATION"
-            and awaiting_rounds > MAX_AWAITING_CONFIRMATION_ROUNDS
+            and awaiting_rounds >= MAX_AWAITING_CONFIRMATION_ROUNDS
         ):
             return "ESCALATED"
         if user_response == "confirm" and self.state == "AWAITING_CONFIRMATION":
             return "PROCESSING"
         if user_response == "deny" and self.state == "AWAITING_CONFIRMATION":
             return "SLOT_FILLING"
-        if (
-            self.state == "AWAITING_CONFIRMATION"
-            and awaiting_rounds >= MAX_AWAITING_CONFIRMATION_ROUNDS
-        ):
-            return "ESCALATED"
         return None
 
 
@@ -605,7 +600,7 @@ class ContextWindowManager:
         exactly equal to ``history_budget`` does NOT trigger
         summarization (matches the spec-pinned boundary condition).
         """
-        total_tokens = sum(self.count_tokens(m.get("content", "")) for m in messages)
+        total_tokens = sum(self.count_tokens(m.get("content") or "") for m in messages)
         if total_tokens <= self.history_budget:
             return list(messages)
         drop_count = max(1, len(messages) // 3)

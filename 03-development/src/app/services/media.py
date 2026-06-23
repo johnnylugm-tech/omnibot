@@ -190,9 +190,14 @@ class ClamAVScanner:
 
         def _invoke() -> None:
             try:
-                holder["result"] = self._runner(file_bytes, file_type)  # type: ignore[arg-type, call-overload]
-            except Exception:  # pragma: no cover
-                holder["error"] = True
+                if self._runner is subprocess.run:
+                    holder["result"] = self._runner(file_bytes, file_type, timeout=self.timeout_ms / 1000.0)  # type: ignore[arg-type, call-overload]
+                else:
+                    holder["result"] = self._runner(file_bytes, file_type)  # type: ignore[arg-type, call-overload]
+            except Exception as exc:  # pragma: no cover
+                import logging
+                logging.getLogger(__name__).exception("ClamAV scan failed", exc_info=True)
+                holder["error"] = repr(exc)
 
         thread = threading.Thread(target=_invoke, daemon=True)
         start = time.monotonic()

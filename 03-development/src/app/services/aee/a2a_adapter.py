@@ -209,9 +209,9 @@ class A2AAdapter(ActionAdapter):
         """[M-07] Validate URL and detect DNS rebinding via IP pinning.
 
         On first call for a given hostname the resolved IPs are cached.
-        Subsequent calls reject any change in the resolved set, preventing
-        DNS-rebinding attacks that occur between _validate_agent_url() and
-        the actual httpx connect.
+        Subsequent calls reject any change in the resolved set. This is a
+        best-effort guard because of the TOCTOU window between this check
+        and the actual httpx connect.
         """
         from urllib.parse import urlparse as _urlparse
         hostname = _urlparse(url).hostname
@@ -282,6 +282,8 @@ class A2AAdapter(ActionAdapter):
             response = self._client.get(url)
             response.raise_for_status()
             card = response.json()
+        except ValueError:
+            raise
         except Exception:
             # Negative-cache the failure for ``agent_card_negative_ttl_seconds``
             # so a transient DNS / connect blip does not blank the tool
@@ -358,13 +360,16 @@ class A2AAdapter(ActionAdapter):
                 headers=headers,
             )
             response.raise_for_status()
-        except Exception as exc:
-            # All execute() failures (connect / DNS / HTTP 4xx/5xx) surface
-            # through the NP-15 channel so callers see a uniform
-            # ``error_message`` containing ``"timeout"``.
-            # Truncate to avoid leaking bearer tokens in exception messages
+        except httpx.HTTPStatusError as exc:
+            safe_exc = str(exc).split('\n')[0][:200]
+            return fail(f"http_error: {safe_exc}")
+        except (httpx.TimeoutException, httpx.ConnectError) as exc:
             safe_exc = str(exc).split('\n')[0][:200]
             return fail(f"{_TIMEOUT_FAILURE_PREFIX}{safe_exc}")
+        except Exception as exc:
+            # All execute() failures surface through the NP-15 channel
+            safe_exc = str(exc).split('\n')[0][:200]
+            return fail(f"error: {safe_exc}")
 
         try:
             body: Any = response.json()
