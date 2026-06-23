@@ -18,8 +18,17 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent / "03-development" / "src"))
+
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+url = os.environ.get("DATABASE_URL", "postgresql+asyncpg://omnibot:dev_only_change_me_pg@127.0.0.1:5433/omnibot")
+config.set_main_option("sqlalchemy.url", url)
+
 target_metadata = None
 
 # other values from the config, defined by the needs of env.py,
