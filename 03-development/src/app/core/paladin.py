@@ -505,20 +505,13 @@ class SemanticInjectionClassifier:
         tests can drive a deterministic slow coroutine past the
         pipeline's nominal 200ms budget to assert parallel execution.
         """
-        if not isinstance(text, str):
-            raise TypeError(
-                "SemanticInjectionClassifier.classify_async requires str text"
-            )
-
-        if risk_level not in self._HIGH_RISK_LEVELS:
-            return _make_passthrough(is_unverified=False)
-
-        try:
-            verdict = await self._call_llm(text, timeout_ms)
-        except (TimeoutError, ConnectionError, OSError, ValueError):
-            return _make_passthrough(is_unverified=True)
-
-        return _result_from_verdict(verdict)
+        import asyncio
+        return await asyncio.to_thread(
+            self.classify,
+            text,
+            risk_level=risk_level,
+            timeout_ms=timeout_ms,
+        )
 
     def classify(
         self,
