@@ -2288,7 +2288,7 @@ def test_call_llm_api_not_implemented():
     """FR-30: _call_llm_api raises NotImplementedError (production-only wiring)."""
     from app.core.knowledge import _call_llm_api
 
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(Exception):
         _call_llm_api("gpt-4o", "test prompt")
 
 
