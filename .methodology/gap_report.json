@@ -1,12 +1,12 @@
 {
   "summary": {
-    "total": 473,
+    "total": 472,
     "missing": 0,
     "incomplete": 0,
-    "orphaned": 473,
+    "orphaned": 472,
     "critical": 0,
     "major": 0,
-    "minor": 473
+    "minor": 472
   },
   "gaps": [
     {
@@ -440,12 +440,6 @@
       "severity": "minor",
       "reason": "'ahandle_jsonrpc_call' has no corresponding specification in SPEC.md",
       "action": "Add spec for ahandle_jsonrpc_call or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'BaseWebhookAdapter' has no corresponding specification in SPEC.md",
-      "action": "Add spec for BaseWebhookAdapter or remove if unnecessary"
     },
     {
       "type": "ORPHANED",

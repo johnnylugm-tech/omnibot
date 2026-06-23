@@ -12,7 +12,8 @@
         "app.api.management",
         "app.api.auth",
         "app.api.websocket",
-        "app.api.main"
+        "app.api.main",
+        "app.api.adapters.a2a"
       ],
       "allowed_dependencies": [
         "core",
@@ -29,7 +30,8 @@
         "app.core.knowledge",
         "app.core.dst",
         "app.core.response",
-        "app.core.emotion"
+        "app.core.emotion",
+        "app.core.unified_message"
       ],
       "allowed_dependencies": [
         "infra",
@@ -61,7 +63,9 @@
         "app.infra.circuit_breaker",
         "app.infra.observability",
         "app.infra.security",
-        "app.infra.deployment"
+        "app.infra.deployment",
+        "app.middleware.chain",
+        "app.middleware.ip_whitelist"
       ],
       "allowed_dependencies": []
     },
