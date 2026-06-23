@@ -173,7 +173,7 @@ class ABTestManager:
         for variant, weight in traffic_split.items():
             if not isinstance(weight, (int, float)) or weight < 0:
                 continue
-            cumulative += int(weight)
+            cumulative += float(weight)
             if bucket < cumulative:
                 return str(variant)
         return ABTestManager._CONTROL_FALLBACK

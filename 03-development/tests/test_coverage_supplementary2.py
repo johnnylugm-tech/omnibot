@@ -555,7 +555,7 @@ def test_a2a_adapter_close():
     from app.services.aee.a2a_adapter import A2AAdapter
 
     with patch("app.services.aee.a2a_adapter._validate_agent_url"):
-        adapter = A2AAdapter.__new__(A2AAdapter)
+        adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
         adapter._client = MagicMock()
         adapter.close()
     adapter._client.close.assert_called_once()
@@ -566,7 +566,7 @@ def test_a2a_discover_agent_card_http_success():
     from app.services.aee.a2a_adapter import A2AAdapter
 
     with patch("app.services.aee.a2a_adapter._validate_agent_url"):
-        adapter = A2AAdapter.__new__(A2AAdapter)
+        adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
         adapter.agent_url = "https://agent.example.com"
         adapter.bearer_token = None
         adapter.timeout = 2.0
@@ -592,7 +592,7 @@ def test_a2a_list_tools_with_methods():
     from app.services.aee.a2a_adapter import A2AAdapter, ToolDefinition
 
     with patch("app.services.aee.a2a_adapter._validate_agent_url"):
-        adapter = A2AAdapter.__new__(A2AAdapter)
+        adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
         adapter.agent_url = "https://agent.example.com"
 
     card = {"methods": [
@@ -613,7 +613,7 @@ def test_a2a_execute_success():
     from app.services.aee.a2a_adapter import A2AAdapter
 
     with patch("app.services.aee.a2a_adapter._validate_agent_url"):
-        adapter = A2AAdapter.__new__(A2AAdapter)
+        adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
         adapter.agent_url = "https://agent.example.com"
         adapter.bearer_token = "tok"
         mock_client = MagicMock()
@@ -632,7 +632,7 @@ def test_a2a_execute_json_parse_error():
     from app.services.aee.a2a_adapter import A2AAdapter
 
     with patch("app.services.aee.a2a_adapter._validate_agent_url"):
-        adapter = A2AAdapter.__new__(A2AAdapter)
+        adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
         adapter.agent_url = "https://agent.example.com"
         adapter.bearer_token = None
         mock_client = MagicMock()
@@ -652,7 +652,7 @@ def test_a2a_execute_jsonrpc_error():
     from app.services.aee.a2a_adapter import A2AAdapter
 
     with patch("app.services.aee.a2a_adapter._validate_agent_url"):
-        adapter = A2AAdapter.__new__(A2AAdapter)
+        adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
         adapter.agent_url = "https://agent.example.com"
         adapter.bearer_token = None
         mock_client = MagicMock()
@@ -1197,7 +1197,7 @@ def test_webui_update_entry_returns_none_not_found():
     from app.admin.webui import KnowledgeAdminAPI
 
     api = KnowledgeAdminAPI()
-    result = api.update_entry(99999, title="new")
+    result = api.update_entry(99999, title="new", role="admin")
     assert result is None
 
 
@@ -1775,7 +1775,7 @@ def test_a2a_adapter_close_calls_client_close():
     """A2AAdapter.close() calls self._client.close()."""
     from app.services.aee.a2a_adapter import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
     adapter._client = MagicMock()
     adapter.close()
     adapter._client.close.assert_called_once()
@@ -1788,7 +1788,7 @@ def test_a2a_discover_agent_card_http_200():
     """_discover_agent_card returns card dict on HTTP 200."""
     from app.services.aee.a2a_adapter import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
     adapter.agent_url = "https://agent.example.com"
     adapter.bearer_token = None
     adapter.timeout = 2.0
@@ -1817,7 +1817,7 @@ def test_a2a_list_tools_from_card():
     """list_tools converts card methods into ToolDefinition list."""
     from app.services.aee.a2a_adapter import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
     adapter.agent_url = "https://agent.example.com"
     card = {"methods": [
         {"name": "do_thing", "description": "does a thing"},
@@ -1836,7 +1836,7 @@ def test_a2a_list_tools_from_card():
     """A2AAdapter.execute returns ok result on successful JSON-RPC call."""
     from app.services.aee.a2a_adapter import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
     adapter.agent_url = "https://agent.example.com"
     adapter.bearer_token = "tok"
     adapter._time_offset = 0.0
@@ -1855,7 +1855,7 @@ def test_a2a_execute_json_decode_error():
     """execute returns fail when response.json() raises ValueError."""
     from app.services.aee.a2a_adapter import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
     adapter.agent_url = "https://agent.example.com"
     adapter.bearer_token = None
     adapter._time_offset = 0.0
@@ -1873,7 +1873,7 @@ def test_a2a_execute_json_decode_error():
     """execute returns fail when response body contains JSON-RPC error."""
     from app.services.aee.a2a_adapter import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
     adapter.agent_url = "https://agent.example.com"
     adapter.bearer_token = None
     adapter._time_offset = 0.0
@@ -1906,7 +1906,8 @@ def test_webui_crud_update_action():
     from app.admin.webui import KNOWLEDGE_ACTION_UPDATE, KnowledgeAdminAPI
 
     api = KnowledgeAdminAPI()
-    result = api.crud(KNOWLEDGE_ACTION_UPDATE, entry_id=0, fields={})
+    with patch("app.admin.rbac.RBACEnforcer.check", return_value=200):
+        result = api.crud(KNOWLEDGE_ACTION_UPDATE, entry_id=0, fields={})
     assert isinstance(result, dict)
 
 
@@ -3346,8 +3347,8 @@ def test_a2a_check_ip_pinning_no_hostname():
     """a2a_adapter.py:219 — _check_ip_pinning returns early when URL has no hostname."""
     from app.services.aee.a2a_adapter import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
-    adapter._validated_ips = {}
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0
     # URL with no hostname → _urlparse("file:///path").hostname is None
     adapter._check_ip_pinning("file:///path/to/file")  # should not raise
 
@@ -3359,8 +3360,8 @@ def test_a2a_check_ip_pinning_first_visit_stores_ips():
     """a2a_adapter.py:224-226 — _check_ip_pinning stores IPs on first visit."""
     from app.services.aee.a2a_adapter import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
-    adapter._validated_ips = {}
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0
     with patch("app.services.aee.a2a_adapter._validate_agent_url"), \
          patch("app.services.aee.a2a_adapter._resolve_addresses", return_value=["127.0.0.1"]):
         adapter._check_ip_pinning("http://example.com/api")
@@ -3374,8 +3375,9 @@ def test_a2a_check_ip_pinning_rebinding_raises():
     """a2a_adapter.py:227-231 — _check_ip_pinning raises ValueError on IP change."""
     from app.services.aee.a2a_adapter import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
-    adapter._validated_ips = {"example.com": frozenset({"10.0.0.1"})}
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    import time
+    adapter._validated_ips = {"example.com": (frozenset({"10.0.0.1"}), time.time())}
     with patch("app.services.aee.a2a_adapter._validate_agent_url"), \
          patch("app.services.aee.a2a_adapter._resolve_addresses", return_value=["192.168.1.1"]):
         with pytest.raises(ValueError, match="DNS rebinding"):
@@ -3728,7 +3730,7 @@ async def test_a2a_averify_m2m_token_no_bearer():
     """a2a.py:190-192 — averify_m2m_token returns False when no Bearer token."""
     from app.api.adapters.a2a import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
     adapter._jwks_url = "http://example.com/.well-known/jwks.json"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
@@ -3741,7 +3743,7 @@ async def test_a2a_averify_m2m_token_not_three_segments():
     """a2a.py:196-197 — averify_m2m_token returns False for non-3-segment JWT."""
     from app.api.adapters.a2a import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
     adapter._jwks_url = "http://example.com/.well-known/jwks.json"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
@@ -3760,7 +3762,7 @@ async def test_a2a_averify_m2m_token_exception_path():
 
     from app.api.adapters.a2a import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
     adapter._jwks_url = "http://example.com/.well-known/jwks.json"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
@@ -3787,11 +3789,11 @@ async def test_a2a_ahandle_jsonrpc_call_auth_failure_raises():
     """a2a.py:290-291 — ahandle_jsonrpc_call raises A2AAuthError when token invalid."""
     from app.api.adapters.a2a import A2AAdapter, A2AAuthError
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
     adapter._jwks_url = "http://x.com/jwks"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
-    adapter._validated_ips = {}
+    adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0
 
     with patch.object(adapter, "averify_m2m_token", AsyncMock(return_value=False)):
         with pytest.raises(A2AAuthError):
@@ -3806,11 +3808,11 @@ async def test_a2a_ahandle_jsonrpc_call_success():
     """a2a.py:293-307 — ahandle_jsonrpc_call returns UnifiedMessage when token valid."""
     from app.api.adapters.a2a import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
     adapter._jwks_url = "http://x.com/jwks"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
-    adapter._validated_ips = {}
+    adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0
 
     with patch.object(adapter, "averify_m2m_token", AsyncMock(return_value=True)), \
          patch.object(adapter, "_aextract_sub_from_token", AsyncMock(return_value="agent-1")):
@@ -3830,7 +3832,7 @@ async def test_a2a_aextract_sub_no_token():
     """a2a.py:360-362 — _aextract_sub_from_token returns _UNKNOWN_AGENT when no bearer."""
     from app.api.adapters.a2a import _UNKNOWN_AGENT, A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
     adapter._jwks_url = "http://x.com/jwks"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
@@ -3843,7 +3845,7 @@ async def test_a2a_aextract_sub_verify_fails():
     """a2a.py:364-365 — _aextract_sub_from_token returns _UNKNOWN_AGENT when verify fails."""
     from app.api.adapters.a2a import _UNKNOWN_AGENT, A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
     adapter._jwks_url = "http://x.com/jwks"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
@@ -3860,7 +3862,7 @@ async def test_a2a_aextract_sub_success():
 
     from app.api.adapters.a2a import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
     adapter._jwks_url = "http://x.com/jwks"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
@@ -3881,7 +3883,7 @@ async def test_a2a_aextract_sub_exception():
 
     from app.api.adapters.a2a import _UNKNOWN_AGENT, A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
     adapter._jwks_url = "http://x.com/jwks"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
@@ -3907,7 +3909,7 @@ async def test_a2a_averify_m2m_token_expired():
 
     from app.api.adapters.a2a import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
     adapter._jwks_url = "http://x.com/jwks"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
@@ -3930,7 +3932,7 @@ async def test_a2a_averify_m2m_token_wrong_audience():
 
     from app.api.adapters.a2a import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
     adapter._jwks_url = "http://x.com/jwks"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
@@ -3953,7 +3955,7 @@ async def test_a2a_averify_m2m_token_wrong_issuer():
 
     from app.api.adapters.a2a import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
     adapter._jwks_url = "http://x.com/jwks"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = "https://auth.example.com"  # non-empty → issuer check active
@@ -3976,7 +3978,7 @@ async def test_a2a_averify_m2m_token_no_matching_jwk():
 
     from app.api.adapters.a2a import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
     adapter._jwks_url = "http://x.com/jwks"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
@@ -4012,7 +4014,7 @@ async def test_a2a_averify_m2m_token_rsa_verify_success():
 
     from app.api.adapters.a2a import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
     adapter._jwks_url = "http://x.com/jwks"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""

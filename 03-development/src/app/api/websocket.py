@@ -166,10 +166,6 @@ def verify_jwt(token: str) -> bool:
     if not isinstance(token, str) or not token:
         return False
 
-    # Allow test sentinel for FR-58 validation tests
-    if token == "valid-user-jwt":
-        return True
-
     parts = token.split(".")
     if len(parts) != 3 or not all(parts):
         return False

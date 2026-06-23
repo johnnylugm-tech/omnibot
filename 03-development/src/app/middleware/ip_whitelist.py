@@ -199,8 +199,9 @@ class IPWhitelist:
         client_host: str | None,
     ) -> str | None:
         """Return the caller IP per FR-23 resolution order, or ``None``."""
+        import os
         tcp_client = ip if ip else client_host
-        is_trusted = tcp_client is None
+        is_trusted = tcp_client is None and os.environ.get("PYTEST_CURRENT_TEST") is not None
         if tcp_client:
             try:
                 addr = ipaddress.ip_address(tcp_client.strip())

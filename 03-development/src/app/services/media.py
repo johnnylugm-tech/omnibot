@@ -198,9 +198,9 @@ class ClamAVScanner:
         def _invoke() -> None:
             try:
                 if self._runner is subprocess.run:
-                    holder["result"] = self._runner(file_bytes, file_type, timeout=timeout_seconds)  # type: ignore[arg-type, call-overload, reportArgumentType]
+                    holder["result"] = self._runner(["clamdscan", "-"], input=file_bytes, capture_output=True, timeout=timeout_seconds)
                 else:
-                    holder["result"] = self._runner(file_bytes, file_type)  # type: ignore[arg-type, call-overload]
+                    holder["result"] = self._runner(file_bytes, file_type)
             except Exception as exc:  # pragma: no cover
                 import logging
                 logging.getLogger(__name__).exception(

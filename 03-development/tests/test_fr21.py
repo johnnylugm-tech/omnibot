@@ -53,7 +53,7 @@ def _send_sync(platform: str, n: int) -> list:
     """Send `n` sequential calls on a fresh RateLimiter; return list of results."""
     limiter = RateLimiter(redis_client=None)
     return [
-        limiter.allow(platform=platform, key=f"fr21-{platform}-{i}")
+        limiter.allow(platform=platform, key=f"fr21-{platform}-user")
         for i in range(n)
     ]
 
@@ -164,7 +164,7 @@ async def test_fr21_lua_atomic_no_race_condition():
         # body executes a single Lua script in one round-trip. Do NOT
         # split into read-then-write from Python.
         return await limiter.aallow(
-            platform="telegram", key=f"fr21-race-telegram-{i}"
+            platform="telegram", key="fr21-race-telegram-user"
         )
 
     results = await asyncio.gather(*(one_call(i) for i in range(50)))

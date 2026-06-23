@@ -18,12 +18,46 @@ import os
 import secrets
 import time
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from pydantic import BaseModel
 
 from app.admin.rbac import RBACEnforcer
 from app.api.adapters.utils import _b64url_encode
+from app.infra.rate_limit import RateLimiter
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+security = HTTPBearer()
+
+def get_current_user_role(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+    """Extract role from JWT."""
+    token = credentials.credentials
+    if not token:
+        return "anonymous"
+    parts = token.split(".")
+    if len(parts) != 3:
+        return "anonymous"
+    try:
+        import base64
+        payload_b64 = parts[1]
+        payload_bytes = base64.urlsafe_b64decode(payload_b64 + "=" * (-len(payload_b64) % 4))
+        payload = json.loads(payload_bytes)
+        sub = payload.get("sub", "")
+        # Very simple role mapping based on sub for demonstration
+        if sub == os.environ.get("OMNIBOT_ADMIN_USER", ""):
+            return "system"
+        return "customer"
+    except Exception:
+        return "anonymous"
+
+class LoginBody(BaseModel):
+    username: str
+    password: str
+
+class RoleAssignBody(BaseModel):
+    role: str
+
+_login_rate_limiter = RateLimiter()
 
 
 def _make_jwt(username: str) -> str:
@@ -102,16 +136,23 @@ def assign_role_to_user(user_id: str, role: str, caller_role: str) -> int:
 
 
 @router.post("/login")
-def _login_route(body: dict) -> dict:
-    result = login(body.get("username", ""), body.get("password", ""))
+def _login_route(body: LoginBody, request: Request) -> dict:
+    ip = request.client.host if request.client else "127.0.0.1"
+    # Re-use the rate limiter framework with a custom platform "web_login"
+    # so we don't spam the same bucket as normal web traffic
+    rate_outcome = _login_rate_limiter.allow("web", f"login_ip:{ip}")
+    if rate_outcome.status == 429:
+        raise HTTPException(status_code=429, detail="Too Many Requests")
+
+    result = login(body.username, body.password)
     if isinstance(result, int):
         raise HTTPException(status_code=result)
     return result
 
 
 @router.post("/users/{user_id}/roles")
-def _assign_role_route(user_id: str, body: dict) -> dict:
-    result = assign_role_to_user(user_id, body.get("role", ""), body.get("caller_role", ""))
+def _assign_role_route(user_id: str, body: RoleAssignBody, caller_role: str = Depends(get_current_user_role)) -> dict:
+    result = assign_role_to_user(user_id, body.role, caller_role)
     if result != 200:
         raise HTTPException(status_code=result)
     return {"status": result}

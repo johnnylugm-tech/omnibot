@@ -166,15 +166,24 @@ def export_user_data(user_id: str, format: str = "json") -> dict:
     }
     if format == "csv":
         import json
-        csv_lines = ["section,key,value"]
+        import csv
+        import io
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(["section", "key", "value"])
         for section, content in payload.items():
             if isinstance(content, (list, dict)):
-                val = json.dumps(content).replace('"', '""')
-                csv_lines.append(f'{section},content,"{val}"')
+                val = json.dumps(content)
+                if val.startswith(("=", "+", "-", "@", "\t", "\r")):
+                    val = "'" + val
+                writer.writerow([section, "content", val])
             else:
-                csv_lines.append(f'{section},value,"{content}"')
+                str_content = str(content)
+                if str_content.startswith(("=", "+", "-", "@", "\t", "\r")):
+                    str_content = "'" + str_content
+                writer.writerow([section, "value", str_content])
         return {
-            "csv_data": "\n".join(csv_lines),
+            "csv_data": output.getvalue(),
             "filename": f"user_data_{user_id}.csv",
             "content_type": "text/csv",
         }

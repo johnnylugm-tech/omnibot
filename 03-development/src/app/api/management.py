@@ -138,6 +138,9 @@ def create_experiment(role: str, payload: dict) -> int:
     return _HTTP_OK
 
 
+from fastapi import APIRouter, HTTPException, Query, Depends
+from app.api.auth import get_current_user_role
+
 @router.get("/health")
 def _health_route() -> dict:
     return check_health()
@@ -145,7 +148,7 @@ def _health_route() -> dict:
 
 @router.get("/knowledge")
 def _knowledge_list_route(
-    role: str = Query("anonymous"), page: int = Query(1), limit: int = Query(20)
+    role: str = Depends(get_current_user_role), page: int = Query(1), limit: int = Query(20)
 ) -> dict:
     result = list_knowledge(role, page, limit)
     if isinstance(result, int):
@@ -154,7 +157,7 @@ def _knowledge_list_route(
 
 
 @router.post("/knowledge")
-def _knowledge_create_route(role: str = Query("anonymous"), body: Optional[dict] = None) -> dict:  # noqa: UP045
+def _knowledge_create_route(role: str = Depends(get_current_user_role), body: Optional[dict] = None) -> dict:  # noqa: UP045
     result = create_knowledge(role, body or {})
     if result == _HTTP_FORBIDDEN:
         raise HTTPException(status_code=_HTTP_FORBIDDEN)

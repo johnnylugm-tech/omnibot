@@ -315,6 +315,9 @@ class KnowledgeAdminAPI:
         with self._store() as store:
             return store.get(entry_id)
 
+    from app.admin.rbac import RBACEnforcer
+    
+    @RBACEnforcer.require("knowledge", "write")
     def update_entry(
         self, entry_id: int, **fields: Any
     ) -> KnowledgeEntry | None:
@@ -323,7 +326,7 @@ class KnowledgeAdminAPI:
             if entry is None:
                 return None
             for key, value in fields.items():
-                if hasattr(entry, key):
+                if key in {"title", "content", "keywords"} and hasattr(entry, key):
                     setattr(entry, key, value)
             store.commit()  # H-23: real DB adapter requires explicit commit
         return entry

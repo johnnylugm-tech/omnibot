@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "430758fd1786cfc6a2c0ec43aab27d20bc22a408",
-  "content_sha256": "80ed0a5120ca942fe34b457940334741fcb32e9510617ed6e49144b9f961a9e7",
+  "git_sha": "e94ff0e3952ce5e5b3cfef9bd03fa5960e5ea580",
+  "content_sha256": "118fec37a8f762ac3d6a88600912cd78c72798bccd7020d1e40148d932f3ef8d",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -14,7 +14,7 @@
       "code_coverage": "97.2%",
       "test_coverage": "100.0%",
       "verification_rate": "97.2%",
-      "total_links": 257,
+      "total_links": 260,
       "missing_mappings": {
         "fr_without_srs": [
           "FR-01",
@@ -290,7 +290,8 @@
         "code_files": [
           "src/app/api/adapters/messenger.py",
           "src/app/api/adapters/verifiers.py",
-          "src/app/api/webhooks.py"
+          "src/app/api/webhooks.py",
+          "tests/test_fr03.py"
         ],
         "test_files": [
           "tests/test_fr03.py"
@@ -500,6 +501,7 @@
         "srs_section": null,
         "code_files": [
           "tests/pyramid.py",
+          "tests/strategy.py",
           "tests/test_fr107.py"
         ],
         "test_files": [
@@ -520,7 +522,8 @@
           "src/app/infra/deployment.py",
           "src/app/services/escalation.py",
           "src/app/services/llm_judge.py",
-          "tests/golden_dataset.py"
+          "tests/golden_dataset.py",
+          "tests/strategy.py"
         ],
         "test_files": [
           "tests/test_fr108.py"
@@ -1518,7 +1521,8 @@
         "status": "verified",
         "srs_section": null,
         "code_files": [
-          "src/app/api/auth.py"
+          "src/app/api/auth.py",
+          "src/app/api/main.py"
         ],
         "test_files": [
           "tests/test_fr86.py"

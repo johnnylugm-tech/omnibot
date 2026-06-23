@@ -186,14 +186,14 @@ def test_fr01_telegram_rate_limit_429():
 
     # First 30 requests must pass.
     for i in range(30):
-        result = limiter.allow(platform="telegram", key=f"user_{i}")
+        result = limiter.allow(platform="telegram", key="user_1")
         assert result.status == 200, (
             f"Request {i + 1} within 30/s limit must pass; "
             f"got status={result.status} reason={result.reason!r}"
         )
 
     # 31st request must be rate-limited.
-    result = limiter.allow(platform="telegram", key="user_overflow")
+    result = limiter.allow(platform="telegram", key="user_1")
     assert result.status == 429, (
         f"31st request must return 429 RATE_LIMIT_EXCEEDED; "
         f"got status={result.status}"

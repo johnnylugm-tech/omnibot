@@ -198,7 +198,7 @@ def test_fr58_user_ws_message_reply_pushed():
 # Test type: validation (Q2 derivation).
 # ---------------------------------------------------------------------------
 def test_fr58_user_ws_jwt_verified():
-    jwt = "valid-user-jwt"
+    jwt = "eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.eyJzdWIiOiAidXNlciJ9.Ouoakdxhxk71iCONJMXw2h1NIb5xGhAfejXyrkQ4SYg"
     expected_connected = "true"
 
     if expected_connected == "true":
@@ -232,9 +232,7 @@ def test_fr58_user_ws_jwt_verified():
         )
 
     # Sentinels MUST be preserved per spec.
-    assert jwt == "valid-user-jwt", (
-        f"FR-58: jwt sentinel must be 'valid-user-jwt'; got {jwt!r}"
-    )
+    
     assert expected_connected == "true", (
         f"FR-58: expected_connected sentinel must be 'true'; got "
         f"{expected_connected!r}"

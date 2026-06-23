@@ -211,11 +211,17 @@ class HybridKnowledge:
         if not rows:
             return None
 
-        best = rows[0]
-        confidence = self._score(best, query)
-        if confidence < self.CONFIDENCE_THRESHOLD:
+        best = None
+        max_score = 0.0
+        for row in rows:
+            score = self._score(row, query)
+            if score > max_score:
+                max_score = score
+                best = row
+
+        if max_score < self.CONFIDENCE_THRESHOLD:
             return None
-        return self._to_result(best, confidence)
+        return self._to_result(best, max_score)
 
     @staticmethod
     def _to_result(row: Any, confidence: float) -> KnowledgeResult:

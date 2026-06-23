@@ -119,6 +119,8 @@ class CLIAdapter(ActionAdapter):
         kill_signal: str | None = None,
         language: str | None = None,
     ) -> ToolExecutionResult:
+        if timeout_seconds is None:
+            timeout_seconds = 5.0
         """[FR-42] 在 sandboxed 子進程內執行本地 Python / Bash 腳本。
 
         Citations:
@@ -224,7 +226,7 @@ class CLIAdapter(ActionAdapter):
             return fail("process completed before kill signal could be sent")
 
         try:
-            stdout, stderr = proc.communicate(timeout=timeout_seconds)
+            stdout, stderr = proc.communicate(timeout=timeout_seconds if timeout_seconds is not None else 5.0)
         except subprocess.TimeoutExpired:
             # kill_signal didn't fire fast enough — fall back to hard kill
             # and report the timeout.

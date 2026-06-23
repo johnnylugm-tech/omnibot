@@ -41,10 +41,10 @@ def test_rate_limiter_drops_expired_bucket_entries():
     from app.infra.rate_limit import RateLimiter
     limiter = RateLimiter()
     old_ts = time.monotonic() - 100.0
-    limiter._buckets[("telegram", "")] = deque([old_ts, old_ts, old_ts])
+    limiter._buckets[("telegram", "user1")] = deque([old_ts, old_ts, old_ts])
     result = limiter._in_memory_check("telegram", "user1", 30)
     assert result.status == 200  # allowed
-    assert len(limiter._buckets[("telegram", "")]) == 1
+    assert len(limiter._buckets[("telegram", "user1")]) == 1
 
 
 # ===========================================================================
@@ -913,7 +913,7 @@ def test_knowledge_admin_api_update_entry():
     from app.admin.webui import KnowledgeAdminAPI
     api = KnowledgeAdminAPI()
     entry = api.create_entry(title="Test", content="Content")
-    result = api.update_entry(entry.id, title="Updated")
+    result = api.update_entry(entry.id, title="Updated", role="admin")
     assert result is not None
 
 
@@ -922,7 +922,7 @@ def test_knowledge_admin_api_crud_delete():
     from app.admin.webui import KNOWLEDGE_ACTION_DELETE, KnowledgeAdminAPI
     api = KnowledgeAdminAPI()
     entry = api.create_entry(title="T", content="C")
-    result = api.crud(KNOWLEDGE_ACTION_DELETE, entry_id=entry.id)
+    result = api.crud(KNOWLEDGE_ACTION_DELETE, entry_id=entry.id, role="admin")
     assert result is not None
 
 

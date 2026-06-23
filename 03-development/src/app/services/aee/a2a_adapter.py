@@ -433,7 +433,8 @@ class A2AAdapter(ActionAdapter):
             response.raise_for_status()
         except httpx.HTTPStatusError as exc:
             safe_exc = str(exc).split('\n')[0][:200]
-            return fail(f"http_error: {safe_exc}")
+            resp_text = getattr(exc.response, "text", "")[:500]
+            return fail(f"{_TIMEOUT_FAILURE_PREFIX}{safe_exc} - {resp_text}")
         except (httpx.TimeoutException, httpx.ConnectError) as exc:
             safe_exc = str(exc).split('\n')[0][:200]
             return fail(f"{_TIMEOUT_FAILURE_PREFIX}{safe_exc}")

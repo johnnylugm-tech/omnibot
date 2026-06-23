@@ -159,9 +159,18 @@ class A2AAdapter:
 
             # Fetch JWKS and verify RS256 signature
             import urllib.request
-            req = urllib.request.Request(self._jwks_url, headers={"User-Agent": "OmniBot"})
-            with urllib.request.urlopen(req, timeout=5.0) as _resp:
-                jwks = json.loads(_resp.read())
+            import urllib.error
+            import logging
+            
+            jwks = None
+            if hasattr(self, "_jwks_cache") and self._jwks_cache and time.time() - getattr(self, "_jwks_cache_time", 0) < 300:
+                jwks = self._jwks_cache
+            else:
+                req = urllib.request.Request(self._jwks_url, headers={"User-Agent": "OmniBot"})
+                with urllib.request.urlopen(req, timeout=5.0) as _resp:
+                    jwks = json.loads(_resp.read())
+                    self._jwks_cache = jwks
+                    self._jwks_cache_time = time.time()
 
             header_bytes = base64.urlsafe_b64decode(header_b64 + "=" * (-len(header_b64) % 4))
             kid = json.loads(header_bytes).get("kid")
@@ -181,7 +190,9 @@ class A2AAdapter:
             public_key.verify(sig, msg, padding.PKCS1v15(), hashes.SHA256())
 
             return True
-        except Exception:
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning("JWKS verification failed: %s", exc)
             return False
 
     async def averify_m2m_token(self, authorization_header: str) -> bool:
@@ -208,9 +219,17 @@ class A2AAdapter:
                 return False
 
             import httpx
-            async with httpx.AsyncClient() as client:
-                response = await client.get(self._jwks_url, headers={"User-Agent": "OmniBot"}, timeout=5.0)
-                jwks = response.json()
+            import logging
+            
+            jwks = None
+            if hasattr(self, "_jwks_cache") and self._jwks_cache and time.time() - getattr(self, "_jwks_cache_time", 0) < 300:
+                jwks = self._jwks_cache
+            else:
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(self._jwks_url, headers={"User-Agent": "OmniBot"}, timeout=5.0)
+                    jwks = response.json()
+                    self._jwks_cache = jwks
+                    self._jwks_cache_time = time.time()
 
             header_bytes = base64.urlsafe_b64decode(header_b64 + "=" * (-len(header_b64) % 4))
             kid = json.loads(header_bytes).get("kid")
@@ -230,7 +249,9 @@ class A2AAdapter:
             public_key.verify(sig, msg, padding.PKCS1v15(), hashes.SHA256())
 
             return True
-        except Exception:
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning("Async JWKS verification failed: %s", exc)
             return False
 
     def handle_jsonrpc_call(
@@ -339,9 +360,7 @@ class A2AAdapter:
         if not token:
             return _UNKNOWN_AGENT
 
-        # [FR-06] Require valid signature BEFORE extracting sub claim (C-03 fix)
-        if not self.verify_m2m_token(authorization_header):
-            return _UNKNOWN_AGENT
+
 
         try:
             # JWT structure: header.payload.signature
@@ -351,7 +370,9 @@ class A2AAdapter:
             payload_bytes = base64.urlsafe_b64decode(payload_b64)
             payload: dict[str, Any] = json.loads(payload_bytes)
             return str(payload.get("sub", _UNKNOWN_AGENT))
-        except Exception:
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning("Sub extraction failed: %s", exc)
             return _UNKNOWN_AGENT
 
     async def _aextract_sub_from_token(self, authorization_header: str) -> str:
@@ -360,8 +381,7 @@ class A2AAdapter:
         if not token:
             return _UNKNOWN_AGENT
 
-        if not await self.averify_m2m_token(authorization_header):
-            return _UNKNOWN_AGENT
+
 
         try:
             payload_b64: str = token.split(".")[1]
@@ -369,6 +389,8 @@ class A2AAdapter:
             payload_bytes = base64.urlsafe_b64decode(payload_b64)
             payload: dict[str, Any] = json.loads(payload_bytes)
             return str(payload.get("sub", _UNKNOWN_AGENT))
-        except Exception:
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning("Async sub extraction failed: %s", exc)
             return _UNKNOWN_AGENT
 

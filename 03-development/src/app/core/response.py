@@ -363,7 +363,7 @@ class ResponseGenerator:
             # full Markdown. ``expected_truncated="false"`` per
             # TEST_SPEC.md case 5.
             return content
-        if platform == "agent":
+        if platform == "agent" or platform == "a2a":
             # Pure-JSON envelope for the A2A / M2M Agent channel.
             # ``ensure_ascii=False`` so non-ASCII reply bodies (e.g.
             # CJK) survive the round-trip without ``\uXXXX`` escapes —

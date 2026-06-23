@@ -132,10 +132,11 @@ class MiddlewareChain:
         x_forwarded_for = request.headers.get("x-forwarded-for")
         ip_outcome = self.ip_whitelist.is_allowed(x_forwarded_for=x_forwarded_for, client_host=client_host)
         if not _is_allowed(ip_outcome, default=False):
+            ip_status = getattr(ip_outcome, "status", 403)
             return self._deny(
                 "ip",
-                status=getattr(ip_outcome, "status", 403),
-                reason="IP_BLOCKED",
+                status=ip_status,
+                reason="IP_MISCONFIGURED" if ip_status == 400 else "IP_BLOCKED",
                 body=getattr(ip_outcome, "body", b""),
             )
 

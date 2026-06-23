@@ -158,7 +158,7 @@ def test_fr69_kappa_above_07_on_golden_set():
         # the minimum needed to keep the example realistic — the
         # resulting Kappa is well above 0.7 (≈ 0.8 in the
         # 2-class-of-5 regime).
-        human_labels = [4] * golden_size
+        human_labels = [4] * (golden_size // 2) + [2] * (golden_size - golden_size // 2)
         judge_labels = list(human_labels)  # start identical
         # flip 50 of them — these become the disagreements
         for i in range(0, golden_size, 10):

@@ -621,16 +621,24 @@ class CalibrationPipeline:
         n = len(golden_set)
         first = golden_set[0]
         if isinstance(first, dict):
-            # dict golden_set: compare human label vs judge's predicted label.
-            # Field contract: {"label": <human_label>, "judge_label": <judge_prediction>}.
-            matches = sum(
-                1 for item in golden_set
-                if "label" in item and "judge_label" in item and item["label"] == item["judge_label"]
-            )
-            return matches / n
+            pairs = [(item["label"], item["judge_label"]) for item in golden_set if "label" in item and "judge_label" in item]
         else:
-            matches = sum(1 for pair in golden_set if pair[0] == pair[1])
-            return matches / n
+            pairs = golden_set
+        
+        n = len(pairs)
+        if n == 0:
+            return None
+        matches = sum(1 for h, j in pairs if h == j)
+        p_o = matches / n
+        
+        from collections import Counter
+        h_counts = Counter(h for h, j in pairs)
+        j_counts = Counter(j for h, j in pairs)
+        p_e = sum((h_counts[k] / n) * (j_counts[k] / n) for k in set(h_counts) | set(j_counts))
+        
+        if p_e == 1.0:
+            return 1.0 if p_o == 1.0 else 0.0
+        return (p_o - p_e) / (1.0 - p_e)
 
     def _read_cached_kappa(self) -> float | None:
         """Read the last-good Kappa from the injected cache.

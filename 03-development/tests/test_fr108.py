@@ -323,7 +323,7 @@ def test_redteam_rate_limit_burst_attack_blocked():
 
     # Simulate a burst of 1000 requests on Telegram (limit: 30 req/s)
     results = [
-        limiter.allow(platform="telegram", key=f"burst_{i}")
+        limiter.allow(platform="telegram", key="burst_user")
         for i in range(1000)
     ]
 
@@ -692,7 +692,7 @@ def test_kpi_judge_kappa_above_07():
     #   run_cycle() completes, computed on a 500-sample golden set.
     import asyncio
     result = asyncio.run(calibration.run_cycle(
-        golden_set=[{"label": "positive", "judge_label": "positive"} for _ in range(500)],
+        golden_set=[{"label": "positive", "judge_label": "positive"} for _ in range(250)] + [{"label": "negative", "judge_label": "negative"} for _ in range(250)],
     ))
 
     assert result is not None, "run_cycle() must return a CalibrationResult, not None"
@@ -896,10 +896,10 @@ def test_webhook_telegram_rate_limit_returns_429():
     limiter = RateLimiter(redis_client=None)
 
     for i in range(30):
-        r = limiter.allow(platform="telegram", key=f"ifc_{i}")
+        r = limiter.allow(platform="telegram", key="ifc_1")
         assert r.status == 200, f"Request {i+1}/30 must pass; got {r.status}"
 
-    result = limiter.allow(platform="telegram", key="ifc_overflow")
+    result = limiter.allow(platform="telegram", key="ifc_1")
     assert result.status == 429, (
         f"Telegram 31st request must return 429; got {result.status}"
     )
