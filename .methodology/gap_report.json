@@ -1,12 +1,12 @@
 {
   "summary": {
-    "total": 472,
+    "total": 478,
     "missing": 0,
     "incomplete": 0,
-    "orphaned": 472,
+    "orphaned": 478,
     "critical": 0,
     "major": 0,
-    "minor": 472
+    "minor": 478
   },
   "gaps": [
     {
@@ -602,6 +602,24 @@
       "severity": "minor",
       "reason": "'parse_messages' has no corresponding specification in SPEC.md",
       "action": "Add spec for parse_messages or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'get_current_user_role' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get_current_user_role or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'LoginBody' has no corresponding specification in SPEC.md",
+      "action": "Add spec for LoginBody or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'RoleAssignBody' has no corresponding specification in SPEC.md",
+      "action": "Add spec for RoleAssignBody or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
@@ -1752,6 +1770,18 @@
     {
       "type": "ORPHANED",
       "severity": "minor",
+      "reason": "'set_saq_client' has no corresponding specification in SPEC.md",
+      "action": "Add spec for set_saq_client or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'validate_saq_wiring' has no corresponding specification in SPEC.md",
+      "action": "Add spec for validate_saq_wiring or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
       "reason": "'enqueue_embedding_job' has no corresponding specification in SPEC.md",
       "action": "Add spec for enqueue_embedding_job or remove if unnecessary"
     },
@@ -1904,6 +1934,12 @@
       "severity": "minor",
       "reason": "'ResponseError' has no corresponding specification in SPEC.md",
       "action": "Add spec for ResponseError or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'NoScriptError' has no corresponding specification in SPEC.md",
+      "action": "Add spec for NoScriptError or remove if unnecessary"
     },
     {
       "type": "ORPHANED",

@@ -200,11 +200,12 @@ def test_pipeline_normalise_platform_with_name_attr():
     assert result == "agent"
 
 
-def test_pipeline_get_context():
+@pytest.mark.asyncio
+async def test_pipeline_get_context():
     """pipeline.py — get_context returns dict with conversation_id."""
     from app.core.pipeline import get_context
 
-    result = get_context("conv-1")
+    result = await get_context("conv-1")
     assert result["conversation_id"] == "conv-1"
     assert result["history"] == []
 

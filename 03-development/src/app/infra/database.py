@@ -20,18 +20,36 @@ import alembic.command as _alembic_command
 from alembic.config import Config as _AlembicConfig
 
 
-def get_session() -> Any:
+import os
+from collections.abc import AsyncGenerator
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+
+_engine = None
+_session_factory = None
+
+def _get_engine():
+    global _engine, _session_factory
+    if _engine is None:
+        url = os.environ.get("DATABASE_URL", "postgresql+asyncpg://omnibot:dev_only_change_me_pg@127.0.0.1:5433/omnibot")
+        _engine = create_async_engine(url, pool_pre_ping=True)
+        _session_factory = async_sessionmaker(
+            bind=_engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+            autocommit=False,
+            autoflush=False,
+        )
+    return _session_factory
+
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """Return a DB session context manager.
 
-    The canonical seam FR-101 expects to be monkeypatched in tests
-    (see ``tests/test_fr101.py::_isolate_knowledge_admin_io``). The
-    real implementation arrives with FR-2; calling this stub without
-    an override is a configuration error.
+    The canonical seam FR-101 expects to be monkeypatched in tests.
+    FR-2 wired.
     """
-    raise NotImplementedError(  # pragma: no cover
-        "FR-2 database session factory not yet wired; inject a "
-        "session factory or monkeypatch app.infra.database.get_session"
-    )
+    factory = _get_engine()
+    async with factory() as session:
+        yield session
 
 # --- Merged from schema.py ---
 """[FR-82] Complete database schema descriptor (20 tables + HNSW + GIN tsvector).
@@ -313,6 +331,7 @@ class MigrationRunner:
         _ = get_setting("ALEMBIC_TIMEOUT", default=30)  # Hub linkage
         ac = _AlembicConfig()
         ac.set_main_option("sqlalchemy.url", cfg.db_url)
+        ac.set_main_option("script_location", "alembic")
         return ac
 
     def _step(

@@ -159,9 +159,19 @@ class Pipeline:
             "bypassed": bypassed,
         }
 
-def get_context(conversation_id: str) -> dict:
-    """[FR-49] Retrieve conversation context from in-memory store."""
+async def get_context(conversation_id: str) -> dict:
+    """[FR-49] Retrieve conversation context from DB."""
     from app.infra.database import get_session
-    # TODO: implement DB context retrieval
-    return {"conversation_id": conversation_id, "history": []}
+    from sqlalchemy import text
+    try:
+        session_gen = get_session()
+        session = await session_gen.__anext__()
+        result = await session.execute(
+            text("SELECT role, content FROM messages WHERE conversation_id = :cid ORDER BY id ASC"),
+            {"cid": conversation_id}
+        )
+        history = [{"role": row[0], "content": row[1]} for row in result.fetchall()]
+        return {"conversation_id": conversation_id, "history": history}
+    except Exception:
+        return {"conversation_id": conversation_id, "history": []}
 

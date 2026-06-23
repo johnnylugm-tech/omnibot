@@ -588,10 +588,24 @@ def _call_llm_api(model: str, prompt: str) -> str:
     Citations:
         - SRS.md FR-30 — gpt-4o 主要 → gemini-1.5-flash fallback.
     """
-    raise NotImplementedError(
-        "FR-30: wire openai/google-generativeai SDK in production; "
-        "tests inject a stub via monkeypatch.setattr"
-    )
+    import os
+    if model == "gpt-4o":
+        import openai
+        client = openai.Client(api_key=os.getenv("OPENAI_API_KEY", "dummy"))
+        response = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response.choices[0].message.content or ""
+    elif model == "gemini-1.5-flash":
+        from google import genai
+        client = genai.Client(api_key=os.getenv("GEMINI_API_KEY", "dummy"))
+        response = client.models.generate_content(
+            model=model,
+            contents=prompt,
+        )
+        return response.text or ""
+    raise ValueError(f"Unsupported LLM: {model}")
 
 
 def _build_sandwich_prompt(query: str, retrieved_context: str) -> str:

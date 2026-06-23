@@ -26,7 +26,6 @@ def test_fr107_integration_coverage_20pct():
 def test_fr107_e2e_faq_exact_match():
     """FR-107: E2E — FAQ exact-match query returns rule-based result (source=rule)."""
     expected_source = "rule"
-    assert expected_source == "rule"
     result = TestStrategy().run_e2e_pipeline("faq_exact_match")
     assert result["status"] == "pass"
 
@@ -34,7 +33,6 @@ def test_fr107_e2e_faq_exact_match():
 def test_fr107_e2e_semantic_search():
     """FR-107: E2E — semantic similarity query returns RAG result (source=rag)."""
     expected_source = "rag"
-    assert expected_source == "rag"
     result = TestStrategy().run_e2e_pipeline("semantic_search")
     assert result["status"] == "pass"
 
