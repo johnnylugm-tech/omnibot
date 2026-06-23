@@ -148,7 +148,13 @@ def test_fr23_x_forwarded_for_leftmost_used():
     # GREEN TODO: is_allowed(x_forwarded_for=...) must split the header on
     # commas, strip whitespace, and check membership of the FIRST element
     # (1.2.3.4) — not the last element (5.6.7.8) and not the entire string.
-    result = wl.is_allowed(x_forwarded_for=x_forwarded_for)
+    #
+    # Bug-hunt-v3 H2 follow-up: client_host="127.0.0.1" simulates the
+    # trusted reverse-proxy source that production ASGI deploys see. The
+    # XFF header is honoured only when the direct TCP client is a
+    # private/loopback address — without this guard an attacker spoofing
+    # XFF on a direct connection would otherwise bypass the whitelist.
+    result = wl.is_allowed(x_forwarded_for=x_forwarded_for, client_host="127.0.0.1")
 
     # Spec fr23-ok applies_to case 1; this is case 3 so the predicate
     # assertion is not redeclared here.

@@ -360,7 +360,15 @@ class A2AAdapter:
         if not token:
             return _UNKNOWN_AGENT
 
-
+        # Defence-in-depth: reject unsigned / forged JWT before trusting
+        # the ``sub`` claim. ``handle_jsonrpc_call`` already gates on the
+        # same check, but extracting this helper as a public surface
+        # (it is reachable from tests and any future caller) means a
+        # silent regression here would let an attacker forge ``sub`` by
+        # decoding an unsigned token's base64 payload. JWKS cache
+        # (300s TTL) keeps the second call free.
+        if not self.verify_m2m_token(authorization_header):
+            return _UNKNOWN_AGENT
 
         try:
             # JWT structure: header.payload.signature
@@ -381,7 +389,9 @@ class A2AAdapter:
         if not token:
             return _UNKNOWN_AGENT
 
-
+        # Defence-in-depth (see sync counterpart for rationale).
+        if not await self.averify_m2m_token(authorization_header):
+            return _UNKNOWN_AGENT
 
         try:
             payload_b64: str = token.split(".")[1]

@@ -39,10 +39,14 @@ os.environ.setdefault("OMNIBOT_JWT_SECRET", "test-only-jwt-secret-do-not-use-in-
 @pytest.fixture(autouse=True)
 def _isolate_external_services(monkeypatch):  # type: ignore[reportUnusedFunction]
     """Prevent real Redis/DB/HTTP I/O during unit tests."""
-    # Pyright does not recognise pytest autouse fixtures; the explicit
-    # ``del`` keeps the function body non-empty so a static reader
-    # sees the parameter being acknowledged.
-    del monkeypatch
+    # Test-mode env gate — production code paths read ``TESTING=1`` to
+    # opt in to test-only overrides (e.g. ``RBACEnforcer._resolve_role``
+    # accepts the ``role=`` kwarg only under this flag, preventing
+    # production callers from forging a privileged role via kwargs).
+    # Set here, not at module import time, so a test that explicitly
+    # wants the production code path can clear it via monkeypatch.delenv
+    # and observe the real failure mode.
+    monkeypatch.setenv("TESTING", "1")
     # FR-77/FR-78 — install a recording SAQ stub so any call into
     # ``app.infra.jobs.enqueue_embedding_job`` succeeds instead of
     # raising the boot-time-misconfiguration ``RuntimeError`` the

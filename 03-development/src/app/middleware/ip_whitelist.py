@@ -198,10 +198,19 @@ class IPWhitelist:
         ip: str | None,
         client_host: str | None,
     ) -> str | None:
-        """Return the caller IP per FR-23 resolution order, or ``None``."""
-        import os
+        """Return the caller IP per FR-23 resolution order, or ``None``.
+
+        Trust rule: ``X-Forwarded-For`` is honoured **only** when the
+        direct TCP client is a private/loopback address. When
+        ``client_host`` is ``None`` (ASGI edge case / proxy misconfig)
+        we MUST treat the request as untrusted — there is no way to
+        validate the XFF chain, so honouring it would let an attacker
+        bypass the whitelist by simply omitting the TCP source. This
+        is the inverse of the original "default trusted" fallback
+        (which was the bug-hunt-v3 H2 finding).
+        """
         tcp_client = ip if ip else client_host
-        is_trusted = tcp_client is None and os.environ.get("PYTEST_CURRENT_TEST") is not None
+        is_trusted = False
         if tcp_client:
             try:
                 addr = ipaddress.ip_address(tcp_client.strip())

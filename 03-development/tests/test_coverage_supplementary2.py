@@ -3498,11 +3498,20 @@ def test_mcp_is_server_unreachable_down_in_command_word():
 
 
 def test_mcp_is_server_unreachable_sse_port_65535():
-    """mcp_adapter.py:296 — _is_server_unreachable returns True for SSE with port 65535."""
+    """mcp_adapter.py — bug-hunt-v3 M5 follow-up.
+
+    Port 65535 in a URL is a perfectly valid TCP port (the last one in the
+    16-bit space); the production code must NOT treat its mere presence
+    as an unreachable marker. The ``"65535" in url`` substring check was
+    a test sentinel that leaked into production (it would have flagged
+    e.g. ``https://api.example.com:65535/foo`` as down). After the fix
+    the predicate is ``False`` and connectivity is determined by the
+    real transport, not by a substring match.
+    """
     from app.services.aee.mcp_adapter import MCPAdapter
 
     adapter = MCPAdapter(transport="sse", url="http://example.com:65535/mcp")
-    assert adapter._is_server_unreachable() is True
+    assert adapter._is_server_unreachable() is False
 
 
 # --- tool_executor.py:315-329 (async handler in thread when event loop running) ---

@@ -309,7 +309,7 @@ class MCPAdapter(ActionAdapter):
 
         if self.transport == "sse" and self.url:
             parsed_lower = self.url.lower()
-            if re.search(r'\bdown\b', parsed_lower) or ("65535" in parsed_lower and __import__("os").environ.get("TESTING") == "1"):
+            if re.search(r'\bdown\b', parsed_lower):
                 return True
 
         return False
