@@ -1,12 +1,12 @@
 {
   "summary": {
-    "total": 478,
+    "total": 484,
     "missing": 0,
     "incomplete": 0,
-    "orphaned": 478,
+    "orphaned": 484,
     "critical": 0,
     "major": 0,
-    "minor": 478
+    "minor": 484
   },
   "gaps": [
     {
@@ -2786,6 +2786,42 @@
       "severity": "minor",
       "reason": "'run_e2e_pipeline' has no corresponding specification in SPEC.md",
       "action": "Add spec for run_e2e_pipeline or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'run_migrations_offline' has no corresponding specification in SPEC.md",
+      "action": "Add spec for run_migrations_offline or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'do_run_migrations' has no corresponding specification in SPEC.md",
+      "action": "Add spec for do_run_migrations or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'run_async_migrations' has no corresponding specification in SPEC.md",
+      "action": "Add spec for run_async_migrations or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'run_migrations_online' has no corresponding specification in SPEC.md",
+      "action": "Add spec for run_migrations_online or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'upgrade' has no corresponding specification in SPEC.md",
+      "action": "Add spec for upgrade or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'downgrade' has no corresponding specification in SPEC.md",
+      "action": "Add spec for downgrade or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
