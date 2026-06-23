@@ -33,6 +33,7 @@ try:
     from redis.exceptions import (
         ConnectionError as RedisConnectionError,  # type: ignore[reportAssignmentType]
     )
+    from redis.exceptions import NoScriptError  # type: ignore[reportAssignmentType]
     from redis.exceptions import ResponseError  # type: ignore[reportAssignmentType]
     from redis.exceptions import (
         TimeoutError as RedisTimeoutError,  # type: ignore[reportAssignmentType]
@@ -47,14 +48,20 @@ except ImportError:  # pragma: no cover -- redis lib is in pyproject dependencie
     class ResponseError(Exception):  # type: ignore[no-redef]
         pass
 
-# FR-22 fail-open triggers: any Redis-side connection or timeout failure.
-# The built-in ConnectionError covers the test mock; the redis.* exceptions
-# cover production traffic from redis-py.
+    class NoScriptError(ResponseError):  # type: ignore[no-redef]
+        pass
+
+# FR-22 fail-open triggers: connection-class failures only.
+# ``ResponseError`` is intentionally excluded so a WRONGTYPE / Lua /
+# protocol bug surfaces as a deny (fail-closed) rather than silently
+# bypassing the limiter for the rest of the process lifetime.
+# ``NoScriptError`` (a ``ResponseError`` subclass) is handled
+# separately — it triggers a one-shot script reload + retry, and only
+# if that also fails do we fall back to deny.
 _FAIL_OPEN_EXCEPTIONS: tuple[type[BaseException], ...] = (
     RedisConnectionError,
     RedisTimeoutError,
     ConnectionError,
-    ResponseError,
 )
 
 
@@ -153,9 +160,45 @@ class RateLimiter:
         return self._in_memory_check(platform, key, limit)
 
     def _redis_decide(self, platform: str, key: str, limit: int) -> RateLimitResult:
-        """Consult Redis and apply the limit. Fail-open on outage (FR-22)."""
+        """Consult Redis and apply the limit. Fail-open on outage (FR-22).
+
+        Exception handling matrix (FR-22 strict reading — only
+        connection-class outages fail open; protocol / Lua errors fail
+        closed to avoid permanently bypassing the limiter):
+            * ``NoScriptError``     → reload + retry once, then deny
+            * ``_FAIL_OPEN_EXCEPTIONS`` (connection / timeout) → fail-open
+            * ``ResponseError``     → fail-closed (deny + ERROR log)
+            * any other exception  → fail-closed (deny + ERROR log)
+        """
         try:
             count = self._redis_count(platform, key)
+        except NoScriptError as exc:
+            # SCRIPT FLUSH / Redis restart / first call after boot —
+            # the script SHA is no longer cached server-side. ``evalsha``
+            # cannot self-recover, so fall through to ``eval`` which
+            # implicitly re-loads the script. Only fail-closed if the
+            # second attempt ALSO raises.
+            logger.info(
+                "rate_limit_script_reload",
+                extra={
+                    "platform": platform,
+                    "key": key,
+                    "error": str(exc),
+                },
+            )
+            try:
+                count = self._redis_count_eval(platform, key)
+            except Exception as retry_exc:
+                logger.error(
+                    "rate_limit_script_reload_failed",
+                    extra={
+                        "platform": platform,
+                        "key": key,
+                        "error_type": type(retry_exc).__name__,
+                        "error": str(retry_exc),
+                    },
+                )
+                return RateLimitResult.denied()
         except _FAIL_OPEN_EXCEPTIONS as exc:
             # FR-22 fail-open: log and pass. Do NOT cache the outage;
             # the next call will retry Redis so we recover automatically.
@@ -169,6 +212,33 @@ class RateLimiter:
                 },
             )
             return RateLimitResult.allowed()
+        except ResponseError as exc:
+            # WRONGTYPE / Lua bug / protocol violation — fail CLOSED
+            # rather than permanently bypassing the limiter. ``_redis_count``
+            # already retried via EVAL once for ``NoScriptError``; any
+            # remaining ``ResponseError`` is a real configuration or
+            # protocol problem, not a transient outage.
+            logger.error(
+                "rate_limit_redis_protocol_error",
+                extra={
+                    "platform": platform,
+                    "key": key,
+                    "error_type": type(exc).__name__,
+                    "error": str(exc),
+                },
+            )
+            return RateLimitResult.denied()
+        except Exception as exc:
+            logger.error(
+                "rate_limit_redis_unexpected_error",
+                extra={
+                    "platform": platform,
+                    "key": key,
+                    "error_type": type(exc).__name__,
+                    "error": str(exc),
+                },
+            )
+            return RateLimitResult.denied()
 
         return RateLimitResult.denied() if count > limit else RateLimitResult.allowed()
 
@@ -183,8 +253,46 @@ class RateLimiter:
         now = time.time()
         window_start = now - self._WINDOW_SECONDS
         member = f"{now}:{key}:{uuid.uuid4().hex}"
-        result = client.evalsha(
-            sha,
+        try:
+            result = client.evalsha(
+                sha,
+                1,
+                f"rate_limit:{platform}:{key}",
+                window_start,
+                now,
+                member,
+            )
+        except NoScriptError:
+            # Script SHA was flushed between ``script_load`` and
+            # ``evalsha`` (SCRIPT FLUSH, Redis restart, fail-over).
+            # Fall through to ``EVAL`` which re-loads the script
+            # implicitly. The caller (``_redis_decide``) wraps this
+            # with a one-shot retry guard.
+            result = client.eval(
+                self._SCRIPT,
+                1,
+                f"rate_limit:{platform}:{key}",
+                window_start,
+                now,
+                member,
+            )
+        return int(result)
+
+    def _redis_count_eval(self, platform: str, key: str) -> int:
+        """Fallback path used by :meth:`_redis_decide` after ``NoScriptError``.
+
+        Skips ``script_load`` + ``evalsha`` and goes straight to
+        ``EVAL`` so the server-side script cache is repopulated in
+        one round trip.
+        """
+        import uuid
+        assert self.redis_client is not None
+        client = self.redis_client
+        now = time.time()
+        window_start = now - self._WINDOW_SECONDS
+        member = f"{now}:{key}:{uuid.uuid4().hex}"
+        result = client.eval(
+            self._SCRIPT,
             1,
             f"rate_limit:{platform}:{key}",
             window_start,
@@ -198,10 +306,13 @@ class RateLimiter:
         window_start = now - self._WINDOW_SECONDS
 
         with self._lock:
-            # Platform-level global bucket: the in-memory fallback enforces
-            # a per-platform aggregate limit (not per-user), matching the
-            # FR-21 spec: 31st request to any `telegram` key must return 429.
-            bucket = self._buckets.setdefault((platform, ""), deque())
+            # Per-user sub-bucket — mirrors the Redis path
+            # (``rate_limit:{platform}:{key}``) so the in-memory
+            # fallback is a drop-in replacement when ``redis_client``
+            # is None. The earlier ``(platform, "")`` aggregate
+            # violated the docstring contract and caused unrelated
+            # users to share one bucket whenever Redis was absent.
+            bucket = self._buckets.setdefault((platform, key), deque())
             # Drop entries that have aged out of the sliding window.
             while bucket and bucket[0] < window_start:
                 bucket.popleft()

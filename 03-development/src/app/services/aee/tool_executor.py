@@ -336,13 +336,17 @@ class ToolExecutor:
         except asyncio.CancelledError:
             raise
         except Exception as exc:
-            import asyncio
-            if isinstance(exc, (TimeoutError, asyncio.TimeoutError)) or type(exc).__name__ == "TimeoutError":
-                return fail(f"timeout: Tool '{tool_name}' exceeded {_handler_timeout}s timeout")
             # [M-09] NP-07: ``MemoryError`` / ``RecursionError`` are
             # subclasses of ``Exception`` and therefore land here; the
             # prior explicit ``raise`` is removed so the executor NEVER
             # propagates raw exceptions to the caller.
+            #
+            # Note: ``asyncio.wait_for`` was removed from the sync-handler
+            # path so this branch can no longer catch ``TimeoutError``
+            # raised by the dispatcher itself — timeouts now surface as
+            # the inner exception type the handler chooses to raise, and
+            # the legacy ``isinstance(... TimeoutError ...)`` short-circuit
+            # was deleted to avoid a dead-code false positive.
             #
             # [L-03] Log the full traceback (which may include
             # internal paths / DSNs / stack frames) for operators via

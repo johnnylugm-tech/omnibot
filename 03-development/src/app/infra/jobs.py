@@ -327,18 +327,76 @@ process_embedding_job.compute_backoff = _compute_backoff  # type: ignore[attr-de
 # - 02-architecture/SAD.md:322 (Module: jobs.py contract)
 # ---------------------------------------------------------------------------
 
-# Hook for the async enqueue — replaceable in production by a SAQ
-# enqueue call. The test does not directly assert on the enqueue
-# result, but the FR-77 contract ("fallback 全部走非同步") requires
-# the call to happen, so the hook MUST be invoked on TimeoutError.
+# SAQ wiring — production replaces the default ``_SAQ_CLIENT`` via
+# :func:`set_saq_client` at boot. Tests can either leave the default
+# (``None``) for "stub" semantics, or inject a stub queue that records
+# jobs in memory. The default ``None`` is a BOOT-TIME MISCONFIGURATION
+# signal: :func:`validate_saq_wiring` raises loudly so a deployment
+# that forgot the wiring fails fast instead of silently dropping every
+# embedding job (which would leave chunks stuck at
+# ``embedding_synced=False`` and Tier-2 searches blind to them).
+from typing import Any as _Any
+
+_SAQ_CLIENT: _Any | None = None
+
+
+def set_saq_client(client: _Any) -> None:
+    """Install the SAQ queue client used by :func:`enqueue_embedding_job`.
+
+    Called once at boot from the production wiring layer. Passing
+    ``None`` clears the wiring (used by tests to force the stub path).
+    """
+    global _SAQ_CLIENT
+    _SAQ_CLIENT = client
+
+
+def validate_saq_wiring() -> None:
+    """Raise ``RuntimeError`` if the SAQ client has not been wired in.
+
+    Intended to be called at process startup (``app/__main__.py``,
+    k8s ``livenessProbe`` handler, or the test conftest). Without
+    this guard a missing wiring goes undetected until the first
+    FR-77 fallback path silently drops a job — a particularly
+    nasty failure mode because the chunk is committed to the DB
+    but never embedded, so the failure only surfaces when a
+    downstream search misses the row hours later.
+    """
+    if _SAQ_CLIENT is None:
+        raise RuntimeError(
+            "SAQ client is not configured — call "
+            "app.infra.jobs.set_saq_client(client) at boot before "
+            "any request that may trigger an embedding enqueue "
+            "(FR-77 fallback / FR-78 batch import)."
+        )
+
+
 def enqueue_embedding_job(job: EmbeddingJob) -> EmbeddingJob:
     """Enqueue an ``EmbeddingJob`` for async processing.
 
-    Stub default — records nothing, returns the job unchanged. In
-    production this is replaced with the SAQ enqueue call. The
-    signature MUST remain stable so the create function can call it
-    unconditionally on the fallback path.
+    Production path: delegates to the configured SAQ client
+    (``set_saq_client``). On any client-side failure the exception
+    is re-raised so the caller's ``try/except`` (which now logs
+    and increments a counter per the FR-78 contract) observes the
+    drop instead of treating the no-op stub as a success.
+
+    Test path: when ``_SAQ_CLIENT is None`` the function logs an
+    ERROR and raises ``RuntimeError`` rather than silently returning
+    ``job`` — the old stub behaviour masked wiring bugs in
+    production. Tests that intentionally want the no-op semantics
+    MUST install a recording stub via :func:`set_saq_client` first
+    (see ``tests/test_fr77.py`` / ``test_fr78.py`` for the pattern).
     """
+    if _SAQ_CLIENT is None:
+        import logging
+        logging.getLogger(__name__).error(
+            "enqueue_embedding_job invoked without SAQ wiring — "
+            "job chunk_id=%s would be dropped silently", job.chunk_id,
+        )
+        raise RuntimeError(
+            "enqueue_embedding_job called without SAQ client wired; "
+            "call set_saq_client(client) at boot"
+        )
+    _SAQ_CLIENT.enqueue("embed_job", job)
     return job
 
 

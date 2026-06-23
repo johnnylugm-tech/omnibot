@@ -166,10 +166,15 @@ class HybridKnowledge:
     # SQL template for the Tier-1 rule lookup. ``:limit`` is bound at
     # execute-time so the constant ``RULE_LIMIT`` stays the single source
     # of truth (test assertions grep the rendered statement for LIMIT).
+    # ``ESCAPE '\\'`` is part of the statement itself so callers do NOT
+    # need to rewrite the SQL string at execute-time (the prior
+    # ``.replace("ILIKE :pattern", ...)`` was fragile — a refactor that
+    # changed the placeholder spelling would silently disable LIKE
+    # metachar escaping).
     _RULE_SQL = (
         "SELECT id, knowledge_id, content, match_type "
         "FROM knowledge_base "
-        "WHERE content ILIKE :pattern "
+        "WHERE content ILIKE :pattern ESCAPE '\\' "
         "   OR :query = ANY(keywords) "
         "ORDER BY id "
         "LIMIT :limit"
@@ -195,7 +200,7 @@ class HybridKnowledge:
 
         escaped_query = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         result = self._session.execute(
-            self._RULE_SQL.replace("ILIKE :pattern", "ILIKE :pattern ESCAPE '\\\\'"),
+            self._RULE_SQL,
             {
                 "pattern": f"%{escaped_query}%",
                 "query": query,

@@ -26,6 +26,7 @@ Citations:
 
 from __future__ import annotations
 
+import contextlib
 import ipaddress
 import socket
 import time
@@ -176,12 +177,13 @@ class A2AAdapter(ActionAdapter):
         # leak file descriptors.
         self._client: httpx.Client = httpx.Client(timeout=self.timeout)
 
-        # M-07: IP-pinning cache — maps hostname → frozenset of str IPs.
-        # On first validation the resolved IPs are stored; subsequent
-        # calls reject any DNS change to a different set, preventing
-        # DNS-rebinding attacks even when the change happens between
-        # _validate_agent_url() and the actual httpx connect.
-        self._validated_ips: dict[str, frozenset[str]] = {}
+        # M-07: IP-pinning cache — hostname → (frozenset of str IPs,
+        # pinned_at_epoch). Entries expire after ``_ip_pinning_ttl_seconds``
+        # so a long-lived adapter does not keep a stale pin that the
+        # operator has since rotated. ``_pinned_dns_lock`` reads this
+        # map to lock the subsequent httpx connect to the same IPs.
+        self._validated_ips: dict[str, tuple[frozenset[str], float]] = {}
+        self._ip_pinning_ttl_seconds: float = 300.0
 
     # ------------------------------------------------------------------
     # Lifecycle (H-21 — close persistent HTTP client).
@@ -208,10 +210,20 @@ class A2AAdapter(ActionAdapter):
     def _check_ip_pinning(self, url: str) -> None:
         """[M-07] Validate URL and detect DNS rebinding via IP pinning.
 
-        On first call for a given hostname the resolved IPs are cached.
-        Subsequent calls reject any change in the resolved set. This is a
-        best-effort guard because of the TOCTOU window between this check
-        and the actual httpx connect.
+        On first call for a given hostname the resolved IPs are cached
+        for ``_IP_PINNING_TTL_SECONDS`` and the rebinding set is compared
+        on every subsequent call. The cache is keyed on (hostname, ttl-bucket)
+        so a hostname whose DNS record legitimately rotates will be
+        re-pinned instead of permanently rejected as a rebinding attempt.
+
+        TOCTOU note: this function detects a rebinding that has already
+        happened; it does NOT prevent the next ``httpx`` connect from
+        racing against a fresh DNS flip. Callers SHOULD wrap the
+        subsequent ``_client.get/post`` in :meth:`_pinned_dns_lock` so
+        the connect also uses the cached IP. That wrapper narrows the
+        window to a single round-trip — still not bulletproof against
+        a hostile resolver that returns different IPs per query, but
+        far better than the original "best-effort" docstring claim.
         """
         from urllib.parse import urlparse as _urlparse
         hostname = _urlparse(url).hostname
@@ -221,14 +233,71 @@ class A2AAdapter(ActionAdapter):
         current_ips = frozenset(str(ip) for ip in _resolve_addresses(hostname))
         if not current_ips:
             return
-        pinned = self._validated_ips.get(hostname)
-        if pinned is None:
-            self._validated_ips[hostname] = current_ips
-        elif current_ips != pinned:
-            raise ValueError(
-                f"DNS rebinding detected for {hostname!r}: "
-                f"IPs changed from {pinned} to {current_ips}"
-            )
+        # (ip_set, pinned_at) — expire after ``_IP_PINNING_TTL_SECONDS``
+        # so a long-lived adapter does not keep an IP set that the
+        # operator rotated out from under it.
+        entry = self._validated_ips.get(hostname)
+        if entry is not None:
+            pinned_ips, pinned_at = entry
+            if time.time() - pinned_at < self._ip_pinning_ttl_seconds:
+                if current_ips != pinned_ips:
+                    raise ValueError(
+                        f"DNS rebinding detected for {hostname!r}: "
+                        f"IPs changed from {pinned_ips} to {current_ips}"
+                    )
+                return
+        # First call OR TTL-expired — re-pin.
+        self._validated_ips[hostname] = (current_ips, time.time())
+
+    @contextlib.contextmanager
+    def _pinned_dns_lock(self, url: str):
+        """[M-07] Narrow the IP-pinning TOCTOU window to a single request.
+
+        Temporarily monkey-patches ``socket.getaddrinfo`` so that any
+        ``httpx`` connect initiated inside the ``with`` block resolves
+        the agent hostname to the previously-cached IP instead of
+        re-querying DNS. The original ``getaddrinfo`` is restored on
+        exit (success or failure) via try/finally.
+
+        Limitations (inherent to monkey-patching a stdlib function):
+            * Process-global — concurrent ``A2AAdapter`` instances on
+              different hostnames will see each other's patch for the
+              duration of their connect; the patch only fires for the
+              exact hostname passed here.
+            * httpx may cache resolved IPs internally; if it has
+              already resolved, the patch is a no-op. The wrapper
+              still helps when the connect is the first one since
+              pool warm-up.
+        """
+        from urllib.parse import urlparse as _urlparse
+        hostname = _urlparse(url).hostname
+        entry = self._validated_ips.get(hostname) if hostname else None
+        if entry is None:
+            yield
+            return
+        pinned_ips, pinned_at = entry
+        if not pinned_ips or (time.time() - pinned_at) >= self._ip_pinning_ttl_seconds:
+            # Pin expired — do NOT monkey-patch; let httpx resolve
+            # afresh so the next ``_check_ip_pinning`` re-validates
+            # the rotated DNS.
+            yield
+            return
+        # Pick a deterministic representative IP for ``getaddrinfo``;
+        # the actual connect will hit that one specific address even
+        # if the resolver would have returned more.
+        representative_ip = next(iter(pinned_ips))
+        original = socket.getaddrinfo
+
+        def _patched(host, *args, **kwargs):
+            if host == hostname:
+                return original(representative_ip, *args, **kwargs)
+            return original(host, *args, **kwargs)
+
+        socket.getaddrinfo = _patched
+        try:
+            yield
+        finally:
+            socket.getaddrinfo = original
 
     def _now(self) -> float:
         """[FR-41] 現在時間（測試可透過 ``_force_cache_age`` 偏移）。"""
@@ -279,7 +348,8 @@ class A2AAdapter(ActionAdapter):
         url = f"{self.agent_url}/.well-known/agent.json"
         try:
             self._check_ip_pinning(self.agent_url)
-            response = self._client.get(url)
+            with self._pinned_dns_lock(self.agent_url):
+                response = self._client.get(url)
             response.raise_for_status()
             card = response.json()
         except ValueError:
@@ -354,11 +424,12 @@ class A2AAdapter(ActionAdapter):
         url = f"{self.agent_url}/rpc"
         try:
             self._check_ip_pinning(self.agent_url)
-            response = self._client.post(
-                url,
-                json=payload,
-                headers=headers,
-            )
+            with self._pinned_dns_lock(self.agent_url):
+                response = self._client.post(
+                    url,
+                    json=payload,
+                    headers=headers,
+                )
             response.raise_for_status()
         except httpx.HTTPStatusError as exc:
             safe_exc = str(exc).split('\n')[0][:200]

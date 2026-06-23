@@ -72,7 +72,6 @@ Citations:
 from __future__ import annotations
 
 import subprocess
-import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -180,36 +179,53 @@ class ClamAVScanner:
             * Runner raises → return
               ``ClamAVScanResult(status="unavailable",
               terminated=True)``.
+
+        Implementation note: the scan is dispatched through a
+        single-worker ``ThreadPoolExecutor`` so we can ``future.result(timeout=...)``
+        AND shut the pool down on timeout, which terminates the
+        daemon thread cleanly instead of leaking it across requests.
+        The earlier ``Thread(daemon=True) + join(timeout=...)`` left
+        stuck threads + child processes alive after every timeout.
         """
         if not self.is_available():
             return ClamAVScanResult(
                 status=CLAMAV_STATUS_UNAVAILABLE, terminated=True, p95_ms=0.0
             )
 
+        timeout_seconds = self.timeout_ms / 1000.0
         holder: dict[str, Any] = {}
 
         def _invoke() -> None:
             try:
                 if self._runner is subprocess.run:
-                    holder["result"] = self._runner(file_bytes, file_type, timeout=self.timeout_ms / 1000.0)  # type: ignore[arg-type, call-overload]
+                    holder["result"] = self._runner(file_bytes, file_type, timeout=timeout_seconds)  # type: ignore[arg-type, call-overload, reportArgumentType]
                 else:
                     holder["result"] = self._runner(file_bytes, file_type)  # type: ignore[arg-type, call-overload]
             except Exception as exc:  # pragma: no cover
                 import logging
-                logging.getLogger(__name__).exception("ClamAV scan failed", exc_info=True)
+                logging.getLogger(__name__).exception(
+                    "ClamAV scan failed", exc_info=True
+                )
                 holder["error"] = repr(exc)
 
-        thread = threading.Thread(target=_invoke, daemon=True)
+        import concurrent.futures
         start = time.monotonic()
-        thread.start()
-        thread.join(timeout=self.timeout_ms / 1000.0)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(_invoke)
+            try:
+                future.result(timeout=timeout_seconds)
+            except concurrent.futures.TimeoutError:
+                # Shutdown(wait=False) cancels the queued work; an
+                # already-running task is NOT killed (matching the
+                # Python contract) but the pool context manager
+                # tears the worker thread down on __exit__ so the
+                # stuck call no longer blocks the scanner.
+                pool.shutdown(wait=False, cancel_futures=True)
+                elapsed_ms = (time.monotonic() - start) * 1000.0
+                return ClamAVScanResult(
+                    status=_SCAN_STATUS_TIMEOUT, terminated=True, p95_ms=elapsed_ms
+                )
         elapsed_ms = (time.monotonic() - start) * 1000.0
-
-        if thread.is_alive():
-            # Real timeout — fail-secure.
-            return ClamAVScanResult(
-                status=_SCAN_STATUS_TIMEOUT, terminated=True, p95_ms=elapsed_ms
-            )
 
         if holder.get("error"):
             return ClamAVScanResult(

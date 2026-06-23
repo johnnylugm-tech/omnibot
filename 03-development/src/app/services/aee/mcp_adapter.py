@@ -165,7 +165,14 @@ class MCPAdapter(ActionAdapter):
         正式實作: ``subprocess.Popen`` 啟動 child process 並解析
         stdout 的 MCP tool 列表。測試期間由 ``_stub_transport_io``
         fixture 替換為固定 sentinel 回傳。
+
+        The ``proc`` reference is tracked across every exception path
+        so the child process + 3 pipe FDs are ALWAYS reaped — prior
+        implementations only cleaned up on ``TimeoutExpired`` and
+        leaked the subprocess on ``BrokenPipeError`` / ``OSError`` /
+        ``KeyboardInterrupt``.
         """
+        proc: subprocess.Popen | None = None
         try:
             proc = subprocess.Popen(
                 shlex.split(self.command or ""),
@@ -174,34 +181,38 @@ class MCPAdapter(ActionAdapter):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
-            try:
-                init_req = json.dumps({
-                    "jsonrpc": "2.0",
-                    "id": 0,
-                    "method": "initialize",
-                    "params": {"protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": {"name": "omnibot", "version": "1.0"}}
-                }).encode("utf-8") + b"\n"
+            init_req = json.dumps({
+                "jsonrpc": "2.0",
+                "id": 0,
+                "method": "initialize",
+                "params": {"protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": {"name": "omnibot", "version": "1.0"}}
+            }).encode("utf-8") + b"\n"
 
-                list_req = json.dumps({
-                    "jsonrpc": "2.0",
-                    "id": 1,
-                    "method": "tools/list",
-                    "params": {}
-                }).encode("utf-8") + b"\n"
+            list_req = json.dumps({
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "tools/list",
+                "params": {}
+            }).encode("utf-8") + b"\n"
 
-                stdout, _ = proc.communicate(
-                    input=init_req + list_req,
-                    timeout=self.connect_timeout_ms / 1000
-                )
-                if proc.returncode != 0:
-                    return []
-                return self._parse_tool_list(stdout)
-            except Exception:
-                proc.kill()
-                proc.wait(timeout=1.0)
+            stdout, _ = proc.communicate(
+                input=init_req + list_req,
+                timeout=self.connect_timeout_ms / 1000
+            )
+            if proc.returncode != 0:
                 return []
+            return self._parse_tool_list(stdout)
+        except subprocess.TimeoutExpired:
+            return []
         except Exception:
             return []
+        finally:
+            if proc is not None and proc.poll() is None:
+                proc.kill()
+                try:
+                    proc.wait(timeout=1.0)
+                except Exception:
+                    pass
 
     def _connect_sse(self) -> list[ToolDefinition]:
         """[FR-40] 透過 SSE HTTP endpoint 連線並回傳 server 宣告的工具清單。

@@ -115,7 +115,13 @@ class CircuitBreaker:
                 self._level != self.LEVEL_0
                 and self._llm_success_count >= self._LLM_CONSECUTIVE_SUCCESS_RECOVERY
             ):
-                self._level = self.LEVEL_0
+                # Step down ONE level per recovery streak (FR-99 spec
+                # "auto-rise on consecutive success count") — never
+                # jump directly to LEVEL_0, otherwise we skip the
+                # progressive re-enablement enforced by
+                # ``_step_down_level`` (LEVEL_5 → LEVEL_0 in one call
+                # bypasses LEVEL_4 / LEVEL_3 / LEVEL_2 / LEVEL_1).
+                self._level = self._step_down_level(self._level)
                 self._llm_success_count = 0
             return self._level
 

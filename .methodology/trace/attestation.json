@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "21c4b4b617599e5c807d658b7d6e5d7f393d7838",
-  "content_sha256": "3926e2c120b4616e58003e75181a224beec756c31fb8cd499dd342e5d23d6f64",
+  "git_sha": "dea6d59708d54337a47d13f208be4dce70f43b5a",
+  "content_sha256": "9d6d4f37ef3823876dc215852d1616b047fdb0e4a091d69fab6f4251dd8ed557",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -14,7 +14,7 @@
       "code_coverage": "97.2%",
       "test_coverage": "100.0%",
       "verification_rate": "97.2%",
-      "total_links": 380,
+      "total_links": 369,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -70,7 +70,6 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          ".mutmut_runs/tests_messenger/test_fr03.py",
           "03-development/src/app/api/adapters/messenger.py",
           "03-development/src/app/api/adapters/verifiers.py",
           "03-development/src/app/api/webhooks.py",
@@ -178,7 +177,6 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          ".mutmut_runs/tests_paladin/test_fr10.py",
           "03-development/src/app/core/paladin.py",
           "03-development/tests/test_fr10.py"
         ],
@@ -284,7 +282,6 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          ".mutmut_runs/tests_media/test_fr107.py",
           "03-development/tests/pyramid.py",
           "03-development/tests/strategy.py",
           "03-development/tests/test_fr107.py"
@@ -321,7 +318,6 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          ".mutmut_runs/tests_paladin/test_fr11.py",
           "03-development/src/app/core/paladin.py",
           "03-development/tests/test_fr11.py"
         ],
@@ -336,7 +332,6 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          ".mutmut_runs/tests_paladin/test_fr12.py",
           "03-development/src/app/core/paladin.py",
           "03-development/tests/test_fr12.py"
         ],
@@ -351,7 +346,6 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          ".mutmut_runs/tests_paladin/test_fr13.py",
           "03-development/src/app/core/paladin.py",
           "03-development/tests/test_fr13.py"
         ],
@@ -366,7 +360,6 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          ".mutmut_runs/tests_paladin/test_fr14.py",
           "03-development/src/app/core/paladin.py",
           "03-development/tests/test_fr14.py"
         ],
@@ -381,7 +374,6 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          ".mutmut_runs/tests_paladin/test_fr15.py",
           "03-development/src/app/core/paladin.py",
           "03-development/tests/test_fr15.py"
         ],
@@ -396,7 +388,6 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          ".mutmut_runs/tests_paladin/test_fr16.py",
           "03-development/src/app/core/paladin.py",
           "03-development/tests/test_fr16.py"
         ],
@@ -608,7 +599,6 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          ".mutmut_runs/tests_knowledge/test_fr32.py",
           "03-development/src/app/core/knowledge.py",
           "03-development/tests/test_fr32.py"
         ],
@@ -623,7 +613,6 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          ".mutmut_runs/tests_knowledge/test_fr33.py",
           "03-development/src/app/core/knowledge.py",
           "03-development/tests/test_fr33.py"
         ],

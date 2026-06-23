@@ -37,6 +37,33 @@ os.environ.setdefault("OMNIBOT_ADMIN_PASS", "correct")
 os.environ.setdefault("OMNIBOT_JWT_SECRET", "test-only-jwt-secret-do-not-use-in-prod-32chars")
 
 @pytest.fixture(autouse=True)
-def _isolate_external_services(monkeypatch):
+def _isolate_external_services(monkeypatch):  # type: ignore[reportUnusedFunction]
     """Prevent real Redis/DB/HTTP I/O during unit tests."""
-    yield
+    # Pyright does not recognise pytest autouse fixtures; the explicit
+    # ``del`` keeps the function body non-empty so a static reader
+    # sees the parameter being acknowledged.
+    del monkeypatch
+    # FR-77/FR-78 — install a recording SAQ stub so any call into
+    # ``app.infra.jobs.enqueue_embedding_job`` succeeds instead of
+    # raising the boot-time-misconfiguration ``RuntimeError`` the
+    # production wiring enforces. Tests that explicitly want the
+    # misconfiguration path can call ``set_saq_client(None)`` to
+    # override the autouse stub.
+    try:
+        from app.infra.jobs import set_saq_client
+
+        class _RecordingSAQStub:
+            def __init__(self) -> None:
+                self.enqueued: list[object] = []
+
+            def enqueue(self, queue: str, job: object) -> None:
+                self.enqueued.append((queue, job))
+
+        _stub = _RecordingSAQStub()
+        set_saq_client(_stub)
+        yield
+        set_saq_client(None)
+    except ImportError:
+        # Source module not yet importable (RED phase) — fall
+        # through to the original no-op behaviour.
+        yield

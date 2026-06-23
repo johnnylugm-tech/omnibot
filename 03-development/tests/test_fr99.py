@@ -378,6 +378,13 @@ def test_fr99_recovery_auto_rises_on_success_count():
     # degradation level back toward LEVEL_0. A single failure during the
     # recovery phase MUST reset the success counter. The return value is
     # the resulting level after the success recording.
+    #
+    # FR-99 spec mandates PROGRESSIVE recovery: one step-down per
+    # streak (LEVEL_3 → LEVEL_2 → LEVEL_1 → LEVEL_0). The earlier
+    # implementation jumped directly to LEVEL_0, which skipped the
+    # designed-in re-enablement steps; that bug was fixed in the
+    # circuit_breaker rework, and this assertion is updated to match
+    # the spec.
     result = None
     for _ in range(3):
         result = cb.record_llm_success()
@@ -386,12 +393,31 @@ def test_fr99_recovery_auto_rises_on_success_count():
         "FR-99: record_llm_success() must not return None after recovery "
         "success count."
     )
+    assert result == CircuitBreaker.LEVEL_2, (
+        "FR-99: 3 consecutive LLM successes after LEVEL_3 must step "
+        f"down to LEVEL_2 (progressive recovery); got {result!r}."
+    )
+    assert cb.current_level == CircuitBreaker.LEVEL_2, (
+        "FR-99: current_level must be LEVEL_2 after one recovery streak; "
+        f"got {cb.current_level!r}."
+    )
+
+    # Second streak → LEVEL_1; third streak → LEVEL_0. Verifies the
+    # step-down path used by _step_down_level (not a direct jump).
+    for _ in range(3):
+        result = cb.record_llm_success()
+    assert result == CircuitBreaker.LEVEL_1, (
+        "FR-99: second streak of 3 successes must step down to LEVEL_1; "
+        f"got {result!r}."
+    )
+    for _ in range(3):
+        result = cb.record_llm_success()
     assert result == CircuitBreaker.LEVEL_0, (
-        "FR-99: 3 consecutive LLM successes must auto-recover to LEVEL_0; "
+        "FR-99: third streak of 3 successes must reach LEVEL_0; "
         f"got {result!r}."
     )
     assert cb.current_level == CircuitBreaker.LEVEL_0, (
-        "FR-99: current_level must be LEVEL_0 after recovery; got "
+        "FR-99: current_level must be LEVEL_0 after full recovery; got "
         f"{cb.current_level!r}."
     )
 
