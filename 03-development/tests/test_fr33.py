@@ -388,3 +388,53 @@ def test_fr33_knowledge_rag_search_top_k_default_is_three():
     assert default == 3, (
         f"_rag_search_top_k default top_k must be 3; got {default!r}"
     )
+
+
+def test_fr33_knowledge_rag_fallback_search_path_default_is_vector_not_none():
+    """``RAGFallback.search_path`` MUST default to ``"vector"``, not ``None``.
+
+    Kills mutmut #20 (str = "vector" → str = None).
+    """
+    from app.core.knowledge import RAGFallback
+    fb = RAGFallback()
+    assert fb.search_path == "vector", (
+        f"RAGFallback.search_path default must be 'vector'; "
+        f"got {fb.search_path!r}"
+    )
+    assert fb.search_path is not None, (
+        f"RAGFallback.search_path default must NOT be None; "
+        f"got {fb.search_path!r}"
+    )
+
+
+def test_fr33_knowledge_chunker_constructor_keeps_spec_when_none_passed():
+    """``Chunker.__init__`` MUST default ``spec`` to ``ChunkSpec()`` when
+    ``None`` is passed.
+
+    Kills mutmut #250 (``self._spec = spec or ChunkSpec()`` → ``self._spec = None``).
+    """
+    from app.core.knowledge import Chunker, ChunkSpec
+    chunker = Chunker(spec=None)
+    assert chunker._spec is not None, (
+        "Chunker(spec=None) must default _spec to a non-None ChunkSpec(); "
+        f"got {chunker._spec!r}"
+    )
+    assert isinstance(chunker._spec, ChunkSpec), (
+        "Chunker(spec=None) must initialize _spec to a ChunkSpec() "
+        f"instance; got {type(chunker._spec).__name__}"
+    )
+
+
+def test_fr33_knowledge_rule_sql_no_xx_wrap():
+    """``HybridKnowledge._RULE_SQL`` MUST NOT contain ``XX...XX`` wrapping.
+
+    Kills mutmut #50 (string wrapped with ``XX`` prefix/suffix).
+    """
+    from app.core.knowledge import HybridKnowledge
+    sql = HybridKnowledge._RULE_SQL
+    assert "XX" not in sql, (
+        f"_RULE_SQL must not contain XX-wrap patterns; got {sql!r}"
+    )
+    assert "WHERE" in sql and "ILIKE" in sql, (
+        f"_RULE_SQL must contain WHERE and ILIKE; got {sql!r}"
+    )
