@@ -298,3 +298,76 @@ def test_fr06_a2a_rpc_ask_customer_service_end_to_end(monkeypatch):
         f"platform_user_id must be str; "
         f"got {type(result.platform_user_id).__name__}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Mutation coverage — FR-05 Web platform adapter (api/adapters/web.py)
+# ---------------------------------------------------------------------------
+
+def test_fr05_web_adapter_create_guest_session_returns_token_and_expiry():
+    """``WebAdapter.create_guest_session()`` MUST return a dict with
+    ``token`` (str, JWT-shaped) and ``expires_in`` (int, >= 1).
+    """
+    from app.api.adapters.web import WebAdapter
+    adapter = WebAdapter(jwt_secret="test-secret-fr05", jwt_expiry_seconds=3600)
+    result = adapter.create_guest_session()
+    assert isinstance(result, dict), (
+        f"create_guest_session() must return a dict; got type={type(result).__name__}"
+    )
+    assert "token" in result, "create_guest_session() must return 'token'"
+    assert "expires_in" in result, "create_guest_session() must return 'expires_in'"
+    assert isinstance(result["token"], str)
+    # JWT shape: three dot-separated base64url segments
+    assert result["token"].count(".") == 2, (
+        f"WebAdapter token must be a JWT (3 dot-separated segments); "
+        f"got token={result['token']!r}"
+    )
+    assert result["expires_in"] == 3600
+
+
+def test_fr05_web_adapter_process_message_with_valid_jwt_returns_unified_message():
+    """A valid JWT signed with the adapter's secret MUST produce a
+    UnifiedMessage with platform=WEB and platform_user_id from the
+    JWT's ``sub`` claim. Kills mutants on ``payload["sub"]`` and
+    ``Platform.WEB``.
+    """
+    from app.api.adapters.web import WebAdapter
+    from app.core.unified_message import Platform, MessageType, UnifiedMessage
+    secret = "test-secret-fr05-process"
+    adapter = WebAdapter(jwt_secret=secret, jwt_expiry_seconds=3600)
+    session = adapter.create_guest_session()
+    msg = adapter.process_message(jwt_token=session["token"], content="hello world")
+    assert isinstance(msg, UnifiedMessage)
+    assert msg.platform == Platform.WEB, (
+        f"process_message must produce a Platform.WEB UnifiedMessage; "
+        f"got platform={msg.platform!r}"
+    )
+    assert msg.platform_user_id.startswith("guest-"), (
+        f"platform_user_id must start with 'guest-' from JWT 'sub' claim; "
+        f"got platform_user_id={msg.platform_user_id!r}"
+    )
+    assert msg.content == "hello world"
+    assert msg.message_type == MessageType.TEXT
+    assert msg.reply_token is None
+
+
+def test_fr05_web_adapter_process_message_with_invalid_jwt_raises_web_auth_error():
+    """An invalid JWT MUST raise ``WebAuthError`` with status=401 and
+    error_code="AUTH_TOKEN_EXPIRED". Kills mutants that change 401 → 402.
+    """
+    from app.api.adapters.web import WebAdapter, WebAuthError
+    adapter = WebAdapter(jwt_secret="real-secret", jwt_expiry_seconds=3600)
+    # A tampered JWT — verifier will reject
+    bad_token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJoYWNrZXIifQ.bogus"
+    try:
+        adapter.process_message(jwt_token=bad_token, content="x")
+    except WebAuthError as exc:
+        assert exc.status == 401, (
+            f"WebAuthError status must be 401; got {exc.status}"
+        )
+        assert exc.error_code == "AUTH_TOKEN_EXPIRED", (
+            f"WebAuthError error_code must be 'AUTH_TOKEN_EXPIRED'; "
+            f"got {exc.error_code!r}"
+        )
+    else:
+        raise AssertionError("Expected WebAuthError for invalid JWT")

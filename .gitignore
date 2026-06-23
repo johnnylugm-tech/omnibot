@@ -162,3 +162,5 @@ tmp/
 .methodology/steering_history.json
 .mutmut-cache/
 .code-review-graph/
+.mutmut-cache
+.mutmut_runs/

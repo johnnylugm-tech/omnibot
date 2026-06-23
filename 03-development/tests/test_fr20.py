@@ -283,3 +283,89 @@ def test_fr20_90day_anonymize_scheduled():
         f"'保留 90 天後自動匿名化'); got policy.scheduled="
         f"{getattr(policy, 'scheduled', None)!r}, expected {scheduled!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Mutation coverage — kill surviving mutants in core/pii.py
+# ---------------------------------------------------------------------------
+
+def test_fr20_pii_masks_phone_number():
+    """``PIIMasking.mask()`` MUST detect and mask Taiwan phone numbers
+    (e.g. ``0912345678``) using the ``[phone_masked]`` token.
+    Kills mutants #4–8 that wrap the phone regex string segments with
+    ``XX…XX`` (the regex would no longer match real phone numbers).
+    """
+    from app.core.pii import PIIMasking
+    masker = PIIMasking()
+    result = masker.mask("我的電話是 0912345678 請聯絡我")
+    assert "[phone_masked]" in result.masked_text, (
+        f"PII masker must mask Taiwan phone number 0912345678; "
+        f"got masked_text={result.masked_text!r}"
+    )
+    assert result.mask_count >= 1
+
+
+def test_fr20_pii_masks_email_address():
+    """``PIIMasking.mask()`` MUST mask email addresses (RFC-ish pattern).
+    Kills mutants wrapping the email regex with ``XX…XX``.
+    """
+    from app.core.pii import PIIMasking
+    masker = PIIMasking()
+    result = masker.mask("聯絡我 test@example.com")
+    assert "[email_masked]" in result.masked_text, (
+        f"PII masker must mask email test@example.com; "
+        f"got masked_text={result.masked_text!r}"
+    )
+
+
+def test_fr20_pii_masks_taiwan_address():
+    """``PIIMasking.mask()`` MUST mask Taiwan addresses
+    (e.g. ``台北市信義路100號``). Kills mutants #16-20 wrapping the
+    address regex with ``XX…XX``.
+    """
+    from app.core.pii import PIIMasking
+    masker = PIIMasking()
+    result = masker.mask("地址：台北市信義路100號")
+    assert "[address_masked]" in result.masked_text, (
+        f"PII masker must mask Taiwan address; "
+        f"got masked_text={result.masked_text!r}"
+    )
+
+
+def test_fr20_pii_masks_credit_card():
+    """``PIIMasking.mask()`` MUST mask 16-digit credit-card numbers.
+    Kills mutant #12 wrapping the credit-card regex.
+    """
+    from app.core.pii import PIIMasking
+    masker = PIIMasking()
+    result = masker.mask("卡號 4111111111111111 請記下")
+    assert "[credit_card_masked]" in result.masked_text, (
+        f"PII masker must mask 16-digit credit card; "
+        f"got masked_text={result.masked_text!r}"
+    )
+
+
+def test_fr20_mask_formats_dict_has_phone_token():
+    """``PIIMasking.MASK_FORMATS["phone"]`` MUST equal
+    ``"[phone_masked]"`` (NOT ``"XX[phone_masked]XX"``).
+    Kills mutant #28.
+    """
+    from app.core.pii import PIIMasking
+    assert PIIMasking.MASK_FORMATS["phone"] == "[phone_masked]", (
+        f"MASK_FORMATS['phone'] must be '[phone_masked]'; "
+        f"got {PIIMasking.MASK_FORMATS['phone']!r}"
+    )
+
+
+def test_fr20_pii_masks_international_phone_with_country_code():
+    """``PIIMasking.mask()`` MUST mask phone numbers with the ``+886``
+    Taiwan country code. Kills mutant #4 which wraps the ``\+886`` regex
+    segment with ``XX…XX``.
+    """
+    from app.core.pii import PIIMasking
+    masker = PIIMasking()
+    result = masker.mask("來電 +886-2-2345-6789 請接")
+    assert "[phone_masked]" in result.masked_text, (
+        f"PII masker must mask +886 phone number; "
+        f"got masked_text={result.masked_text!r}"
+    )

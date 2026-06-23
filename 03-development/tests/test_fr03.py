@@ -373,3 +373,73 @@ def test_fr03_messenger_entry_parsed_to_unified_message():
     assert result.reply_token is None, (
         f"reply_token must be None for Messenger; got {result.reply_token!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Mutation coverage — kill surviving mutants in api/adapters/messenger.py
+# ---------------------------------------------------------------------------
+
+def test_fr03_messenger_parse_entries_default_timestamp_is_epoch_zero():
+    """When an entry lacks ``"time"`` key, ``parse_entries`` MUST fall
+    back to epoch 0 (1970-01-01T00:00:00Z), NOT to ``1`` (1969-12-31T23:59:59.999Z).
+    Kills mutant #13 (``entry.get("time", 0)`` → ``entry.get("time", 1)``).
+    """
+    from datetime import datetime, timezone
+
+    adapter = MessengerWebhookAdapter(verify_token="t")
+    entries = [{
+        "id": "X",
+        # no "time" key
+        "messaging": [{
+            "sender": {"id": "PSID_1"},
+            "message": {"mid": "m", "text": "hi"},
+        }],
+    }]
+    result = adapter.parse_entries(entries)[0]
+    assert result.received_at == datetime(1970, 1, 1, tzinfo=timezone.utc), (
+        f"Missing 'time' must default to epoch 0 (1970-01-01); "
+        f"got received_at={result.received_at!r}"
+    )
+
+
+def test_fr03_messenger_parse_entries_timestamp_divided_by_1000():
+    """``parse_entries`` MUST divide ``entry["time"]`` by 1000 to convert
+    epoch-ms to epoch-s. Kills mutant #16 (``timestamp_ms / 1000`` →
+    ``timestamp_ms / 1001``).
+    """
+    from datetime import datetime, timezone
+
+    adapter = MessengerWebhookAdapter(verify_token="t")
+    entries = [{
+        "id": "X",
+        "time": 1_700_000_000_000,  # 2023-11-14T22:13:20Z in epoch-ms
+        "messaging": [{
+            "sender": {"id": "PSID_1"},
+            "message": {"mid": "m", "text": "hi"},
+        }],
+    }]
+    result = adapter.parse_entries(entries)[0]
+    assert result.received_at == datetime(2023, 11, 14, 22, 13, 20, tzinfo=timezone.utc), (
+        f"Entry time=1700000000000ms must convert to 2023-11-14T22:13:20Z; "
+        f"got received_at={result.received_at!r}"
+    )
+
+
+def test_fr03_messenger_parse_entries_missing_message_text_is_empty_string():
+    """When a messaging event has no ``message.text``, ``content`` MUST
+    be an empty string (not ``"XXXX"`` or None). Kills mutant #24.
+    """
+    adapter = MessengerWebhookAdapter(verify_token="t")
+    entries = [{
+        "id": "X",
+        "time": 1_700_000_000_000,
+        "messaging": [{
+            "sender": {"id": "PSID_1"},
+            # No "message" key at all
+        }],
+    }]
+    result = adapter.parse_entries(entries)[0]
+    assert result.content == "", (
+        f"Missing 'message.text' must default to empty string; "
+        f"got content={result.content!r}"
+    )

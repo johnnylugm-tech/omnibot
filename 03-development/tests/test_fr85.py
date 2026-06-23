@@ -600,3 +600,21 @@ def test_fr85_rbac_require_role_none_falls_through(monkeypatch):
         pass
     else:
         raise AssertionError("Expected PermissionError — role=None should fall through")
+
+
+# ---------------------------------------------------------------------------
+# Mutation coverage — kill surviving mutants in api/management.py
+# ---------------------------------------------------------------------------
+
+def test_fr85_check_health_status_is_ok_when_both_services_ok():
+    """``check_health()`` MUST return ``status="ok"`` when both
+    postgres_status and redis_status are "ok". Kills mutants #22–25
+    (== → != mutations) and #26 (and → or).
+    """
+    result = check_health()
+    assert result["status"] == "ok", (
+        f"check_health() must return status='ok' when both services are "
+        f"'ok'; got status={result['status']!r}"
+    )
+    assert result["postgres"] == "ok"
+    assert result["redis"] == "ok"

@@ -335,7 +335,6 @@
         "srs_section": null,
         "code_files": [
           "src/app/api/adapters/a2a.py",
-          "src/app/api/adapters/base.py",
           "src/app/api/adapters/line.py",
           "src/app/api/adapters/messenger.py",
           "src/app/api/adapters/telegram.py",

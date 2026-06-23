@@ -1,11 +1,26 @@
 import os
 import ast
-import pytest
+from pathlib import Path
+
+# Tests in this file use hard-coded relative paths to enforce SAD.md
+# architectural constraints. The relative paths assume the project root as
+# CWD, which is true for normal `pytest` runs but FALSE for mutmut's
+# subprocess (mutmut rewrites pytest's rootdir to a temp workdir under
+# /tmp/_mutmut_score.*).
+#
+# Resolve from this test file's location so the paths work in both:
+#   - Normal pytest: tests/test_constraints.py → ../../03-development/...
+#   - Mutmut workdir: copy of test_constraints.py → same resolve still hits
+#     the project root because the harness copies the file to the workdir
+#     with the same directory structure (.../tests/test_constraints.py).
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_PIPELINE_PATH = _PROJECT_ROOT / "03-development" / "src" / "app" / "core" / "pipeline.py"
+_INFRA_DIR = _PROJECT_ROOT / "03-development" / "src" / "app" / "infra"
+
 
 def test_paladin_executes_before_pii():
     """Enforce SAD.md rule: paladin_executes_before_pii in pipeline.py."""
-    with open("03-development/src/app/core/pipeline.py") as f:
-        content = f.read()
+    content = _PIPELINE_PATH.read_text()
     paladin_idx = content.find("self.paladin.check_input(content)")
     pii_idx = content.find("self.pii.mask(content)")
     assert paladin_idx != -1 and pii_idx != -1
@@ -13,8 +28,7 @@ def test_paladin_executes_before_pii():
 
 def test_infra_layer_isolation():
     """Enforce SAD.md rule: infra layer cannot import domain."""
-    infra_dir = "03-development/src/app/infra"
-    for root, _, files in os.walk(infra_dir):
+    for root, _, files in os.walk(_INFRA_DIR):
         for file in files:
             if file.endswith(".py"):
                 with open(os.path.join(root, file)) as f:

@@ -218,3 +218,29 @@ def test_fr48_2_consecutive_negative_not_trigger():
         f"FR-48: expected_escalate sentinel must be 'false'; "
         f"got {expected_escalate!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Mutation coverage — kill surviving mutants in core/emotion.py
+# ---------------------------------------------------------------------------
+
+def test_fr48_emotion_should_escalate_none_emotions_returns_false():
+    """``emotion_should_escalate(None)`` MUST return ``False`` (NOT True).
+    Kills mutant #113 which inverts ``return False`` → ``return True``
+    for the ``is None`` short-circuit.
+    """
+    from app.core.emotion import emotion_should_escalate
+    assert emotion_should_escalate(None) is False, (
+        f"emotion_should_escalate(None) must return False (no escalation "
+        f"triggered by no input); got True"
+    )
+
+
+def test_fr48_emotion_tracker_should_escalate_none_returns_false():
+    """``EmotionTracker.should_escalate(None)`` MUST return ``False``.
+    """
+    from app.core.emotion import EmotionTracker
+    tracker = EmotionTracker()
+    assert tracker.should_escalate(None) is False, (
+        f"EmotionTracker.should_escalate(None) must return False; got True"
+    )

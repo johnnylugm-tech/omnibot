@@ -279,3 +279,28 @@ def test_fr01_telegram_end_to_end_message_mapped_to_unified_message():
     assert result.reply_token is None, (
         f"reply_token must be None for Telegram; got {result.reply_token!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Mutation coverage — kill surviving mutants in api/adapters/telegram.py
+# ---------------------------------------------------------------------------
+
+def test_fr01_telegram_parse_update_default_text_is_empty_string():
+    """When an update's message has no ``"text"`` key, ``content`` MUST
+    default to empty string (NOT ``"XXXX"`` or None). Kills mutant #10.
+    """
+    from app.api.adapters.telegram import TelegramWebhookAdapter
+    adapter = TelegramWebhookAdapter()
+    update = {
+        "update_id": 12345,
+        "message": {
+            "from": {"id": 1},
+            "chat": {"id": 1},
+            # No "text" key
+        },
+    }
+    result = adapter.process_update(update)
+    assert result.content == "", (
+        f"Missing 'text' must default to empty string; "
+        f"got content={result.content!r}"
+    )

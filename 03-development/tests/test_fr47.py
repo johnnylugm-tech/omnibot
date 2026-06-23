@@ -255,3 +255,79 @@ def test_fr47_recent_score_higher_weight():
     assert old_hours == "48", (
         f"FR-47: old_hours sentinel must be '48'; got {old_hours!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Mutation coverage — kill surviving mutants in core/emotion.py
+# ---------------------------------------------------------------------------
+
+def test_fr46_emotion_intensity_min_constant_is_zero():
+    """``EmotionAnalyzer.INTENSITY_MIN`` MUST equal ``0.0`` (the closed
+    interval lower bound per SRS FR-46). Kills mutant #7 which changes
+    ``INTENSITY_MIN: float = 0.0`` → ``1.0``.
+    """
+    from app.core import emotion
+    assert emotion.INTENSITY_MIN == 0.0, (
+        f"INTENSITY_MIN must be 0.0 (SRS FR-46 intensity range lower "
+        f"bound); got {emotion.INTENSITY_MIN!r}"
+    )
+
+
+def test_fr46_emotion_intensity_max_constant_is_one():
+    """``EmotionAnalyzer.INTENSITY_MAX`` MUST equal ``1.0`` (the closed
+    interval upper bound per SRS FR-46). Kills mutant #9 (``1.0`` → ``2.0``).
+    """
+    from app.core import emotion
+    assert emotion.INTENSITY_MAX == 1.0, (
+        f"INTENSITY_MAX must be 1.0 (SRS FR-46 intensity range upper "
+        f"bound); got {emotion.INTENSITY_MAX!r}"
+    )
+
+
+def test_fr46_emotion_empty_text_returns_intensity_zero():
+    """Empty input MUST return ``intensity=INTENSITY_MIN=0.0`` (neutral).
+    Kills mutant #7 indirectly — ``INTENSITY_MIN`` change would yield
+    a different intensity for empty input.
+    """
+    from app.core.emotion import EmotionAnalyzer
+    analyzer = EmotionAnalyzer()
+    score = analyzer.analyze("")
+    assert score.category == "neutral"
+    assert score.intensity == 0.0, (
+        f"Empty input must yield intensity=0.0 (= INTENSITY_MIN); "
+        f"got intensity={score.intensity!r}"
+    )
+
+
+def test_fr46_emotion_positive_keyword_contains_great():
+    """The positive-keyword frozenset MUST contain the literal ``"great"``.
+    Kills mutants #17–28 wrapping individual keyword strings with ``XX…XX``.
+    """
+    from app.core.emotion import _POSITIVE_KEYWORDS
+    assert "great" in _POSITIVE_KEYWORDS, (
+        f"_POSITIVE_KEYWORDS must contain 'great'; "
+        f"got set={_POSITIVE_KEYWORDS!r}"
+    )
+
+
+def test_fr46_emotion_negative_keyword_contains_angry():
+    """The negative-keyword frozenset MUST contain ``"angry"``.
+    Kills mutants wrapping negative keywords.
+    """
+    from app.core.emotion import _NEGATIVE_KEYWORDS
+    assert "angry" in _NEGATIVE_KEYWORDS, (
+        f"_NEGATIVE_KEYWORDS must contain 'angry'; "
+        f"got set={_NEGATIVE_KEYWORDS!r}"
+    )
+
+
+def test_fr46_emotion_valid_categories_exact_set():
+    """``VALID_CATEGORIES`` MUST be exactly the frozenset
+    ``{"positive", "neutral", "negative"}`` (no XX-wrapped variants).
+    Kills mutants that wrap individual category strings.
+    """
+    from app.core.emotion import VALID_CATEGORIES
+    assert VALID_CATEGORIES == frozenset({"positive", "neutral", "negative"}), (
+        f"VALID_CATEGORIES must be exactly {{'positive', 'neutral', "
+        f"'negative'}}; got {VALID_CATEGORIES!r}"
+    )

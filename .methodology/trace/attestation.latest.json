@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "c803ee891a02da5f5ca5edbd6f35121e9dc8df82",
-  "content_sha256": "de5a33276c507d21c37188f578b8e70f9b279ada38de71553385d4acb46e47e0",
+  "git_sha": "4c5a441a649f324ae831338bc086e4c25dd060db",
+  "content_sha256": "c4c3a382e4c193fcfc474b691841bcc6000fbffc41253199fef31158dad93d39",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -14,7 +14,7 @@
       "code_coverage": "97.2%",
       "test_coverage": "100.0%",
       "verification_rate": "97.2%",
-      "total_links": 370,
+      "total_links": 372,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [
@@ -70,6 +70,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          ".mutmut_runs/tests_messenger/test_fr03.py",
           "03-development/src/app/api/adapters/messenger.py",
           "03-development/src/app/api/adapters/verifiers.py",
           "03-development/src/app/api/webhooks.py",
@@ -118,7 +119,6 @@
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/app/api/adapters/a2a.py",
-          "03-development/src/app/api/adapters/base.py",
           "03-development/src/app/api/adapters/line.py",
           "03-development/src/app/api/adapters/messenger.py",
           "03-development/src/app/api/adapters/telegram.py",
@@ -600,6 +600,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          ".mutmut_runs/tests_knowledge/test_fr32.py",
           "03-development/src/app/core/knowledge.py",
           "03-development/tests/test_fr32.py"
         ],
@@ -614,6 +615,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          ".mutmut_runs/tests_knowledge/test_fr33.py",
           "03-development/src/app/core/knowledge.py",
           "03-development/tests/test_fr33.py"
         ],

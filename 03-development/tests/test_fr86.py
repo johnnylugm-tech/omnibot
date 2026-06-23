@@ -67,7 +67,16 @@ from app.api.webhooks import _b64url_decode, _b64url_encode
 # Test type: happy_path (Q1 derivation).
 # Active Pattern: NP-01 (auth 401).
 # ============================================================================
-def test_fr86_login_returns_jwt_and_refresh():
+def test_fr86_login_returns_jwt_and_refresh(monkeypatch):
+    # ``login()`` reads OMNIBOT_ADMIN_USER / OMNIBOT_ADMIN_PASS from the
+    # environment; without these the function returns 401 even for valid
+    # probe creds. The harness's pytest is invoked with a clean env in
+    # some runners (e.g. mutmut's temp workdir), so pin the values here
+    # to keep the test hermetic.
+    monkeypatch.setenv("OMNIBOT_ADMIN_USER", "admin")
+    monkeypatch.setenv("OMNIBOT_ADMIN_PASS", "correct")
+    monkeypatch.setenv("OMNIBOT_JWT_SECRET", "test-jwt-secret-for-fr86-only")
+
     username = "admin"
     password = "correct"
     expected_tokens = "access,refresh"
@@ -159,7 +168,14 @@ def test_fr86_login_returns_jwt_and_refresh():
 # Test type: validation (Q2 derivation).
 # Active Pattern: NP-01 (auth 401).
 # ============================================================================
-def test_fr86_login_failure_401():
+def test_fr86_login_failure_401(monkeypatch):
+    # Same env-pin rationale as test_fr86_login_returns_jwt_and_refresh —
+    # without these, login() cannot authenticate valid probes and the
+    # failure path is no longer distinguishable.
+    monkeypatch.setenv("OMNIBOT_ADMIN_USER", "admin")
+    monkeypatch.setenv("OMNIBOT_ADMIN_PASS", "correct")
+    monkeypatch.setenv("OMNIBOT_JWT_SECRET", "test-jwt-secret-for-fr86-only")
+
     username = "admin"
     password = "wrong"
     expected_status = "401"
@@ -592,4 +608,25 @@ def test_fr86_require_role_kwarg_none_falls_through(monkeypatch):
     # Both role and request consumed.
     assert result == {"args": (), "kwargs": {}}, (
         f"FR-86: role=None must fall through to request path; got {result!r}."
+    )
+
+
+# ---------------------------------------------------------------------------
+# Mutation coverage — kill surviving mutants in api/auth.py
+# ---------------------------------------------------------------------------
+
+def test_fr86_login_with_unset_admin_user_returns_401(monkeypatch):
+    """When ``OMNIBOT_ADMIN_USER`` is unset and ``OMNIBOT_ADMIN_PASS`` is
+    also unset, ``login`` MUST return 401 (NOT a successful login).
+    Kills mutants #29 / #31 (default ``if admin_user`` → ``True``
+    would let login succeed with empty credentials).
+    """
+    monkeypatch.delenv("OMNIBOT_ADMIN_USER", raising=False)
+    monkeypatch.delenv("OMNIBOT_ADMIN_PASS", raising=False)
+    # Also clear JWT secret to avoid side effects
+    monkeypatch.delenv("OMNIBOT_JWT_SECRET", raising=False)
+    result = login(username="anything", password="anything")
+    assert result == 401, (
+        f"login() with no admin credentials configured MUST return 401; "
+        f"got result={result!r}"
     )

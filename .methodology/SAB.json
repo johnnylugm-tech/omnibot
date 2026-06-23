@@ -40,7 +40,7 @@
       "name": "services",
       "modules": [
         "app.services.registry",
-        "app.services.aee",
+        "app.services.aee/",
         "app.services.escalation",
         "app.services.ab_testing",
         "app.services.llm_judge",

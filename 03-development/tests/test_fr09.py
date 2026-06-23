@@ -237,3 +237,92 @@ def test_fr09_api_response_error_code_present_on_failure():
     assert response.data is None, (
         f"data must be None on a failure envelope; got {response.data!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Mutation coverage — kill surviving mutants in api/common.py
+# ---------------------------------------------------------------------------
+
+def test_fr09_api_response_normalises_success_from_error():
+    """ApiResponse with ``success=True`` and ``error`` set MUST normalise
+    to success=False via ``__post_init__``. Kills common.py mutant 14
+    (``not has_error`` → ``has_error``): without normalisation the mutation
+    would leave ``success=True`` on a failure envelope, violating the
+    FR-09 lock-step invariant.
+    """
+    resp = ApiResponse(success=True, error="boom")
+    assert resp.success is False, (
+        f"ApiResponse(success=True, error='boom') must normalise to "
+        f"success=False via __post_init__; got success={resp.success!r}"
+    )
+
+
+def test_fr09_api_response_normalises_success_from_error_code():
+    """ApiResponse with ``success=True`` and ``error_code`` set MUST
+    normalise to success=False. Same rationale as the error variant.
+    """
+    resp = ApiResponse(success=True, error_code="E_FAIL")
+    assert resp.success is False, (
+        f"ApiResponse(success=True, error_code='E_FAIL') must normalise "
+        f"to success=False; got success={resp.success!r}"
+    )
+
+
+def test_fr09_paginated_response_has_next_boundary():
+    """has_next MUST be False when page*limit == total. Kills common.py
+    mutant 18 (< → <=): with <= the boundary case flips to True.
+    """
+    resp = PaginatedResponse(total=20, page=2, limit=10, items=[])
+    assert resp.has_next is False, (
+        f"PaginatedResponse(total=20, page=2, limit=10).has_next must be "
+        f"False (boundary case); got {resp.has_next!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Mutation coverage for api/common.py ``build_response`` and
+# ``extract_user_context`` seams — the dataclass mutants on TypeVar /
+# frozen are equivalent (no behaviour to test), but these two functions
+# have concrete logic worth probing.
+# ---------------------------------------------------------------------------
+
+def test_fr09_build_response_passes_through_data_field():
+    """``build_response(data=X)`` MUST return an ``ApiResponse`` whose
+    ``data`` field is ``X`` verbatim. A mutant that nulls the data
+    argument would lose the caller's payload.
+    """
+    from app.api.common import build_response
+    payload = {"id": 42, "name": "alice"}
+    resp = build_response(data=payload)
+    assert resp.data is payload, (
+        f"build_response(data=payload) must keep the payload; got data={resp.data!r}"
+    )
+
+
+def test_fr09_build_response_passes_through_error_and_code():
+    """``build_response(error=E, error_code=C)`` MUST surface both fields
+    on the returned ``ApiResponse``. Kills mutants that null either kwarg.
+    """
+    from app.api.common import build_response
+    resp = build_response(data=None, error="boom", error_code="E_BOOM")
+    assert resp.error == "boom", (
+        f"build_response must surface error='boom'; got error={resp.error!r}"
+    )
+    assert resp.error_code == "E_BOOM", (
+        f"build_response must surface error_code='E_BOOM'; "
+        f"got error_code={resp.error_code!r}"
+    )
+
+
+def test_fr09_extract_user_context_returns_user_id_dict():
+    """``extract_user_context(request)`` MUST return a dict that contains a
+    ``user_id`` key. Kills mutants that rename the key or return None.
+    """
+    from app.api.common import extract_user_context
+    result = extract_user_context(object())
+    assert isinstance(result, dict), (
+        f"extract_user_context must return a dict; got type={type(result).__name__}"
+    )
+    assert "user_id" in result, (
+        f"extract_user_context result must contain 'user_id' key; got keys={list(result.keys())!r}"
+    )

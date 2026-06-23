@@ -335,3 +335,127 @@ def test_fr04_whatsapp_message_parsed_to_unified_message():
     assert result.reply_token is None, (
         f"reply_token must be None for WhatsApp; got {result.reply_token!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Mutation coverage — kill surviving mutants in api/adapters/whatsapp.py
+# ---------------------------------------------------------------------------
+
+def test_fr04_whatsapp_parse_messages_default_from_is_empty_string():
+    """When a message lacks ``"from"`` key, ``platform_user_id`` MUST
+    default to empty string (NOT ``"XXXX"`` or None). Kills mutant #28.
+    """
+    from app.api.adapters.whatsapp import WhatsAppWebhookAdapter
+    adapter = WhatsAppWebhookAdapter(verify_token="t")
+    payload = {
+        "object": "whatsapp_business_account",
+        "entry": [{
+            "id": "WA",
+            "changes": [{
+                "value": {
+                    "messages": [{
+                        # No "from" key
+                        "text": {"body": "hi"},
+                        "type": "text",
+                        "timestamp": "1700000000",
+                    }],
+                },
+            }],
+        }],
+    }
+    result = adapter.parse_messages(payload)[0]
+    assert result.platform_user_id == "", (
+        f"Missing 'from' must default to empty string; "
+        f"got platform_user_id={result.platform_user_id!r}"
+    )
+
+
+def test_fr04_whatsapp_parse_messages_default_text_body_is_empty_string():
+    """When a message has no ``text.body``, ``content`` MUST default
+    to empty string. Kills mutant #32.
+    """
+    from app.api.adapters.whatsapp import WhatsAppWebhookAdapter
+    adapter = WhatsAppWebhookAdapter(verify_token="t")
+    payload = {
+        "object": "whatsapp_business_account",
+        "entry": [{
+            "id": "WA",
+            "changes": [{
+                "value": {
+                    "messages": [{
+                        "from": "1234",
+                        # No "text" key
+                        "type": "text",
+                        "timestamp": "1700000000",
+                    }],
+                },
+            }],
+        }],
+    }
+    result = adapter.parse_messages(payload)[0]
+    assert result.content == "", (
+        f"Missing 'text.body' must default to empty string; "
+        f"got content={result.content!r}"
+    )
+
+
+def test_fr04_whatsapp_parse_messages_default_type_is_text():
+    """When a message lacks ``"type"``, ``message_type`` MUST default
+    to ``MessageType.TEXT`` via the ``"text"`` default fallback.
+    Kills mutant #35 (default value ``"text"`` → ``"XXtextXX"``).
+    """
+    from app.api.adapters.whatsapp import WhatsAppWebhookAdapter
+    from app.core.unified_message import MessageType
+    adapter = WhatsAppWebhookAdapter(verify_token="t")
+    payload = {
+        "object": "whatsapp_business_account",
+        "entry": [{
+            "id": "WA",
+            "changes": [{
+                "value": {
+                    "messages": [{
+                        "from": "1234",
+                        "text": {"body": "hi"},
+                        # No "type" key — defaults to "text"
+                        "timestamp": "1700000000",
+                    }],
+                },
+            }],
+        }],
+    }
+    result = adapter.parse_messages(payload)[0]
+    assert result.message_type == MessageType.TEXT, (
+        f"Missing 'type' must default to MessageType.TEXT; "
+        f"got message_type={result.message_type!r}"
+    )
+
+
+def test_fr04_whatsapp_parse_messages_invalid_timestamp_falls_back_to_epoch_zero():
+    """When ``timestamp`` is not parseable as int, ``received_at`` MUST
+    fall back to epoch 0 (1970-01-01T00:00:00Z), NOT to ``1`` (1969) or
+    ``None`` (TypeError). Kills mutants #42, #43.
+    """
+    from datetime import datetime, timezone
+    from app.api.adapters.whatsapp import WhatsAppWebhookAdapter
+    adapter = WhatsAppWebhookAdapter(verify_token="t")
+    payload = {
+        "object": "whatsapp_business_account",
+        "entry": [{
+            "id": "WA",
+            "changes": [{
+                "value": {
+                    "messages": [{
+                        "from": "1234",
+                        "text": {"body": "hi"},
+                        "type": "text",
+                        "timestamp": "not-a-number",
+                    }],
+                },
+            }],
+        }],
+    }
+    result = adapter.parse_messages(payload)[0]
+    assert result.received_at == datetime(1970, 1, 1, tzinfo=timezone.utc), (
+        f"Unparseable timestamp must fall back to epoch 0 (1970-01-01); "
+        f"got received_at={result.received_at!r}"
+    )

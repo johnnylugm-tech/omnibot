@@ -163,3 +163,51 @@ def test_fr105_nfr18_monthly_cost_under_500_usd():
         f"NFR-18: 50k Tier-3 queries/month must cost < $500; "
         f"got ${worst_case['total']:.2f}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Mutation coverage — kill surviving mutants in admin/odd_sql.py
+# ---------------------------------------------------------------------------
+# odd_sql.py is mostly a frozen SQL query dict; mutmut mutates string
+# contents (which become ``XX...XX``) and dict-key names. These survive
+# because the original test_fr105 tests query *behaviour*, not the
+# exact SQL string / dict-key vocabulary. The targeted tests below
+# pin the canonical names so a rename mutant would surface.
+
+def test_fr105_odd_query_keys_are_canonical_names():
+    """``execute_all()`` MUST surface results keyed by the canonical
+    ODD query names defined in ``_ODD_SQL_QUERIES`` (10 queries per
+    FR-105). A mutant that renames a key (``"odd_fcr_rate"`` →
+    ``"XXodd_fcr_rateXX"``) would surface as a missing entry under
+    the canonical name.
+    """
+    from app.admin.odd_sql import _ODD_SQL_QUERIES
+    # The mock db returns the SQL string it received so we can introspect.
+    seen_sql: dict[str, str] = {}
+
+    def _capture(sql):
+        # Reverse-lookup the key by sql content
+        for k, v in _ODD_SQL_QUERIES.items():
+            if v == sql:
+                seen_sql[k] = sql
+                return "ok"
+        return "ok"
+
+    mock_db = MagicMock()
+    mock_db.execute.side_effect = _capture
+    runner = ODDSqlRunner(db=mock_db, environment="staging")
+    results = runner.execute_all()
+    expected_keys = set(_ODD_SQL_QUERIES.keys())
+    assert set(results.keys()) == expected_keys, (
+        f"execute_all() must return exactly the canonical 10 ODD query "
+        f"keys {expected_keys!r}; got {set(results.keys())!r}"
+    )
+    for name in expected_keys:
+        assert name in seen_sql, (
+            f"db.execute() must have been called with the SQL for "
+            f"{name!r}; capture dict={seen_sql!r}"
+        )
+        assert "XX" not in seen_sql[name], (
+            f"SQL for {name!r} must not contain mutmut rename marker 'XX'; "
+            f"got sql={seen_sql[name]!r}"
+        )
