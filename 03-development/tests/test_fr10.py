@@ -309,3 +309,125 @@ def test_fr10_latency_under_2ms(sanitizer: InputSanitizer):
         f"(slack +{slack_ms}ms); observed p95={p95_ms:.3f}ms over "
         f"{iterations} iterations on input {text!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Mutation coverage — kill surviving mutants in core/paladin.py
+# ---------------------------------------------------------------------------
+
+def test_fr10_paladin_homoglyphs_maps_cyrillic_a_to_ascii():
+    """``InputSanitizer`` MUST map Cyrillic ``А`` (U+0410) to ASCII ``"A"``.
+    Kills mutants #1, 5 that change the chr(0x0410) → chr(...) mapping.
+    """
+    from app.core.paladin import InputSanitizer
+    s = InputSanitizer()
+    # Cyrillic А (U+0410)
+    out = s.sanitize("А")
+    assert out == "A", (
+        f"InputSanitizer must map Cyrillic А (U+0410) to ASCII 'A'; "
+        f"got {out!r}"
+    )
+
+
+def test_fr10_paladin_homoglyphs_maps_cyrillic_h_to_ascii():
+    """``InputSanitizer`` MUST map Cyrillic ``Н`` (U+041D) to ASCII ``"H"``.
+    Kills mutants #1, 10 that wrap or change chr(0x041D) → "H".
+    """
+    from app.core.paladin import InputSanitizer
+    s = InputSanitizer()
+    out = s.sanitize("Н")
+    assert out == "H", (
+        f"InputSanitizer must map Cyrillic Н (U+041D) to ASCII 'H'; "
+        f"got {out!r}"
+    )
+
+
+def test_fr10_paladin_homoglyphs_maps_cyrillic_c_to_ascii():
+    """``InputSanitizer`` MUST map Cyrillic ``С`` (U+0421) to ASCII ``"C"``.
+    Kills mutants wrapping the chr(0x0421) → "C" mapping.
+    """
+    from app.core.paladin import InputSanitizer
+    s = InputSanitizer()
+    out = s.sanitize("С")
+    assert out == "C", (
+        f"InputSanitizer must map Cyrillic С (U+0421) to ASCII 'C'; "
+        f"got {out!r}"
+    )
+
+
+def test_fr10_paladin_homoglyphs_maps_cyrillic_e_to_ascii():
+    """``InputSanitizer`` MUST map Cyrillic ``Е`` (U+0415) to ASCII ``"E"``.
+    Kills mutants wrapping the chr(0x0415) → "E" mapping.
+    """
+    from app.core.paladin import InputSanitizer
+    s = InputSanitizer()
+    out = s.sanitize("Е")
+    assert out == "E", (
+        f"InputSanitizer must map Cyrillic Е (U+0415) to ASCII 'E'; "
+        f"got {out!r}"
+    )
+
+
+def test_fr10_paladin_homoglyphs_maps_cyrillic_o_to_ascii():
+    """``InputSanitizer`` MUST map Cyrillic ``О`` (U+041E) to ASCII ``"O"``.
+    Kills mutants wrapping the chr(0x041E) → "O" mapping.
+    """
+    from app.core.paladin import InputSanitizer
+    s = InputSanitizer()
+    out = s.sanitize("О")
+    assert out == "O", (
+        f"InputSanitizer must map Cyrillic О (U+041E) to ASCII 'O'; "
+        f"got {out!r}"
+    )
+
+
+def test_fr10_paladin_homoglyphs_maps_cyrillic_p_to_ascii():
+    """``InputSanitizer`` MUST map Cyrillic ``Р`` (U+0420) to ASCII ``"P"``.
+    Kills mutants wrapping the chr(0x0420) → "P" mapping.
+    """
+    from app.core.paladin import InputSanitizer
+    s = InputSanitizer()
+    out = s.sanitize("Р")
+    assert out == "P", (
+        f"InputSanitizer must map Cyrillic Р (U+0420) to ASCII 'P'; "
+        f"got {out!r}"
+    )
+
+
+def test_fr10_paladin_homoglyphs_maps_cyrillic_t_to_ascii():
+    """``InputSanitizer`` MUST map Cyrillic ``Т`` (U+0422) to ASCII ``"T"``.
+    Kills mutants wrapping the chr(0x0422) → "T" mapping.
+    """
+    from app.core.paladin import InputSanitizer
+    s = InputSanitizer()
+    out = s.sanitize("Т")
+    assert out == "T", (
+        f"InputSanitizer must map Cyrillic Т (U+0422) to ASCII 'T'; "
+        f"got {out!r}"
+    )
+
+
+def test_fr10_paladin_homoglyphs_maps_cyrillic_x_to_ascii():
+    """``InputSanitizer`` MUST map Cyrillic ``Х`` (U+0425) to ASCII ``"X"``.
+    Kills mutants wrapping the chr(0x0425) → "X" mapping.
+    """
+    from app.core.paladin import InputSanitizer
+    s = InputSanitizer()
+    out = s.sanitize("Х")
+    assert out == "X", (
+        f"InputSanitizer must map Cyrillic Х (U+0425) to ASCII 'X'; "
+        f"got {out!r}"
+    )
+
+
+def test_fr10_paladin_homoglyphs_maps_greek_alpha_to_ascii():
+    """``InputSanitizer`` MUST map Greek ``Α`` (U+0391) to ASCII ``"A"``.
+    Kills mutants wrapping the chr(0x0391) → "A" mapping.
+    """
+    from app.core.paladin import InputSanitizer
+    s = InputSanitizer()
+    out = s.sanitize("Α")
+    assert out == "A", (
+        f"InputSanitizer must map Greek Α (U+0391) to ASCII 'A'; "
+        f"got {out!r}"
+    )

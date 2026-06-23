@@ -589,3 +589,49 @@ def test_fr99_nfr09_load_test_exists_in_load_folder():
         content = f.read()
     assert "http_req_failed" in content, "load test must assert error rate"
     assert "http_req_duration" in content, "load test must assert response time"
+
+
+# ---------------------------------------------------------------------------
+# Mutation coverage — kill surviving mutants in infra/circuit_breaker.py
+# ---------------------------------------------------------------------------
+
+def test_fr99_circuit_breaker_level_constants_exact():
+    """``CircuitBreaker.LEVEL_*`` constants MUST equal the exact string
+    values ``"level_0"`` ... ``"level_5"``. Kills mutants wrapping
+    string constants (e.g. ``LEVEL_4: str = None``).
+    """
+    from app.infra.circuit_breaker import CircuitBreaker
+    expected = {f"LEVEL_{i}": f"level_{i}" for i in range(6)}
+    for attr, val in expected.items():
+        actual = getattr(CircuitBreaker, attr)
+        assert actual == val, (
+            f"CircuitBreaker.{attr} must equal {val!r}; got {actual!r}"
+        )
+
+
+def test_fr99_circuit_breaker_initial_success_count_is_zero():
+    """``CircuitBreaker.__init__`` MUST set ``_llm_success_count = 0``.
+    Kills mutant #50 (``0`` → ``1``).
+    """
+    from app.infra.circuit_breaker import CircuitBreaker
+    cb = CircuitBreaker()
+    assert cb._llm_success_count == 0, (
+        f"CircuitBreaker._llm_success_count must start at 0; "
+        f"got {cb._llm_success_count!r}"
+    )
+
+
+def test_fr99_circuit_breaker_record_llm_failure_resets_success_count():
+    """``record_llm_failure`` MUST reset ``_llm_success_count`` to ``0``.
+    Kills mutant #54 (``= 0`` → ``= 1``).
+    """
+    from app.infra.circuit_breaker import CircuitBreaker
+    cb = CircuitBreaker()
+    # Bump success count first
+    cb._llm_success_count = 7
+    cb.record_llm_failure()
+    assert cb._llm_success_count == 0, (
+        f"After record_llm_failure, _llm_success_count must be reset to 0; "
+        f"got {cb._llm_success_count!r}"
+    )
+

@@ -796,3 +796,128 @@ def test_fr80_concurrent_xclaim_isolated():
                 f"id with {other_occurrences} other consumers — "
                 f"XCLAIM race produced a duplicate"
             )
+
+
+# ---------------------------------------------------------------------------
+# Mutation coverage — kill surviving mutants in infra/redis_streams.py
+# ---------------------------------------------------------------------------
+
+def test_fr80_redis_streams_pel_batch_size_constant_is_100():
+    """``_PEL_BATCH_SIZE`` MUST equal 100. Kills mutants wrapping it."""
+    from app.infra.redis_streams import _PEL_BATCH_SIZE
+    assert _PEL_BATCH_SIZE == 100, (
+        f"_PEL_BATCH_SIZE must be 100 (SRS FR-80); got {_PEL_BATCH_SIZE!r}"
+    )
+
+
+def test_fr80_redis_streams_default_stream_name_is_messages():
+    """``AsyncMessageProcessor.__init__`` MUST default ``stream="messages"``.
+    Kills mutant wrapping the default string.
+    """
+    from app.infra.redis_streams import AsyncMessageProcessor
+    from unittest.mock import MagicMock
+    client = MagicMock()
+    proc = AsyncMessageProcessor(redis_client=client)
+    assert proc.stream == "messages", (
+        f"AsyncMessageProcessor default stream MUST be 'messages'; "
+        f"got {proc.stream!r}"
+    )
+
+
+def test_fr80_redis_streams_default_group_name_is_omnibot():
+    """``AsyncMessageProcessor.__init__`` MUST default ``group_name="omnibot"``."""
+    from app.infra.redis_streams import AsyncMessageProcessor
+    from unittest.mock import MagicMock
+    client = MagicMock()
+    proc = AsyncMessageProcessor(redis_client=client)
+    assert proc.group_name == "omnibot", (
+        f"AsyncMessageProcessor default group_name MUST be 'omnibot'; "
+        f"got {proc.group_name!r}"
+    )
+
+
+def test_fr80_redis_streams_next_stream_id_increments_seq():
+    """``_next_stream_id(stream_id)`` MUST return ``ms-(seq+1)`` (no XX-wrap).
+    Kills mutant #20 wrapping the return value.
+    """
+    from app.infra.redis_streams import _next_stream_id
+    assert _next_stream_id("1700000000000-0") == "1700000000000-1", (
+        f"_next_stream_id('1700000000000-0') must return '1700000000000-1'; "
+        f"got {_next_stream_id('1700000000000-0')!r}"
+    )
+
+
+def test_fr80_redis_streams_next_stream_id_preserves_on_invalid():
+    """``_next_stream_id`` MUST return the input unchanged when seq is invalid.
+    Kills mutants that wrap or change the except branch.
+    """
+    from app.infra.redis_streams import _next_stream_id
+    assert _next_stream_id("bad-seq") == "bad-seq", (
+        f"_next_stream_id('bad-seq') must return 'bad-seq' (no exception); "
+        f"got {_next_stream_id('bad-seq')!r}"
+    )
+
+
+def test_fr80_redis_streams_message_dataclass_has_required_fields():
+    """``Message`` dataclass MUST expose ``message_id`` and ``fields``.
+    Kills mutants wrapping the dataclass field defaults.
+    """
+    from app.infra.redis_streams import Message
+    msg = Message(message_id="m", fields={"k": "v"})
+    assert msg.message_id == "m"
+    assert msg.fields == {"k": "v"}
+
+
+def test_fr80_redis_streams_known_fields_contains_event_type():
+    """``_FR80_KNOWN_FIELDS`` MUST contain ``"event_type"`` (not XX-wrapped).
+    Kills mutant #5.
+    """
+    from app.infra.redis_streams import _FR80_KNOWN_FIELDS
+    assert "event_type" in _FR80_KNOWN_FIELDS, (
+        f"_FR80_KNOWN_FIELDS must contain 'event_type'; "
+        f"got {_FR80_KNOWN_FIELDS!r}"
+    )
+
+
+def test_fr80_redis_streams_known_fields_contains_user_id():
+    """``_FR80_KNOWN_FIELDS`` MUST contain ``"user_id"``."""
+    from app.infra.redis_streams import _FR80_KNOWN_FIELDS
+    assert "user_id" in _FR80_KNOWN_FIELDS, (
+        f"_FR80_KNOWN_FIELDS must contain 'user_id'; "
+        f"got {_FR80_KNOWN_FIELDS!r}"
+    )
+
+
+def test_fr80_redis_streams_known_fields_contains_conversation_id():
+    """``_FR80_KNOWN_FIELDS`` MUST contain ``"conversation_id"``."""
+    from app.infra.redis_streams import _FR80_KNOWN_FIELDS
+    assert "conversation_id" in _FR80_KNOWN_FIELDS, (
+        f"_FR80_KNOWN_FIELDS must contain 'conversation_id'; "
+        f"got {_FR80_KNOWN_FIELDS!r}"
+    )
+
+
+def test_fr80_redis_streams_block_ms_default_5000():
+    """``AsyncMessageProcessor.block_ms`` MUST default to 5000.
+    Kills mutants changing the default.
+    """
+    from app.infra.redis_streams import AsyncMessageProcessor
+    from unittest.mock import MagicMock
+    proc = AsyncMessageProcessor(redis_client=MagicMock())
+    assert proc.block_ms == 5000, (
+        f"AsyncMessageProcessor default block_ms MUST be 5000; "
+        f"got {proc.block_ms!r}"
+    )
+
+
+def test_fr80_redis_streams_idle_ms_default_60000():
+    """``AsyncMessageProcessor.idle_ms`` MUST default to 60000.
+    Kills mutants changing the default.
+    """
+    from app.infra.redis_streams import AsyncMessageProcessor
+    from unittest.mock import MagicMock
+    proc = AsyncMessageProcessor(redis_client=MagicMock())
+    assert proc.idle_ms == 60000, (
+        f"AsyncMessageProcessor default idle_ms MUST be 60000; "
+        f"got {proc.idle_ms!r}"
+    )

@@ -373,3 +373,70 @@ def test_fr75_maintenance_queue_low_concurrency_1():
         f"FR-75 maintenance concurrency must be exactly 1; "
         f"got {actual_concurrency}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Mutation coverage — infra/jobs.py
+# ---------------------------------------------------------------------------
+
+def test_fr75_jobs_queue_configs_exact():
+    """``QUEUE_CONFIGS`` MUST define the 3 production queues pinned by FR-75
+    with their exact (name, priority, concurrency, timeout) tuples.
+    Kills mutants changing priority strings or concurrency numbers.
+    """
+    from app.infra.jobs import QUEUE_CONFIGS
+    expected = {
+        "embedding": ("embedding", "high", 3, 30),
+        "maintenance": ("maintenance", "low", 1, 60),
+        "notification": ("notification", "high", 5, 10),
+    }
+    for queue_name, exp in expected.items():
+        cfg = QUEUE_CONFIGS[queue_name]
+        assert (cfg.name, cfg.priority, cfg.concurrency, cfg.timeout) == exp, (
+            f"QUEUE_CONFIGS[{queue_name!r}] must equal {exp!r}; "
+            f"got ({cfg.name!r}, {cfg.priority!r}, {cfg.concurrency!r}, {cfg.timeout!r})"
+        )
+
+
+def test_fr75_jobs_embedding_job_default_max_retries_is_3():
+    """``EmbeddingJob`` MUST default ``max_retries=3`` (SRS FR-77).
+    Kills mutants changing the default.
+    """
+    from app.infra.jobs import EmbeddingJob
+    job = EmbeddingJob(chunk_id="c1", knowledge_id=1, content="x", model="m")
+    assert job.max_retries == 3, (
+        f"EmbeddingJob.max_retries default must be 3 (SRS FR-77); "
+        f"got {job.max_retries!r}"
+    )
+
+
+def test_fr75_jobs_embedding_job_default_retry_count_is_0():
+    """``EmbeddingJob`` MUST default ``retry_count=0``."""
+    from app.infra.jobs import EmbeddingJob
+    job = EmbeddingJob(chunk_id="c1", knowledge_id=1, content="x", model="m")
+    assert job.retry_count == 0, (
+        f"EmbeddingJob.retry_count default must be 0; got {job.retry_count!r}"
+    )
+
+
+def test_fr75_jobs_embedding_job_default_jitter_true():
+    """``EmbeddingJob`` MUST default ``jitter=True``."""
+    from app.infra.jobs import EmbeddingJob
+    job = EmbeddingJob(chunk_id="c1", knowledge_id=1, content="x", model="m")
+    assert job.jitter is True, (
+        f"EmbeddingJob.jitter default must be True; got {job.jitter!r}"
+    )
+
+
+def test_fr75_jobs_queue_configs_has_three_entries():
+    """``QUEUE_CONFIGS`` MUST have exactly 3 entries (embedding, maintenance, notification).
+    Kills mutants adding/removing entries.
+    """
+    from app.infra.jobs import QUEUE_CONFIGS
+    assert len(QUEUE_CONFIGS) == 3, (
+        f"QUEUE_CONFIGS must have 3 entries; got {len(QUEUE_CONFIGS)}"
+    )
+    assert set(QUEUE_CONFIGS.keys()) == {"embedding", "maintenance", "notification"}, (
+        f"QUEUE_CONFIGS keys must be exactly {{embedding, maintenance, notification}}; "
+        f"got {set(QUEUE_CONFIGS.keys())!r}"
+    )

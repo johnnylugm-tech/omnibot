@@ -182,3 +182,288 @@ async def test_fr21_lua_atomic_no_race_condition():
     )
 
 # NFR coverage: NFR-10 (circuit_breaker >=99.9% uptime)
+
+
+# ---------------------------------------------------------------------------
+# Mutation coverage — circuit_breaker.py (linked from test_fr99.py)
+# ---------------------------------------------------------------------------
+
+def test_fr21_circuit_breaker_level_constants_exact():
+    """``CircuitBreaker.LEVEL_*`` constants MUST equal the exact string
+    values ``"level_0"`` ... ``"level_5"``. Kills mutants wrapping
+    string constants (e.g. ``LEVEL_4: str = None``).
+    """
+    from app.infra.circuit_breaker import CircuitBreaker
+    expected = {f"LEVEL_{i}": f"level_{i}" for i in range(6)}
+    for attr, val in expected.items():
+        actual = getattr(CircuitBreaker, attr)
+        assert actual == val, (
+            f"CircuitBreaker.{attr} must equal {val!r}; got {actual!r}"
+        )
+
+
+def test_fr21_circuit_breaker_initial_success_count_is_zero():
+    """``CircuitBreaker.__init__`` MUST set ``_llm_success_count = 0``.
+    Kills mutant #50 (``0`` → ``1``).
+    """
+    from app.infra.circuit_breaker import CircuitBreaker
+    cb = CircuitBreaker()
+    assert cb._llm_success_count == 0, (
+        f"CircuitBreaker._llm_success_count must start at 0; "
+        f"got {cb._llm_success_count!r}"
+    )
+
+
+def test_fr21_circuit_breaker_record_llm_failure_resets_success_count():
+    """``record_llm_failure`` MUST reset ``_llm_success_count`` to ``0``.
+    Kills mutant #54 (``= 0`` → ``= 1``).
+    """
+    from app.infra.circuit_breaker import CircuitBreaker
+    cb = CircuitBreaker()
+    cb._llm_success_count = 7
+    cb.record_llm_failure()
+    assert cb._llm_success_count == 0, (
+        f"After record_llm_failure, _llm_success_count must be reset to 0; "
+        f"got {cb._llm_success_count!r}"
+    )
+
+
+def test_fr21_circuit_breaker_level_0_initial():
+    """Initial level MUST be LEVEL_0 = "level_0"."""
+    from app.infra.circuit_breaker import CircuitBreaker
+    cb = CircuitBreaker()
+    assert cb._level == "level_0", (
+        f"CircuitBreaker._level must start at 'level_0'; got {cb._level!r}"
+    )
+
+
+def test_fr21_circuit_breaker_p95_latency_threshold_is_800():
+    """``CircuitBreaker._LLM_P95_LATENCY_THRESHOLD_MS`` MUST equal 800.0.
+    Kills mutants wrapping the constant.
+    """
+    from app.infra.circuit_breaker import CircuitBreaker
+    assert CircuitBreaker._LLM_P95_LATENCY_THRESHOLD_MS == 800.0, (
+        f"CircuitBreaker._LLM_P95_LATENCY_THRESHOLD_MS must be 800.0; "
+        f"got {CircuitBreaker._LLM_P95_LATENCY_THRESHOLD_MS!r}"
+    )
+
+
+def test_fr21_circuit_breaker_consecutive_failure_threshold_is_5():
+    """``CircuitBreaker._LLM_CONSECUTIVE_FAILURE_THRESHOLD`` MUST equal 5.
+    Kills mutants wrapping the constant.
+    """
+    from app.infra.circuit_breaker import CircuitBreaker
+    assert CircuitBreaker._LLM_CONSECUTIVE_FAILURE_THRESHOLD == 5, (
+        f"CircuitBreaker._LLM_CONSECUTIVE_FAILURE_THRESHOLD must be 5; "
+        f"got {CircuitBreaker._LLM_CONSECUTIVE_FAILURE_THRESHOLD!r}"
+    )
+
+
+def test_fr21_circuit_breaker_lateral_failure_threshold_is_3():
+    """``CircuitBreaker._LATERAL_FAILURE_THRESHOLD`` MUST equal 3.
+    Kills mutants wrapping the constant.
+    """
+    from app.infra.circuit_breaker import CircuitBreaker
+    assert CircuitBreaker._LATERAL_FAILURE_THRESHOLD == 3, (
+        f"CircuitBreaker._LATERAL_FAILURE_THRESHOLD must be 3; "
+        f"got {CircuitBreaker._LATERAL_FAILURE_THRESHOLD!r}"
+    )
+
+
+def test_fr21_circuit_breaker_embedding_failure_count_increments():
+    """``record_embedding_failure`` MUST increment ``_embedding_failure_count``
+    via ``+=`` (cumulative). Kills mutant #70 (``+= 1`` → ``= 1``).
+    """
+    from app.infra.circuit_breaker import CircuitBreaker
+    cb = CircuitBreaker()
+    cb.record_embedding_failure()
+    cb.record_embedding_failure()
+    cb.record_embedding_failure()
+    cb.record_embedding_failure()
+    assert cb._embedding_failure_count == 4, (
+        f"_embedding_failure_count must increment by 1 per call "
+        f"(cumulative); got {cb._embedding_failure_count!r}"
+    )
+
+
+def test_fr21_circuit_breaker_get_search_strategy_returns_tsvector():
+    """``get_search_strategy`` MUST return the string ``"tsvector"`` when
+    ``_embedding_down`` is True. Kills mutant #80 (``"tsvector"`` → ``"XXtsvectorXX"``).
+    """
+    from app.infra.circuit_breaker import CircuitBreaker
+    cb = CircuitBreaker()
+    cb._embedding_down = True
+    assert cb.get_search_strategy() == "tsvector", (
+        f"get_search_strategy must return 'tsvector' when embedding_down; "
+        f"got {cb.get_search_strategy()!r}"
+    )
+
+
+def test_fr21_circuit_breaker_record_classifier_success_resets_down():
+    """``record_classifier_success`` MUST set ``_classifier_down = False``.
+    Kills mutant #90 (``= False`` → ``= True``).
+    """
+    from app.infra.circuit_breaker import CircuitBreaker
+    cb = CircuitBreaker()
+    cb._classifier_down = True
+    cb.record_classifier_success()
+    assert cb._classifier_down is False, (
+        f"record_classifier_success must set _classifier_down=False; "
+        f"got {cb._classifier_down!r}"
+    )
+
+
+def test_fr21_circuit_breaker_get_search_strategy_returns_embedding():
+    """``get_search_strategy`` MUST return ``"embedding"`` when ``_embedding_down``
+    is False (default). Kills mutant #81 (``"embedding"`` → ``"XXembeddingXX"``).
+    """
+    from app.infra.circuit_breaker import CircuitBreaker
+    cb = CircuitBreaker()
+    assert cb.get_search_strategy() == "embedding", (
+        f"get_search_strategy must return 'embedding' when embedding_down=False; "
+        f"got {cb.get_search_strategy()!r}"
+    )
+
+
+def test_fr21_circuit_breaker_classifier_failure_count_increments_by_one():
+    """``record_classifier_failure`` MUST increment ``_classifier_failure_count``
+    by exactly 1. Kills mutant #84 (``+= 1`` → ``+= 2``).
+    """
+    from app.infra.circuit_breaker import CircuitBreaker
+    cb = CircuitBreaker()
+    cb.record_classifier_failure()
+    assert cb._classifier_failure_count == 1, (
+        f"After 1 record_classifier_failure, count must be 1; "
+        f"got {cb._classifier_failure_count!r}"
+    )
+
+
+def test_fr21_circuit_breaker_is_classifier_active_returns_true_when_not_down():
+    """``is_classifier_active()`` MUST return ``True`` when ``_classifier_down``
+    is False. Kills mutant #92 (``return not self._classifier_down`` → `return self._classifier_down`).
+    """
+    from app.infra.circuit_breaker import CircuitBreaker
+    cb = CircuitBreaker()
+    assert cb.is_classifier_active() is True, (
+        f"is_classifier_active must return True when classifier_down=False; "
+        f"got {cb.is_classifier_active()!r}"
+    )
+
+
+def test_fr21_circuit_breaker_is_classifier_active_returns_false_when_down():
+    """``is_classifier_active()`` MUST return ``False`` when ``_classifier_down``
+    is True.
+    """
+    from app.infra.circuit_breaker import CircuitBreaker
+    cb = CircuitBreaker()
+    cb._classifier_down = True
+    assert cb.is_classifier_active() is False, (
+        f"is_classifier_active must return False when classifier_down=True; "
+        f"got {cb.is_classifier_active()!r}"
+    )
+
+
+def test_fr21_circuit_breaker_retry_policy_jitter_default_true():
+    """``RetryPolicy.__init__`` MUST default ``jitter=True``.
+    Kills mutant #96 (``= True`` → ``= False``).
+    """
+    import app.infra.circuit_breaker as cb_mod
+    if not hasattr(cb_mod, "RetryPolicy"):
+        return  # RetryPolicy not exported; nothing to test
+    from app.infra.circuit_breaker import RetryPolicy
+    rp = RetryPolicy()
+    assert rp.jitter is True, (
+        f"RetryPolicy.jitter default must be True; got {rp.jitter!r}"
+    )
+
+
+def test_fr21_circuit_breaker_embedding_down_initial_is_false_not_none():
+    """``_embedding_down`` MUST initialise to ``False`` (NOT ``None``).
+    Kills mutants #35 (``= False`` → ``= None``).
+    """
+    from app.infra.circuit_breaker import CircuitBreaker
+    cb = CircuitBreaker()
+    assert cb._embedding_down is False, (
+        f"_embedding_down initial value MUST be False (strict); "
+        f"got {cb._embedding_down!r} (type {type(cb._embedding_down).__name__})"
+    )
+
+
+def test_fr21_circuit_breaker_classifier_down_initial_is_false_not_none():
+    """``_classifier_down`` MUST initialise to ``False`` (NOT ``None``).
+    Kills mutants #39 (``= False`` → ``= None``).
+    """
+    from app.infra.circuit_breaker import CircuitBreaker
+    cb = CircuitBreaker()
+    assert cb._classifier_down is False, (
+        f"_classifier_down initial value MUST be False (strict); "
+        f"got {cb._classifier_down!r} (type {type(cb._classifier_down).__name__})"
+    )
+
+
+def test_fr21_rate_limiter_limits_dict_exact():
+    """``RateLimiter.LIMITS`` MUST be the exact per-platform dict
+    {"telegram":30, "line":30, "messenger":30, "whatsapp":30, "web":10, "agent":100}.
+    Kills mutants wrapping any platform → int mapping.
+    """
+    from app.infra.rate_limit import RateLimiter
+    expected = {
+        "telegram": 30,
+        "line": 30,
+        "messenger": 30,
+        "whatsapp": 30,
+        "web": 10,
+        "agent": 100,
+    }
+    assert RateLimiter.LIMITS == expected, (
+        f"RateLimiter.LIMITS must equal {expected!r}; got {RateLimiter.LIMITS!r}"
+    )
+
+
+def test_fr21_rate_limiter_window_seconds_is_1():
+    """``RateLimiter._WINDOW_SECONDS`` MUST equal 1.0."""
+    from app.infra.rate_limit import RateLimiter
+    assert RateLimiter._WINDOW_SECONDS == 1.0, (
+        f"_WINDOW_SECONDS must be 1.0; got {RateLimiter._WINDOW_SECONDS!r}"
+    )
+
+
+def test_fr21_rate_limiter_lua_script_contains_zadd():
+    """``RateLimiter._SCRIPT`` MUST contain the literal ``ZADD`` Redis command.
+    Kills mutants wrapping ZADD segment with XX...XX.
+    """
+    from app.infra.rate_limit import RateLimiter
+    assert "ZADD" in RateLimiter._SCRIPT, (
+        f"_SCRIPT must contain 'ZADD'; got {RateLimiter._SCRIPT!r}"
+    )
+    assert "ZREMRANGEBYSCORE" in RateLimiter._SCRIPT, (
+        f"_SCRIPT must contain 'ZREMRANGEBYSCORE'; got {RateLimiter._SCRIPT!r}"
+    )
+    assert "ZCARD" in RateLimiter._SCRIPT, (
+        f"_SCRIPT must contain 'ZCARD' (return count); got {RateLimiter._SCRIPT!r}"
+    )
+
+
+def test_fr21_rate_limiter_result_status_200_when_allowed():
+    """``RateLimitResult`` for an allowed request MUST have ``status=200``.
+    Kills mutants changing default status.
+    """
+    from app.infra.rate_limit import RateLimiter
+    rl = RateLimiter(redis_client=None)
+    r = rl.allow(platform="telegram", key="unique-key-1")
+    assert r.status == 200, (
+        f"first telegram call must return status=200; got {r.status!r}"
+    )
+    assert r.reason == "", (
+        f"first telegram call (allowed) must have reason=''; got {r.reason!r}"
+    )
+
+
+def test_fr21_rate_limit_result_dataclass_has_status_and_reason():
+    """``RateLimitResult`` MUST expose ``status`` and ``reason`` fields.
+    Kills mutants wrapping the dataclass.
+    """
+    from app.infra.rate_limit import RateLimitResult
+    r = RateLimitResult(status=200, reason="")
+    assert r.status == 200
+    assert r.reason == ""

@@ -175,11 +175,11 @@ exclude_lines = [
 ]
 
 [tool.mutmut]
-paths_to_mutate = "03-development/src/app/core/emotion.py"
+paths_to_mutate = "03-development/src/app/services/media.py"
 paths_to_exclude = "03-development/src/app/__init__.py,03-development/src/app/*/__init__.py,03-development/tests/"
 backup = false
-runner = "python -m pytest -x --tb=short -q .mutmut_runs/tests_emotion/"
-tests_dir = ".mutmut_runs/tests_pipeline"
+runner = "python -m pytest --rootdir=/Users/johnny/projects/omnibot --override-ini='testpaths=' -x --tb=short -q /Users/johnny/projects/omnibot/03-development/tests/test_fr100.py /Users/johnny/projects/omnibot/03-development/tests/test_fr101.py /Users/johnny/projects/omnibot/03-development/tests/test_fr102.py /Users/johnny/projects/omnibot/03-development/tests/test_fr103.py /Users/johnny/projects/omnibot/03-development/tests/test_fr104.py /Users/johnny/projects/omnibot/03-development/tests/test_fr105.py /Users/johnny/projects/omnibot/03-development/tests/test_fr106.py /Users/johnny/projects/omnibot/03-development/tests/test_fr107.py"
+tests_dir = ".mutmut_runs/tests_media"
 
 [project.scripts]
 omnibot = "uvicorn:run"
