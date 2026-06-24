@@ -186,9 +186,9 @@ def test_fr98_knowledge_soft_delete_rollback():
         "FR-98 KnowledgeRollbackResult must expose ``is_active``"
     )
     observed_is_active = (
-        result.is_active()
+        result.is_active()  # type: ignore[reportAttributeAccessIssue]
         if callable(getattr(result, "is_active", None))
-        else result.is_active
+        else result.is_active  # type: ignore[reportAttributeAccessIssue]
     )
 
     # The rollback MUST restore is_active=True — the FR's
@@ -209,9 +209,9 @@ def test_fr98_knowledge_soft_delete_rollback():
         "FR-98 KnowledgeRollbackResult must expose ``version``"
     )
     observed_version = (
-        result.version()
+        result.version()  # type: ignore[reportAttributeAccessIssue]
         if callable(getattr(result, "version", None))
-        else result.version
+        else result.version  # type: ignore[reportAttributeAccessIssue]
     )
     assert isinstance(observed_version, int) and observed_version > 0, (
         f"FR-98 knowledge rollback version must be a positive int; got "
@@ -268,9 +268,9 @@ def test_fr98_schema_downgrade_no_data_loss():
             "FR-98 SchemaMigrationResult must expose ``rows_preserved``"
         )
         observed_rows_preserved = (
-            result.rows_preserved()
+            result.rows_preserved()  # type: ignore[reportAttributeAccessIssue]
             if callable(getattr(result, "rows_preserved", None))
-            else result.rows_preserved
+            else result.rows_preserved  # type: ignore[reportAttributeAccessIssue]
         )
 
         # The downgrade MUST preserve every row — the FR's
@@ -292,9 +292,9 @@ def test_fr98_schema_downgrade_no_data_loss():
             "FR-98 SchemaMigrationResult must expose ``migration``"
         )
         observed_migration = (
-            result.migration()
+            result.migration()  # type: ignore[reportAttributeAccessIssue]
             if callable(getattr(result, "migration", None))
-            else result.migration
+            else result.migration  # type: ignore[reportAttributeAccessIssue]
         )
         assert observed_migration == "downgrade", (
             f"FR-98 schema downgrade result must record migration="
@@ -376,9 +376,9 @@ def test_fr98_experiment_abort_restores_control():
         "FR-98 ExperimentAbortResult must expose ``status``"
     )
     observed_status = (
-        result.status()
+        result.status()  # type: ignore[reportAttributeAccessIssue]
         if callable(getattr(result, "status", None))
-        else result.status
+        else result.status  # type: ignore[reportAttributeAccessIssue]
     )
 
     # The status MUST be "aborted" — the FR's
@@ -399,9 +399,9 @@ def test_fr98_experiment_abort_restores_control():
         "FR-98 ExperimentAbortResult must expose ``traffic``"
     )
     observed_traffic = (
-        result.traffic()
+        result.traffic()  # type: ignore[reportAttributeAccessIssue]
         if callable(getattr(result, "traffic", None))
-        else result.traffic
+        else result.traffic  # type: ignore[reportAttributeAccessIssue]
     )
 
     # The traffic MUST be routed to "control" — the FR's

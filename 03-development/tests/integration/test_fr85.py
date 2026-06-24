@@ -502,7 +502,7 @@ def test_fr85_rbac_require_authorized(monkeypatch):
     def handler(payload=None):
         return payload
 
-    result = handler(role="admin", payload="data")
+    result = handler(role="admin", payload="data")  # type: ignore[reportCallIssue]
     assert result == "data"
 
 
@@ -515,7 +515,7 @@ def test_fr85_rbac_require_denied(monkeypatch):
         return "should not reach"  # pragma: no cover — unreachable on deny
 
     try:
-        handler(role="anonymous")
+        handler(role="anonymous")  # type: ignore[reportCallIssue]
     except PermissionError as exc:
         assert str(exc) == RBACEnforcer.ERROR_AUTHZ_INSUFFICIENT_ROLE
     else:
@@ -533,7 +533,7 @@ def test_fr85_rbac_require_role_from_request(monkeypatch):
     class FakeRequest:
         user_role = "admin"
 
-    result = handler(request=FakeRequest())
+    result = handler(request=FakeRequest())  # type: ignore[reportCallIssue]
     assert result == "ok"
 
 
@@ -548,7 +548,7 @@ def test_fr85_rbac_require_role_from_first_arg(monkeypatch):
     class FakeRequest:
         user_role = "admin"
 
-    result = handler(FakeRequest())
+    result = handler(FakeRequest())  # type: ignore[reportCallIssue]
     assert result == "ok"
 
 
@@ -578,7 +578,7 @@ def test_fr85_rbac_require_role_ignored_without_testing(monkeypatch):
         return "ok"  # pragma: no cover
 
     try:
-        handler(role="admin")
+        handler(role="admin")  # type: ignore[reportCallIssue]
     except PermissionError:
         pass
     else:
@@ -595,7 +595,7 @@ def test_fr85_rbac_require_role_none_falls_through(monkeypatch):
         return "ok"  # pragma: no cover
 
     try:
-        handler(role=None)
+        handler(role=None)  # type: ignore[reportCallIssue]
     except PermissionError:
         pass
     else:

@@ -31,7 +31,7 @@ import secrets
 import threading
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, Query
 
 from app.api.adapters.a2a import A2AAdapter
 from app.api.adapters.line import LineWebhookAdapter
@@ -622,14 +622,17 @@ async def line_webhook(body: dict) -> dict[str, object]:
             return {"status": "ok", "count": 0}
         pipeline = _get_pipeline()
         response = pipeline.handle_message(msgs[0])
-        return {"status": "ok", "count": len(msgs), "source": str(response.source)}
+        return {"status": "ok", "count": len(msgs), "source": response.source.value if hasattr(response.source, "value") else str(response.source)}
     except Exception as exc:
         return {"status": "error", "code": "INTERNAL_ERROR", "detail": str(exc)}
 
 
 @router.get("/api/v1/webhook/messenger")
-async def messenger_challenge(hub_mode: str = "", hub_verify_token: str = "",
-                              hub_challenge: str = "") -> dict[str, str]:
+async def messenger_challenge(
+    hub_mode: str = Query("", alias="hub.mode"),
+    hub_verify_token: str = Query("", alias="hub.verify_token"),
+    hub_challenge: str = Query("", alias="hub.challenge"),
+) -> dict[str, str]:
     """[F-01] FR-03 — Messenger webhook verification challenge."""
     adapter = _messenger_adapter()
     return {"hub.challenge": adapter.handle_challenge(hub_mode, hub_verify_token, hub_challenge)}
@@ -645,14 +648,17 @@ async def messenger_webhook(body: dict) -> dict[str, object]:
         pipeline = _get_pipeline()
         response = pipeline.handle_message(msgs[0]) if msgs else None
         return {"status": "ok", "count": len(msgs),
-                "source": str(response.source) if response else "rule"}
+                "source": (response.source.value if hasattr(response.source, "value") else str(response.source)) if response else "rule"}
     except Exception as exc:
         return {"status": "error", "code": "INTERNAL_ERROR", "detail": str(exc)}
 
 
 @router.get("/api/v1/webhook/whatsapp")
-async def whatsapp_challenge(hub_mode: str = "", hub_verify_token: str = "",
-                             hub_challenge: str = "") -> dict[str, str]:
+async def whatsapp_challenge(
+    hub_mode: str = Query("", alias="hub.mode"),
+    hub_verify_token: str = Query("", alias="hub.verify_token"),
+    hub_challenge: str = Query("", alias="hub.challenge"),
+) -> dict[str, str]:
     """[F-01] FR-04 — WhatsApp webhook verification challenge."""
     adapter = _whatsapp_adapter()
     return {"hub.challenge": adapter.handle_challenge(hub_mode, hub_verify_token, hub_challenge)}
@@ -667,7 +673,7 @@ async def whatsapp_webhook(body: dict) -> dict[str, object]:
         pipeline = _get_pipeline()
         response = pipeline.handle_message(msgs[0]) if msgs else None
         return {"status": "ok", "count": len(msgs),
-                "source": str(response.source) if response else "rule"}
+                "source": (response.source.value if hasattr(response.source, "value") else str(response.source)) if response else "rule"}
     except Exception as exc:
         return {"status": "error", "code": "INTERNAL_ERROR", "detail": str(exc)}
 
@@ -691,7 +697,7 @@ async def web_message(body: dict, authorization: str = "") -> dict[str, object]:
         msg = adapter.process_message(token, body.get("content", ""))
         pipeline = _get_pipeline()
         response = pipeline.handle_message(msg)
-        return {"status": "ok", "source": str(response.source),
+        return {"status": "ok", "source": (response.source.value if hasattr(response.source, "value") else str(response.source)),
                 "content": response.content}
     except Exception as exc:
         return {"status": "error", "code": "INTERNAL_ERROR", "detail": str(exc)}
@@ -705,7 +711,7 @@ async def a2a_rpc(body: dict, authorization: str = "") -> dict[str, object]:
         msg = adapter.handle_jsonrpc_call(body, authorization)
         pipeline = _get_pipeline()
         response = pipeline.handle_message(msg)
-        return {"status": "ok", "source": str(response.source),
+        return {"status": "ok", "source": (response.source.value if hasattr(response.source, "value") else str(response.source)),
                 "jsonrpc": "2.0", "id": body.get("id")}
     except Exception as exc:
         return {"status": "error", "code": "INTERNAL_ERROR", "detail": str(exc)}

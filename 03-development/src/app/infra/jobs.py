@@ -335,7 +335,7 @@ process_embedding_job.compute_backoff = _compute_backoff  # type: ignore[attr-de
 # that forgot the wiring fails fast instead of silently dropping every
 # embedding job (which would leave chunks stuck at
 # ``embedding_synced=False`` and Tier-2 searches blind to them).
-from typing import Any as _Any
+from typing import Any as _Any  # noqa: E402
 
 _SAQ_CLIENT: _Any | None = None
 

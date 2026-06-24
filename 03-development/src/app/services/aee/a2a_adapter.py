@@ -29,6 +29,7 @@ from __future__ import annotations
 import contextlib
 import ipaddress
 import socket
+import threading
 import time
 import uuid
 from typing import Any
@@ -43,6 +44,8 @@ from app.services.aee.adapter import (
     fail,
     ok,
 )
+
+_DNS_PATCH_LOCK = threading.Lock()
 
 # NP-15 surface marker: every ``execute()`` failure is reported as a
 # timeout-flavored error per FR-41 (timeout=2.0s). Centralised so the
@@ -84,6 +87,11 @@ def _is_public_address(ip: ipaddress._BaseAddress) -> bool:
     ``169.254.169.254`` and friends), multicast, reserved, and the
     unspecified address.
     """
+    if isinstance(ip, ipaddress.IPv6Address) and (
+        ip.packed.startswith(b'\x20\x02') or ip.packed.startswith(b'\x20\x01\x00\x00')
+    ):
+        return False
+
     return not (
         ip.is_private  # type: ignore[attr-defined]
         or ip.is_loopback  # type: ignore[attr-defined]
@@ -286,18 +294,20 @@ class A2AAdapter(ActionAdapter):
         # the actual connect will hit that one specific address even
         # if the resolver would have returned more.
         representative_ip = next(iter(pinned_ips))
-        original = socket.getaddrinfo
 
-        def _patched(host, *args, **kwargs):
-            if host == hostname:
-                return original(representative_ip, *args, **kwargs)
-            return original(host, *args, **kwargs)
+        with _DNS_PATCH_LOCK:
+            original = socket.getaddrinfo
 
-        socket.getaddrinfo = _patched
-        try:
-            yield
-        finally:
-            socket.getaddrinfo = original
+            def _patched(host, *args, **kwargs):
+                if host == hostname:
+                    return original(representative_ip, *args, **kwargs)
+                return original(host, *args, **kwargs)
+
+            socket.getaddrinfo = _patched
+            try:
+                yield
+            finally:
+                socket.getaddrinfo = original
 
     def _now(self) -> float:
         """[FR-41] 現在時間（測試可透過 ``_force_cache_age`` 偏移）。"""

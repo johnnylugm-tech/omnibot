@@ -1,0 +1,96 @@
+ID: dst#5
+File: dst.py:237-306
+Title: DialogueState 跨 webhook handler race（SAD NP-13 違規）
+Desc: N/A
+Fix: 加 `set_intent_and_slots` locked setter，或在 webhook 層 per-conversation_id 實例化 DialogueState。
+----------------------------------------
+ID: paladin#15
+File: paladin.py:1041-1073
+Title: `_handle_retrospective_block` security_log_writer 失敗導致 L3 revocation 不發出
+Desc: N/A
+Fix: writer 呼叫包 try/except，仍回 `_blocked_result`。
+----------------------------------------
+ID: rate_limit#1
+File: rate_limit.py:109-116
+Title: A2A 平台無限流
+Desc: N/A
+Fix: 補 `"a2a": 30` 進 LIMITS。
+----------------------------------------
+ID: rate_limit#8
+File: rate_limit.py:144-149
+Title: `aallow` 是 async 函式但無 await
+Desc: N/A
+Fix: 
+----------------------------------------
+ID: rate_limit#10
+File: rate_limit.py:306-324
+Title: `_buckets` dict 無界增長
+Desc: N/A
+Fix: 
+----------------------------------------
+ID: redis_streams#1
+File: redis_streams.py:301-318
+Title: handler latency > idle_ms 導致同 message 雙重處理
+Desc: N/A
+Fix: in-process `self._in_flight: set[str]` 去重。
+----------------------------------------
+ID: cli_adapter#1
+File: cli_adapter.py:98-110
+Title: `execute()` 是 hardcoded stub，永遠不回 `run_script`
+Desc: N/A
+Fix: 
+----------------------------------------
+ID: mcp_adapter#1
+File: mcp_adapter.py:189-209
+Title: `_connect_stdio` 串接 initialize + tools/list 但 parser 只支援單一 JSON
+Desc: N/A
+Fix: 逐 frame 讀（Content-Length 或 newline-delimited），或只送 tools/list。
+----------------------------------------
+ID: mcp_adapter#2
+File: mcp_adapter.py:246-250
+Title: SSE path 不送 JSON-RPC envelope
+Desc: N/A
+Fix: 包成 `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{...}}`。
+----------------------------------------
+ID: llm_judge#1
+File: llm_judge.py:437
+Title: `CalibrationPipeline` 將 `judge_llm=None` 誤判為 NP-07 故障
+Desc: N/A
+Fix: 
+----------------------------------------
+ID: pipeline#1
+File: pipeline.py:172-174
+Title: AGENT bypass 時 stage call log 仍記錄 `emotion`
+Desc: N/A
+Fix: `if not process_result.get("bypassed"): current_log.append("emotion")`。
+----------------------------------------
+ID: pipeline#2
+File: pipeline.py:249-264
+Title: `get_context` 洩漏 DB session
+Desc: N/A
+Fix: `async with get_session() as session: ...`。
+----------------------------------------
+ID: retraction#2
+File: response.py:505-521
+Title: `_attempt_windowed_delete` 忽略 `client.delete_message` 回傳值
+Desc: N/A
+Fix: `if not client.delete_message(message_id):` 走 fail-secure。
+----------------------------------------
+ID: retraction#3
+File: response.py:659-704
+Title: `retract()` 對 unknown platform 拋 ValueError 但未觸發 SOC2 audit
+Desc: N/A
+Fix: 拋出前先 `_log_retraction_failed(reason='unknown_platform')`。
+----------------------------------------
+ID: chain#1
+File: chain.py:164
+Title: `platform_adapter.parse()` 失敗未防護
+Desc: N/A
+Fix: try/except 回 `_deny("parse", status=400, reason="PARSE_FAILED")`。
+----------------------------------------
+ID: chain#2
+File: chain.py:171
+Title: Rate-limit 結果 fail-open 預設值錯誤
+Desc: N/A
+Fix: 
+----------------------------------------

@@ -1,0 +1,100 @@
+........................................................................ [  6%]
+........................................................................ [ 12%]
+........................................................................ [ 19%]
+x.........x............................................................. [ 25%]
+........................................................................ [ 32%]
+.............x.......................................................... [ 38%]
+........................................................................ [ 45%]
+........................................................................ [ 51%]
+........................................................................ [ 58%]
+........................................................................ [ 64%]
+........................................................................ [ 71%]
+........................................................................ [ 77%]
+........................................................................ [ 84%]
+........................................................................ [ 90%]
+........................................................................ [ 97%]
+...............................                                          [100%]
+=============================== warnings summary ===============================
+03-development/tests/test_coverage_supplementary2.py::test_await_coro_from_sync_loop_stop_runtime_error
+  /Users/johnny/projects/omnibot/03-development/src/app/core/paladin.py:622: RuntimeWarning: coroutine 'wait_for' was never awaited
+    holder["v"] = new_loop.run_until_complete(
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+03-development/tests/unit/test_fr49.py::test_fr49_handle_message_dst_branch_invoked
+  /Users/johnny/projects/omnibot/03-development/tests/unit/test_fr49.py:602: RuntimeWarning: coroutine 'Connection._cancel' was never awaited
+    class _TrackedDST:
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform darwin, python 3.9.6-final-0 ________________
+
+Name                                                   Stmts   Miss  Cover   Missing
+------------------------------------------------------------------------------------
+03-development/src/app/__init__.py                         0      0   100%
+03-development/src/app/admin/__init__.py                   0      0   100%
+03-development/src/app/admin/gdpr.py                     106      2    98%   178, 183
+03-development/src/app/admin/odd_sql.py                   29      0   100%
+03-development/src/app/admin/portal.py                    24      0   100%
+03-development/src/app/admin/rbac.py                      66      0   100%
+03-development/src/app/admin/reports.py                    8      0   100%
+03-development/src/app/admin/webui.py                    228      0   100%
+03-development/src/app/api/__init__.py                     0      0   100%
+03-development/src/app/api/adapters/__init__.py            0      0   100%
+03-development/src/app/api/adapters/a2a.py               166      2    99%   167, 227
+03-development/src/app/api/adapters/line.py               15      0   100%
+03-development/src/app/api/adapters/messenger.py          24      0   100%
+03-development/src/app/api/adapters/telegram.py           11      0   100%
+03-development/src/app/api/adapters/utils.py              11      0   100%
+03-development/src/app/api/adapters/verifiers.py          75      0   100%
+03-development/src/app/api/adapters/web.py                42      0   100%
+03-development/src/app/api/adapters/whatsapp.py           36      0   100%
+03-development/src/app/api/auth.py                        86     36    58%   34-66, 155-165, 170-173
+03-development/src/app/api/common.py                      26      0   100%
+03-development/src/app/api/main.py                        41     41     0%   9-100
+03-development/src/app/api/management.py                  96     29    70%   144, 151-154, 159-162, 175-178, 186-189, 197-200, 209-212, 220-223
+03-development/src/app/api/webhooks.py                   215     78    64%   541-558, 565-566, 570, 574, 578, 582, 586, 590, 601-612, 618-627, 634-635, 641-650, 657-658, 664-672, 678-682, 688-697, 703-711
+03-development/src/app/api/websocket.py                  102      0   100%
+03-development/src/app/core/__init__.py                    0      0   100%
+03-development/src/app/core/dst.py                       102      0   100%
+03-development/src/app/core/emotion.py                    79      0   100%
+03-development/src/app/core/knowledge.py                 329      7    98%   599-608
+03-development/src/app/core/paladin.py                   236      2    99%   661, 1159
+03-development/src/app/core/pii.py                        85      0   100%
+03-development/src/app/core/pipeline.py                   97      9    91%   113-117, 188-189, 261-262
+03-development/src/app/core/response.py                  129      0   100%
+03-development/src/app/core/unified_message.py            30      0   100%
+03-development/src/app/infra/__init__.py                   0      0   100%
+03-development/src/app/infra/circuit_breaker.py          116      0   100%
+03-development/src/app/infra/config.py                    20      0   100%
+03-development/src/app/infra/database.py                  99      0   100%
+03-development/src/app/infra/deployment.py               183      0   100%
+03-development/src/app/infra/jobs.py                      90      5    94%   364-365, 390-395
+03-development/src/app/infra/observability.py            180      0   100%
+03-development/src/app/infra/rate_limit.py                97     21    78%   183-203, 217-243, 273, 290-304
+03-development/src/app/infra/redis_streams.py            109      0   100%
+03-development/src/app/infra/security.py                 102      0   100%
+03-development/src/app/middleware/__init__.py              0      0   100%
+03-development/src/app/middleware/chain.py                69     11    84%   227-228, 231-245
+03-development/src/app/middleware/ip_whitelist.py         79      0   100%
+03-development/src/app/services/__init__.py                0      0   100%
+03-development/src/app/services/ab_testing.py             70      0   100%
+03-development/src/app/services/aee/__init__.py            0      0   100%
+03-development/src/app/services/aee/a2a_adapter.py       163     22    87%   248, 278-300, 356, 435-437, 441-444
+03-development/src/app/services/aee/adapter.py            30      0   100%
+03-development/src/app/services/aee/cli_adapter.py        81      0   100%
+03-development/src/app/services/aee/mcp_adapter.py       141      7    95%   148-150, 216-218, 311
+03-development/src/app/services/aee/tool_executor.py      99      1    99%   337
+03-development/src/app/services/escalation.py             57      0   100%
+03-development/src/app/services/llm_judge.py              94      2    98%   630, 640
+03-development/src/app/services/media.py                 114      1    99%   201
+03-development/src/app/services/registry.py                7      0   100%
+------------------------------------------------------------------------------------
+TOTAL                                                   4494    276    94%
+=========================== short test summary info ============================
+XFAIL 03-development/tests/integration/test_fr13.py::test_fr13_timeout_returns_unverified_passthrough - Timing-sensitive async test — event loop scheduling race
+XFAIL 03-development/tests/integration/test_fr15.py::test_fr15_medium_risk_l4_parallel_l3 - timing-sensitive async test
+XFAIL 03-development/tests/integration/test_fr69.py::test_fr69_calibration_timeout_skips_cycle - Timing-sensitive calibration timeout test — requires real async timeout enforcement
+1108 passed, 3 xfailed, 2 warnings in 45.55s

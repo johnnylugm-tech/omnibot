@@ -325,9 +325,9 @@ def test_fr101_knowledge_crud_correct():
     # the create call passed in. A GREEN that stored the title under
     # a different key (or dropped it) would break the list view.
     create_title = (
-        create_result.title
+        create_result.title  # type: ignore[reportAttributeAccessIssue]
         if not callable(getattr(create_result, "title", None))
-        else create_result.title()
+        else create_result.title()  # type: ignore[reportAttributeAccessIssue]
     )
     assert create_title == "FAQ-row-2", (
         f"FR-101 create_entry must persist the title verbatim; got "
@@ -401,9 +401,9 @@ def test_fr101_csv_import_succeeds():
         "FR-101 ImportResult must expose ``imported``"
     )
     observed_imported = (
-        result.imported()
+        result.imported()  # type: ignore[reportAttributeAccessIssue]
         if callable(getattr(result, "imported", None))
-        else result.imported
+        else result.imported  # type: ignore[reportAttributeAccessIssue]
     )
     if expected_imported == "100":
         assert observed_imported == int(rows), (

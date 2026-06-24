@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-06-20T08:27:48.212904+00:00",
-  "git_sha": "6c05b4d70926eb2c507080ccbdf5682b3d860df8",
+  "generated_at": "2026-06-24T14:43:13.101242+00:00",
+  "git_sha": "890cd195dc7d9a3a2c94fdd20ee5c63359c10198",
   "language": "python",
   "high_risk": [
     {
@@ -84,12 +84,88 @@
       "name": "__init__"
     },
     {
+      "path": "03-development/src/app/admin/gdpr.py",
+      "name": "gdpr"
+    },
+    {
+      "path": "03-development/src/app/admin/odd_sql.py",
+      "name": "odd_sql"
+    },
+    {
+      "path": "03-development/src/app/admin/portal.py",
+      "name": "portal"
+    },
+    {
+      "path": "03-development/src/app/admin/rbac.py",
+      "name": "rbac"
+    },
+    {
+      "path": "03-development/src/app/admin/reports.py",
+      "name": "reports"
+    },
+    {
+      "path": "03-development/src/app/admin/webui.py",
+      "name": "webui"
+    },
+    {
       "path": "03-development/src/app/api/__init__.py",
       "name": "__init__"
     },
     {
-      "path": "03-development/src/app/api/agent_card.py",
-      "name": "agent_card"
+      "path": "03-development/src/app/api/adapters/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/app/api/adapters/a2a.py",
+      "name": "a2a"
+    },
+    {
+      "path": "03-development/src/app/api/adapters/line.py",
+      "name": "line"
+    },
+    {
+      "path": "03-development/src/app/api/adapters/messenger.py",
+      "name": "messenger"
+    },
+    {
+      "path": "03-development/src/app/api/adapters/telegram.py",
+      "name": "telegram"
+    },
+    {
+      "path": "03-development/src/app/api/adapters/utils.py",
+      "name": "utils"
+    },
+    {
+      "path": "03-development/src/app/api/adapters/verifiers.py",
+      "name": "verifiers"
+    },
+    {
+      "path": "03-development/src/app/api/adapters/web.py",
+      "name": "web"
+    },
+    {
+      "path": "03-development/src/app/api/adapters/whatsapp.py",
+      "name": "whatsapp"
+    },
+    {
+      "path": "03-development/src/app/api/auth.py",
+      "name": "auth"
+    },
+    {
+      "path": "03-development/src/app/api/common.py",
+      "name": "common"
+    },
+    {
+      "path": "03-development/src/app/api/main.py",
+      "name": "main"
+    },
+    {
+      "path": "03-development/src/app/api/management.py",
+      "name": "management"
+    },
+    {
+      "path": "03-development/src/app/api/webhooks.py",
+      "name": "webhooks"
     },
     {
       "path": "03-development/src/app/api/websocket.py",
@@ -98,14 +174,6 @@
     {
       "path": "03-development/src/app/core/__init__.py",
       "name": "__init__"
-    },
-    {
-      "path": "03-development/src/app/core/api_response.py",
-      "name": "api_response"
-    },
-    {
-      "path": "03-development/src/app/core/chunking.py",
-      "name": "chunking"
     },
     {
       "path": "03-development/src/app/core/dst.py",
@@ -132,92 +200,52 @@
       "name": "pipeline"
     },
     {
-      "path": "03-development/src/app/core/response_generator.py",
-      "name": "response_generator"
-    },
-    {
-      "path": "03-development/src/app/core/retraction.py",
-      "name": "retraction"
+      "path": "03-development/src/app/core/response.py",
+      "name": "response"
     },
     {
       "path": "03-development/src/app/core/unified_message.py",
       "name": "unified_message"
     },
     {
-      "path": "03-development/src/app/core/unified_response.py",
-      "name": "unified_response"
-    },
-    {
       "path": "03-development/src/app/infra/__init__.py",
       "name": "__init__"
     },
     {
-      "path": "03-development/src/app/infra/alert_rules.py",
-      "name": "alert_rules"
+      "path": "03-development/src/app/infra/circuit_breaker.py",
+      "name": "circuit_breaker"
     },
     {
-      "path": "03-development/src/app/infra/backup_strategy.py",
-      "name": "backup_strategy"
+      "path": "03-development/src/app/infra/config.py",
+      "name": "config"
     },
     {
-      "path": "03-development/src/app/infra/compose.py",
-      "name": "compose"
+      "path": "03-development/src/app/infra/database.py",
+      "name": "database"
     },
     {
-      "path": "03-development/src/app/infra/data_retention.py",
-      "name": "data_retention"
+      "path": "03-development/src/app/infra/deployment.py",
+      "name": "deployment"
     },
     {
-      "path": "03-development/src/app/infra/grafana_dashboard.py",
-      "name": "grafana_dashboard"
-    },
-    {
-      "path": "03-development/src/app/infra/k8s_deployment.py",
-      "name": "k8s_deployment"
-    },
-    {
-      "path": "03-development/src/app/infra/migrations.py",
-      "name": "migrations"
+      "path": "03-development/src/app/infra/jobs.py",
+      "name": "jobs"
     },
     {
       "path": "03-development/src/app/infra/observability.py",
       "name": "observability"
     },
     {
-      "path": "03-development/src/app/infra/prometheus_metrics.py",
-      "name": "prometheus_metrics"
-    },
-    {
       "path": "03-development/src/app/infra/rate_limit.py",
       "name": "rate_limit"
-    },
-    {
-      "path": "03-development/src/app/infra/redis_security.py",
-      "name": "redis_security"
     },
     {
       "path": "03-development/src/app/infra/redis_streams.py",
       "name": "redis_streams"
     },
     {
-      "path": "03-development/src/app/infra/retry.py",
-      "name": "retry"
-    },
-    {
-      "path": "03-development/src/app/infra/schema.py",
-      "name": "schema"
-    },
-    {
-      "path": "03-development/src/app/infra/tde.py",
-      "name": "tde"
-    },
-    {
-      "path": "03-development/src/app/infra/tracing.py",
-      "name": "tracing"
-    },
-    {
-      "path": "03-development/src/app/infra/vector_index.py",
-      "name": "vector_index"
+      "path": "03-development/src/app/infra/security.py",
+      "name": "security"
     },
     {
       "path": "03-development/src/app/middleware/__init__.py",
@@ -266,14 +294,29 @@
     {
       "path": "03-development/src/app/services/escalation.py",
       "name": "escalation"
+    },
+    {
+      "path": "03-development/src/app/services/llm_judge.py",
+      "name": "llm_judge"
+    },
+    {
+      "path": "03-development/src/app/services/media.py",
+      "name": "media"
+    },
+    {
+      "path": "03-development/src/app/services/registry.py",
+      "name": "registry"
     }
   ],
   "mutation_survivors": [],
-  "integration_coverage": null,
+  "integration_coverage": {
+    "gate": 2,
+    "score": 60
+  },
   "sources": {
     "declared": 10,
     "crg_hubs": 0,
     "mutation_survivors": 0,
-    "integration_coverage": false
+    "integration_coverage": true
   }
 }

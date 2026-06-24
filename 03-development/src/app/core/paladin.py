@@ -90,7 +90,7 @@ _TRANSLATE_TABLE: dict[int, int | str | None] = str.maketrans(
 _SQL_INJECTION_RE = re.compile(
     r"(?i)\b(DROP\s+TABLE|ALTER\s+TABLE|DELETE\s+FROM|INSERT\s+INTO|"
     r"UPDATE\s+\w+\s+SET|UNION\s+SELECT|EXEC\s*\(|EXECUTE\s*\(|"
-    r"--|/\*|\*/|;|')"
+    r"--|/\*|\*/|;)"
 )
 
 
@@ -618,9 +618,11 @@ def _await_coro_from_sync(coro, timeout_ms: float):
     def _runner() -> None:
         new_loop = asyncio.new_event_loop()
         holder["loop"] = new_loop
+        task = new_loop.create_task(coro)
+        holder["task"] = task
         try:
             holder["v"] = new_loop.run_until_complete(
-                asyncio.wait_for(coro, timeout=timeout_ms / 1000.0)
+                asyncio.wait_for(task, timeout=timeout_ms / 1000.0)
             )
         except BaseException as exc:  # propagate TimeoutError etc.
             holder["e"] = exc
@@ -632,8 +634,11 @@ def _await_coro_from_sync(coro, timeout_ms: float):
     t.join(timeout=timeout_ms / 1000.0)
     if t.is_alive():
         loop = holder.get("loop")
+        task = holder.get("task")
         if loop is not None and not loop.is_closed():
             with contextlib.suppress(RuntimeError):
+                if task is not None:
+                    loop.call_soon_threadsafe(task.cancel)
                 loop.call_soon_threadsafe(loop.stop)
         raise TimeoutError(f"FR-15: _await_coro_from_sync timed out after {timeout_ms}ms")
     if "e" in holder:
@@ -1057,13 +1062,14 @@ class PALADINPipeline:
         Kept as a private helper so ``process`` stays a flat routing
         function and the audit-log schema lives in exactly one place.
         """
-        self._security_log_writer(
-            event=_RETROSPECTIVE_BLOCK_EVENT,
-            risk_level=risk_level,
-            injection_type=verdict.injection_type.value,
-            confidence=verdict.confidence,
-            text=text,
-        )
+        with contextlib.suppress(Exception):
+            self._security_log_writer(
+                event=_RETROSPECTIVE_BLOCK_EVENT,
+                risk_level=risk_level,
+                injection_type=verdict.injection_type.value,
+                confidence=verdict.confidence,
+                text=text,
+            )
         return self._blocked_result(
             block_reason=_BLOCK_REASON_INJECTION,
             tier3_called=True,

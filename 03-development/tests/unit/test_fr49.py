@@ -13,6 +13,7 @@ performs an exact-match lookup, so do not rename or alias.
 """
 
 from __future__ import annotations
+
 import pytest
 
 # ---------------------------------------------------------------------------
@@ -187,8 +188,9 @@ def test_fr49_telegram_platform_emotion_module_runs():
 # ---------------------------------------------------------------------------
 def test_fr49_handle_message_returns_unified_response():
     from datetime import datetime, timezone
-    from app.core.unified_message import UnifiedMessage, Platform, MessageType
+
     from app.core.response import UnifiedResponse
+    from app.core.unified_message import MessageType, Platform, UnifiedMessage
 
     msg = UnifiedMessage(
         platform=Platform.LINE,
@@ -304,7 +306,8 @@ def test_fr49_handle_message_paladin_receives_raw_content():
     verifies the paladin branch is wired.
     """
     from datetime import datetime, timezone
-    from app.core.unified_message import UnifiedMessage, Platform, MessageType
+
+    from app.core.unified_message import MessageType, Platform, UnifiedMessage
 
     paladin_received = {"value": None}
 
@@ -340,8 +343,9 @@ def test_fr49_handle_message_pii_masking_changes_content():
     #19 (content = None).
     """
     from datetime import datetime, timezone
-    from app.core.unified_message import UnifiedMessage, Platform, MessageType
+
     from app.core.response import UnifiedResponse
+    from app.core.unified_message import MessageType, Platform, UnifiedMessage
 
     class _StubPII:
         def mask(self, text):
@@ -372,8 +376,9 @@ def test_fr49_handle_message_knowledge_query_uses_masked_content():
     mutant #24 (knowledge_result = None).
     """
     from datetime import datetime, timezone
-    from app.core.unified_message import UnifiedMessage, Platform, MessageType
+
     from app.core.response import ResponseSource
+    from app.core.unified_message import MessageType, Platform, UnifiedMessage
 
     _ = ResponseSource  # silence Pyright
     queried_with = {"text": None}
@@ -413,8 +418,9 @@ def test_fr49_handle_message_knowledge_source_set_on_response():
     #32–35 (source = None).
     """
     from datetime import datetime, timezone
-    from app.core.unified_message import UnifiedMessage, Platform, MessageType
+
     from app.core.response import ResponseSource
+    from app.core.unified_message import MessageType, Platform, UnifiedMessage
 
     class _StubKnowledge:
         def query(self, text):
@@ -449,8 +455,9 @@ def test_fr49_handle_message_default_response_source_rule_with_zero_confidence()
     default that misreported the system as fully certain.
     """
     from datetime import datetime, timezone
-    from app.core.unified_message import UnifiedMessage, Platform, MessageType
+
     from app.core.response import ResponseSource
+    from app.core.unified_message import MessageType, Platform, UnifiedMessage
 
     msg = UnifiedMessage(
         platform=Platform.LINE,
@@ -478,7 +485,8 @@ def test_fr49_handle_message_response_format_uses_platform_value():
     mutant #29 (``getattr(msg.platform, "value", ...)`` → ``getattr(..., "XXvalueXX", ...)``).
     """
     from datetime import datetime, timezone
-    from app.core.unified_message import UnifiedMessage, Platform, MessageType
+
+    from app.core.unified_message import MessageType, Platform, UnifiedMessage
 
     fmt_input = {"platform": None, "content": None}
 
@@ -514,7 +522,8 @@ def test_fr49_handle_message_emotion_adjustment_propagates():
     mutant #26–27 (``process_result.get('emotion')`` → wrong key / None).
     """
     from datetime import datetime, timezone
-    from app.core.unified_message import UnifiedMessage, Platform, MessageType
+
+    from app.core.unified_message import MessageType, Platform, UnifiedMessage
 
     class _StubEmotion:
         def analyze(self, text):
@@ -576,7 +585,8 @@ def test_fr49_handle_message_dst_branch_invoked():
     (``_ = self.dst`` → ``_ = None``).
     """
     from datetime import datetime, timezone
-    from app.core.unified_message import UnifiedMessage, Platform, MessageType
+
+    from app.core.unified_message import MessageType, Platform, UnifiedMessage
 
     msg = UnifiedMessage(
         platform=Platform.LINE,
@@ -595,6 +605,9 @@ def test_fr49_handle_message_dst_branch_invoked():
         def __getattribute__(self, name):
             object.__setattr__(self, "accessed", True)
             return object.__getattribute__(self, name)
+
+        def update_intent_and_slots(self, intent, slots):
+            pass
 
     dst = _TrackedDST()
     Pipeline(dst=dst).handle_message(msg)

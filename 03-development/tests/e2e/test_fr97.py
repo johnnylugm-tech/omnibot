@@ -319,9 +319,9 @@ def test_fr97_backup_failure_triggers_alert():
     # regardless so long as the test can drive the result into
     # status="failed".
     observed_status = (
-        result.status()
+        result.status()  # type: ignore[reportAttributeAccessIssue]
         if callable(getattr(result, "status", None))
-        else result.status
+        else result.status  # type: ignore[reportAttributeAccessIssue]
     )
     if status == "failed":
         # The result MUST reflect the failed status. A GREEN that
@@ -335,9 +335,9 @@ def test_fr97_backup_failure_triggers_alert():
 
     if expected_alert == "true":
         observed_alert = (
-            result.alert_triggered()
+            result.alert_triggered()  # type: ignore[reportAttributeAccessIssue]
             if callable(getattr(result, "alert_triggered", None))
-            else result.alert_triggered
+            else result.alert_triggered  # type: ignore[reportAttributeAccessIssue]
         )
         assert observed_alert is True, (
             f"FR-97 backup failure must trigger an alert "

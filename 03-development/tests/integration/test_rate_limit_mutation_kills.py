@@ -13,15 +13,15 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from app.infra.rate_limit import (  # noqa: E402
-    RateLimitResult,
     RateLimiter,
+    RateLimitResult,
 )
 
 
 def test_rate_limit_result_allowed_factory() -> None:
-    """Mutant on ``RateLimitResult.allowed()`` flipping status or reason.
+    """Mutant on ``RateLimitResult.allowed_result()`` flipping status or reason.
     """
-    r = RateLimitResult.allowed()
+    r = RateLimitResult.allowed_result()
     assert r.status == 200
     assert r.reason == ""
 
@@ -38,7 +38,7 @@ def test_rate_limit_result_denied_factory() -> None:
 def test_rate_limit_result_frozen() -> None:
     """Mutant removing ``frozen=True`` would allow field mutation.
     """
-    r = RateLimitResult.allowed()
+    r = RateLimitResult.allowed_result()
     try:
         r.status = 500  # type: ignore[misc]
         raised = False
@@ -58,6 +58,7 @@ def test_rate_limit_limits_table() -> None:
         "whatsapp": 30,
         "web": 10,
         "agent": 100,
+        "a2a": 30,
     }
 
 
@@ -97,7 +98,7 @@ def test_rate_limit_in_memory_exceeds_limit_denied() -> None:
     fail this.
     """
     rl = RateLimiter()
-    for i in range(30):
+    for _i in range(30):
         rl.allow(platform="telegram", key="user_overflow")
     # 31st request must be denied.
     result = rl.allow(platform="telegram", key="user_overflow")

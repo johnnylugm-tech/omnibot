@@ -116,6 +116,8 @@ class A2AAdapter:
         self._jwks_url = jwks_url
         self._expected_audience = expected_audience
         self._expected_issuer = expected_issuer
+        self._jwks_cache: Any = None
+        self._jwks_cache_time: float = 0.0
 
     def verify_m2m_token(self, authorization_header: str) -> bool:
         """[FR-06] Verify an M2M Bearer token against the configured JWKS.

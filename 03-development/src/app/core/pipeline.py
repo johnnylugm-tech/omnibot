@@ -112,8 +112,7 @@ class Pipeline:
         """
         if self.dst is None:
             return []
-        self.dst.intent = intent
-        self.dst.slots.update(slots)
+        self.dst.update_intent_and_slots(intent, slots)
         return self.dst.missing_slots()
 
     def handle_message(self, msg: Any) -> Any:
@@ -133,7 +132,7 @@ class Pipeline:
 
         if self.paladin is not None:
             current_log.append("paladin")
-            self.paladin.check_input(content)
+            self.paladin.check_input(content)  # type: ignore[union-attr]
 
         if self.pii is not None:
             current_log.append("pii")
@@ -151,9 +150,7 @@ class Pipeline:
         missing_after_fill: list[str] = []
         if self.dst is not None:
             current_log.append("dst")
-            dst_slots = getattr(self.dst, "slots", None)
-            if isinstance(dst_slots, dict):
-                dst_slots.update(slots)
+            self.dst.update_intent_and_slots(_intent, slots)
             if hasattr(self.dst, "missing_slots"):
                 missing_after_fill = list(self.dst.missing_slots())
             current_log.append(
@@ -169,7 +166,8 @@ class Pipeline:
         # Emotion (FR-46..49)
         process_result = self.process(msg.platform, content)
         emotion_result = process_result.get("emotion")
-        current_log.append("emotion")
+        if not process_result.get("bypassed"):
+            current_log.append("emotion")
 
         # Response (FR-50..53)
         if self.response is not None:
@@ -251,14 +249,18 @@ async def get_context(conversation_id: str) -> dict:
     from sqlalchemy import text
 
     from app.infra.database import get_session
+
     try:
         session_gen = get_session()
         session = await session_gen.__anext__()
-        result = await session.execute(
-            text("SELECT role, content FROM messages WHERE conversation_id = :cid ORDER BY id ASC"),
-            {"cid": conversation_id}
-        )
-        history = [{"role": row[0], "content": row[1]} for row in result.fetchall()]
+        try:
+            result = await session.execute(
+                text("SELECT role, content FROM messages WHERE conversation_id = :cid ORDER BY id ASC"),
+                {"cid": conversation_id}
+            )
+            history = [{"role": row[0], "content": row[1]} for row in result.fetchall()]
+        finally:
+            await session_gen.aclose()
         return {"conversation_id": conversation_id, "history": history}
     except Exception:
         return {"conversation_id": conversation_id, "history": []}

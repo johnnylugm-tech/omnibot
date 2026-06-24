@@ -102,6 +102,8 @@ class ABTestManager:
     # self-documenting and a future spec bump (e.g. wider bucket) only
     # edits one line.
     _DIGEST_PREFIX_LEN: int = 8
+    # The modulus used to group traffic into 100 buckets.
+    # INVARIANT: Must be an integer > 0, defining the total traffic slice granularity (usually 100).
     _BUCKET_MODULUS: int = 100
 
     def __init__(self, db: Any, llm: Any) -> None:
@@ -169,7 +171,7 @@ class ABTestManager:
         ``_CONTROL_FALLBACK`` sentinel rather than crashing the
         request path.
         """
-        cumulative = 0
+        cumulative = 0.0
         for variant, weight in traffic_split.items():
             if not isinstance(weight, (int, float)) or weight < 0:
                 continue

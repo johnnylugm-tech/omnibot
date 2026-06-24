@@ -533,8 +533,8 @@ def test_fr02_process_events_missing_source_keyerror():
 
 
 def test_fr02_rate_limit_result_allowed():
-    """RateLimitResult.allowed() returns status=200, reason=''."""
-    result = RateLimitResult.allowed()
+    """RateLimitResult.allowed_result() returns status=200, reason=''."""
+    result = RateLimitResult.allowed_result()
     assert result.status == 200, f"allowed status must be 200, got {result.status}"
     assert result.reason == "", f"allowed reason must be '', got {result.reason!r}"
 
@@ -550,7 +550,7 @@ def test_fr02_rate_limit_result_denied():
 
 def test_fr02_rate_limit_result_is_frozen():
     """RateLimitResult is an immutable frozen dataclass."""
-    result = RateLimitResult.allowed()
+    result = RateLimitResult.allowed_result()
     import dataclasses
 
     with pytest.raises(dataclasses.FrozenInstanceError):

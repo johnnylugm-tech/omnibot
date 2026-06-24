@@ -161,7 +161,10 @@ class MiddlewareChain:
 
         # 4. Platform Adapter Parse — produces the user_id used as the
         # rate-limiter key in the next stage.
-        ctx = self.platform_adapter.parse(request)
+        try:
+            ctx = self.platform_adapter.parse(request)
+        except Exception:
+            return self._deny("parse", status=400, reason="PARSE_FAILED")
 
         # 5. Rate Limiting — keyed by the parsed user_id, not the raw IP.
         rate_outcome = self.rate_limiter.allow(

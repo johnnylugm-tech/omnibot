@@ -291,9 +291,9 @@ def test_fr102_debugger_shows_tier1_tier2_flow():
         "FR-102 DebuggerResult must expose ``sections``"
     )
     observed_sections = (
-        result.sections()
+        result.sections()  # type: ignore[reportAttributeAccessIssue]
         if callable(getattr(result, "sections", None))
-        else result.sections
+        else result.sections  # type: ignore[reportAttributeAccessIssue]
     )
     assert observed_sections is not None, (
         "FR-102 DebuggerResult.sections must not be None"
@@ -332,19 +332,19 @@ def test_fr102_debugger_shows_tier1_tier2_flow():
     )
 
     observed_ilike = (
-        result.ilike_results
+        result.ilike_results  # type: ignore[reportAttributeAccessIssue]
         if not callable(getattr(result, "ilike_results", None))
-        else result.ilike_results()
+        else result.ilike_results()  # type: ignore[reportAttributeAccessIssue]
     )
     observed_cosine = (
-        result.cosine_scores
+        result.cosine_scores  # type: ignore[reportAttributeAccessIssue]
         if not callable(getattr(result, "cosine_scores", None))
-        else result.cosine_scores()
+        else result.cosine_scores()  # type: ignore[reportAttributeAccessIssue]
     )
     observed_rrf = (
-        result.rrf_top3
+        result.rrf_top3  # type: ignore[reportAttributeAccessIssue]
         if not callable(getattr(result, "rrf_top3", None))
-        else result.rrf_top3()
+        else result.rrf_top3()  # type: ignore[reportAttributeAccessIssue]
     )
     assert observed_ilike is not None, (
         "FR-102 DebuggerResult.ilike_results must not be None"
@@ -377,9 +377,9 @@ def test_fr102_debugger_shows_tier1_tier2_flow():
     # the user what was asked. A GREEN that dropped the query would
     # break the "what did I just search for?" affordance.
     observed_query = (
-        result.query()
+        result.query()  # type: ignore[reportAttributeAccessIssue]
         if callable(getattr(result, "query", None))
-        else result.query
+        else result.query  # type: ignore[reportAttributeAccessIssue]
     )
     assert observed_query == query, (
         f"FR-102 DebuggerResult.query must echo the input; got "

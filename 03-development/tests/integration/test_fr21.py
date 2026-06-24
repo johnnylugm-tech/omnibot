@@ -414,8 +414,9 @@ def test_fr21_rate_limiter_limits_dict_exact():
         "whatsapp": 30,
         "web": 10,
         "agent": 100,
+        "a2a": 30,
     }
-    assert RateLimiter.LIMITS == expected, (
+    assert expected == RateLimiter.LIMITS, (
         f"RateLimiter.LIMITS must equal {expected!r}; got {RateLimiter.LIMITS!r}"
     )
 

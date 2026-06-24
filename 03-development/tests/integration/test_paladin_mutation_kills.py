@@ -24,15 +24,14 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from app.core.paladin import (  # noqa: E402
-    GroundingChecker,
-    InputSanitizer,
-    InjectionType,
     ClassificationResult,
-    ProcessResult,
+    GroundingChecker,
+    InjectionType,
+    InputSanitizer,
     PALADINPipeline,
+    ProcessResult,
     SemanticInjectionClassifier,
 )
-
 
 # ---------------------------------------------------------------------------
 # L1 InputSanitizer — _sanitize_sql_patterns (FR-108)

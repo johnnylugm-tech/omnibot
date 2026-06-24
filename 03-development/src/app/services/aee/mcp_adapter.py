@@ -246,7 +246,15 @@ class MCPAdapter(ActionAdapter):
         with httpx.Client(timeout=self.connect_timeout_ms / 1000) as client:
             response = client.post(
                 self.url or "",
-                json={"tool": tool_name, "arguments": arguments},
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "tools/call",
+                    "params": {
+                        "name": tool_name,
+                        "arguments": arguments
+                    }
+                },
             )
             response.raise_for_status()
             try:
@@ -267,24 +275,30 @@ class MCPAdapter(ActionAdapter):
         Stub parser — production wiring would map MCP tool schemas to
         ``ToolDefinition`` instances.
         """
+        tools = []
         try:
-            data = json.loads(_raw.decode("utf-8"))
-            if "result" in data and "tools" in data["result"]:
-                tools = []
-                for t in data["result"]["tools"]:
-                    tools.append(
-                        ToolDefinition(
-                            name=t.get("name", ""),
-                            description=t.get("description", ""),
-                            parameters_schema=t.get("inputSchema", {}),
-                            protocol="mcp",
-                            handler_ref=t.get("name", ""),
-                        )
-                    )
-                return tools
+            # support JSON-RPC over newline-delimited JSON
+            for line in _raw.decode("utf-8").splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    data = json.loads(line)
+                    if "result" in data and "tools" in data["result"]:
+                        for t in data["result"]["tools"]:
+                            tools.append(
+                                ToolDefinition(
+                                    name=t.get("name", ""),
+                                    description=t.get("description", ""),
+                                    parameters_schema=t.get("inputSchema", {}),
+                                    protocol="mcp",
+                                    handler_ref=t.get("name", ""),
+                                )
+                            )
+                except json.JSONDecodeError:
+                    pass
         except Exception:
             pass
-        return []
+        return tools
 
     def _is_server_unreachable(self) -> bool:
         """[FR-40] NP-07: 偵測 server 不可達。

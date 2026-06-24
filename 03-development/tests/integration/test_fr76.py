@@ -269,7 +269,7 @@ def test_fr76_backoff_has_jitter():
 
     # 2b. Draw the delay multiple times; with jitter=True the draws
     # must NOT all be identical.
-    draws = [float(compute_backoff(job, attempt)) for _ in range(20)]
+    draws = [float(compute_backoff(job, attempt)) for _ in range(20)]  # type: ignore[reportArgumentType]
 
     # SRS-mandated window: [base * 2**a * 0.5, base * 2**a * 1.0]
     # = [4.0 * 0.5, 4.0 * 1.0] = [2.0s, 4.0s].
@@ -354,7 +354,7 @@ def test_fr76_p95_under_30s():
             f"FR-76 result for {job.chunk_id} must expose a duration "
             f"(e.g. ``duration_seconds``); got {result!r}"
         )
-        durations.append(float(d))
+        durations.append(float(d))  # type: ignore[reportArgumentType]
 
     # Compute p95 — the SRS-mandated SLO is that this value must
     # stay under 30s.
@@ -439,7 +439,7 @@ def test_fr76_queue_unavailable_job_retried_with_backoff():
     raw = base_delay * (2 ** attempt)  # 1.0s
     lower_bound = raw * 0.5  # 0.5s
     upper_bound = raw * 1.0  # 1.0s
-    assert lower_bound <= float(backoff) <= upper_bound + 1e-9, (
+    assert lower_bound <= float(backoff) <= upper_bound + 1e-9, (  # type: ignore[reportArgumentType]
         f"FR-76 backoff at attempt={attempt} base={base_delay} "
         f"jitter={jitter} must lie in [{lower_bound}s, {upper_bound}s]; "
         f"got {backoff}s"
@@ -448,7 +448,7 @@ def test_fr76_queue_unavailable_job_retried_with_backoff():
     # Defensive: jitter=True means the chosen backoff is a sample
     # from the window — accept the value but require it is
     # strictly > 0 so the retry is actually delayed.
-    assert float(backoff) > 0.0, (
+    assert float(backoff) > 0.0, (  # type: ignore[reportArgumentType]
         f"FR-76 backoff must be positive (jitter={jitter}); "
         f"got {backoff}s"
     )

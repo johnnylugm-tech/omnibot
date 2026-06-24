@@ -81,16 +81,17 @@ class RateLimitResult:
 
     status: int
     reason: str = ""
+    allowed: bool = True
 
     @classmethod
-    def allowed(cls) -> RateLimitResult:
+    def allowed_result(cls) -> RateLimitResult:
         """Construct a pass-through result (status=200, no reason)."""
-        return cls(200, "")
+        return cls(200, "", True)
 
     @classmethod
     def denied(cls) -> RateLimitResult:
         """Construct a rate-limited result (status=429, RATE_LIMIT_EXCEEDED)."""
-        return cls(429, "RATE_LIMIT_EXCEEDED")
+        return cls(429, "RATE_LIMIT_EXCEEDED", False)
 
 
 class RateLimiter:
@@ -113,6 +114,7 @@ class RateLimiter:
         "whatsapp": 30,
         "web": 10,
         "agent": 100,
+        "a2a": 30,
     }
 
     _WINDOW_SECONDS: float = 1.0
@@ -131,6 +133,9 @@ class RateLimiter:
         # Inject; do not connect.
         self.redis_client = redis_client
         # (platform, key) -> deque of monotonic timestamps inside the window.
+        # INVARIANT: Keys must be composed of (str, str).
+        # INVARIANT: Values must be a deque of floats sorted in ascending order.
+        # INVARIANT: Length of any deque must not exceed the specified rate limit bounds.
         self._buckets: dict[tuple[str, str], deque[float]] = {}
         self._lock = threading.Lock()
 
@@ -146,14 +151,15 @@ class RateLimiter:
 
         Identical fail-open semantics: redis outage → 200 + WARNING log.
         """
-        return self._check_and_record(platform, key)
+        import asyncio
+        return await asyncio.to_thread(self._check_and_record, platform, key)
 
     def _check_and_record(self, platform: str, key: str) -> RateLimitResult:
         limit = self.LIMITS.get(platform)
         if limit is None:
             # Unknown platform — fail-open; the platform layer is the
             # authority for which platforms exist.
-            return RateLimitResult.allowed()
+            return RateLimitResult.allowed_result()
 
         if self.redis_client is not None:
             return self._redis_decide(platform, key, limit)
@@ -213,7 +219,7 @@ class RateLimiter:
                     "error": str(exc),
                 },
             )
-            return RateLimitResult.allowed()
+            return RateLimitResult.allowed_result()
         except ResponseError as exc:
             # WRONGTYPE / Lua bug / protocol violation — fail CLOSED
             # rather than permanently bypassing the limiter. ``_redis_count``
@@ -242,7 +248,7 @@ class RateLimiter:
             )
             return RateLimitResult.denied()
 
-        return RateLimitResult.denied() if count > limit else RateLimitResult.allowed()
+        return RateLimitResult.denied() if count > limit else RateLimitResult.allowed_result()
 
     def _redis_count(self, platform: str, key: str) -> int:
         # Caller (_check_and_record) already gated on `redis_client is not None`,
@@ -308,6 +314,16 @@ class RateLimiter:
         window_start = now - self._WINDOW_SECONDS
 
         with self._lock:
+            if len(self._buckets) > 10000:
+                empty_keys = [k for k, v in self._buckets.items() if not v or v[-1] < window_start]
+                for k in empty_keys:
+                    del self._buckets[k]
+                if len(self._buckets) > 10000:
+                    import random
+                    keys_to_delete = random.sample(list(self._buckets.keys()), len(self._buckets) - 10000)
+                    for k in keys_to_delete:
+                        del self._buckets[k]
+
             # Per-user sub-bucket — mirrors the Redis path
             # (``rate_limit:{platform}:{key}``) so the in-memory
             # fallback is a drop-in replacement when ``redis_client``
@@ -321,4 +337,4 @@ class RateLimiter:
             if len(bucket) >= limit:
                 return RateLimitResult.denied()
             bucket.append(now)
-            return RateLimitResult.allowed()
+            return RateLimitResult.allowed_result()

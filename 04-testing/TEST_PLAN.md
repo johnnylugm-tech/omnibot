@@ -170,10 +170,59 @@ For each FR the test set exercises:
 NFR dimensions are covered indirectly by per-FR tests (e.g. NFR-01 performance via latency assertions in e2e tests).
 Direct NFR-09 (load) is exercised by `tests/load/`.
 
-## 7. Acceptance
+## 7. NFR Coverage Matrix
+
+Each NFR from `02-architecture/SAD.md` §NFR Traceability is mapped to a quality-gate dimension
+(`harness/constitution/CONSTITUTION.md` §2.2) and the test artefact that measures it.
+
+| NFR | Dimension | Target | Module | Test Artefact |
+|-----|-----------|--------|--------|---------------|
+| NFR-01 | performance | API p95 latency | (core pipeline) | `tests/e2e/test_perf.py`, `tests/integration/test_*.py` benchmark markers |
+| NFR-02 | performance | Query p95 latency | (pipeline) | `tests/e2e/test_perf.py`, `tests/integration/test_pipeline_*.py` |
+| NFR-03 | performance | Knowledge recall p95 | `app.core.knowledge` | `tests/integration/test_knowledge_*.py` |
+| NFR-04 | performance | Embedding generation p95 | `app.core.knowledge` | `tests/integration/test_knowledge_*.py` |
+| NFR-05 | performance | AEE adapter p95 | `app.services.aee` | `tests/integration/test_aee_*.py`, `tests/unit/test_aee_adapter_mutation_kills.py` |
+| NFR-06 | performance | HNSW index search p95 | `app.core.knowledge` | `tests/integration/test_knowledge_*.py` |
+| NFR-07 | performance | A2A envelope p95 | `app.api.a2a` | `tests/integration/test_a2a_*.py` |
+| NFR-08 | performance | LLM judge p95 | `app.services.llm_judge` | `tests/integration/test_llm_judge_*.py` |
+| NFR-09 | performance | Load profile (10x burst) | (whole system) | `tests/load/k6_*.js`, `tests/load/` |
+| NFR-10 | error_handling | 5xx rate < 0.1% | (all API) | `tests/integration/test_error_*.py` |
+| NFR-11 | error_handling | Circuit breaker opens at 50% | `app.infra.circuit_breaker` | `tests/integration/test_circuit_breaker_*.py` |
+| NFR-12 | error_handling | Retry-After honour | `app.infra.rate_limit` | `tests/integration/test_rate_limit_*.py` |
+| NFR-13 | error_handling | Timeout < 30s all async | (all async) | `tests/integration/test_*_timeout.py` |
+| NFR-14 | error_handling | DLQ on consumer failure | `app.infra.jobs` | `tests/integration/test_jobs_*.py`, `tests/integration/test_jobs_mutation_kills.py` |
+| NFR-15 | security | All inputs sanitised | `app.core.pii` | `tests/integration/test_pii_*.py` |
+| NFR-16 | security | TLS 1.2+ enforced | `app.infra.observability` | `tests/integration/test_tls_*.py` |
+| NFR-17 | security | RBAC per role enforced | `app.api.auth` | `tests/integration/test_auth_*.py` |
+| NFR-18 | reliability | FERNET key rotation | `app.admin.gdpr` | `tests/integration/test_fr93.py` |
+| NFR-19 | reliability | PII encrypted at rest | `app.admin.gdpr` | `tests/integration/test_fr93.py` |
+| NFR-20 | reliability | Right-to-erasure within 30d | `app.admin.gdpr` | `tests/integration/test_fr93.py` |
+| NFR-21 | deployability | GDPR Art.5(1)(e) minimisation | `app.admin.gdpr` | `tests/integration/test_fr93.py` |
+| NFR-22 | deployability | SOC2 audit trail | `app.infra.observability` | `tests/integration/test_observability_*.py` |
+| NFR-23 | testability | FCR ≥90% | `app.admin.odd_sql` | `tests/integration/test_odd_sql_*.py` |
+| NFR-24 | testability | CSAT ≥4.8 | `app.services.llm_judge` | `tests/integration/test_llm_judge_*.py` |
+| NFR-25 | testability | Escalation SLA ≥95% | `app.services.escalation` | `tests/integration/test_escalation_*.py` |
+| NFR-26 | testability | Cohen's Kappa ≥0.7 | `app.services.llm_judge` | `tests/integration/test_llm_judge_*.py` |
+| NFR-27 | testability | Grounding ≥100% (cos≥0.75) | `app.core.paladin` | `tests/integration/test_paladin_*.py`, `tests/integration/test_paladin_mutation_kills.py` |
+| NFR-28 | testability | Recall@3 ≥92% HNSW 1536d | `app.core.knowledge` | `tests/integration/test_knowledge_*.py` |
+| NFR-29 | testability | Agentic tool success ≥95% | `app.services.aee` | `tests/integration/test_aee_*.py`, `tests/unit/test_aee_adapter_mutation_kills.py` |
+| NFR-30 | scalability | HPA min=3 max=10 CPU=70% | `app.infra.deployment` | `k8s/hpa.yaml`, validated in deployment |
+| NFR-31 | maintainability | 100% OTel trace coverage | `app.infra.observability` | `tests/integration/test_observability_*.py` |
+| NFR-32 | testability | unit≥70% integration≥20% e2e≥10% | `tests.strategy` | `tests/strategy.py`, `tests/pyramid.py` |
+| NFR-33 | reliability | rate_limit fail-open on Redis unavailable | `app.infra.rate_limit` | `tests/integration/test_rate_limit_*.py` |
+| NFR-34 | reliability | IP whitelist fail-secure 403 | `app.infra.rate_limit` | `tests/integration/test_ip_whitelist_*.py` |
+| NFR-35 | reliability | Max 100 CIDR blocks | `app.infra.rate_limit` | `tests/integration/test_ip_whitelist_*.py` |
+| NFR-36 | security | M2M 90-day expiry; revoke instant | `app.api.auth` | `tests/integration/test_auth_*.py` |
+| NFR-37 | performance | WebUI p95 < 1500ms | `app.admin.webui` | `tests/e2e/test_perf.py` |
+| NFR-38 | performance | ClamAV scan p95 < 500ms | `app.services.media` | `tests/integration/test_media_*.py` |
+
+> Note: `mutation_testing` is **disabled** via the harness feature-flag mechanism (`harness/core/harness_config.py`, default `mutation_testing=false` when `.methodology/harness_config.json` is absent — currently the case). Existing mutation-killing tests under `tests/integration/test_*_mutation_kills.py` remain on disk as defence-in-depth but are not a Gate 3 scoring input.
+
+## 8. Acceptance
 
 - [x] All 108 FRs have at least one test_frNN.py file
 - [x] Test tier distribution: unit, integration, e2e
 - [x] Mutation-kill tests for high-risk modules (paladin, aee, jobs, rate_limit, redis_streams)
 - [x] Pipeline invariant tests (H-04, H-08)
+- [x] NFR-01..NFR-38 mapped to quality-gate dimensions and test artefacts (§7)
 

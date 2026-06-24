@@ -260,7 +260,7 @@ def test_fr24_rate_limit_after_platform_parse():
         )
 
 
-def _call_order_index(mock, method_name, *args):  # noqa: ARG001  args reserved for future ordering probes
+def _call_order_index(mock, method_name, *args):
     _ = args  # silence unused-arg warnings
     """Return the index of ``method_name`` in ``MiddlewareChain.CHAIN_ORDER``.
 

@@ -43,6 +43,14 @@ def _detect_language(script: str) -> str:
     """Return ``"python"`` or ``"bash"`` for a script payload."""
     if any(marker in script for marker in _PYTHON_MARKERS):
         return "python3"
+    try:
+        import ast
+        parsed = ast.parse(script)
+        # Verify it has Pythonic structure, not just a bare bash command like 'ls'
+        if any(not isinstance(node, ast.Expr) or not isinstance(node.value, ast.Name) for node in parsed.body):
+            return "python3"
+    except SyntaxError:
+        pass
     return "bash"
 
 

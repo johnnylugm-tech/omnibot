@@ -38,6 +38,5 @@ def test_infra_layer_isolation():
                         for alias in node.names:
                             if alias.name.startswith(("app.core", "app.api", "app.services")):
                                 raise AssertionError(f"Infra layer imports domain: {alias.name} in {file}")
-                    elif isinstance(node, ast.ImportFrom):
-                        if node.module and node.module.startswith(("app.core", "app.api", "app.services")):
-                            raise AssertionError(f"Infra layer imports domain: {node.module} in {file}")
+                    elif isinstance(node, ast.ImportFrom) and node.module and node.module.startswith(("app.core", "app.api", "app.services")):
+                        raise AssertionError(f"Infra layer imports domain: {node.module} in {file}")

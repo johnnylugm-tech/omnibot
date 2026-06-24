@@ -58,9 +58,16 @@ def get_current_user_role(credentials: HTTPAuthorizationCredentials = Depends(se
             return "anonymous"
 
         sub = payload.get("sub", "")
-        # Very simple role mapping based on sub for demonstration
+        # Very simple role mapping based on sub for demonstration.
+        # NOTE: Returns ``"admin"`` (the RBACEnforcer role key in
+        # ROLE_PERMISSIONS), NOT ``"system"`` — the management API
+        # routes resolve ``role`` through this function and feed it
+        # straight into ``RBACEnforcer.check(role, resource, action)``.
+        # Returning ``"system"`` would fail every admin call because
+        # ``"system"`` is not a key in ``ROLE_PERMISSIONS`` (only the
+        # resource name is).
         if sub == os.environ.get("OMNIBOT_ADMIN_USER", ""):
-            return "system"
+            return "admin"
         return "customer"
     except Exception:
         return "anonymous"
@@ -155,7 +162,7 @@ def _login_route(body: LoginBody, request: Request) -> dict:
     ip = request.client.host if request.client else "127.0.0.1"
     # Re-use the rate limiter framework with a custom platform "web_login"
     # so we don't spam the same bucket as normal web traffic
-    rate_outcome = _login_rate_limiter.allow("web", f"login_ip:{ip}")
+    rate_outcome = _login_rate_limiter.allow(platform="web", key=f"login_ip:{ip}")
     if rate_outcome.status == 429:
         raise HTTPException(status_code=429, detail="Too Many Requests")
 

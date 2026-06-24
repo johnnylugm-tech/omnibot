@@ -14,10 +14,10 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from app.infra.redis_streams import (  # noqa: E402
+    _FR80_KNOWN_FIELDS,
     BusyGroupError,
     Message,
     ParsedMessage,
-    _FR80_KNOWN_FIELDS,
     _next_stream_id,
 )
 
@@ -53,9 +53,9 @@ def test_fr80_known_fields_set_is_exact() -> None:
     """Mutant that adds, removes, or renames a known field is caught
     by inspecting the frozenset directly.
     """
-    assert _FR80_KNOWN_FIELDS == frozenset({
+    assert frozenset({
         "event_type", "user_id", "conversation_id", "payload"
-    })
+    }) == _FR80_KNOWN_FIELDS
 
 
 def test_busygroup_error_is_exception() -> None:

@@ -256,6 +256,13 @@ class DialogueState:
         self.intent: str = intent
         self.slots: dict[str, str] = slots if slots is not None else {}
 
+    def update_intent_and_slots(self, intent: str, slots: dict[str, str]) -> None:
+        """Atomically update intent and slots (fix for dst#5 race)."""
+        with self._lock:
+            if intent:
+                self.intent = intent
+            self.slots.update(slots)
+
     def transition(self, to_state: str) -> str:
         """Atomically move to ``to_state`` if the edge is legal.
 
@@ -526,6 +533,9 @@ class ContextWindowManager:
     # earliest 1/3 — declared once so callers that introspect the
     # output (and the test suite that pins ``role == "system"``) all
     # agree on the exact payload.
+    # INVARIANT: Must be a dict with keys 'role' and 'content'.
+    # INVARIANT: 'role' must be exactly 'system' to comply with FR-63 format rules.
+    # INVARIANT: Must not be mutated by instance methods.
     _SUMMARY_MESSAGE: ClassVar[dict] = {
         "role": "system",
         "content": "<summary of dropped messages>",

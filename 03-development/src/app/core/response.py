@@ -503,7 +503,15 @@ def _attempt_windowed_delete(
         return _apology_result(platform, message_id)
 
     try:
-        client.delete_message(message_id)
+        success = client.delete_message(message_id)
+        if success is False:
+            _log_retraction_failed(
+                security_log_writer,
+                platform=platform,
+                message_id=message_id,
+                reason="api_error",
+            )
+            return _apology_result(platform, message_id)
     except Exception:
         _log_retraction_failed(
             security_log_writer,
@@ -701,6 +709,12 @@ def retract(
     if platform == "a2a":
         return _retract_a2a(message_id, a2a_client, security_log_writer)
 
+    _log_retraction_failed(
+        security_log_writer,
+        platform=platform,
+        message_id=message_id,
+        reason="unknown_platform",
+    )
     raise ValueError(f"Unknown platform: {platform!r}")
 
 # --- Merged from unified_response.py ---

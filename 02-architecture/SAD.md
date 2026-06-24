@@ -529,6 +529,15 @@ sab:
         - app.api.management
         - app.api.auth
         - app.api.websocket
+        # platform adapters (added 2026-06-24, Architecture Amendment)
+        - app.api.adapters.a2a
+        - app.api.adapters.line
+        - app.api.adapters.messenger
+        - app.api.adapters.telegram
+        - app.api.adapters.utils
+        - app.api.adapters.verifiers
+        - app.api.adapters.web
+        - app.api.adapters.whatsapp
       allowed_dependencies: ["core", "infra", "admin"]
 
     - name: core
@@ -545,7 +554,12 @@ sab:
     - name: services
       modules:
         - app.services.registry
-        - app.services.aee
+        # app.services.aee sub-modules (expanded 2026-06-24, Architecture Amendment)
+        - app.services.aee.adapter
+        - app.services.aee.a2a_adapter
+        - app.services.aee.cli_adapter
+        - app.services.aee.mcp_adapter
+        - app.services.aee.tool_executor
         - app.services.escalation
         - app.services.ab_testing
         - app.services.llm_judge

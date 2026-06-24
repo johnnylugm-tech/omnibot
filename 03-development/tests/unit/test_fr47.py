@@ -327,7 +327,7 @@ def test_fr46_emotion_valid_categories_exact_set():
     Kills mutants that wrap individual category strings.
     """
     from app.core.emotion import VALID_CATEGORIES
-    assert VALID_CATEGORIES == frozenset({"positive", "neutral", "negative"}), (
+    assert frozenset({"positive", "neutral", "negative"}) == VALID_CATEGORIES, (
         f"VALID_CATEGORIES must be exactly {{'positive', 'neutral', "
         f"'negative'}}; got {VALID_CATEGORIES!r}"
     )

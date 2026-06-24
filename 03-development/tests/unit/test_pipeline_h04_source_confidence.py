@@ -8,7 +8,6 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
-
 from app.core.pipeline import Pipeline
 from app.core.response import ResponseSource
 
@@ -18,7 +17,7 @@ class _StubKnowledge:
         self.source = source
         self.confidence = confidence
 
-    def query(self, text: str):  # noqa: ARG002
+    def query(self, text: str):
         return SimpleNamespace(
             id="stub",
             content=text,

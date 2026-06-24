@@ -153,9 +153,9 @@ def test_resolve_tool_returns_matching_tool() -> None:
     We exercise ``ActionAdapter._resolve_tool`` via a custom subclass
     that exposes the protected method.
     """
-    from app.services.aee.adapter import ActionAdapter as _AA
+    from app.services.aee.adapter import ActionAdapter
 
-    class _Adapter2(_AA):
+    class _Adapter2(ActionAdapter):
         def list_tools(self):  # type: ignore[override]
             return [
                 ToolDefinition(

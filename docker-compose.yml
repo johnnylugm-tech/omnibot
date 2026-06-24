@@ -1,0 +1,170 @@
+# docker-compose.yml — OmniBot dev infrastructure (FR-95, SAD §2.5)
+#
+# Mirrors the 7 running containers currently brought up ad-hoc via `docker run`
+# with the `omnibot-*` prefix. A fresh clone can `docker compose up -d` to
+# reproduce the dev environment that satisfies SAD §2.5 / FR-95.
+#
+# Topology:
+#   pg-super      : pgvector/pgvector:pg16      -> 127.0.0.1:5433 -> 5432
+#   redis         : redis:7-alpine (TLS)        -> 127.0.0.1:6380 -> 6379
+#   clamav        : clamav/clamav:stable_base   -> 127.0.0.1:3310 -> 3310
+#   otel          : otel-collector-contrib      -> 127.0.0.1:4317,4318
+#   prom          : prom/prometheus:latest      -> 127.0.0.1:9090
+#   grafana       : grafana/grafana:latest      -> 127.0.0.1:3000
+#   db            : postgres:16-alpine (sec.)   -> 127.0.0.1:5432 -> 5432
+#
+# All services share the `omnibot-net` bridge. Host port mapping mirrors the
+# ad-hoc configuration verified by the env-check agent (see
+# `.sessi-work/env_check_result.json` for reachable verification).
+
+name: omnibot
+
+services:
+  pg-super:
+    image: pgvector/pgvector:pg16
+    container_name: omnibot-super-pg
+    environment:
+      POSTGRES_USER: omnibot
+      POSTGRES_PASSWORD: dev_only_change_me_pg
+      POSTGRES_DB: omnibot
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg-super-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U omnibot -d omnibot"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - omnibot-net
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: omnibot-super-redis
+    command:
+      - redis-server
+      - --requirepass
+      - dev_only_change_me_redis
+      - --tls-port
+      - "6379"
+      - --port
+      - "0"
+      - --tls-cert-file
+      - /etc/redis/tls/redis.crt
+      - --tls-key-file
+      - /etc/redis/tls/redis.key
+      - --tls-ca-cert-file
+      - /etc/redis/tls/ca.crt
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis-data:/data
+      - ./deployment/redis/tls:/etc/redis/tls:ro
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "dev_only_change_me_redis", "--tls", "--cacert", "/etc/redis/tls/ca.crt", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - omnibot-net
+    restart: unless-stopped
+    # NOTE: TLS certs in ./deployment/redis/tls/ must be present before start.
+    # For a quick dev start, omit the --tls-* flags and use REDIS_URL=redis://...
+
+  clamav:
+    image: clamav/clamav:stable_base
+    container_name: omnibot-clamav
+    ports:
+      - "3310:3310"
+    volumes:
+      - clamav-data:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "clamdcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - omnibot-net
+    restart: unless-stopped
+
+  otel:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: omnibot-super-otel
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./deployment/otel/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "55679:55679" # zpages
+    networks:
+      - omnibot-net
+    restart: unless-stopped
+
+  prom:
+    image: prom/prometheus:latest
+    container_name: omnibot-super-prom
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    volumes:
+      - ./deployment/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prom-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - omnibot-net
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: omnibot-super-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: dev_only_change_me_grafana
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./deployment/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prom
+    networks:
+      - omnibot-net
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: omnibot-db
+    environment:
+      POSTGRES_USER: omnibot
+      POSTGRES_PASSWORD: dev_only_change_me_pg
+      POSTGRES_DB: omnibot_secondary
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U omnibot -d omnibot_secondary"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - omnibot-net
+    restart: unless-stopped
+
+networks:
+  omnibot-net:
+    driver: bridge
+    name: omnibot-net
+
+volumes:
+  pg-super-data:
+  redis-data:
+  clamav-data:
+  prom-data:
+  grafana-data:
+  db-data:

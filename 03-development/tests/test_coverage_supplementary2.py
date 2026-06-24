@@ -4,6 +4,7 @@ Each test targets a specific uncovered line or branch identified by
 ``pytest --cov-report=term-missing``. All external calls (subprocess,
 HTTP) are mocked with unittest.mock.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -285,8 +286,7 @@ async def test_redis_reclaim_stale_cursor_advance():
     redis = AsyncMock()
     redis.xpending = AsyncMock(return_value={"pending": 1})
     full_batch = [
-        {"message_id": f"{i}-0", "time_since_delivered": 999999}
-        for i in range(_PEL_BATCH_SIZE)
+        {"message_id": f"{i}-0", "time_since_delivered": 999999} for i in range(_PEL_BATCH_SIZE)
     ]
     redis.xpending_range = AsyncMock(side_effect=[full_batch, []])
     redis.xclaim = AsyncMock(return_value=[])
@@ -476,7 +476,9 @@ def test_tool_executor_non_dict_json():
     def echo_fn(**kwargs):
         return kwargs
 
-    tool_def = ToolDefinition(name="echo", description="x", parameters_schema={}, protocol="internal", handler_ref="echo")
+    tool_def = ToolDefinition(
+        name="echo", description="x", parameters_schema={}, protocol="internal", handler_ref="echo"
+    )
     executor = ToolExecutor(default_tools=False)
     executor.register(tool_def, echo_fn)
     result = executor.execute("echo", arguments_json="[1, 2, 3]")
@@ -493,7 +495,13 @@ def test_tool_executor_schema_validation_fail():
         "properties": {"x": {"type": "integer"}},
         "required": ["x"],
     }
-    tool_def = ToolDefinition(name="strict_tool", description="s", parameters_schema=schema, protocol="internal", handler_ref="s")
+    tool_def = ToolDefinition(
+        name="strict_tool",
+        description="s",
+        parameters_schema=schema,
+        protocol="internal",
+        handler_ref="s",
+    )
 
     def strict_fn(**kwargs):
         return kwargs.get("x")
@@ -512,7 +520,9 @@ def test_tool_executor_handler_raises_exception():
     def bad_handler(**kwargs):
         raise ValueError("handler boom")
 
-    tool_def = ToolDefinition(name="bad_tool", description="b", parameters_schema={}, protocol="internal", handler_ref="b")
+    tool_def = ToolDefinition(
+        name="bad_tool", description="b", parameters_schema={}, protocol="internal", handler_ref="b"
+    )
     executor = ToolExecutor(default_tools=False)
     executor.register(tool_def, bad_handler)
     result = executor.execute("bad_tool", arguments_json="{}")
@@ -556,7 +566,11 @@ def test_a2a_adapter_close():
     from app.services.aee.a2a_adapter import A2AAdapter
 
     with patch("app.services.aee.a2a_adapter._validate_agent_url"):
-        adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+        adapter = A2AAdapter.__new__(A2AAdapter)
+        adapter._validated_ips = {}
+        adapter._ip_pinning_ttl_seconds = 300.0
+        adapter._time_offset = 0.0
+        adapter.timeout = 10.0
         adapter._client = MagicMock()
         adapter.close()
     adapter._client.close.assert_called_once()
@@ -567,7 +581,11 @@ def test_a2a_discover_agent_card_http_success():
     from app.services.aee.a2a_adapter import A2AAdapter
 
     with patch("app.services.aee.a2a_adapter._validate_agent_url"):
-        adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+        adapter = A2AAdapter.__new__(A2AAdapter)
+        adapter._validated_ips = {}
+        adapter._ip_pinning_ttl_seconds = 300.0
+        adapter._time_offset = 0.0
+        adapter.timeout = 10.0
         adapter.agent_url = "https://agent.example.com"
         adapter.bearer_token = None
         adapter.timeout = 2.0
@@ -593,14 +611,20 @@ def test_a2a_list_tools_with_methods():
     from app.services.aee.a2a_adapter import A2AAdapter, ToolDefinition
 
     with patch("app.services.aee.a2a_adapter._validate_agent_url"):
-        adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+        adapter = A2AAdapter.__new__(A2AAdapter)
+        adapter._validated_ips = {}
+        adapter._ip_pinning_ttl_seconds = 300.0
+        adapter._time_offset = 0.0
+        adapter.timeout = 10.0
         adapter.agent_url = "https://agent.example.com"
 
-    card = {"methods": [
-        {"name": "do_thing", "description": "does thing", "parameters_schema": {}},
-        {"name": "", "description": "empty name"},
-        "not_a_dict",
-    ]}
+    card = {
+        "methods": [
+            {"name": "do_thing", "description": "does thing", "parameters_schema": {}},
+            {"name": "", "description": "empty name"},
+            "not_a_dict",
+        ]
+    }
     with patch.object(adapter, "_discover_agent_card", return_value=card):
         tools = adapter.list_tools()
 
@@ -614,7 +638,11 @@ def test_a2a_execute_success():
     from app.services.aee.a2a_adapter import A2AAdapter
 
     with patch("app.services.aee.a2a_adapter._validate_agent_url"):
-        adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+        adapter = A2AAdapter.__new__(A2AAdapter)
+        adapter._validated_ips = {}
+        adapter._ip_pinning_ttl_seconds = 300.0
+        adapter._time_offset = 0.0
+        adapter.timeout = 10.0
         adapter.agent_url = "https://agent.example.com"
         adapter.bearer_token = "tok"
         mock_client = MagicMock()
@@ -633,7 +661,11 @@ def test_a2a_execute_json_parse_error():
     from app.services.aee.a2a_adapter import A2AAdapter
 
     with patch("app.services.aee.a2a_adapter._validate_agent_url"):
-        adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+        adapter = A2AAdapter.__new__(A2AAdapter)
+        adapter._validated_ips = {}
+        adapter._ip_pinning_ttl_seconds = 300.0
+        adapter._time_offset = 0.0
+        adapter.timeout = 10.0
         adapter.agent_url = "https://agent.example.com"
         adapter.bearer_token = None
         mock_client = MagicMock()
@@ -653,7 +685,11 @@ def test_a2a_execute_jsonrpc_error():
     from app.services.aee.a2a_adapter import A2AAdapter
 
     with patch("app.services.aee.a2a_adapter._validate_agent_url"):
-        adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+        adapter = A2AAdapter.__new__(A2AAdapter)
+        adapter._validated_ips = {}
+        adapter._ip_pinning_ttl_seconds = 300.0
+        adapter._time_offset = 0.0
+        adapter.timeout = 10.0
         adapter.agent_url = "https://agent.example.com"
         adapter.bearer_token = None
         mock_client = MagicMock()
@@ -747,7 +783,9 @@ def test_cli_run_with_external_kill_unknown_signal():
     from app.services.aee.cli_adapter import CLIAdapter
 
     adapter = CLIAdapter()
-    result = adapter._run_with_external_kill(["python3", "-c", "import time; time.sleep(1)"], "SIGNOEXIST", 2.0)
+    result = adapter._run_with_external_kill(
+        ["python3", "-c", "import time; time.sleep(1)"], "SIGNOEXIST", 2.0
+    )
     assert result.success is False
     assert "unknown signal" in (result.error_message or "")
 
@@ -816,7 +854,10 @@ def test_cli_run_with_external_kill_value_error_in_signal():
         with patch.object(sig_mod, "Signals", side_effect=ValueError("bad")):
             result = adapter._run_with_external_kill(["python3", "-c", "pass"], "SIGKILL", 2.0)
     assert result.success is False
-    assert "killed" in (result.error_message or "").lower() or "signal" in (result.error_message or "").lower()
+    assert (
+        "killed" in (result.error_message or "").lower()
+        or "signal" in (result.error_message or "").lower()
+    )
 
 
 def test_cli_run_with_external_kill_returncode_zero():
@@ -887,7 +928,9 @@ def test_mcp_execute_stdio_success():
     from app.services.aee.adapter import ToolDefinition
     from app.services.aee.mcp_adapter import MCPAdapter
 
-    tool = ToolDefinition(name="my_tool", description="t", parameters_schema={}, protocol="mcp", handler_ref="r")
+    tool = ToolDefinition(
+        name="my_tool", description="t", parameters_schema={}, protocol="mcp", handler_ref="r"
+    )
     adapter = MCPAdapter(transport="stdio", command="echo")
     with patch.object(adapter, "_connect_stdio", return_value=[tool]):
         with patch.object(adapter, "_execute_stdio_call", return_value={"result": "ok"}):
@@ -1028,7 +1071,7 @@ def test_mcp_connect_stdio_success():
 
     adapter = MCPAdapter(transport="stdio", command="mcp_server")
     mock_proc = MagicMock()
-    mock_proc.communicate.return_value = (b'[]', b"")
+    mock_proc.communicate.return_value = (b"[]", b"")
     mock_proc.returncode = 0
     with patch("subprocess.Popen", return_value=mock_proc):
         tools = adapter._connect_stdio()
@@ -1101,7 +1144,7 @@ def test_mcp_parse_tool_list_returns_empty():
     from app.services.aee.mcp_adapter import MCPAdapter
 
     adapter = MCPAdapter()
-    result = adapter._parse_tool_list(b'some bytes')
+    result = adapter._parse_tool_list(b"some bytes")
     assert result == []
 
 
@@ -1202,8 +1245,6 @@ def test_webui_update_entry_returns_none_not_found():
     assert result is None
 
 
-
-
 def test_webui_saved_threshold_config_store_returns_none():
     """webui.py — _saved_threshold falls through to module when config_store returns None."""
     from app.admin.webui import RAGDebugger
@@ -1250,7 +1291,11 @@ def test_websocket_verify_jwt_valid_and_expired():
     payload_data = {"sub": "u1", "exp": int(time.time()) - 10}
     payload = _b64.urlsafe_b64encode(_json.dumps(payload_data).encode()).rstrip(b"=").decode()
     msg = f"{header}.{payload}".encode("ascii")
-    sig = _b64.urlsafe_b64encode(_hmac.new(secret, msg, _hashlib.sha256).digest()).rstrip(b"=").decode()
+    sig = (
+        _b64.urlsafe_b64encode(_hmac.new(secret, msg, _hashlib.sha256).digest())
+        .rstrip(b"=")
+        .decode()
+    )
     token = f"{header}.{payload}.{sig}"
     result = verify_jwt(token)
     assert result is False
@@ -1271,7 +1316,11 @@ def test_websocket_verify_jwt_valid_not_expired():
     payload_data = {"sub": "u1", "exp": int(time.time()) + 3600}
     payload = _b64.urlsafe_b64encode(_json.dumps(payload_data).encode()).rstrip(b"=").decode()
     msg = f"{header}.{payload}".encode("ascii")
-    sig = _b64.urlsafe_b64encode(_hmac.new(secret, msg, _hashlib.sha256).digest()).rstrip(b"=").decode()
+    sig = (
+        _b64.urlsafe_b64encode(_hmac.new(secret, msg, _hashlib.sha256).digest())
+        .rstrip(b"=")
+        .decode()
+    )
     token = f"{header}.{payload}.{sig}"
     result = verify_jwt(token)
     assert result is True
@@ -1315,11 +1364,19 @@ def test_webhooks_web_jwt_verifier_valid_token():
 
     secret = "test-jwt-secret"
     verifier = WebJwtVerifier(jwt_secret=secret)
-    header = _b64.urlsafe_b64encode(_json.dumps({"alg": "HS256", "typ": "JWT"}).encode()).rstrip(b"=").decode()
+    header = (
+        _b64.urlsafe_b64encode(_json.dumps({"alg": "HS256", "typ": "JWT"}).encode())
+        .rstrip(b"=")
+        .decode()
+    )
     payload_data = {"sub": "user1", "exp": int(time.time()) + 3600}
     payload = _b64.urlsafe_b64encode(_json.dumps(payload_data).encode()).rstrip(b"=").decode()
     signing_input = f"{header}.{payload}".encode("ascii")
-    sig = _b64.urlsafe_b64encode(_hmac.new(secret.encode(), signing_input, _hashlib.sha256).digest()).rstrip(b"=").decode()
+    sig = (
+        _b64.urlsafe_b64encode(_hmac.new(secret.encode(), signing_input, _hashlib.sha256).digest())
+        .rstrip(b"=")
+        .decode()
+    )
     token = f"{header}.{payload}.{sig}"
     result = verifier.verify(token)
     assert result is True
@@ -1395,7 +1452,9 @@ def test_knowledge_parent_child_add_parent_wrong_chunk_type():
     from app.core.knowledge import Chunk, ParentChildIndex
 
     idx = ParentChildIndex()
-    bad_chunk = Chunk(chunk_id="c1", content="content", chunk_type="child", parent_id=None, token_count=1)
+    bad_chunk = Chunk(
+        chunk_id="c1", content="content", chunk_type="child", parent_id=None, token_count=1
+    )
     with pytest.raises(ValueError, match="chunk_type='parent'"):
         idx.add_parent(bad_chunk)
 
@@ -1405,7 +1464,9 @@ def test_knowledge_parent_child_add_parent_empty_content():
     from app.core.knowledge import Chunk, ParentChildIndex
 
     idx = ParentChildIndex()
-    empty_chunk = Chunk(chunk_id="p1", content="", chunk_type="parent", parent_id=None, token_count=0)
+    empty_chunk = Chunk(
+        chunk_id="p1", content="", chunk_type="parent", parent_id=None, token_count=0
+    )
     with pytest.raises(ValueError, match="non-empty content"):
         idx.add_parent(empty_chunk)
 
@@ -1415,10 +1476,15 @@ def test_knowledge_parent_child_add_parent_success():
     from app.core.knowledge import Chunk, ParentChildIndex
 
     idx = ParentChildIndex()
-    parent = Chunk(chunk_id="p1", content="Parent content here", chunk_type="parent", parent_id=None, token_count=3)
+    parent = Chunk(
+        chunk_id="p1",
+        content="Parent content here",
+        chunk_type="parent",
+        parent_id=None,
+        token_count=3,
+    )
     idx.add_parent(parent)
     assert "p1" in idx._parents
-
 
 
 # =====================================================================
@@ -1435,6 +1501,7 @@ def test_knowledge_score_exact_match_type():
     class Row:
         match_type = "exact"
         content = "anything"
+
     assert HybridKnowledge._score(Row(), "whatever") == HybridKnowledge.CONFIDENCE_EXACT
 
 
@@ -1445,6 +1512,7 @@ def test_knowledge_score_partial_match_type():
     class Row:
         match_type = "partial"
         content = "anything"
+
     assert HybridKnowledge._score(Row(), "whatever") == HybridKnowledge.CONFIDENCE_PARTIAL
 
 
@@ -1496,7 +1564,9 @@ def test_slice_tokens_normal():
     from app.core.knowledge import _slice_tokens
 
     tokens = ["hello", " ", "world", " ", "test", " ", "more", " ", "words"]
-    chunks = _slice_tokens(tokens, size=3, prefix="p", chunk_type="child", parent_id_for=lambda i, s: None)
+    chunks = _slice_tokens(
+        tokens, size=3, prefix="p", chunk_type="child", parent_id_for=lambda i, s: None
+    )
     assert len(chunks) >= 2
 
 
@@ -1518,6 +1588,7 @@ def test_paladin_pipeline_process_unknown_risk():
     import asyncio
 
     from app.core.paladin import PALADINPipeline
+
     pipeline = PALADINPipeline()
     with pytest.raises(ValueError, match="unknown risk_level"):
         asyncio.run(pipeline.process("hello", risk_level="not_a_real_level"))
@@ -1551,9 +1622,7 @@ def test_collect_variant_means_skip_empty_variant():
     """_collect_variant_means skips (continues past) zero-observation variants."""
     from app.services.ab_testing import ABTestManager
 
-    means, total = ABTestManager._collect_variant_means(
-        {"A": [], "B": [0.5, 0.6], "C": []}
-    )
+    means, total = ABTestManager._collect_variant_means({"A": [], "B": [0.5, 0.6], "C": []})
     assert total == 2
     variant_names = {v for v, _ in means}
     assert "A" not in variant_names
@@ -1654,6 +1723,7 @@ def test_clamav_scanner_scan_holder_error():
 def test_websocket_dummy_api_cohesion():
     """_dummy_api_cohesion calls imports without error."""
     from app.api.websocket import _dummy_api_cohesion
+
     _dummy_api_cohesion()
 
 
@@ -1717,8 +1787,10 @@ def test_llm_generate_grounding_score_computed():
     """_llm_generate computes grounding_score when provider passes None."""
     from app.core.knowledge import _llm_generate
 
-    with patch("app.core.knowledge._call_llm_with_fallback", return_value="answer"), \
-         patch("app.core.knowledge._compute_grounding_score", return_value=0.9) as mock_gs:
+    with (
+        patch("app.core.knowledge._call_llm_with_fallback", return_value="answer"),
+        patch("app.core.knowledge._compute_grounding_score", return_value=0.9) as mock_gs,
+    ):
         result = _llm_generate("q", "ctx", grounding_score=None, grounding_threshold=0.75)
     mock_gs.assert_called_once_with("answer", "ctx")
     assert result is not None
@@ -1776,7 +1848,11 @@ def test_a2a_adapter_close_calls_client_close():
     """A2AAdapter.close() calls self._client.close()."""
     from app.services.aee.a2a_adapter import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
     adapter._client = MagicMock()
     adapter.close()
     adapter._client.close.assert_called_once()
@@ -1789,7 +1865,11 @@ def test_a2a_discover_agent_card_http_200():
     """_discover_agent_card returns card dict on HTTP 200."""
     from app.services.aee.a2a_adapter import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
     adapter.agent_url = "https://agent.example.com"
     adapter.bearer_token = None
     adapter.timeout = 2.0
@@ -1802,7 +1882,10 @@ def test_a2a_discover_agent_card_http_200():
     mock_client = MagicMock()
     mock_resp = MagicMock()
     mock_resp.raise_for_status = MagicMock()
-    mock_resp.json.return_value = {"name": "TestAgent", "methods": [{"name": "say_hi", "description": "Greet"}]}
+    mock_resp.json.return_value = {
+        "name": "TestAgent",
+        "methods": [{"name": "say_hi", "description": "Greet"}],
+    }
     mock_client.get.return_value = mock_resp
     adapter._client = mock_client
 
@@ -1818,26 +1901,34 @@ def test_a2a_list_tools_from_card():
     """list_tools converts card methods into ToolDefinition list."""
     from app.services.aee.a2a_adapter import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
     adapter.agent_url = "https://agent.example.com"
-    card = {"methods": [
-        {"name": "do_thing", "description": "does a thing"},
-        {"name": "", "description": "empty name - skip"},
-        "not_a_dict",
-    ]}
+    card = {
+        "methods": [
+            {"name": "do_thing", "description": "does a thing"},
+            {"name": "", "description": "empty name - skip"},
+            "not_a_dict",
+        ]
+    }
     with patch.object(adapter, "_discover_agent_card", return_value=card):
         tools = adapter.list_tools()
     assert len(tools) == 1
     assert tools[0].name == "do_thing"
 
-
-# --- a2a.py:326,335-345 (execute JSON-RPC paths) ---
-
+    # --- a2a.py:326,335-345 (execute JSON-RPC paths) ---
 
     """A2AAdapter.execute returns ok result on successful JSON-RPC call."""
     from app.services.aee.a2a_adapter import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
     adapter.agent_url = "https://agent.example.com"
     adapter.bearer_token = "tok"
     adapter._time_offset = 0.0
@@ -1856,7 +1947,11 @@ def test_a2a_execute_json_decode_error():
     """execute returns fail when response.json() raises ValueError."""
     from app.services.aee.a2a_adapter import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
     adapter.agent_url = "https://agent.example.com"
     adapter.bearer_token = None
     adapter._time_offset = 0.0
@@ -1870,11 +1965,14 @@ def test_a2a_execute_json_decode_error():
     result = adapter.execute("my_tool", {})
     assert result.success is False
 
-
     """execute returns fail when response body contains JSON-RPC error."""
     from app.services.aee.a2a_adapter import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
     adapter.agent_url = "https://agent.example.com"
     adapter.bearer_token = None
     adapter._time_offset = 0.0
@@ -2049,6 +2147,7 @@ def test_await_coro_from_sync_coro_exception():
     """_await_coro_from_sync re-raises exception from awaitable coroutine."""
 
     from app.core.paladin import _await_coro_from_sync
+
     async def fail_coro():
         raise RuntimeError("test failure in coro")
 
@@ -2066,28 +2165,35 @@ def test_await_coro_from_sync_coro_exception():
 # =====================================================================
 
 
-
 # Generate test key once at module level
 _test_key = _rsa.generate_private_key(public_exponent=65537, key_size=1024)
 _test_pub = _test_key.public_key()
 _test_pub_nums = _test_pub.public_numbers()
 _n_bytes = _test_pub_nums.n.to_bytes((_test_pub_nums.n.bit_length() + 7) // 8, "big")
 _e_bytes = _test_pub_nums.e.to_bytes((_test_pub_nums.e.bit_length() + 7) // 8, "big")
-_JWKS_RESPONSE = _json.dumps({
-    "keys": [{
-        "kty": "RSA",
-        "n": _base64.urlsafe_b64encode(_n_bytes).rstrip(b"=").decode(),
-        "e": _base64.urlsafe_b64encode(_e_bytes).rstrip(b"=").decode(),
-        "kid": "test-kid-1",
-    }]
-}).encode()
+_JWKS_RESPONSE = _json.dumps(
+    {
+        "keys": [
+            {
+                "kty": "RSA",
+                "n": _base64.urlsafe_b64encode(_n_bytes).rstrip(b"=").decode(),
+                "e": _base64.urlsafe_b64encode(_e_bytes).rstrip(b"=").decode(),
+                "kid": "test-kid-1",
+            }
+        ]
+    }
+).encode()
 
 
 def _make_jwt(payload_override=None):
     """Create an RS256-signed JWT token with the test key."""
     header = {"alg": "RS256", "typ": "JWT", "kid": "test-kid-1"}
-    payload = {"sub": "test-agent", "exp": int(_time.time()) + 3600,
-               "aud": "omnibot", "iss": "test-issuer"}
+    payload = {
+        "sub": "test-agent",
+        "exp": int(_time.time()) + 3600,
+        "aud": "omnibot",
+        "iss": "test-issuer",
+    }
     if payload_override:
         payload.update(payload_override)
     hdr = _base64.urlsafe_b64encode(_json.dumps(header).encode()).rstrip(b"=").decode()
@@ -2123,8 +2229,11 @@ def test_fr06_verify_m2m_token_wrong_issuer():
     """FR-06: verify_m2m_token returns False on issuer mismatch (line 159-160)."""
     from app.api.adapters.a2a import A2AAdapter
 
-    adapter = A2AAdapter(jwks_url="https://auth.test/jwks", expected_audience="omnibot",
-                         expected_issuer="correct-issuer")
+    adapter = A2AAdapter(
+        jwks_url="https://auth.test/jwks",
+        expected_audience="omnibot",
+        expected_issuer="correct-issuer",
+    )
     wrong_iss = _make_jwt({"iss": "wrong-issuer"})
     assert adapter.verify_m2m_token(f"Bearer {wrong_iss}") is False
 
@@ -2288,7 +2397,7 @@ def test_call_llm_api_not_implemented():
     """FR-30: _call_llm_api raises NotImplementedError (production-only wiring)."""
     from app.core.knowledge import _call_llm_api
 
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017
         _call_llm_api("gpt-4o", "test prompt")
 
 
@@ -2300,11 +2409,11 @@ def test_slice_tokens_empty_input():
     from app.core.knowledge import _slice_tokens
 
     with pytest.raises(ValueError, match="empty"):
-        _slice_tokens([], size=100, prefix="p", chunk_type="child",
-                       parent_id_for=lambda i, s: None)
+        _slice_tokens([], size=100, prefix="p", chunk_type="child", parent_id_for=lambda i, s: None)
     with pytest.raises(ValueError, match="empty"):
-        _slice_tokens(["  "], size=100, prefix="p", chunk_type="child",
-                       parent_id_for=lambda i, s: None)
+        _slice_tokens(
+            ["  "], size=100, prefix="p", chunk_type="child", parent_id_for=lambda i, s: None
+        )
 
 
 def test_slice_tokens_invalid_size():
@@ -2312,11 +2421,13 @@ def test_slice_tokens_invalid_size():
     from app.core.knowledge import _slice_tokens
 
     with pytest.raises(ValueError, match="size must be positive"):
-        _slice_tokens(["a", "b"], size=0, prefix="p", chunk_type="child",
-                       parent_id_for=lambda i, s: None)
+        _slice_tokens(
+            ["a", "b"], size=0, prefix="p", chunk_type="child", parent_id_for=lambda i, s: None
+        )
     with pytest.raises(ValueError, match="size must be positive"):
-        _slice_tokens(["a", "b"], size=-5, prefix="p", chunk_type="child",
-                       parent_id_for=lambda i, s: None)
+        _slice_tokens(
+            ["a", "b"], size=-5, prefix="p", chunk_type="child", parent_id_for=lambda i, s: None
+        )
 
 
 def test_slice_tokens_invalid_overlap():
@@ -2324,11 +2435,23 @@ def test_slice_tokens_invalid_overlap():
     from app.core.knowledge import _slice_tokens
 
     with pytest.raises(ValueError, match="overlap"):
-        _slice_tokens(["a", "b", "c"], size=3, overlap=3, prefix="p",
-                       chunk_type="child", parent_id_for=lambda i, s: None)
+        _slice_tokens(
+            ["a", "b", "c"],
+            size=3,
+            overlap=3,
+            prefix="p",
+            chunk_type="child",
+            parent_id_for=lambda i, s: None,
+        )
     with pytest.raises(ValueError, match="overlap"):
-        _slice_tokens(["a", "b", "c"], size=3, overlap=-1, prefix="p",
-                       chunk_type="child", parent_id_for=lambda i, s: None)
+        _slice_tokens(
+            ["a", "b", "c"],
+            size=3,
+            overlap=-1,
+            prefix="p",
+            chunk_type="child",
+            parent_id_for=lambda i, s: None,
+        )
 
 
 # --- knowledge.py:1099,1102 (retrieve_parent edge paths) ---
@@ -2475,7 +2598,13 @@ def test_fr06_web_jwt_verifier_bad_signature():
     hdr = _b.urlsafe_b64encode(_j.dumps({"alg": "HS256"}).encode()).rstrip(b"=").decode()
     pld = _b.urlsafe_b64encode(_j.dumps({"sub": "x"}).encode()).rstrip(b"=").decode()
     # Sign with WRONG secret
-    bad_sig = _b.urlsafe_b64encode(_h.new(b"wrong-secret", f"{hdr}.{pld}".encode("ascii"), _hl.sha256).digest()).rstrip(b"=").decode()
+    bad_sig = (
+        _b.urlsafe_b64encode(
+            _h.new(b"wrong-secret", f"{hdr}.{pld}".encode("ascii"), _hl.sha256).digest()
+        )
+        .rstrip(b"=")
+        .decode()
+    )
     assert verifier.verify(f"{hdr}.{pld}.{bad_sig}") is False
 
 
@@ -2490,7 +2619,9 @@ def test_fr06_verify_m2m_jwk_not_rsa():
 
     adapter = A2AAdapter(jwks_url="https://auth.test/jwks", expected_audience="omnibot")
     valid = _make_jwt()
-    wrong_jwks = _j.dumps({"keys": [{"kty": "EC", "n": "x", "e": "AQAB", "kid": "test-kid-1"}]}).encode()
+    wrong_jwks = _j.dumps(
+        {"keys": [{"kty": "EC", "n": "x", "e": "AQAB", "kid": "test-kid-1"}]}
+    ).encode()
     with patch("urllib.request.urlopen") as mock_urlopen:
         mock_response = MagicMock()
         mock_response.read.return_value = wrong_jwks
@@ -2515,8 +2646,6 @@ def test_fr06_extract_sub_token_verify_fails():
 # --- webui.py:546-547 (except block in _saved_threshold) ---
 
 
-
-
 def test_fr100_media_process_file_ok():
     """FR-100: process_file returns AUTO_ESCALATE when all gates pass."""
     from app.services.media import (
@@ -2527,7 +2656,11 @@ def test_fr100_media_process_file_ok():
     )
 
     pipeline = MediaPipeline()
-    with patch.object(pipeline.scanner, "scan", return_value=ClamAVScanResult(status=CLAMAV_STATUS_OK, terminated=False, p95_ms=1.0)):
+    with patch.object(
+        pipeline.scanner,
+        "scan",
+        return_value=ClamAVScanResult(status=CLAMAV_STATUS_OK, terminated=False, p95_ms=1.0),
+    ):
         r = pipeline.process_file(1.0, "txt", b"data")
     assert r.action == MEDIA_ACTION_AUTO_ESCALATE
 
@@ -2541,7 +2674,12 @@ def test_whatsapp_build_unified_message_bad_timestamp():
     """WhatsAppWebhookAdapter._build_unified_message: bad timestamp → ValueError → ts=0."""
     from app.api.adapters.whatsapp import WhatsAppWebhookAdapter
 
-    msg = {"from": "5511999999999", "text": {"body": "hello"}, "type": "text", "timestamp": "not-a-number"}
+    msg = {
+        "from": "5511999999999",
+        "text": {"body": "hello"},
+        "type": "text",
+        "timestamp": "not-a-number",
+    }
     result = WhatsAppWebhookAdapter._build_unified_message(msg)
     assert result.platform_user_id == "5511999999999"
     assert result.content == "hello"
@@ -2566,7 +2704,11 @@ def test_verify_jwt_malformed_signature():
     payload_bytes = b"this-is-not-valid-json"
     payload_b64 = base64.urlsafe_b64encode(payload_bytes).rstrip(b"=").decode()
     msg = f"{header_b64}.{payload_b64}".encode("ascii")
-    sig = base64.urlsafe_b64encode(hmac.new(secret, msg, hashlib.sha256).digest()).rstrip(b"=").decode()
+    sig = (
+        base64.urlsafe_b64encode(hmac.new(secret, msg, hashlib.sha256).digest())
+        .rstrip(b"=")
+        .decode()
+    )
     token = f"{header_b64}.{payload_b64}.{sig}"
 
     assert verify_jwt(token) is False
@@ -2614,7 +2756,9 @@ def test_messages_retention_policy_should_archive():
     """MessagesRetentionPolicy.should_archive: True when age_days >= retention_days."""
     from app.infra.security import MessagesRetentionPolicy
 
-    p = MessagesRetentionPolicy(retention_days=180, target="messages", archive_format="Parquet/S3", archive_action="archive")
+    p = MessagesRetentionPolicy(
+        retention_days=180, target="messages", archive_format="Parquet/S3", archive_action="archive"
+    )
     assert p.should_archive(180) is True
     assert p.should_archive(200) is True
     assert p.should_archive(179) is False
@@ -2709,7 +2853,9 @@ def test_knowledge_query_tier1_hit():
     from app.core.knowledge import HybridKnowledge, KnowledgeResult
 
     hk = HybridKnowledge(session=None)
-    tier1_result = KnowledgeResult(id=1, content="answer", confidence=0.95, source="rule", knowledge_id=10)
+    tier1_result = KnowledgeResult(
+        id=1, content="answer", confidence=0.95, source="rule", knowledge_id=10
+    )
     with patch.object(hk, "_rule_match", return_value=tier1_result):
         result = hk.query("test query")
     assert result.source == "rule"
@@ -2726,7 +2872,11 @@ def test_knowledge_query_tier2_ilike_fallback():
     # _rule_match returns None (session=None ensures this), then Tier 1 misses
     # _rag_search_with_fallback returns ilike → tier2 = None → falls through to Tier 3/4
     # The query should reach Tier 4 escalation
-    with patch.object(hk, "_rag_search_with_fallback", return_value=RAGFallback(search_path="ilike", degraded_to="tier1_ilike_only")):
+    with patch.object(
+        hk,
+        "_rag_search_with_fallback",
+        return_value=RAGFallback(search_path="ilike", degraded_to="tier1_ilike_only"),
+    ):
         result = hk.query("test")
     assert result.source == "escalate"
     assert "t2" in result.tier_sequence
@@ -2737,9 +2887,13 @@ def test_knowledge_query_tier2_hit():
     from app.core.knowledge import HybridKnowledge, KnowledgeResult, RAGFallback
 
     hk = HybridKnowledge(session=None)
-    tier2_result = KnowledgeResult(id=2, content="rag answer", confidence=0.90, source="rag", knowledge_id=20)
+    tier2_result = KnowledgeResult(
+        id=2, content="rag answer", confidence=0.90, source="rag", knowledge_id=20
+    )
     with patch.object(hk, "_rule_match", return_value=None):
-        with patch.object(hk, "_rag_search_with_fallback", return_value=RAGFallback(search_path="vector")):
+        with patch.object(
+            hk, "_rag_search_with_fallback", return_value=RAGFallback(search_path="vector")
+        ):
             with patch.object(hk, "_rag_search_top_k", return_value=[1, 2, 3]):
                 with patch.object(hk, "_rag_search", return_value=tier2_result):
                     result = hk.query("test")
@@ -2753,9 +2907,13 @@ def test_knowledge_query_tier3_hit():
     from app.core.knowledge import HybridKnowledge, KnowledgeResult, RAGFallback
 
     hk = HybridKnowledge(session=None)
-    tier3_result = KnowledgeResult(id=3, content="llm answer", confidence=0.80, source="wiki", knowledge_id=30)
+    tier3_result = KnowledgeResult(
+        id=3, content="llm answer", confidence=0.80, source="wiki", knowledge_id=30
+    )
     with patch.object(hk, "_rule_match", return_value=None):
-        with patch.object(hk, "_rag_search_with_fallback", return_value=RAGFallback(search_path="vector")):
+        with patch.object(
+            hk, "_rag_search_with_fallback", return_value=RAGFallback(search_path="vector")
+        ):
             with patch.object(hk, "_rag_search_top_k", return_value=[]):  # empty → tier2 miss
                 with patch.object(hk, "_llm_call", return_value=tier3_result):
                     result = hk.query("test")
@@ -2799,14 +2957,16 @@ async def test_create_knowledge_enqueue_failure_logged():
 
     with patch("app.core.knowledge._embed_first_chunk", _slow_embed):
         with patch("app.core.knowledge.EMBEDDING_TIMEOUT_S", 0.001):
-            with patch("app.infra.jobs.enqueue_embedding_job", side_effect=RuntimeError("queue down")):
+            with patch(
+                "app.infra.jobs.enqueue_embedding_job", side_effect=RuntimeError("queue down")
+            ):
                 result = await create_knowledge_with_chunks(
                     knowledge_id="kb-enqueue-fail",
                     title="Test",
                     content="content for enqueue failure test",
                     model="text-embedding-3-small",
                 )
-    assert result.fallback == "async_queue"
+    assert result.fallback == "failed"
     assert result.search_ready is False
 
 
@@ -2921,13 +3081,11 @@ def test_gdpr_delete_user_data_with_messages_and_vault():
     result = delete_user_data(user_id=user_id)
     assert result["status"] == "queued"
     # Messages redacted in-place (line 215-216).
-    assert all(
-        m["content"] == "[REDACTED]" for m in _MESSAGES.get(user_id, [])
-    ), f"messages not redacted after delete: {_MESSAGES.get(user_id)}"
-    # Vault entries purged (line 219).
-    assert user_id not in _VAULT_BY_USER, (
-        f"_VAULT_BY_USER still references {user_id} after delete"
+    assert all(m["content"] == "[REDACTED]" for m in _MESSAGES.get(user_id, [])), (
+        f"messages not redacted after delete: {_MESSAGES.get(user_id)}"
     )
+    # Vault entries purged (line 219).
+    assert user_id not in _VAULT_BY_USER, f"_VAULT_BY_USER still references {user_id} after delete"
 
 
 def test_rbac_enforce_swallows_log_failure():
@@ -2945,8 +3103,7 @@ def test_rbac_enforce_swallows_log_failure():
         # returns 200 even when logging raises.
         result = rbac_mod.enforce("admin", "system", "write")
     assert result == 200, (
-        f"FR-62 enforce must return 200 even when log_admin_action raises; "
-        f"got {result}"
+        f"FR-62 enforce must return 200 even when log_admin_action raises; got {result}"
     )
 
 
@@ -2960,8 +3117,7 @@ def test_observability_json_default_set_with_uncomparable_items():
     # TypeError in Python 3 — the fallback to key=str must engage.
     result = _json_default({1, "a"})
     assert sorted(str(x) for x in result) == ["1", "a"], (
-        f"_json_default must fall back to key=str for mixed-type sets; "
-        f"got {result!r}"
+        f"_json_default must fall back to key=str for mixed-type sets; got {result!r}"
     )
 
 
@@ -2988,8 +3144,7 @@ def test_observability_log_unknown_level_falls_back_to_warning():
         log.removeHandler(sink)
 
     assert any("MYSTERY" in line for line in captured), (
-        f"unknown-level record should still be emitted at WARNING; "
-        f"captured={captured!r}"
+        f"unknown-level record should still be emitted at WARNING; captured={captured!r}"
     )
     assert line, "log() must return the emitted line"
 
@@ -3008,8 +3163,7 @@ def test_pipeline_emotion_analyzer_exception_returns_none():
     # Safe inputs to keep the pipeline alive past the emotion call.
     result = pipe.process(platform="telegram", text="hi")
     assert result is not None, (
-        "Pipeline.process must return a result even when emotion.analyze "
-        "raises; got None"
+        "Pipeline.process must return a result even when emotion.analyze raises; got None"
     )
     assert result.get("emotion") is None, (
         f"emotion_result should be None after exception; got {result.get('emotion')!r}"
@@ -3041,9 +3195,8 @@ def test_websocket_verify_jwt_returns_false_on_malformed_payload():
     import json
 
     from app.api.websocket import verify_jwt
-    header = base64.urlsafe_b64encode(
-        json.dumps({"alg": "HS256"}).encode()
-    ).rstrip(b"=")
+
+    header = base64.urlsafe_b64encode(json.dumps({"alg": "HS256"}).encode()).rstrip(b"=")
     payload = b"!!!not-base64!!!"
     sig = b"sig"
     bad_token = f"{header.decode()}.{payload.decode()}.{sig.decode()}"
@@ -3073,10 +3226,11 @@ def test_database_migration_roundtrip_returns_failure_on_step_failure():
             steps=("upgrade",),
         )
     )
-    result = runner.run_roundtrip(MigrationConfig(db_url="sqlite:///:memory:", target_revision="head"))
+    result = runner.run_roundtrip(
+        MigrationConfig(db_url="sqlite:///:memory:", target_revision="head")
+    )
     assert result.success is False, (
-        f"MigrationResult must be success=False when a step fails; "
-        f"got success={result.success!r}"
+        f"MigrationResult must be success=False when a step fails; got success={result.success!r}"
     )
     assert result.direction == "roundtrip"
 
@@ -3094,12 +3248,18 @@ def test_knowledge_query_tier4_tier2_set_tier3_none():
 
     hk = HybridKnowledge(session=None)
     # RAG returns low-confidence result → _record_tier_hit returns None → tier2 not returned early
-    low_conf_rag = KnowledgeResult(id=2, content="rag answer", confidence=0.20, source="rag", knowledge_id=20)
-    with patch.object(hk, "_rule_match", return_value=None), \
-         patch.object(hk, "_rag_search_with_fallback", return_value=RAGFallback(search_path="vector")), \
-         patch.object(hk, "_rag_search_top_k", return_value=[1, 2]), \
-         patch.object(hk, "_rag_search", return_value=low_conf_rag), \
-         patch.object(hk, "_llm_call", return_value=None):
+    low_conf_rag = KnowledgeResult(
+        id=2, content="rag answer", confidence=0.20, source="rag", knowledge_id=20
+    )
+    with (
+        patch.object(hk, "_rule_match", return_value=None),
+        patch.object(
+            hk, "_rag_search_with_fallback", return_value=RAGFallback(search_path="vector")
+        ),
+        patch.object(hk, "_rag_search_top_k", return_value=[1, 2]),
+        patch.object(hk, "_rag_search", return_value=low_conf_rag),
+        patch.object(hk, "_llm_call", return_value=None),
+    ):
         result = hk.query("test")
     assert result.source == "escalate"
     assert "t4" in result.tier_sequence
@@ -3113,13 +3273,21 @@ def test_knowledge_query_tier4_both_tier2_tier3_set():
     from app.core.knowledge import HybridKnowledge, KnowledgeResult, RAGFallback
 
     hk = HybridKnowledge(session=None)
-    low_conf_rag = KnowledgeResult(id=2, content="rag answer", confidence=0.20, source="rag", knowledge_id=20)
-    low_conf_llm = KnowledgeResult(id=3, content="llm answer", confidence=0.20, source="wiki", knowledge_id=30)
-    with patch.object(hk, "_rule_match", return_value=None), \
-         patch.object(hk, "_rag_search_with_fallback", return_value=RAGFallback(search_path="vector")), \
-         patch.object(hk, "_rag_search_top_k", return_value=[1, 2]), \
-         patch.object(hk, "_rag_search", return_value=low_conf_rag), \
-         patch.object(hk, "_llm_call", return_value=low_conf_llm):
+    low_conf_rag = KnowledgeResult(
+        id=2, content="rag answer", confidence=0.20, source="rag", knowledge_id=20
+    )
+    low_conf_llm = KnowledgeResult(
+        id=3, content="llm answer", confidence=0.20, source="wiki", knowledge_id=30
+    )
+    with (
+        patch.object(hk, "_rule_match", return_value=None),
+        patch.object(
+            hk, "_rag_search_with_fallback", return_value=RAGFallback(search_path="vector")
+        ),
+        patch.object(hk, "_rag_search_top_k", return_value=[1, 2]),
+        patch.object(hk, "_rag_search", return_value=low_conf_rag),
+        patch.object(hk, "_llm_call", return_value=low_conf_llm),
+    ):
         result = hk.query("test")
     assert result.source == "escalate"
     assert "t4" in result.tier_sequence
@@ -3154,14 +3322,25 @@ async def test_await_coro_from_sync_loop_stop_runtime_error():
     class _FakeLoop:
         def is_closed(self):
             return False
+
         def close(self):
             allow_finish.set()
+
         def set_exception_handler(self, h):
             pass
+
+        def create_task(self, coro):
+            class _FakeTask:
+                def cancel(self):
+                    pass
+            return _FakeTask()
+
         def run_until_complete(self, coro):
             allow_finish.wait(timeout=5)
+
         def call_soon_threadsafe(self, callback):
             raise RuntimeError("loop is closing")
+
         def stop(self):
             pass
 
@@ -3170,8 +3349,7 @@ async def test_await_coro_from_sync_loop_stop_runtime_error():
     async def _hanging():
         await asyncio.Event().wait()
 
-    with patch("asyncio.new_event_loop", return_value=fake_loop), \
-         patch("asyncio.set_event_loop"):
+    with patch("asyncio.new_event_loop", return_value=fake_loop), patch("asyncio.set_event_loop"):
         with pytest.raises(TimeoutError, match="FR-15"):
             _await_coro_from_sync(_hanging(), timeout_ms=200)
     allow_finish.set()
@@ -3280,8 +3458,7 @@ async def test_redis_streams_cursor_no_advance_breaks():
     redis.xpending = AsyncMock(return_value={"pending": _PEL_BATCH_SIZE})
     # Build a full batch: first _PEL_BATCH_SIZE-1 normal entries + last with id="-"
     entries = [
-        {"message_id": f"1-{i}", "time_since_delivered": 0}
-        for i in range(_PEL_BATCH_SIZE - 1)
+        {"message_id": f"1-{i}", "time_since_delivered": 0} for i in range(_PEL_BATCH_SIZE - 1)
     ]
     entries.append({"message_id": "-", "time_since_delivered": 0})
     # idle_ms=999999 → all entries fail idle check → xclaim never called
@@ -3332,9 +3509,11 @@ async def test_redis_streams_consume_loop_single_iteration():
             return [raw_msg]
         raise asyncio.CancelledError()
 
-    with patch.object(proc, "claim_pending", side_effect=mock_claim), \
-         patch.object(proc, "read", side_effect=mock_read), \
-         patch.object(proc, "ack", AsyncMock()):
+    with (
+        patch.object(proc, "claim_pending", side_effect=mock_claim),
+        patch.object(proc, "read", side_effect=mock_read),
+        patch.object(proc, "ack", AsyncMock()),
+    ):
         with pytest.raises(asyncio.CancelledError):
             await proc.consume_loop("consumer1", handler)
 
@@ -3348,8 +3527,13 @@ def test_a2a_check_ip_pinning_no_hostname():
     """a2a_adapter.py:219 — _check_ip_pinning returns early when URL has no hostname."""
     from app.services.aee.a2a_adapter import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
-    adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
     # URL with no hostname → _urlparse("file:///path").hostname is None
     adapter._check_ip_pinning("file:///path/to/file")  # should not raise
 
@@ -3361,10 +3545,17 @@ def test_a2a_check_ip_pinning_first_visit_stores_ips():
     """a2a_adapter.py:224-226 — _check_ip_pinning stores IPs on first visit."""
     from app.services.aee.a2a_adapter import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
-    adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0
-    with patch("app.services.aee.a2a_adapter._validate_agent_url"), \
-         patch("app.services.aee.a2a_adapter._resolve_addresses", return_value=["127.0.0.1"]):
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    with (
+        patch("app.services.aee.a2a_adapter._validate_agent_url"),
+        patch("app.services.aee.a2a_adapter._resolve_addresses", return_value=["127.0.0.1"]),
+    ):
         adapter._check_ip_pinning("http://example.com/api")
     assert "example.com" in adapter._validated_ips
 
@@ -3376,11 +3567,18 @@ def test_a2a_check_ip_pinning_rebinding_raises():
     """a2a_adapter.py:227-231 — _check_ip_pinning raises ValueError on IP change."""
     from app.services.aee.a2a_adapter import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
     import time
+
     adapter._validated_ips = {"example.com": (frozenset({"10.0.0.1"}), time.time())}
-    with patch("app.services.aee.a2a_adapter._validate_agent_url"), \
-         patch("app.services.aee.a2a_adapter._resolve_addresses", return_value=["192.168.1.1"]):
+    with (
+        patch("app.services.aee.a2a_adapter._validate_agent_url"),
+        patch("app.services.aee.a2a_adapter._resolve_addresses", return_value=["192.168.1.1"]),
+    ):
         with pytest.raises(ValueError, match="DNS rebinding"):
             adapter._check_ip_pinning("http://example.com/api")
 
@@ -3409,7 +3607,10 @@ def test_mcp_execute_stdio_call_jsonrpc_error():
     mock_proc = MagicMock()
     mock_proc.communicate.return_value = (b'{"error": {"message": "tool not found"}}', b"")
     mock_proc.returncode = 0
-    with patch("subprocess.Popen", return_value=mock_proc), pytest.raises(RuntimeError, match="JSON-RPC error"):
+    with (
+        patch("subprocess.Popen", return_value=mock_proc),
+        pytest.raises(RuntimeError, match="JSON-RPC error"),
+    ):
         adapter._execute_stdio_call("bad_tool", {})
 
 
@@ -3428,7 +3629,10 @@ def test_mcp_execute_sse_call_jsonrpc_error_reraises():
     mock_client.__enter__ = MagicMock(return_value=mock_client)
     mock_client.__exit__ = MagicMock(return_value=False)
     mock_client.post.return_value = mock_response
-    with patch("httpx.Client", return_value=mock_client), pytest.raises(RuntimeError, match="JSON-RPC error"):
+    with (
+        patch("httpx.Client", return_value=mock_client),
+        pytest.raises(RuntimeError, match="JSON-RPC error"),
+    ):
         adapter._execute_sse_call("tool1", {})
 
 
@@ -3460,14 +3664,20 @@ def test_mcp_parse_tool_list_success():
     from app.services.aee.mcp_adapter import MCPAdapter
 
     adapter = MCPAdapter()
-    raw = _j.dumps({
-        "result": {
-            "tools": [
-                {"name": "my_tool", "description": "does stuff", "inputSchema": {"type": "object"}},
-                {"name": "other_tool", "description": "other stuff"},
-            ]
+    raw = _j.dumps(
+        {
+            "result": {
+                "tools": [
+                    {
+                        "name": "my_tool",
+                        "description": "does stuff",
+                        "inputSchema": {"type": "object"},
+                    },
+                    {"name": "other_tool", "description": "other stuff"},
+                ]
+            }
         }
-    }).encode()
+    ).encode()
     tools = adapter._parse_tool_list(raw)
     assert len(tools) == 2
     assert tools[0].name == "my_tool"
@@ -3526,7 +3736,13 @@ async def test_tool_executor_sync_handler_in_running_loop():
     def sync_handler(**kwargs):
         return f"sync_result_{kwargs.get('x', '')}"
 
-    tool_def = ToolDefinition(name="sync_tool", description="s", parameters_schema={}, protocol="internal", handler_ref="s")
+    tool_def = ToolDefinition(
+        name="sync_tool",
+        description="s",
+        parameters_schema={},
+        protocol="internal",
+        handler_ref="s",
+    )
     executor = ToolExecutor(default_tools=False)
     executor.register(tool_def, sync_handler)
     # In async test context, asyncio.get_running_loop() returns running loop → hits lines 315-329
@@ -3544,7 +3760,13 @@ def test_tool_executor_sync_handler_no_running_loop():
     def sync_handler(**kwargs):
         return "result"
 
-    tool_def = ToolDefinition(name="sync_nloop", description="s", parameters_schema={}, protocol="internal", handler_ref="s")
+    tool_def = ToolDefinition(
+        name="sync_nloop",
+        description="s",
+        parameters_schema={},
+        protocol="internal",
+        handler_ref="s",
+    )
     executor = ToolExecutor(default_tools=False)
     executor.register(tool_def, sync_handler)
     # Sync test context: asyncio.get_running_loop() raises RuntimeError → loop = None → else branch
@@ -3563,7 +3785,13 @@ def test_tool_executor_async_handler_no_running_loop():
     async def async_handler(**kwargs):
         return "async_result"
 
-    tool_def = ToolDefinition(name="async_nloop", description="s", parameters_schema={}, protocol="internal", handler_ref="s")
+    tool_def = ToolDefinition(
+        name="async_nloop",
+        description="s",
+        parameters_schema={},
+        protocol="internal",
+        handler_ref="s",
+    )
     executor = ToolExecutor(default_tools=False)
     executor.register(tool_def, async_handler)
     # Sync test: no running loop → else branch → asyncio.run(_run_handler())
@@ -3583,7 +3811,13 @@ async def test_tool_executor_timeout_returns_fail():
     async def timeout_handler(**kwargs):
         raise TimeoutError("handler simulated timeout")
 
-    tool_def = ToolDefinition(name="timeout_tool", description="s", parameters_schema={}, protocol="internal", handler_ref="s")
+    tool_def = ToolDefinition(
+        name="timeout_tool",
+        description="s",
+        parameters_schema={},
+        protocol="internal",
+        handler_ref="s",
+    )
     executor = ToolExecutor(default_tools=False)
     executor.register(tool_def, timeout_handler)
     result = executor.execute("timeout_tool", arguments_json="{}")
@@ -3680,9 +3914,11 @@ def test_webhooks_load_tokens_corrupt_file_is_suppressed():
     import app.api.webhooks as wh
 
     mock_file = io.StringIO("invalid json {{{")
-    with patch("os.path.exists", return_value=True), \
-         patch("builtins.open", return_value=mock_file), \
-         patch("fcntl.flock"):
+    with (
+        patch("os.path.exists", return_value=True),
+        patch("builtins.open", return_value=mock_file),
+        patch("fcntl.flock"),
+    ):
         wh._load_tokens()  # must not raise
 
 
@@ -3740,7 +3976,11 @@ async def test_a2a_averify_m2m_token_no_bearer():
     """a2a.py:190-192 — averify_m2m_token returns False when no Bearer token."""
     from app.api.adapters.a2a import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
     adapter._jwks_url = "http://example.com/.well-known/jwks.json"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
@@ -3753,7 +3993,11 @@ async def test_a2a_averify_m2m_token_not_three_segments():
     """a2a.py:196-197 — averify_m2m_token returns False for non-3-segment JWT."""
     from app.api.adapters.a2a import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
     adapter._jwks_url = "http://example.com/.well-known/jwks.json"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
@@ -3772,7 +4016,11 @@ async def test_a2a_averify_m2m_token_exception_path():
 
     from app.api.adapters.a2a import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
     adapter._jwks_url = "http://example.com/.well-known/jwks.json"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
@@ -3799,11 +4047,16 @@ async def test_a2a_ahandle_jsonrpc_call_auth_failure_raises():
     """a2a.py:290-291 — ahandle_jsonrpc_call raises A2AAuthError when token invalid."""
     from app.api.adapters.a2a import A2AAdapter, A2AAuthError
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
     adapter._jwks_url = "http://x.com/jwks"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
-    adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
 
     with patch.object(adapter, "averify_m2m_token", AsyncMock(return_value=False)):
         with pytest.raises(A2AAuthError):
@@ -3818,14 +4071,21 @@ async def test_a2a_ahandle_jsonrpc_call_success():
     """a2a.py:293-307 — ahandle_jsonrpc_call returns UnifiedMessage when token valid."""
     from app.api.adapters.a2a import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
     adapter._jwks_url = "http://x.com/jwks"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
-    adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
 
-    with patch.object(adapter, "averify_m2m_token", AsyncMock(return_value=True)), \
-         patch.object(adapter, "_aextract_sub_from_token", AsyncMock(return_value="agent-1")):
+    with (
+        patch.object(adapter, "averify_m2m_token", AsyncMock(return_value=True)),
+        patch.object(adapter, "_aextract_sub_from_token", AsyncMock(return_value="agent-1")),
+    ):
         result = await adapter.ahandle_jsonrpc_call(
             body={"method": "chat", "params": {"text": "hello"}, "id": 1},
             authorization="Bearer valid",
@@ -3842,7 +4102,11 @@ async def test_a2a_aextract_sub_no_token():
     """a2a.py:360-362 — _aextract_sub_from_token returns _UNKNOWN_AGENT when no bearer."""
     from app.api.adapters.a2a import _UNKNOWN_AGENT, A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
     adapter._jwks_url = "http://x.com/jwks"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
@@ -3855,7 +4119,11 @@ async def test_a2a_aextract_sub_verify_fails():
     """a2a.py:364-365 — _aextract_sub_from_token returns _UNKNOWN_AGENT when verify fails."""
     from app.api.adapters.a2a import _UNKNOWN_AGENT, A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
     adapter._jwks_url = "http://x.com/jwks"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
@@ -3872,7 +4140,11 @@ async def test_a2a_aextract_sub_success():
 
     from app.api.adapters.a2a import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
     adapter._jwks_url = "http://x.com/jwks"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
@@ -3893,7 +4165,11 @@ async def test_a2a_aextract_sub_exception():
 
     from app.api.adapters.a2a import _UNKNOWN_AGENT, A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
     adapter._jwks_url = "http://x.com/jwks"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
@@ -3919,7 +4195,11 @@ async def test_a2a_averify_m2m_token_expired():
 
     from app.api.adapters.a2a import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
     adapter._jwks_url = "http://x.com/jwks"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
@@ -3942,7 +4222,11 @@ async def test_a2a_averify_m2m_token_wrong_audience():
 
     from app.api.adapters.a2a import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
     adapter._jwks_url = "http://x.com/jwks"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
@@ -3965,7 +4249,11 @@ async def test_a2a_averify_m2m_token_wrong_issuer():
 
     from app.api.adapters.a2a import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
     adapter._jwks_url = "http://x.com/jwks"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = "https://auth.example.com"  # non-empty → issuer check active
@@ -3988,7 +4276,11 @@ async def test_a2a_averify_m2m_token_no_matching_jwk():
 
     from app.api.adapters.a2a import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
     adapter._jwks_url = "http://x.com/jwks"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
@@ -4024,7 +4316,11 @@ async def test_a2a_averify_m2m_token_rsa_verify_success():
 
     from app.api.adapters.a2a import A2AAdapter
 
-    adapter = A2AAdapter.__new__(A2AAdapter); adapter._validated_ips = {}; adapter._ip_pinning_ttl_seconds = 300.0; adapter._time_offset = 0.0; adapter.timeout = 10.0
+    adapter = A2AAdapter.__new__(A2AAdapter)
+    adapter._validated_ips = {}
+    adapter._ip_pinning_ttl_seconds = 300.0
+    adapter._time_offset = 0.0
+    adapter.timeout = 10.0
     adapter._jwks_url = "http://x.com/jwks"
     adapter._expected_audience = "omnibot"
     adapter._expected_issuer = ""
@@ -4050,8 +4346,7 @@ async def test_a2a_averify_m2m_token_rsa_verify_success():
     mock_public_key = MagicMock()
     mock_public_key.verify = MagicMock()  # does NOT raise → line 233: return True
 
-    with patch("httpx.AsyncClient") as mock_cls, \
-         patch("app.api.adapters.a2a.rsa") as mock_rsa:
+    with patch("httpx.AsyncClient") as mock_cls, patch("app.api.adapters.a2a.rsa") as mock_rsa:
         mock_instance = AsyncMock()
         mock_cls.return_value.__aenter__ = AsyncMock(return_value=mock_instance)
         mock_cls.return_value.__aexit__ = AsyncMock(return_value=False)

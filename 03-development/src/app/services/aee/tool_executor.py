@@ -15,6 +15,7 @@ Citations:
 
 from __future__ import annotations
 
+import concurrent.futures
 import inspect
 import json
 import logging
@@ -30,6 +31,8 @@ from app.services.aee.adapter import (
     fail,
     ok,
 )
+
+_SHARED_EXECUTOR = concurrent.futures.ThreadPoolExecutor(thread_name_prefix="tool_exec")
 
 _log = logging.getLogger(__name__)
 
@@ -136,7 +139,7 @@ def _update_shipping_address_handler(
       ``success=False``，error_message 必須包含 shipped / delivered /
       cannot 等關鍵字以便 caller / user 識別。
     """
-    if status in _BLOCKED_ADDRESS_STATUSES:
+    if status.lower() in _BLOCKED_ADDRESS_STATUSES:
         return fail(
             f"Cannot update shipping address: order {order_id} has "
             f"already been {status}."
@@ -312,25 +315,29 @@ class ToolExecutor:
                 loop = None
 
             if loop and loop.is_running():
-                import concurrent.futures
                 def _thread_run():
                     async def _inner():
                         if inspect.iscoroutinefunction(handler):
                             return await asyncio.wait_for(handler(**arguments), timeout=_handler_timeout)
                         else:
                             inner_loop = asyncio.get_running_loop()
-                            return await inner_loop.run_in_executor(None, partial(handler, **arguments))
+                            return await asyncio.wait_for(
+                                inner_loop.run_in_executor(None, partial(handler, **arguments)),
+                                timeout=_handler_timeout
+                            )
                     return asyncio.run(_inner())
 
-                with concurrent.futures.ThreadPoolExecutor(1) as pool:
-                    result = pool.submit(_thread_run).result()
+                result = _SHARED_EXECUTOR.submit(_thread_run).result()
             else:
                 async def _run_handler():
                     if inspect.iscoroutinefunction(handler):
                         return await asyncio.wait_for(handler(**arguments), timeout=_handler_timeout)
                     else:
                         inner_loop = asyncio.get_running_loop()
-                        return await inner_loop.run_in_executor(None, partial(handler, **arguments))
+                        return await asyncio.wait_for(
+                            inner_loop.run_in_executor(None, partial(handler, **arguments)),
+                            timeout=_handler_timeout
+                        )
                 result = asyncio.run(_run_handler())
 
         except asyncio.CancelledError:

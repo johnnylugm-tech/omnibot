@@ -85,7 +85,7 @@ from app.services.llm_judge import (
 def _extract_kappa(result: object) -> object:
     """Read ``kappa`` from any CalibrationResult shape."""
     if hasattr(result, "kappa"):
-        return result.kappa
+        return result.kappa  # type: ignore[reportAttributeAccessIssue]
     if isinstance(result, dict):
         return result.get("kappa")
     raise AssertionError(
@@ -96,7 +96,7 @@ def _extract_kappa(result: object) -> object:
 def _extract_action(result: object) -> object:
     """Read ``action`` from any CalibrationResult shape."""
     if hasattr(result, "action"):
-        return result.action
+        return result.action  # type: ignore[reportAttributeAccessIssue]
     if isinstance(result, dict):
         return result.get("action")
     raise AssertionError(
@@ -107,7 +107,7 @@ def _extract_action(result: object) -> object:
 def _extract_fallback(result: object) -> object:
     """Read ``fallback`` from any CalibrationResult shape."""
     if hasattr(result, "fallback"):
-        return result.fallback
+        return result.fallback  # type: ignore[reportAttributeAccessIssue]
     if isinstance(result, dict):
         return result.get("fallback")
     raise AssertionError(

@@ -13,7 +13,14 @@
         "app.api.auth",
         "app.api.websocket",
         "app.api.main",
-        "app.api.adapters.a2a"
+        "app.api.adapters.a2a",
+        "app.api.adapters.line",
+        "app.api.adapters.messenger",
+        "app.api.adapters.telegram",
+        "app.api.adapters.utils",
+        "app.api.adapters.verifiers",
+        "app.api.adapters.web",
+        "app.api.adapters.whatsapp"
       ],
       "allowed_dependencies": [
         "core",
@@ -42,11 +49,15 @@
       "name": "services",
       "modules": [
         "app.services.registry",
-        "app.services.aee/",
         "app.services.escalation",
         "app.services.ab_testing",
         "app.services.llm_judge",
-        "app.services.media"
+        "app.services.media",
+        "app.services.aee.adapter",
+        "app.services.aee.cli_adapter",
+        "app.services.aee.mcp_adapter",
+        "app.services.aee.tool_executor",
+        "app.services.aee.a2a_adapter"
       ],
       "allowed_dependencies": [
         "infra"
@@ -473,5 +484,29 @@
     "app.services.aee",
     "app.services.llm_judge",
     "app.services.media"
+  ],
+  "_amendment_history": [
+    {
+      "date": "2026-06-24",
+      "phase": 4,
+      "reason": "Architecture Amendment Protocol: register 12 modules (7 adapters + 5 aee) discovered in src tree but missing from SAB.json.",
+      "added": [
+        "app.api.adapters.line",
+        "app.api.adapters.messenger",
+        "app.api.adapters.telegram",
+        "app.api.adapters.utils",
+        "app.api.adapters.verifiers",
+        "app.api.adapters.web",
+        "app.api.adapters.whatsapp",
+        "app.services.aee.adapter",
+        "app.services.aee.cli_adapter",
+        "app.services.aee.mcp_adapter",
+        "app.services.aee.tool_executor",
+        "app.services.aee.a2a_adapter"
+      ],
+      "replaced": [
+        "app.services.aee/ (directory marker not honored)"
+      ]
+    }
   ]
 }

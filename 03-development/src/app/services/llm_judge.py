@@ -552,6 +552,13 @@ class CalibrationPipeline:
             # LLM call under the timeout budget. This is the
             # single call that fires NP-07 (LLM raises) and NP-15
             # (LLM exceeds the timeout) in the test fixtures.
+            if self.judge_llm is None:
+                return CalibrationResult(
+                    kappa=None,
+                    action="pass",
+                    fallback=None,
+                )
+
             await asyncio.wait_for(
                 self.judge_llm.score(),
                 timeout=self.timeout_s,

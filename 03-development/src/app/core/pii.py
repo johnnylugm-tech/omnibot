@@ -64,11 +64,11 @@ _PHONE_RE = re.compile(
     r"(?<!\d)"
     r"(?=(?:[+\-\s\(\)]*\d){10,13}(?!\d))"
     r"(?:"
-        r"\+886[-\s]?(?:0?\d{1,3}[-\s]?\d{3,4}[-\s]?\d{3,4})"
+        r"\+886(?:[-\s]*\d){8,10}"
         r"|"
-        r"0\d{1,3}[-\s]?\d{3,4}[-\s]?\d{3,4}"
+        r"0(?:[-\s]*\d){8,10}"
         r"|"
-        r"\(0\d{1,2}\)[-\s]?\d{3,4}[-\s]?\d{3,4}"
+        r"\(0(?:[-\s]*\d){1,2}\)(?:[-\s]*\d){7,8}"
     r")"
     r"(?!\d)"
 )
@@ -77,7 +77,7 @@ _PHONE_RE = re.compile(
 # the actual replacement so Luhn-invalid 16-digit strings (order IDs,
 # tracking numbers) survive verbatim. The gate lives in ``_mask_credit_card``
 # below, not in the regex.
-_CREDIT_CARD_RE = re.compile(r"\b\d{16}\b")
+_CREDIT_CARD_RE = re.compile(r"\b(?:\d[\s-]*?){15}\d\b")
 
 # Email: pragmatic RFC-ish pattern. Avoids whitespace / angle brackets so
 # the match is safe to splice back into a log line.
@@ -365,7 +365,8 @@ class PIIMasking:
 
         def _replace(match: re.Match[str]) -> str:
             digits = match.group()
-            if self._luhn_valid(digits):
+            stripped_digits = re.sub(r"[\s\-]", "", digits)
+            if self._luhn_valid(stripped_digits):
                 types.append("credit_card")
                 return placeholder
             return digits

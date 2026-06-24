@@ -4,6 +4,10 @@
 Spec source: 02-architecture/TEST_SPEC.md (FR-100)
 SRS source : SRS.md FR-100 (Module 24: 多媒體處理 — image/sticker/location/file)
 
+# pyright: reportAttributeAccessIssue=false
+# Test uses duck-typing via hasattr/getattr on MediaResult; attribute checks are
+# the contract under test, so generic `object` typing is intentional.
+
 Acceptance criteria (from SRS FR-100):
     image     : Image → auto_escalate（不支援圖片理解）.
     sticker   : Sticker → ignore + 固定回覆「請用文字描述您的問題」+ log.
@@ -280,9 +284,9 @@ def test_fr100_image_auto_escalate():
         "FR-100 MediaResult must expose ``action``"
     )
     observed_action = (
-        result.action()
+        result.action()  # type: ignore[reportAttributeAccessIssue]
         if callable(getattr(result, "action", None))
-        else result.action
+        else result.action  # type: ignore[reportAttributeAccessIssue]
     )
 
     # The action MUST be "auto_escalate" — the FR's explicit
@@ -341,9 +345,9 @@ def test_fr100_sticker_fixed_reply():
     # The action MUST be "sticker_reply" — the FR's sticker-routing
     # branch.
     observed_action = (
-        result.action()
+        result.action()  # type: ignore[reportAttributeAccessIssue]
         if callable(getattr(result, "action", None))
-        else result.action
+        else result.action  # type: ignore[reportAttributeAccessIssue]
     )
     assert observed_action == "sticker_reply", (
         f"FR-100 sticker must route to 'sticker_reply'; got "
@@ -359,9 +363,9 @@ def test_fr100_sticker_fixed_reply():
             "FR-100 MediaResult must expose ``reply``"
         )
         observed_reply = (
-            result.reply()
+            result.reply()  # type: ignore[reportAttributeAccessIssue]
             if callable(getattr(result, "reply", None))
-            else result.reply
+            else result.reply  # type: ignore[reportAttributeAccessIssue]
         )
         assert observed_reply == "請用文字描述您的問題", (
             f"FR-100 sticker reply must be '請用文字描述您的問題'; got "
@@ -411,9 +415,9 @@ def test_fr100_location_extracts_coordinates():
     # The action MUST be "location_context" — the FR's location-routing
     # branch.
     observed_action = (
-        result.action()
+        result.action()  # type: ignore[reportAttributeAccessIssue]
         if callable(getattr(result, "action", None))
-        else result.action
+        else result.action  # type: ignore[reportAttributeAccessIssue]
     )
     assert observed_action == "location_context", (
         f"FR-100 location must route to 'location_context'; got "
@@ -427,9 +431,9 @@ def test_fr100_location_extracts_coordinates():
         "FR-100 MediaResult must expose ``coordinates``"
     )
     observed_coords = (
-        result.coordinates()
+        result.coordinates()  # type: ignore[reportAttributeAccessIssue]
         if callable(getattr(result, "coordinates", None))
-        else result.coordinates
+        else result.coordinates  # type: ignore[reportAttributeAccessIssue]
     )
     assert observed_coords is not None, (
         "FR-100 location coordinates must not be None"
@@ -815,9 +819,9 @@ def test_fr100_clamav_timeout_terminates_scan():
         "FR-100 ClamAVScanResult must expose ``terminated``"
     )
     observed_terminated = (
-        result.terminated()
+        result.terminated()  # type: ignore[reportAttributeAccessIssue]
         if callable(getattr(result, "terminated", None))
-        else result.terminated
+        else result.terminated  # type: ignore[reportAttributeAccessIssue]
     )
     if expected_terminated == "true":
         assert observed_terminated is True, (
@@ -832,9 +836,9 @@ def test_fr100_clamav_timeout_terminates_scan():
         "FR-100 ClamAVScanResult must expose ``status``"
     )
     observed_status = (
-        result.status()
+        result.status()  # type: ignore[reportAttributeAccessIssue]
         if callable(getattr(result, "status", None))
-        else result.status
+        else result.status  # type: ignore[reportAttributeAccessIssue]
     )
     assert observed_status != CLAMAV_STATUS_OK, (
         f"FR-100 timed-out scan must NOT report status='ok'; got "

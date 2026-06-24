@@ -47,7 +47,7 @@ import json
 import logging
 import re
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 VALID_SOURCES: frozenset[str] = frozenset(
@@ -591,20 +591,20 @@ def _call_llm_api(model: str, prompt: str) -> str:
     import os
     if model == "gpt-4o":
         import openai
-        client = openai.Client(api_key=os.getenv("OPENAI_API_KEY", "dummy"))
+        client = openai.Client(api_key=os.getenv("OPENAI_API_KEY", "dummy"), timeout=0.45)
         response = client.chat.completions.create(
             model=model,
             messages=[{"role": "user", "content": prompt}]
         )
         return response.choices[0].message.content or ""
     elif model == "gemini-1.5-flash":
-        from google import genai
-        client = genai.Client(api_key=os.getenv("GEMINI_API_KEY", "dummy"))
-        response = client.models.generate_content(
+        from google import genai as _genai
+        gemini_client = _genai.Client(api_key=os.getenv("GEMINI_API_KEY", "dummy"))
+        gemini_response = gemini_client.models.generate_content(
             model=model,
             contents=prompt,
         )
-        return response.text or ""
+        return gemini_response.text or ""
     raise ValueError(f"Unsupported LLM: {model}")
 
 
@@ -1284,6 +1284,7 @@ async def create_knowledge_with_chunks(
             )
         except Exception as exc:
             _logger.error("Failed to enqueue fallback embedding job: %s", exc)
+            fallback = "failed"
         _logger.warning(log_msg, *log_args)
 
     try:
@@ -1360,6 +1361,8 @@ async def create_knowledge_with_chunks(
 # - 02-architecture/SAD.md:323 (Module: jobs.py contract)
 # ---------------------------------------------------------------------------
 
+
+
 @dataclass
 class BatchImportResult:
     """Structured result returned by ``batch_import_knowledge``.
@@ -1383,6 +1386,7 @@ class BatchImportResult:
     failed_count: int
     sync_wait: bool
     per_entry_ms: float
+    failed_chunk_ids: list[str] = field(default_factory=list)
 
 
 def batch_import_knowledge(
@@ -1410,6 +1414,7 @@ def batch_import_knowledge(
     """
     start = time.perf_counter()
     enqueued = 0
+    failed_chunk_ids = []
 
     for entry in entries:
         chunk_id = f"chunk_{uuid.uuid4().hex[:12]}"
@@ -1427,6 +1432,7 @@ def batch_import_knowledge(
         except Exception as exc:
             import logging
             logging.getLogger(__name__).warning("FR-78 batch enqueue failed: %r", exc)
+            failed_chunk_ids.append(chunk_id)
 
     elapsed = time.perf_counter() - start
     count = len(entries)
@@ -1438,6 +1444,7 @@ def batch_import_knowledge(
         failed_count=count - enqueued,
         sync_wait=False,
         per_entry_ms=per_entry_ms,
+        failed_chunk_ids=failed_chunk_ids,
     )
 
 

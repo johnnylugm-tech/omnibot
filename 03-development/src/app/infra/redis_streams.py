@@ -32,6 +32,7 @@ Citations:
 
 from __future__ import annotations
 
+import contextlib
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
@@ -136,6 +137,7 @@ class AsyncMessageProcessor:
         self.stream = stream
         self.block_ms = block_ms
         self.idle_ms = idle_ms
+        self._in_flight: set[str] = set()
 
     @staticmethod
     def _is_busygroup_error(exc: BaseException) -> bool:
@@ -307,15 +309,35 @@ class AsyncMessageProcessor:
         while True:
             pending = await self.claim_pending(consumer)
             for msg in pending:
-                parsed = self.parse_message(msg.message_id, msg.fields)
-                await handler(parsed)
-                await self.ack(msg.message_id)
+                if msg.message_id in self._in_flight:
+                    continue
+                self._in_flight.add(msg.message_id)
+                try:
+                    parsed = self.parse_message(msg.message_id, msg.fields)
+                    try:
+                        await handler(parsed)
+                        with contextlib.suppress(Exception):
+                            await self.ack(msg.message_id)
+                    except Exception:
+                        pass
+                finally:
+                    self._in_flight.discard(msg.message_id)
 
             messages = await self.read(consumer)
             for msg in messages:
-                parsed = self.parse_message(msg.message_id, msg.fields)
-                await handler(parsed)
-                await self.ack(msg.message_id)
+                if msg.message_id in self._in_flight:
+                    continue
+                self._in_flight.add(msg.message_id)
+                try:
+                    parsed = self.parse_message(msg.message_id, msg.fields)
+                    try:
+                        await handler(parsed)
+                        with contextlib.suppress(Exception):
+                            await self.ack(msg.message_id)
+                    except Exception:
+                        pass
+                finally:
+                    self._in_flight.discard(msg.message_id)
 
 
 __all__ = [

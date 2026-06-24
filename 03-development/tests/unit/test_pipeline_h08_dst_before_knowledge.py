@@ -6,7 +6,6 @@ Verifies that dst stage runs BEFORE knowledge stage in handle_message.
 from __future__ import annotations
 
 import pytest
-
 from app.core.pipeline import Pipeline
 
 
@@ -29,6 +28,10 @@ class _StubDST:
     def missing_slots(self) -> list[str]:
         return list(self._missing)
 
+    def update_intent_and_slots(self, intent: str, slots: dict[str, str]) -> None:
+        self.intent = intent
+        self.slots.update(slots)
+
 
 class _StubKnowledge:
     """Captures whether query() was called and at what point."""
@@ -38,7 +41,7 @@ class _StubKnowledge:
         self.confidence = confidence
         self.call_count = 0
 
-    def query(self, text: str):  # noqa: ARG002
+    def query(self, text: str):
         from types import SimpleNamespace
 
         self.call_count += 1
