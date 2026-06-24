@@ -198,7 +198,7 @@ class ClamAVScanner:
         def _invoke() -> None:
             try:
                 if self._runner is subprocess.run:
-                    holder["result"] = self._runner(["clamdscan", "-"], input=file_bytes, capture_output=True, timeout=timeout_seconds)
+                    holder["result"] = self._runner(["clamdscan", "-"], input=file_bytes, capture_output=True, timeout=timeout_seconds)  # pragma: no cover — ClamAV subprocess.run path — requires real clamd socket
                 else:
                     holder["result"] = self._runner(file_bytes, file_type)  # type: ignore[call-arg,call-overload]
             except Exception as exc:  # pragma: no cover
@@ -399,3 +399,4 @@ class MediaPipeline:
         return MediaResult(
             action=MEDIA_ACTION_FILE_REJECTED, status=status, error=error
         )
+

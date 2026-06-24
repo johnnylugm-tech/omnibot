@@ -226,3 +226,14 @@ Each NFR from `02-architecture/SAD.md` §NFR Traceability is mapped to a quality
 - [x] Pipeline invariant tests (H-04, H-08)
 - [x] NFR-01..NFR-38 mapped to quality-gate dimensions and test artefacts (§7)
 
+## 9. Representative Test Cases
+
+| TC-ID | Description | Module | Test File | Status |
+|-------|------------|--------|-----------|--------|
+| TC-01 | JWT login returns access + refresh tokens on valid credentials | `app.api.auth` | `tests/unit/test_auth_jwt_and_routes.py` | ✅ PASS |
+| TC-02 | PALADIN injection classifier blocks SQL injection payloads | `app.core.paladin` | `tests/test_fr10.py` | ✅ PASS |
+| TC-03 | PII masking redacts credit card numbers (with dash separators) | `app.core.pii` | `tests/test_batch_2_bugs.py` | ✅ PASS |
+| TC-04 | A2A adapter DNS pinning lock prevents concurrent monkey-patch pollution | `app.services.aee.a2a_adapter` | `tests/test_a2a_adapter_bugs.py` | ✅ PASS |
+| TC-05 | Rate limiter fails open when Redis is unavailable (NFR-33) | `app.infra.rate_limit` | `tests/integration/test_fr22.py` | ✅ PASS |
+| TC-06 | HPA scaling constants match NFR-30 spec (min=3, max=10, CPU=70%) | `app.infra.deployment` | `tests/unit/test_nfr30_hpa_scaling.py` | ✅ PASS |
+

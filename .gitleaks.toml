@@ -1,0 +1,8 @@
+title = "OmniBot Gitleaks Config"
+
+[allowlist]
+  description = "Test fixtures with fake tokens — not real secrets"
+  paths = [
+    "03-development/tests/test_fr58.py",
+    "03-development/tests/test_fr06.py",
+  ]

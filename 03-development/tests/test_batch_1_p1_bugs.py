@@ -1,10 +1,12 @@
 import asyncio
-import pytest
-import time
+import contextlib
 from collections import deque
 from unittest.mock import patch
-from app.infra.rate_limit import RateLimitResult, RateLimiter
+
+import pytest
+from app.infra.rate_limit import RateLimiter, RateLimitResult
 from app.infra.redis_streams import AsyncMessageProcessor, ParsedMessage
+
 
 def test_id_rate_limit_01_a2a_platform():
     assert "a2a" in RateLimiter.LIMITS
@@ -30,9 +32,9 @@ async def test_id_redis_streams_01_in_flight_dedup():
         def __init__(self, message_id):
             self.message_id = message_id
             self.fields = {"event_type": "test"}
-            
+
     processor = AsyncMessageProcessor(None)
-    
+
     async def mock_claim(c):
         return [DummyMsg("1-0")]
     async def mock_read(c):
@@ -51,17 +53,15 @@ async def test_id_redis_streams_01_in_flight_dedup():
         await asyncio.sleep(0.1)
 
     async def run_loop():
-        try:
+        with contextlib.suppress(ZeroDivisionError):
             await processor.consume_loop("cons", handler)
-        except ZeroDivisionError:
-            pass
 
     processor.read = mock_read # override temporarily
-    
+
     # We will simulate the second task picking it up
     t1 = asyncio.create_task(handler(ParsedMessage("1-0", {})))
     processor._in_flight.add("1-0")
-    
+
     # Run a consume loop that should ignore it
     processor.read = mock_read
     async def mock_claim_with_error(c):
@@ -69,11 +69,9 @@ async def test_id_redis_streams_01_in_flight_dedup():
         processor.read = lambda c: 1/0
         return [DummyMsg("1-0")]
     processor.claim_pending = mock_claim_with_error
-    
-    try:
+
+    with contextlib.suppress(Exception):
         await processor.consume_loop("cons", handler)
-    except Exception:
-        pass
-        
+
     await t1
     assert handled_count == 1

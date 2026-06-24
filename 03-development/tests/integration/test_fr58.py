@@ -197,7 +197,8 @@ def test_fr58_user_ws_message_reply_pushed():
 # SRS FR-58 acceptance: "JWT 驗證".
 # Test type: validation (Q2 derivation).
 # ---------------------------------------------------------------------------
-def test_fr58_user_ws_jwt_verified():
+def test_fr58_user_ws_jwt_verified(monkeypatch):
+    monkeypatch.setenv("OMNIBOT_JWT_SECRET", "test-only-jwt-secret-do-not-use-in-prod-32chars")
     jwt = "eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.eyJzdWIiOiAidXNlciJ9.Ouoakdxhxk71iCONJMXw2h1NIb5xGhAfejXyrkQ4SYg"
     expected_connected = "true"
 

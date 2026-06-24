@@ -481,7 +481,6 @@ def test_fr69_calibration_llm_down_uses_cached_kappa():
 #      even on timeout — "skip_cycle" is the canonical safe exit.
 #    Test type: fault_injection (Q6/1b/NP-15 derivation).
 # ---------------------------------------------------------------------------
-@pytest.mark.xfail(reason="Timing-sensitive calibration timeout test — requires real async timeout enforcement")
 def test_fr69_calibration_timeout_skips_cycle():
     calibration_timeout_ms = "30000"
     expected_action = "skip_cycle"

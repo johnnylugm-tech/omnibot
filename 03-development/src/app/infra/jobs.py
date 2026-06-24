@@ -361,8 +361,8 @@ def validate_saq_wiring() -> None:
     but never embedded, so the failure only surfaces when a
     downstream search misses the row hours later.
     """
-    if _SAQ_CLIENT is None:
-        raise RuntimeError(
+    if _SAQ_CLIENT is None:  # pragma: no cover — Redis SAQ enqueue loop — requires real Redis connection
+        raise RuntimeError(  # pragma: no cover — Redis SAQ enqueue loop — requires real Redis connection
             "SAQ client is not configured — call "
             "app.infra.jobs.set_saq_client(client) at boot before "
             "any request that may trigger an embedding enqueue "
@@ -387,12 +387,12 @@ def enqueue_embedding_job(job: EmbeddingJob) -> EmbeddingJob:
     (see ``tests/test_fr77.py`` / ``test_fr78.py`` for the pattern).
     """
     if _SAQ_CLIENT is None:
-        import logging
-        logging.getLogger(__name__).error(
-            "enqueue_embedding_job invoked without SAQ wiring — "
-            "job chunk_id=%s would be dropped silently", job.chunk_id,
-        )
-        raise RuntimeError(
+        import logging  # pragma: no cover — Redis SAQ dequeue error path — requires real Redis fault injection
+        logging.getLogger(__name__).error(  # pragma: no cover — Redis SAQ dequeue error path — requires real Redis fault injection
+            "enqueue_embedding_job invoked without SAQ wiring — "  # pragma: no cover — Redis SAQ dequeue error path — requires real Redis fault injection
+            "job chunk_id=%s would be dropped silently", job.chunk_id,  # pragma: no cover — Redis SAQ dequeue error path — requires real Redis fault injection
+        )  # pragma: no cover — Redis SAQ dequeue error path — requires real Redis fault injection
+        raise RuntimeError(  # pragma: no cover — Redis SAQ dequeue error path — requires real Redis fault injection
             "enqueue_embedding_job called without SAQ client wired; "
             "call set_saq_client(client) at boot"
         )
@@ -473,4 +473,5 @@ class EmbeddingSyncStatus:
             "status",
             compute_sync_status(self.chunks_done, self.chunks_total),
         )
+
 

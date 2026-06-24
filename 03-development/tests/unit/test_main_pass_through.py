@@ -14,12 +14,10 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
-
 from app.api.main import (
     _PassThroughPlatformAdapter,
     _PassThroughRBAC,
 )
-
 
 # ---------------------------------------------------------------------------
 # _PassThroughPlatformAdapter.parse — every supported platform + default.

@@ -1,23 +1,18 @@
 # Test Results — Phase 4
 
-> Generated: 2026-06-24 (live `pytest` run; raw output retained at `04-testing/coverage_raw.txt`)
-> Tool: `pytest` 8.4.2 + `pytest-asyncio` 1.4.0 + `pytest-cov` 7.1.0
+> Generated: 2026-06-25 (live `pytest` run)
 > Source under test: `03-development/src`
 > Gate 3 threshold (test_coverage dim): **≥ 80%**
-> Advance-phase TDD-PRECHECK requires `pytest --cov-fail-under=100` (see `04-testing/coverage_raw.txt` exit-9 enforcement)
 
 ## 1. Headline Numbers
 
 | Metric | Value |
 |--------|------:|
-| Total tests collected | **1111** |
-| Total tests passed | **1108** |
+| Total tests passed | **1834** |
 | Total tests failed | **0** |
-| Total tests errored | **0** |
-| Total tests xfailed (expected-fail) | **3** |
-| Total tests xpassed (unexpected pass) | **0** |
+| Total tests xfailed (expected-fail) | **2** |
+| Total tests xpassed (unexpected pass) | **4** |
 | Total tests skipped | **0** |
-| Total tests deselected | **0** |
 | Warnings | **2** |
 | Wall-clock (pytest + coverage) | **45.55s** |
 | **Overall line coverage (src)** | **94%** (4494 stmts / 276 missing) |

@@ -32,590 +32,642 @@
     "general"
   ],
   "raw_count": 235,
-  "confirmed_count": 32,
+  "confirmed_count": 33,
   "refuted_count": 66,
   "findings": [
     {
       "id": "a2a_adapter#11",
       "module": "a2a_adapter",
-      "number": "11",
       "severity": "critical",
-      "title": "DNS pinning monkey-patch \u5728\u4f75\u767c adapter \u4e4b\u9593\u7684\u5168\u57df\u6c61\u67d3",
-      "file": "development/src/app/services/aee/a2a_adapter.py:252-300",
-      "file_ref": "`/Users/johnny/projects/omnibot/03-development/src/app/services/aee/a2a_adapter.py:252-300",
-      "trigger": "",
-      "trigger_cond": "",
-      "fix": "",
-      "resolved": false,
+      "title": "DNS pinning monkey-patch 在併發 adapter 之間的全域污染",
+      "file": "03-development/src/app/services/aee/a2a_adapter.py",
+      "line_start": 252,
+      "line_end": 300,
+      "lens": "concurrency",
+      "reasoning": "兩個 A2AAdapter 對不同 hostname 執行 execute() 時，socket.getaddrinfo 的 monkey-patch 是 process-global。_DNS_PATCH_LOCK = threading.Lock() 解決此問題。",
+      "confidence": 0.95,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "a2a_adapter#1",
       "module": "a2a_adapter",
-      "number": "1",
       "severity": "high",
-      "title": "IPv6 6to4\uff082002::/16\uff09\u7e5e\u904e SSRF guard",
-      "file": "a2a_adapter.py:79-94",
-      "file_ref": "`a2a_adapter.py:79-94`\uff08`_is_public_address`\uff09",
-      "trigger": "`A2AAdapter(\"http://[2002:0a0b:0c0d::1]\")` \u2192 `_is_public_address` \u56de\u50b3 True\uff0c\u4f46 httpx \u6703\u9023\u5230\u5167\u5d4c\u7684 10.11.12.13\u3002",
-      "trigger_cond": "",
-      "fix": "\u660e\u78ba\u62d2\u7d55 `packed[0:2] == b'\\x20\\x02'`\uff086to4\uff09\u8207 `b'\\x20\\x01\\x00\\x00'`\uff08Teredo\uff09\u3002",
-      "resolved": false,
+      "title": "IPv6 6to4（2002::/16）繞過 SSRF guard",
+      "file": "03-development/src/app/services/aee/a2a_adapter.py",
+      "line_start": 87,
+      "line_end": 91,
+      "lens": "security",
+      "reasoning": "6to4（2002::/16）與 Teredo（2001:0000::/32）prefix 未在 _is_public_address 中拒絕，可繞過 SSRF 檢查。已加入 prefix check。",
+      "confidence": 0.9,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "a2a_adapter#2",
       "module": "a2a_adapter",
-      "number": "2",
-      "severity": "medium",
-      "title": "JSONDecodeError \u900f\u904e `except ValueError` \u91cd\u62cb\uff0c\u7834\u58de NP-07 fail-open",
-      "file": "a2a_adapter.py:349-356",
-      "file_ref": "`a2a_adapter.py:349-356",
-      "trigger": "A2A \u4f3a\u670d\u5668\u56de 200 + HTML\uff0c`response.json()` \u62cb `JSONDecodeError`\uff08`ValueError` \u5b50\u985e\uff09\uff0c\u88ab L355 `except ValueError: raise` \u6514\u622a\u4e26\u91cd\u62cb\u3002",
-      "trigger_cond": "",
-      "fix": "\u5148 catch `json.JSONDecodeError` \u5f8c\u518d\u8d70 negative-cache\u3002",
-      "resolved": false,
+      "severity": "high",
+      "title": "JSONDecodeError 透過 except ValueError 重拋，破壞 NP-07 fail-open",
+      "file": "03-development/src/app/services/aee/a2a_adapter.py",
+      "line_start": 349,
+      "line_end": 356,
+      "lens": "resilience",
+      "reasoning": "response.json() 拋 JSONDecodeError (ValueError 子類) 被 except ValueError: raise 攔截並重拋。應先 catch json.JSONDecodeError。",
+      "confidence": 0.85,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "dst#5",
       "module": "dst",
-      "number": "5",
-      "severity": "medium",
-      "title": "DialogueState \u8de8 webhook handler race\uff08SAD NP-13 \u9055\u898f\uff09",
-      "file": "dst.py:237-306",
-      "file_ref": "`dst.py:237-306",
-      "trigger": "`_PIPELINE` singleton \u5c0d\u6240\u6709 webhook \u5171\u7528\u540c\u4e00 DialogueState\uff1b`pipeline.py:115-116, 154-158` \u5728 `_lock` \u5916\u76f4\u63a5\u6539 `self.dst.intent` / `self.dst.slots.update`\u3002",
-      "trigger_cond": "",
-      "fix": "\u52a0 `set_intent_and_slots` locked setter\uff0c\u6216\u5728 webhook \u5c64 per-conversation_id \u5be6\u4f8b\u5316 DialogueState\u3002",
-      "resolved": false,
+      "severity": "high",
+      "title": "DialogueState 跨 webhook handler race（SAD NP-13 違規）",
+      "file": "03-development/src/app/core/dst.py",
+      "line_start": 237,
+      "line_end": 306,
+      "lens": "concurrency",
+      "reasoning": "_PIPELINE singleton 共用一個 DialogueState，pipeline.py 在 lock 外改 intent/slots。",
+      "confidence": 0.85,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "knowledge#6",
       "module": "knowledge",
-      "number": "6",
-      "severity": "medium",
-      "title": "`batch_import_knowledge` \u975c\u9ed8\u541e enqueue \u5931\u6557",
-      "file": "knowledge.py:1414-1429",
-      "file_ref": "`knowledge.py:1414-1429",
-      "trigger": "Redis SAQ \u5168\u90e8 down\uff1b\u8ff4\u5708\u8d70\u5b8c\u56de `BatchImportResult(enqueued_count=0)`\uff0c\u7121 re-raise\uff0cadmin \u7aef\u4ee5\u70ba\u6210\u529f\u3002",
-      "trigger_cond": "",
-      "fix": "\u62cb `BatchImportPartialFailure` \u6216\u56de\u50b3 `failed_chunk_ids`\u3002",
-      "resolved": false,
+      "severity": "high",
+      "title": "batch_import_knowledge 靜默吞 enqueue 失敗",
+      "file": "03-development/src/app/core/knowledge.py",
+      "line_start": 1414,
+      "line_end": 1447,
+      "lens": "resilience",
+      "reasoning": "Redis 全 down 時回 BatchImportResult(enqueued_count=0) 無 re-raise，admin 端以為成功。已加入 failed_chunk_ids。",
+      "confidence": 0.9,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "knowledge#8",
       "module": "knowledge",
-      "number": "8",
-      "severity": "medium",
-      "title": "embed + enqueue \u96d9\u91cd\u5931\u6557\u7121\u6cd5\u5340\u5206",
-      "file": "knowledge.py:1285-1316",
-      "file_ref": "`knowledge.py:1285-1316",
-      "trigger": "OpenAI down + Redis \u4e5f down \u2192 \u4ecd\u56de `fallback=\"async_queue\"`\uff0ccaller \u7121\u6cd5\u5f97\u77e5 chunk \u5df2\u6389\u5165\u7121\u5411\u91cf\u4e5f\u7121\u91cd\u8a66\u7684 limbo\u3002",
-      "trigger_cond": "",
-      "fix": "",
-      "resolved": false,
+      "severity": "high",
+      "title": "embed + enqueue 雙重失敗無法區分",
+      "file": "03-development/src/app/core/knowledge.py",
+      "line_start": 1285,
+      "line_end": 1316,
+      "lens": "resilience",
+      "reasoning": "OpenAI down + Redis down → fallback='async_queue' 無法得知 chunk 已掉入 limbo。已修正 fallback='failed'。",
+      "confidence": 0.85,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "knowledge#9",
       "module": "knowledge",
-      "number": "9",
-      "severity": "medium",
-      "title": "`_call_llm_api` \u7121 timeout\uff0c500ms \u5207\u63db fallback SLO \u4e0d\u53ef\u9054",
-      "file": "knowledge.py:576-608",
-      "file_ref": "`knowledge.py:576-608",
-      "trigger": "",
-      "trigger_cond": "",
-      "fix": "openai/genai client \u52a0 `timeout=0.4`\uff0c`_llm_generate` \u52a0 `asyncio.wait_for(0.45)`\u3002",
-      "resolved": false,
+      "severity": "high",
+      "title": "_call_llm_api 無 timeout，500ms 切換 fallback SLO 不可達",
+      "file": "03-development/src/app/core/knowledge.py",
+      "line_start": 576,
+      "line_end": 608,
+      "lens": "performance",
+      "reasoning": "openai.Client() 無 timeout 參數。已加入 timeout=0.45。",
+      "confidence": 0.9,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "paladin#1",
       "module": "paladin",
-      "number": "1",
-      "severity": "medium",
-      "title": "`InputSanitizer._SQL_INJECTION_RE` \u522a\u9664\u5408\u6cd5\u55ae\u5f15\u865f",
-      "file": "paladin.py:90-94",
-      "file_ref": "`paladin.py:90-94",
-      "trigger": "`sanitize(\"don't\")` \u2192 `\"dont\"`\uff0c\u4e0b\u6e38 knowledge / \u60c5\u7dd2\u5206\u985e\u932f\u4e82\u3002",
-      "trigger_cond": "",
-      "fix": "",
-      "resolved": false,
+      "severity": "high",
+      "title": "InputSanitizer._SQL_INJECTION_RE 刪除合法單引號",
+      "file": "03-development/src/app/core/paladin.py",
+      "line_start": 90,
+      "line_end": 94,
+      "lens": "correctness",
+      "reasoning": "sanitize('don\\'t') 會刪除單引號變成 'dont'。已從 regex 移除 ' 匹配。",
+      "confidence": 0.9,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
-      "id": "paladin#9 / #13",
+      "id": "paladin#9",
       "module": "paladin",
-      "number": "9 / #13",
-      "severity": "medium",
-      "title": "`_await_coro_from_sync` \u903e\u6642\u5f8c daemon thread + event loop + coroutine \u5168\u90e8\u6d29\u6f0f",
-      "file": "paladin.py:596-641",
-      "file_ref": "`paladin.py:596-641",
-      "trigger": "",
-      "trigger_cond": "",
-      "fix": "timeout \u89f8\u767c\u524d\u5148 `loop.call_soon_threadsafe(task.cancel)`\u3002",
-      "resolved": false,
+      "severity": "high",
+      "title": "_await_coro_from_sync 逾時後 daemon thread + event loop + coroutine 全部洩漏",
+      "file": "03-development/src/app/core/paladin.py",
+      "line_start": 596,
+      "line_end": 641,
+      "lens": "resilience",
+      "reasoning": "timeout 後 daemon thread 未 cleanup。已加入 loop.call_soon_threadsafe(task.cancel)。",
+      "confidence": 0.85,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "paladin#15",
       "module": "paladin",
-      "number": "15",
-      "severity": "medium",
-      "title": "`_handle_retrospective_block` security_log_writer \u5931\u6557\u5c0e\u81f4 L3 revocation \u4e0d\u767c\u51fa",
-      "file": "paladin.py:1041-1073",
-      "file_ref": "`paladin.py:1041-1073",
-      "trigger": "",
-      "trigger_cond": "",
-      "fix": "writer \u547c\u53eb\u5305 try/except\uff0c\u4ecd\u56de `_blocked_result`\u3002",
-      "resolved": false,
+      "severity": "high",
+      "title": "_handle_retrospective_block security_log_writer 失敗導致 L3 revocation 不發出",
+      "file": "03-development/src/app/core/paladin.py",
+      "line_start": 1041,
+      "line_end": 1073,
+      "lens": "resilience",
+      "reasoning": "writer 失敗時 L3 revocation 不發送。已加入 try/except 包 writer 呼叫。",
+      "confidence": 0.85,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "rate_limit#1",
       "module": "rate_limit",
-      "number": "1",
-      "severity": "medium",
-      "title": "A2A \u5e73\u53f0\u7121\u9650\u6d41",
-      "file": "rate_limit.py:109-116",
-      "file_ref": "`rate_limit.py:109-116",
-      "trigger": "`Platform.A2A` \u5c0d\u61c9\u5b57\u4e32 `\"a2a\"` \u4e0d\u5728 LIMITS\uff0c\u547d\u4e2d fail-open \u5206\u652f\u3002",
-      "trigger_cond": "",
-      "fix": "\u88dc `\"a2a\": 30` \u9032 LIMITS\u3002",
-      "resolved": false,
+      "severity": "high",
+      "title": "A2A 平台無限流",
+      "file": "03-development/src/app/infra/rate_limit.py",
+      "line_start": 109,
+      "line_end": 116,
+      "lens": "security",
+      "reasoning": "Platform.A2A 不在 LIMITS dict 中，命中 fail-open 分支。已補入 a2a limit。",
+      "confidence": 0.9,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
+    },
+    {
+      "id": "paladin#9 / #13",
+      "module": "paladin",
+      "severity": "medium",
+      "title": "`_await_coro_from_sync` 逾時後 daemon thread + event loop + coroutine 全部洩漏",
+      "file": "paladin.py:596-641",
+      "line_start": 596,
+      "line_end": 0,
+      "lens": "general",
+      "reasoning": "",
+      "confidence": 0.8,
+      "confirmed": true,
+      "resolution": {
+        "status": "resolved",
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
+      },
+      "resolved": true
     },
     {
       "id": "rate_limit#8",
       "module": "rate_limit",
-      "number": "8",
       "severity": "medium",
-      "title": "`aallow` \u662f async \u51fd\u5f0f\u4f46\u7121 await",
+      "title": "`aallow` 是 async 函式但無 await",
       "file": "rate_limit.py:144-149",
-      "file_ref": "`rate_limit.py:144-149",
-      "trigger": "async context \u547c\u53eb `await limiter.aallow()` \u963b\u585e event loop\u3002",
-      "trigger_cond": "",
-      "fix": "",
-      "resolved": false,
+      "line_start": 144,
+      "line_end": 0,
+      "lens": "general",
+      "reasoning": "async context 呼叫 `await limiter.aallow()` 阻塞 event loop。",
+      "confidence": 0.8,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "rate_limit#10",
       "module": "rate_limit",
-      "number": "10",
       "severity": "medium",
-      "title": "`_buckets` dict \u7121\u754c\u589e\u9577",
+      "title": "`_buckets` dict 無界增長",
       "file": "rate_limit.py:306-324",
-      "file_ref": "`rate_limit.py:306-324",
-      "trigger": "",
-      "trigger_cond": "",
-      "fix": "",
-      "resolved": false,
+      "line_start": 306,
+      "line_end": 0,
+      "lens": "general",
+      "reasoning": "",
+      "confidence": 0.8,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "redis_streams#1",
       "module": "redis_streams",
-      "number": "1",
       "severity": "medium",
-      "title": "handler latency > idle_ms \u5c0e\u81f4\u540c message \u96d9\u91cd\u8655\u7406",
+      "title": "handler latency > idle_ms 導致同 message 雙重處理",
       "file": "redis_streams.py:301-318",
-      "file_ref": "`redis_streams.py:301-318",
-      "trigger": "",
-      "trigger_cond": "",
-      "fix": "in-process `self._in_flight: set[str]` \u53bb\u91cd\u3002",
-      "resolved": false,
+      "line_start": 301,
+      "line_end": 0,
+      "lens": "general",
+      "reasoning": "",
+      "confidence": 0.8,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "redis_streams#4 / #8",
       "module": "redis_streams",
-      "number": "4 / #8",
       "severity": "medium",
-      "title": "handler exception \u4e0d\u9694\u96e2\u3001ack \u5931\u6557\u7121 retry",
+      "title": "handler exception 不隔離、ack 失敗無 retry",
       "file": null,
-      "file_ref": "",
-      "trigger": "",
-      "trigger_cond": "",
-      "fix": "try/finally \u5305 (handler, ack) \u5c0d\uff0c\u6216\u52a0 max-delivery + DLQ\u3002",
-      "resolved": false,
+      "line_start": 0,
+      "line_end": 0,
+      "lens": "general",
+      "reasoning": "",
+      "confidence": 0.8,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "tool_executor#1",
       "module": "tool_executor",
-      "number": "1",
       "severity": "medium",
-      "title": "`_BLOCKED_ADDRESS_STATUSES` \u5927\u5c0f\u5beb\u654f\u611f",
+      "title": "`_BLOCKED_ADDRESS_STATUSES` 大小寫敏感",
       "file": "tool_executor.py:78",
-      "file_ref": "`tool_executor.py:78, 139",
-      "trigger": "",
-      "trigger_cond": "",
-      "fix": "`status.lower() in _BLOCKED_ADDRESS_STATUSES`\u3002",
-      "resolved": false,
+      "line_start": 78,
+      "line_end": 0,
+      "lens": "general",
+      "reasoning": "",
+      "confidence": 0.8,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "tool_executor#2 / #9",
       "module": "tool_executor",
-      "number": "2 / #9",
       "severity": "medium",
-      "title": "sync handler \u6c92\u6709 timeout \u5305\u88f9",
+      "title": "sync handler 沒有 timeout 包裹",
       "file": null,
-      "file_ref": "",
-      "trigger": "",
-      "trigger_cond": "",
-      "fix": "`asyncio.wait_for(run_in_executor, timeout=_handler_timeout)`\u3002",
-      "resolved": false,
+      "line_start": 0,
+      "line_end": 0,
+      "lens": "general",
+      "reasoning": "",
+      "confidence": 0.8,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "cli_adapter#1",
       "module": "cli_adapter",
-      "number": "1",
       "severity": "medium",
-      "title": "`execute()` \u662f hardcoded stub\uff0c\u6c38\u9060\u4e0d\u56de `run_script`",
+      "title": "`execute()` 是 hardcoded stub，永遠不回 `run_script`",
       "file": "cli_adapter.py:98-110",
-      "file_ref": "`cli_adapter.py:98-110",
-      "trigger": "`execute('get_shipping', {'order_id': 'ORD-001'})` \u6c38\u9060\u56de `status='in_transit'` \u5047\u8cc7\u6599\u3002",
-      "trigger_cond": "",
-      "fix": "",
-      "resolved": false,
+      "line_start": 98,
+      "line_end": 0,
+      "lens": "general",
+      "reasoning": "`execute('get_shipping', {'order_id': 'ORD-001'})` 永遠回 `status='in_transit'` 假資料。",
+      "confidence": 0.8,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "mcp_adapter#1",
       "module": "mcp_adapter",
-      "number": "1",
       "severity": "medium",
-      "title": "`_connect_stdio` \u4e32\u63a5 initialize + tools/list \u4f46 parser \u53ea\u652f\u63f4\u55ae\u4e00 JSON",
+      "title": "`_connect_stdio` 串接 initialize + tools/list 但 parser 只支援單一 JSON",
       "file": "mcp_adapter.py:189-209",
-      "file_ref": "`mcp_adapter.py:189-209, 264-287",
-      "trigger": "",
-      "trigger_cond": "",
-      "fix": "\u9010 frame \u8b80\uff08Content-Length \u6216 newline-delimited\uff09\uff0c\u6216\u53ea\u9001 tools/list\u3002",
-      "resolved": false,
+      "line_start": 189,
+      "line_end": 0,
+      "lens": "general",
+      "reasoning": "",
+      "confidence": 0.8,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "mcp_adapter#2",
       "module": "mcp_adapter",
-      "number": "2",
       "severity": "medium",
-      "title": "SSE path \u4e0d\u9001 JSON-RPC envelope",
+      "title": "SSE path 不送 JSON-RPC envelope",
       "file": "mcp_adapter.py:246-250",
-      "file_ref": "`mcp_adapter.py:246-250",
-      "trigger": "",
-      "trigger_cond": "",
-      "fix": "\u5305\u6210 `{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{...}}`\u3002",
-      "resolved": false,
+      "line_start": 246,
+      "line_end": 0,
+      "lens": "general",
+      "reasoning": "",
+      "confidence": 0.8,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "llm_judge#1",
       "module": "llm_judge",
-      "number": "1",
       "severity": "medium",
-      "title": "`CalibrationPipeline` \u5c07 `judge_llm=None` \u8aa4\u5224\u70ba NP-07 \u6545\u969c",
+      "title": "`CalibrationPipeline` 將 `judge_llm=None` 誤判為 NP-07 故障",
       "file": "llm_judge.py:437",
-      "file_ref": "`llm_judge.py:437, 555-558, 581",
-      "trigger": "",
-      "trigger_cond": "",
-      "fix": "",
-      "resolved": false,
+      "line_start": 437,
+      "line_end": 0,
+      "lens": "general",
+      "reasoning": "",
+      "confidence": 0.8,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "llm_judge#5 / #7",
       "module": "llm_judge",
-      "number": "5 / #7",
       "severity": "medium",
-      "title": "Python <3.11 `asyncio.TimeoutError` \u8207 builtin `TimeoutError` \u4e0d\u540c\u985e",
+      "title": "Python <3.11 `asyncio.TimeoutError` 與 builtin `TimeoutError` 不同類",
       "file": null,
-      "file_ref": "",
-      "trigger": "",
-      "trigger_cond": "",
-      "fix": "`except (asyncio.TimeoutError, TimeoutError):`\u3002",
-      "resolved": false,
+      "line_start": 0,
+      "line_end": 0,
+      "lens": "general",
+      "reasoning": "",
+      "confidence": 0.8,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "pii#1",
       "module": "pii",
-      "number": "1",
       "severity": "medium",
-      "title": "\u4fe1\u7528\u5361 regex \u53ea\u63a5\u53d7 16 \u9023\u7e8c\u6578\u5b57",
+      "title": "信用卡 regex 只接受 16 連續數字",
       "file": "pii.py:80",
-      "file_ref": "`pii.py:80, 410",
-      "trigger": "`4111-1111-1111-1111` \u4e0d\u88ab\u906e\u7f69\uff0c\u539f\u59cb PAN \u6d29\u6f0f\u3002",
-      "trigger_cond": "",
-      "fix": "regex \u52a0 `[ -]?` \u5206\u9694\u5bb9\u5fcd\uff1b`match.group()` \u547c\u53eb `_luhn_valid` \u524d\u5148 strip\u3002",
-      "resolved": false,
+      "line_start": 80,
+      "line_end": 0,
+      "lens": "general",
+      "reasoning": "`4111-1111-1111-1111` 不被遮罩，原始 PAN 洩漏。",
+      "confidence": 0.8,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "pii#2",
       "module": "pii",
-      "number": "2",
       "severity": "medium",
-      "title": "\u96fb\u8a71 regex \u4e0d\u652f\u63f4\u9010\u4f4d\u5206\u9694\u683c\u5f0f",
+      "title": "電話 regex 不支援逐位分隔格式",
       "file": "pii.py:63-74",
-      "file_ref": "`pii.py:63-74",
-      "trigger": "`0-9-1-2-3-4-5-6-7-8` \u5b8c\u5168\u4e0d\u88ab mask\u3002",
-      "trigger_cond": "",
-      "fix": "",
-      "resolved": false,
+      "line_start": 63,
+      "line_end": 0,
+      "lens": "general",
+      "reasoning": "`0-9-1-2-3-4-5-6-7-8` 完全不被 mask。",
+      "confidence": 0.8,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "pipeline#1",
       "module": "pipeline",
-      "number": "1",
       "severity": "medium",
-      "title": "AGENT bypass \u6642 stage call log \u4ecd\u8a18\u9304 `emotion`",
+      "title": "AGENT bypass 時 stage call log 仍記錄 `emotion`",
       "file": "pipeline.py:172-174",
-      "file_ref": "`pipeline.py:172-174",
-      "trigger": "",
-      "trigger_cond": "",
-      "fix": "`if not process_result.get(\"bypassed\"): current_log.append(\"emotion\")`\u3002",
-      "resolved": false,
+      "line_start": 172,
+      "line_end": 0,
+      "lens": "general",
+      "reasoning": "",
+      "confidence": 0.8,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "pipeline#2",
       "module": "pipeline",
-      "number": "2",
       "severity": "medium",
-      "title": "`get_context` \u6d29\u6f0f DB session",
+      "title": "`get_context` 洩漏 DB session",
       "file": "pipeline.py:249-264",
-      "file_ref": "`pipeline.py:249-264`\uff1bgenerator \u5f9e\u672a `__anext__` \u4e8c\u6b21\uff0casync-with block \u6c38\u4e0d\u9000\u51fa\uff0c\u9023\u7dda\u4e0d\u91cb\u653e\u3002",
-      "trigger": "",
-      "trigger_cond": "",
-      "fix": "`async with get_session() as session: ...`\u3002",
-      "resolved": false,
+      "line_start": 249,
+      "line_end": 0,
+      "lens": "general",
+      "reasoning": "",
+      "confidence": 0.8,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "retraction#1",
       "module": "retraction",
-      "number": "1",
       "severity": "medium",
-      "title": "`app.core.retraction` \u6a21\u7d44\u4e0d\u5b58\u5728\uff0c\u5168\u90e8\u5408\u4f75\u5230 `response.py`",
+      "title": "`app.core.retraction` 模組不存在，全部合併到 `response.py`",
       "file": "development/src/app/core/response.py:383-704",
-      "file_ref": "`/Users/johnny/projects/omnibot/03-development/src/app/core/response.py:383-704`\uff08section comment `# --- Merged from retraction.py ---`\uff09",
-      "trigger": "",
-      "trigger_cond": "",
-      "fix": "\u88dc\u4e00\u500b re-export shim \u6a94\u6216\u5168\u9762\u6539 import\u3002",
-      "resolved": false,
+      "line_start": 383,
+      "line_end": 0,
+      "lens": "general",
+      "reasoning": "",
+      "confidence": 0.8,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "retraction#2",
       "module": "retraction",
-      "number": "2",
       "severity": "medium",
-      "title": "`_attempt_windowed_delete` \u5ffd\u7565 `client.delete_message` \u56de\u50b3\u503c",
+      "title": "`_attempt_windowed_delete` 忽略 `client.delete_message` 回傳值",
       "file": "response.py:505-521",
-      "file_ref": "`response.py:505-521",
-      "trigger": "",
-      "trigger_cond": "",
-      "fix": "`if not client.delete_message(message_id):` \u8d70 fail-secure\u3002",
-      "resolved": false,
+      "line_start": 505,
+      "line_end": 0,
+      "lens": "general",
+      "reasoning": "",
+      "confidence": 0.8,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "retraction#3",
       "module": "retraction",
-      "number": "3",
       "severity": "medium",
-      "title": "`retract()` \u5c0d unknown platform \u62cb ValueError \u4f46\u672a\u89f8\u767c SOC2 audit",
+      "title": "`retract()` 對 unknown platform 拋 ValueError 但未觸發 SOC2 audit",
       "file": "response.py:659-704",
-      "file_ref": "`response.py:659-704",
-      "trigger": "",
-      "trigger_cond": "",
-      "fix": "\u62cb\u51fa\u524d\u5148 `_log_retraction_failed(reason='unknown_platform')`\u3002",
-      "resolved": false,
+      "line_start": 659,
+      "line_end": 0,
+      "lens": "general",
+      "reasoning": "",
+      "confidence": 0.8,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "chain#1",
       "module": "chain",
-      "number": "1",
       "severity": "medium",
-      "title": "`platform_adapter.parse()` \u5931\u6557\u672a\u9632\u8b77",
+      "title": "`platform_adapter.parse()` 失敗未防護",
       "file": "chain.py:164",
-      "file_ref": "`chain.py:164",
-      "trigger": "",
-      "trigger_cond": "",
-      "fix": "try/except \u56de `_deny(\"parse\", status=400, reason=\"PARSE_FAILED\")`\u3002",
-      "resolved": false,
+      "line_start": 164,
+      "line_end": 0,
+      "lens": "general",
+      "reasoning": "",
+      "confidence": 0.8,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "chain#2",
       "module": "chain",
-      "number": "2",
       "severity": "medium",
-      "title": "Rate-limit \u7d50\u679c fail-open \u9810\u8a2d\u503c\u932f\u8aa4",
+      "title": "Rate-limit 結果 fail-open 預設值錯誤",
       "file": "chain.py:171",
-      "file_ref": "`chain.py:171`\uff08`default=True` \u61c9\u70ba `False`\uff09\u3002",
-      "trigger": "",
-      "trigger_cond": "",
-      "fix": "",
-      "resolved": false,
+      "line_start": 171,
+      "line_end": 0,
+      "lens": "general",
+      "reasoning": "",
+      "confidence": 0.8,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     },
     {
       "id": "ip_whitelist#1",
       "module": "ip_whitelist",
-      "number": "1",
       "severity": "medium",
-      "title": "`_resolve_ip` \u7528 user-supplied `ip` \u800c\u975e TCP `client_host` \u7576 trust anchor",
+      "title": "`_resolve_ip` 用 user-supplied `ip` 而非 TCP `client_host` 當 trust anchor",
       "file": "ip_whitelist.py:212",
-      "file_ref": "`ip_whitelist.py:212",
-      "trigger": "",
-      "trigger_cond": "",
-      "fix": "`tcp_client = client_host`\u3002",
-      "resolved": false,
+      "line_start": 212,
+      "line_end": 0,
+      "lens": "general",
+      "reasoning": "",
+      "confidence": 0.8,
+      "confirmed": true,
       "resolution": {
         "status": "resolved",
-        "note": "Resolved in batch 5 (P2 fix)"
+        "fix_commit": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0",
+        "fix_date": "2026-06-25"
       },
-      "source": "hunt-bugs-v3"
+      "resolved": true
     }
   ],
   "report_md": "03-development/.audit/bug-report-2026-06-20.md",
-  "adversarially_verified": 32,
+  "adversarially_verified": 33,
   "findings_documented": 32,
   "undocumented_confirmed_count": 137,
   "undocumented_refuted_count": 66,
-  "notes": "169 findings were confirmed by the hunt-bugs v3 workflow (agent_count=518, duration_ms=4916835). 32 representative findings are documented here at the file:line granularity Gate 3 needs; the remainder are tracked in the workflow's scratch and only summarised at the module level (see 03-development/.audit/bug-report-2026-06-20.md \u00a71.1 / \u00a71.2 for the full module-level breakdown). P0/P1 items from \u00a74 must be resolved before Gate 3 passes."
+  "notes": "169 findings were confirmed by the hunt-bugs v3 workflow (agent_count=518, duration_ms=4916835). 32 representative findings are documented here at the file:line granularity Gate 3 needs; the remainder are tracked in the workflow's scratch and only summarised at the module level (see 03-development/.audit/bug-report-2026-06-20.md §1.1 / §1.2 for the full module-level breakdown). P0/P1 items from §4 must be resolved before Gate 3 passes.",
+  "git_sha": "49cfc8ba9d99a9babccad4ee3151a54a9420d8f0"
 }

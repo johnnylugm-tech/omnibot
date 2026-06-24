@@ -24,18 +24,18 @@ import json
 import time
 
 import pytest
-from fastapi import FastAPI
-from fastapi.security import HTTPAuthorizationCredentials
-from fastapi.testclient import TestClient
-
 from app.api import auth as auth_module
 from app.api.auth import (
     _login_route,
     _make_jwt,
     get_current_user_role,
+)
+from app.api.auth import (
     router as auth_router,
 )
-
+from fastapi import FastAPI
+from fastapi.security import HTTPAuthorizationCredentials
+from fastapi.testclient import TestClient
 
 # ---------------------------------------------------------------------------
 # Helpers

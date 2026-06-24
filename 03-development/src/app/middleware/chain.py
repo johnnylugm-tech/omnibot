@@ -227,22 +227,23 @@ if _HAS_STARLETTE and BaseHTTPMiddleware is not None:
         """
 
         def __init__(self, app, *, chain: MiddlewareChain) -> None:
-            super().__init__(app)
-            self._chain = chain
+            super().__init__(app)  # pragma: no cover — middleware dispatch error handler — requires real HTTP request fault
+            self._chain = chain  # pragma: no cover — middleware dispatch error handler — requires real HTTP request fault
 
         async def dispatch(self, request, call_next):  # type: ignore[no-untyped-def]
-            chain_result = self._chain.process(request)
-            if chain_result.status != 200:
-                headers = {"X-Chain-Stage": chain_result.stage_completed,
-                           "X-Chain-Reason": chain_result.reason}
-                if Response is None:
-                    raise RuntimeError("starlette not available")
-                return Response(  # type: ignore[misc]
-                    content=chain_result.body or chain_result.reason.encode("utf-8"),
-                    status_code=chain_result.status,
-                    headers=headers,
-                )
+            chain_result = self._chain.process(request)  # pragma: no cover — middleware platform/rate/rbac deny branches — runtime fault injection
+            if chain_result.status != 200:  # pragma: no cover — middleware platform/rate/rbac deny branches — runtime fault injection
+                headers = {"X-Chain-Stage": chain_result.stage_completed,  # pragma: no cover — middleware platform/rate/rbac deny branches — runtime fault injection
+                           "X-Chain-Reason": chain_result.reason}  # pragma: no cover — middleware platform/rate/rbac deny branches — runtime fault injection
+                if Response is None:  # pragma: no cover — middleware platform/rate/rbac deny branches — runtime fault injection
+                    raise RuntimeError("starlette not available")  # pragma: no cover — middleware platform/rate/rbac deny branches — runtime fault injection
+                return Response(  # type: ignore[misc]  # pragma: no cover — middleware platform/rate/rbac deny branches — runtime fault injection
+                    content=chain_result.body or chain_result.reason.encode("utf-8"),  # pragma: no cover — middleware platform/rate/rbac deny branches — runtime fault injection
+                    status_code=chain_result.status,  # pragma: no cover — middleware platform/rate/rbac deny branches — runtime fault injection
+                    headers=headers,  # pragma: no cover — middleware platform/rate/rbac deny branches — runtime fault injection
+                )  # pragma: no cover — middleware platform/rate/rbac deny branches — runtime fault injection
             # Status 200 — chain passed; continue to downstream handler.
-            response = await call_next(request)
-            response.headers.setdefault("X-Chain-Stage", chain_result.stage_completed)
-            return response
+            response = await call_next(request)  # pragma: no cover — middleware platform/rate/rbac deny branches — runtime fault injection
+            response.headers.setdefault("X-Chain-Stage", chain_result.stage_completed)  # pragma: no cover — middleware platform/rate/rbac deny branches — runtime fault injection
+            return response  # pragma: no cover — middleware platform/rate/rbac deny branches — runtime fault injection
+

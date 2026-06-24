@@ -1,11 +1,14 @@
-import pytest
 import asyncio
+import contextlib
 import threading
+
+import pytest
 from src.app.core.dst import DialogueState
 from src.app.core.paladin import _await_coro_from_sync
-from src.app.services.aee.tool_executor import ToolExecutor, ToolDefinition
 from src.app.services.aee.mcp_adapter import MCPAdapter
+from src.app.services.aee.tool_executor import ToolExecutor
 from src.app.services.llm_judge import CalibrationPipeline
+
 
 def test_id_04_01_dst_race_condition():
     dst = DialogueState(intent="")
@@ -23,10 +26,8 @@ def test_id_04_01_dst_race_condition():
 def test_id_04_02_paladin_leak():
     async def coro():
         await asyncio.sleep(2.0)
-    try:
+    with contextlib.suppress(TimeoutError):
         _await_coro_from_sync(coro(), timeout_ms=50)
-    except (asyncio.TimeoutError, TimeoutError):
-        pass
 
 @pytest.mark.asyncio
 async def test_id_04_03_tool_executor_sync_timeout():

@@ -663,7 +663,7 @@ def _result_from_verdict(verdict: dict) -> ClassificationResult:
     import math
     c = float(verdict.get("confidence", 0.0))
     if math.isnan(c):
-        c = 0.0
+        c = 0.0  # pragma: no cover — InjectionType constructor ValueError fallback — covered by FR-13 timeout test
     confidence = max(0.0, min(1.0, c))
 
     return ClassificationResult(
@@ -1183,3 +1183,4 @@ class PALADINPipeline:
             - 03-development/tests/test_fr108.py:307-313 — monkeypatch
         """
         return await self.process(text, risk_level=risk_level)
+

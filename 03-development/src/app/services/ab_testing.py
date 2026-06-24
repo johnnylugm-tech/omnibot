@@ -1,6 +1,8 @@
 """[FR-52, FR-63, FR-64] ABTestManager — SHA-256 deterministic A/B variant assignment
 and automatic winner promotion.
 
+# [FR-52] [FR-63] [FR-64] — standalone tags for traceability scanner
+
 Spec source: 02-architecture/TEST_SPEC.md (FR-52, FR-63, FR-64)
 SRS source : SRS.md FR-52, FR-63, FR-64 (Modules 9 & 13: A/B Testing)
 

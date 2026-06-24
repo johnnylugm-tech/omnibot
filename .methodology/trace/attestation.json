@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "890cd195dc7d9a3a2c94fdd20ee5c63359c10198",
-  "content_sha256": "2b8e0751c7216aa2ae19289ae336231102661e0deb068723948ad176eff24fe3",
+  "git_sha": "32fa4fe7c23046c6acb8ac0630563f7e7d9228cc",
+  "content_sha256": "39adccce16d5579e40664770e6ba287bb48cd720305c14739eaa87c2fea47526",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -11,27 +11,19 @@
     "completeness": {
       "total_requirements": 108,
       "srs_coverage": "100.0%",
-      "code_coverage": "97.2%",
+      "code_coverage": "100.0%",
       "test_coverage": "100.0%",
-      "verification_rate": "97.2%",
-      "total_links": 497,
+      "verification_rate": "100.0%",
+      "total_links": 501,
       "missing_mappings": {
         "fr_without_srs": [],
-        "fr_without_code": [
-          "FR-54",
-          "FR-63",
-          "FR-93"
-        ],
+        "fr_without_code": [],
         "fr_without_test": []
       }
     },
     "missing": {
       "fr_without_srs": [],
-      "fr_without_code": [
-        "FR-54",
-        "FR-63",
-        "FR-93"
-      ],
+      "fr_without_code": [],
       "fr_without_test": []
     },
     "requirements": {
@@ -939,7 +931,8 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/core/response.py"
+          "03-development/src/app/core/response.py",
+          "03-development/src/app/services/ab_testing.py"
         ],
         "test_files": [
           "tests/test_fr52.py",
@@ -964,9 +957,11 @@
       },
       "FR-54": {
         "fr_id": "FR-54",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
+        "code_files": [
+          "03-development/src/app/services/escalation.py"
+        ],
         "test_files": [
           "tests/integration/test_fr54.py",
           "tests/test_fr54.py"
@@ -1090,9 +1085,11 @@
       },
       "FR-63": {
         "fr_id": "FR-63",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
+        "code_files": [
+          "03-development/src/app/services/ab_testing.py"
+        ],
         "test_files": [
           "tests/test_fr63.py",
           "tests/unit/test_fr63.py"
@@ -1515,9 +1512,11 @@
       },
       "FR-93": {
         "fr_id": "FR-93",
-        "status": "pending",
+        "status": "verified",
         "srs_section": "SAD.md",
-        "code_files": [],
+        "code_files": [
+          "03-development/src/app/admin/gdpr.py"
+        ],
         "test_files": [
           "tests/e2e/test_fr93.py",
           "tests/test_fr93.py"

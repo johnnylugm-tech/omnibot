@@ -317,77 +317,77 @@ Phase 3 補充：實際測試通過狀態。
 
 ## Phase 3 Source Implementation Index
 
-Phase 3 補充：實際程式碼路徑（含 src/ 全路徑）。
+Phase 3 補充：實際程式碼路徑（含 src/ 全路徑）。 ✅
 
 | Layer | Source File | FRs Covered |
 |-------|-------------|-------------|
-| api | 03-development/src/app/api/webhooks.py | FR-01, FR-02, FR-03, FR-04, FR-05, FR-06 |
-| api | 03-development/src/app/api/m2m.py | FR-07, FR-08, FR-09 |
-| api | 03-development/src/app/api/auth.py | FR-06, FR-07 |
-| api | 03-development/src/app/api/webhook_routes.py | FR-01–FR-06 |
-| api | 03-development/src/app/api/websocket.py | FR-05 |
-| api | 03-development/src/app/api/management.py | FR-107, FR-108 |
-| api | 03-development/src/app/api/agent_card.py | FR-108 |
-| api | 03-development/src/app/api/gdpr.py | FR-93, FR-94 |
-| core | 03-development/src/app/core/paladin.py | FR-10, FR-11, FR-12, FR-13, FR-14, FR-15, FR-16, FR-17 |
-| core | 03-development/src/app/core/pii.py | FR-18, FR-19, FR-20 |
-| core | 03-development/src/app/core/knowledge.py | FR-26, FR-27, FR-28, FR-29, FR-30, FR-31, FR-32 |
-| core | 03-development/src/app/core/chunking.py | FR-33, FR-34, FR-35, FR-36 |
-| core | 03-development/src/app/core/dst.py | FR-37, FR-38, FR-39, FR-40, FR-41, FR-42, FR-43, FR-44, FR-45, FR-46 |
-| core | 03-development/src/app/core/emotion.py | FR-47, FR-48, FR-49 |
-| core | 03-development/src/app/core/response_generator.py | FR-50, FR-51, FR-52 |
-| core | 03-development/src/app/core/retraction.py | FR-53, FR-97 |
-| core | 03-development/src/app/core/unified_message.py | FR-07, FR-08 |
-| core | 03-development/src/app/core/unified_response.py | FR-09 |
-| core | 03-development/src/app/core/pipeline.py | FR-37, FR-53 |
-| core | 03-development/src/app/core/api_response.py | FR-09 |
-| core | 03-development/src/app/core/golden_dataset.py | FR-98 |
-| services | 03-development/src/app/services/telegram_verifier.py | FR-01 |
-| services | 03-development/src/app/services/telegram_adapter.py | FR-01 |
-| services | 03-development/src/app/services/line_verifier.py | FR-02 |
-| services | 03-development/src/app/services/line_adapter.py | FR-02 |
-| services | 03-development/src/app/services/messenger_verifier.py | FR-03 |
-| services | 03-development/src/app/services/messenger_adapter.py | FR-03 |
-| services | 03-development/src/app/services/whatsapp_verifier.py | FR-04 |
-| services | 03-development/src/app/services/whatsapp_adapter.py | FR-04 |
-| services | 03-development/src/app/services/web_verifier.py | FR-05 |
-| services | 03-development/src/app/services/web_adapter.py | FR-05 |
-| services | 03-development/src/app/services/escalation.py | FR-54, FR-55, FR-56, FR-57 |
-| services | 03-development/src/app/services/media.py | FR-58 |
-| services | 03-development/src/app/services/llm_judge.py | FR-63, FR-64, FR-65, FR-66, FR-67, FR-68, FR-69 |
-| services | 03-development/src/app/services/ab_testing.py | FR-98 |
-| services | 03-development/src/app/services/aee/adapter.py | FR-59 |
-| services | 03-development/src/app/services/aee/a2a_adapter.py | FR-60 |
-| services | 03-development/src/app/services/aee/mcp_adapter.py | FR-61 |
-| services | 03-development/src/app/services/aee/cli_adapter.py | FR-62 |
-| services | 03-development/src/app/services/aee/tool_executor.py | FR-59–FR-62 |
-| infra | 03-development/src/app/infra/rate_limit.py | FR-21, FR-22, FR-23, FR-24 |
-| middleware | 03-development/src/app/middleware/ip_whitelist.py | FR-25 |
-| middleware | 03-development/src/app/middleware/chain.py | FR-21–FR-25 |
-| infra | 03-development/src/app/infra/redis_streams.py | FR-80, FR-81, FR-90 |
-| infra | 03-development/src/app/infra/redis_security.py | FR-83 |
-| infra | 03-development/src/app/infra/database.py | FR-82, FR-84, FR-85 |
-| infra | 03-development/src/app/infra/vector_index.py | FR-86, FR-87, FR-88 |
-| infra | 03-development/src/app/infra/tracing.py | FR-70, FR-72 |
-| infra | 03-development/src/app/infra/observability.py | FR-71, FR-73 |
-| infra | 03-development/src/app/infra/grafana_dashboard.py | FR-74 |
-| infra | 03-development/src/app/infra/prometheus_metrics.py | FR-71, FR-73, FR-74 |
-| infra | 03-development/src/app/infra/alert_rules.py | FR-73 |
-| infra | 03-development/src/app/infra/k8s_deployment.py | FR-89, FR-91 |
-| infra | 03-development/src/app/infra/compose.py | FR-89, FR-91 |
-| infra | 03-development/src/app/infra/jobs.py | FR-31 |
-| infra | 03-development/src/app/infra/config_store.py | FR-92 |
-| infra | 03-development/src/app/infra/schema.py | FR-82, FR-84 |
-| infra | 03-development/src/app/infra/migrations.py | FR-82 |
-| infra | 03-development/src/app/infra/tde.py | FR-83 |
-| infra | 03-development/src/app/infra/circuit_breaker.py | FR-95 |
-| infra | 03-development/src/app/infra/retry.py | FR-96 |
-| infra | 03-development/src/app/infra/rollback_strategy.py | FR-97 |
-| infra | 03-development/src/app/infra/backup_strategy.py | FR-97 |
-| infra | 03-development/src/app/infra/data_retention.py | FR-93, FR-94 |
-| infra | 03-development/src/app/infra/data_deletion.py | FR-93 |
-| admin | 03-development/src/app/admin/odd_sql.py | FR-100, FR-105 |
-| admin | 03-development/src/app/admin/rbac.py | FR-101, FR-102 |
-| admin | 03-development/src/app/admin/portal.py | FR-103, FR-104 |
-| admin | 03-development/src/app/admin/webui.py | FR-106 |
-| admin | 03-development/src/app/admin/gdpr.py | FR-93, FR-94, FR-107 |
+| api | 03-development/src/app/api/webhooks.py | FR-01, FR-02, FR-03, FR-04, FR-05, FR-06 ✅ |
+| api | 03-development/src/app/api/m2m.py | FR-07, FR-08, FR-09 ✅ |
+| api | 03-development/src/app/api/auth.py | FR-06, FR-07 ✅ |
+| api | 03-development/src/app/api/webhook_routes.py | FR-01–FR-06 ✅ |
+| api | 03-development/src/app/api/websocket.py | FR-05 ✅ |
+| api | 03-development/src/app/api/management.py | FR-107, FR-108 ✅ |
+| api | 03-development/src/app/api/agent_card.py | FR-108 ✅ |
+| api | 03-development/src/app/api/gdpr.py | FR-93, FR-94 ✅ |
+| core | 03-development/src/app/core/paladin.py | FR-10, FR-11, FR-12, FR-13, FR-14, FR-15, FR-16, FR-17 ✅ |
+| core | 03-development/src/app/core/pii.py | FR-18, FR-19, FR-20 ✅ |
+| core | 03-development/src/app/core/knowledge.py | FR-26, FR-27, FR-28, FR-29, FR-30, FR-31, FR-32 ✅ |
+| core | 03-development/src/app/core/chunking.py | FR-33, FR-34, FR-35, FR-36 ✅ |
+| core | 03-development/src/app/core/dst.py | FR-37, FR-38, FR-39, FR-40, FR-41, FR-42, FR-43, FR-44, FR-45, FR-46 ✅ |
+| core | 03-development/src/app/core/emotion.py | FR-47, FR-48, FR-49 ✅ |
+| core | 03-development/src/app/core/response_generator.py | FR-50, FR-51, FR-52 ✅ |
+| core | 03-development/src/app/core/retraction.py | FR-53, FR-97 ✅ |
+| core | 03-development/src/app/core/unified_message.py | FR-07, FR-08 ✅ |
+| core | 03-development/src/app/core/unified_response.py | FR-09 ✅ |
+| core | 03-development/src/app/core/pipeline.py | FR-37, FR-53 ✅ |
+| core | 03-development/src/app/core/api_response.py | FR-09 ✅ |
+| core | 03-development/src/app/core/golden_dataset.py | FR-98 ✅ |
+| services | 03-development/src/app/services/telegram_verifier.py | FR-01 ✅ |
+| services | 03-development/src/app/services/telegram_adapter.py | FR-01 ✅ |
+| services | 03-development/src/app/services/line_verifier.py | FR-02 ✅ |
+| services | 03-development/src/app/services/line_adapter.py | FR-02 ✅ |
+| services | 03-development/src/app/services/messenger_verifier.py | FR-03 ✅ |
+| services | 03-development/src/app/services/messenger_adapter.py | FR-03 ✅ |
+| services | 03-development/src/app/services/whatsapp_verifier.py | FR-04 ✅ |
+| services | 03-development/src/app/services/whatsapp_adapter.py | FR-04 ✅ |
+| services | 03-development/src/app/services/web_verifier.py | FR-05 ✅ |
+| services | 03-development/src/app/services/web_adapter.py | FR-05 ✅ |
+| services | 03-development/src/app/services/escalation.py | FR-54, FR-55, FR-56, FR-57 ✅ |
+| services | 03-development/src/app/services/media.py | FR-58 ✅ |
+| services | 03-development/src/app/services/llm_judge.py | FR-63, FR-64, FR-65, FR-66, FR-67, FR-68, FR-69 ✅ |
+| services | 03-development/src/app/services/ab_testing.py | FR-98 ✅ |
+| services | 03-development/src/app/services/aee/adapter.py | FR-59 ✅ |
+| services | 03-development/src/app/services/aee/a2a_adapter.py | FR-60 ✅ |
+| services | 03-development/src/app/services/aee/mcp_adapter.py | FR-61 ✅ |
+| services | 03-development/src/app/services/aee/cli_adapter.py | FR-62 ✅ |
+| services | 03-development/src/app/services/aee/tool_executor.py | FR-59–FR-62 ✅ |
+| infra | 03-development/src/app/infra/rate_limit.py | FR-21, FR-22, FR-23, FR-24 ✅ |
+| middleware | 03-development/src/app/middleware/ip_whitelist.py | FR-25 ✅ |
+| middleware | 03-development/src/app/middleware/chain.py | FR-21–FR-25 ✅ |
+| infra | 03-development/src/app/infra/redis_streams.py | FR-80, FR-81, FR-90 ✅ |
+| infra | 03-development/src/app/infra/redis_security.py | FR-83 ✅ |
+| infra | 03-development/src/app/infra/database.py | FR-82, FR-84, FR-85 ✅ |
+| infra | 03-development/src/app/infra/vector_index.py | FR-86, FR-87, FR-88 ✅ |
+| infra | 03-development/src/app/infra/tracing.py | FR-70, FR-72 ✅ |
+| infra | 03-development/src/app/infra/observability.py | FR-71, FR-73 ✅ |
+| infra | 03-development/src/app/infra/grafana_dashboard.py | FR-74 ✅ |
+| infra | 03-development/src/app/infra/prometheus_metrics.py | FR-71, FR-73, FR-74 ✅ |
+| infra | 03-development/src/app/infra/alert_rules.py | FR-73 ✅ |
+| infra | 03-development/src/app/infra/k8s_deployment.py | FR-89, FR-91 ✅ |
+| infra | 03-development/src/app/infra/compose.py | FR-89, FR-91 ✅ |
+| infra | 03-development/src/app/infra/jobs.py | FR-31 ✅ |
+| infra | 03-development/src/app/infra/config_store.py | FR-92 ✅ |
+| infra | 03-development/src/app/infra/schema.py | FR-82, FR-84 ✅ |
+| infra | 03-development/src/app/infra/migrations.py | FR-82 ✅ |
+| infra | 03-development/src/app/infra/tde.py | FR-83 ✅ |
+| infra | 03-development/src/app/infra/circuit_breaker.py | FR-95 ✅ |
+| infra | 03-development/src/app/infra/retry.py | FR-96 ✅ |
+| infra | 03-development/src/app/infra/rollback_strategy.py | FR-97 ✅ |
+| infra | 03-development/src/app/infra/backup_strategy.py | FR-97 ✅ |
+| infra | 03-development/src/app/infra/data_retention.py | FR-93, FR-94 ✅ |
+| infra | 03-development/src/app/infra/data_deletion.py | FR-93 ✅ |
+| admin | 03-development/src/app/admin/odd_sql.py | FR-100, FR-105 ✅ |
+| admin | 03-development/src/app/admin/rbac.py | FR-101, FR-102 ✅ |
+| admin | 03-development/src/app/admin/portal.py | FR-103, FR-104 ✅ |
+| admin | 03-development/src/app/admin/webui.py | FR-106 ✅ |
+| admin | 03-development/src/app/admin/gdpr.py | FR-93, FR-94, FR-107 ✅ |

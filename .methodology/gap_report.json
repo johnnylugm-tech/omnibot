@@ -1,12 +1,12 @@
 {
   "summary": {
-    "total": 502,
+    "total": 503,
     "missing": 0,
     "incomplete": 0,
-    "orphaned": 502,
+    "orphaned": 503,
     "critical": 0,
     "major": 0,
-    "minor": 502
+    "minor": 503
   },
   "gaps": [
     {
@@ -896,6 +896,12 @@
       "severity": "minor",
       "reason": "'DialogueState' has no corresponding specification in SPEC.md",
       "action": "Add spec for DialogueState or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'update_intent_and_slots' has no corresponding specification in SPEC.md",
+      "action": "Add spec for update_intent_and_slots or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
@@ -2040,8 +2046,8 @@
     {
       "type": "ORPHANED",
       "severity": "minor",
-      "reason": "'allowed' has no corresponding specification in SPEC.md",
-      "action": "Add spec for allowed or remove if unnecessary"
+      "reason": "'allowed_result' has no corresponding specification in SPEC.md",
+      "action": "Add spec for allowed_result or remove if unnecessary"
     },
     {
       "type": "ORPHANED",

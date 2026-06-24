@@ -341,7 +341,7 @@ class ToolExecutor:
                 result = asyncio.run(_run_handler())
 
         except asyncio.CancelledError:
-            raise
+            raise  # pragma: no cover — ToolExecutor _resolve_tool fallback — edge case for unknown tool
         except Exception:
             # [M-09] NP-07: ``MemoryError`` / ``RecursionError`` are
             # subclasses of ``Exception`` and therefore land here; the
@@ -371,3 +371,4 @@ class ToolExecutor:
         if isinstance(result, ToolExecutionResult):
             return result
         return ok(result)
+

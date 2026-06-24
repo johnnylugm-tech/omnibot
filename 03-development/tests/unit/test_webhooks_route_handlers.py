@@ -24,13 +24,11 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
 from app.api import webhooks as webhooks_module
 from app.api.webhooks import router as webhooks_router
 from app.core.unified_message import MessageType, Platform, UnifiedMessage
-
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 # ---------------------------------------------------------------------------
 # Helpers

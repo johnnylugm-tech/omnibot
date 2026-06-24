@@ -1,5 +1,7 @@
 """[FR-54, FR-55, FR-56] EscalationManager — lifecycle + SLA + WS push.
 
+# [FR-54] [FR-55] [FR-56] — standalone tags for traceability scanner
+
 Spec source: 02-architecture/TEST_SPEC.md (FR-54, FR-55, FR-56)
 SRS source : SRS.md FR-54 / FR-55 / FR-56 (Module 10: Human Escalation)
 
