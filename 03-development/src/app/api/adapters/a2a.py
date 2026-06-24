@@ -158,10 +158,10 @@ class A2AAdapter:
                 return False
 
             # Fetch JWKS and verify RS256 signature
-            import urllib.request
-            import urllib.error
             import logging
-            
+            import urllib.error
+            import urllib.request
+
             jwks = None
             if hasattr(self, "_jwks_cache") and self._jwks_cache and time.time() - getattr(self, "_jwks_cache_time", 0) < 300:
                 jwks = self._jwks_cache
@@ -218,9 +218,10 @@ class A2AAdapter:
             if self._expected_issuer and payload.get("iss") != self._expected_issuer:
                 return False
 
-            import httpx
             import logging
-            
+
+            import httpx
+
             jwks = None
             if hasattr(self, "_jwks_cache") and self._jwks_cache and time.time() - getattr(self, "_jwks_cache_time", 0) < 300:
                 jwks = self._jwks_cache

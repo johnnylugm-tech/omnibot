@@ -165,9 +165,9 @@ def export_user_data(user_id: str, format: str = "json") -> dict:
         "emotions": _EMOTIONS.get(user_id, []),
     }
     if format == "csv":
-        import json
         import csv
         import io
+        import json
         output = io.StringIO()
         writer = csv.writer(output)
         writer.writerow(["section", "key", "value"])

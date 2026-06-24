@@ -502,7 +502,7 @@ def test_fr102_dict_config_store_get_returns_seeded_default():
     explicitly set it. Kills mutants on the ``setdefault`` default value and
     on the dict-wrapping path.
     """
-    from app.infra.config import _DictConfigStore, DEFAULT_RAG_COSINE_THRESHOLD
+    from app.infra.config import DEFAULT_RAG_COSINE_THRESHOLD, _DictConfigStore
 
     store = _DictConfigStore()
     assert store.get("rag_cosine_threshold") == DEFAULT_RAG_COSINE_THRESHOLD, (

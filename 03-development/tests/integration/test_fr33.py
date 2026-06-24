@@ -382,6 +382,7 @@ def test_fr33_knowledge_rag_search_top_k_default_is_three():
     for FR-26 quality, and a top_k=4 default silently inflates it.
     """
     import inspect
+
     from app.core.knowledge import HybridKnowledge
     sig = inspect.signature(HybridKnowledge._rag_search_top_k)
     default = sig.parameters["top_k"].default

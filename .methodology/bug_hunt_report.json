@@ -1,8 +1,47 @@
 {
   "generated_at": "2026-06-22",
-  "targets_hr": ["dst", "knowledge", "paladin", "rate_limit", "redis_streams", "a2a_adapter", "adapter", "tool_executor", "cli_adapter", "mcp_adapter", "llm_judge", "emotion"],
-  "targets_std": ["pii", "pipeline", "response", "escalation", "ab_testing", "chain", "ip_whitelist", "circuit_breaker", "jobs", "auth", "security", "gdpr", "registry", "media", "webhooks", "rbac", "database", "observability", "api_adapters_base", "config"],
-  "lenses": ["correctness", "concurrency", "resilience", "general"],
+  "targets_hr": [
+    "dst",
+    "knowledge",
+    "paladin",
+    "rate_limit",
+    "redis_streams",
+    "a2a_adapter",
+    "adapter",
+    "tool_executor",
+    "cli_adapter",
+    "mcp_adapter",
+    "llm_judge",
+    "emotion"
+  ],
+  "targets_std": [
+    "pii",
+    "pipeline",
+    "response",
+    "escalation",
+    "ab_testing",
+    "chain",
+    "ip_whitelist",
+    "circuit_breaker",
+    "jobs",
+    "auth",
+    "security",
+    "gdpr",
+    "registry",
+    "media",
+    "webhooks",
+    "rbac",
+    "database",
+    "observability",
+    "api_adapters_base",
+    "config"
+  ],
+  "lenses": [
+    "correctness",
+    "concurrency",
+    "resilience",
+    "general"
+  ],
   "raw_count": 122,
   "adversarially_verified": 12,
   "confirmed_count": 10,
@@ -21,7 +60,15 @@
       "suggested_fix": "Wrap InjectionType() in _result_from_verdict() with try/except ValueError, fallback to InjectionType.NONE + is_unverified=True. Add ValueError to except tuple at L578.",
       "confidence": "high",
       "confirmed": true,
-      "verify_evidence": "L656: bare InjectionType() call. L578: except tuple excludes ValueError. L1110-1123 (high-risk process() branch): no surrounding try/except — ValueError propagates to caller."
+      "verify_evidence": "L656: bare InjectionType() call. L578: except tuple excludes ValueError. L1110-1123 (high-risk process() branch): no surrounding try/except — ValueError propagates to caller.",
+      "status": "resolved",
+      "resolution": {
+        "fix_commit": "bf16c04",
+        "repro_test": "tests/integration/test_fr13.py",
+        "resolved_at": "2026-06-24T11:40:03.407575+00:00",
+        "resolved_by": "claude-code phase 4 hunt-resolve",
+        "evidence_note": "Verified current source on disk matches post-bf16c04 state."
+      }
     },
     {
       "id": "BUG-02",
@@ -36,7 +83,15 @@
       "suggested_fix": "Add _CONVERSATIONS.pop(user_id, None), _EMOTIONS.pop(user_id, None); redact _MESSAGES entries to [REDACTED].",
       "confidence": "high",
       "confirmed": true,
-      "verify_evidence": "Lines 201-204 are the only mutations in delete_user_data(). export_user_data() L155-160 reads _CONVERSATIONS.get(user_id, []), _MESSAGES.get(user_id, []), _EMOTIONS.get(user_id, []) — all untouched by deletion."
+      "verify_evidence": "Lines 201-204 are the only mutations in delete_user_data(). export_user_data() L155-160 reads _CONVERSATIONS.get(user_id, []), _MESSAGES.get(user_id, []), _EMOTIONS.get(user_id, []) — all untouched by deletion.",
+      "status": "resolved",
+      "resolution": {
+        "fix_commit": "5d1bcf4",
+        "repro_test": "tests/integration/test_fr93.py",
+        "resolved_at": "2026-06-24T11:40:03.407575+00:00",
+        "resolved_by": "claude-code phase 4 hunt-resolve",
+        "evidence_note": "Verified current source on disk matches post-5d1bcf4 state."
+      }
     },
     {
       "id": "BUG-03",
@@ -51,7 +106,15 @@
       "suggested_fix": "Maintain _VAULT_BY_USER: dict[str, list[str]] secondary index. delete_user_data() iterates and removes all entries for user_id.",
       "confidence": "high",
       "confirmed": true,
-      "verify_evidence": "L27: _VAULT keys are UUID entry_id strings. L68-73: store_pii_entry() stores no user_id inside records. delete_user_data() makes no reference to _VAULT."
+      "verify_evidence": "L27: _VAULT keys are UUID entry_id strings. L68-73: store_pii_entry() stores no user_id inside records. delete_user_data() makes no reference to _VAULT.",
+      "status": "resolved",
+      "resolution": {
+        "fix_commit": "5d1bcf4",
+        "repro_test": "tests/integration/test_fr93.py",
+        "resolved_at": "2026-06-24T11:40:03.407575+00:00",
+        "resolved_by": "claude-code phase 4 hunt-resolve",
+        "evidence_note": "Verified current source on disk matches post-5d1bcf4 state."
+      }
     },
     {
       "id": "BUG-04",
@@ -66,7 +129,15 @@
       "suggested_fix": "Guard: if row['assigned_agent'] is not None and row['assigned_agent'] != agent_id: raise ValueError('Already assigned to ...')",
       "confidence": "high",
       "confirmed": true,
-      "verify_evidence": "L252: row['assigned_agent'] = agent_id — unconditional overwrite. No lock in class. _ensure_row() only upserts on absence, no assignment guard."
+      "verify_evidence": "L252: row['assigned_agent'] = agent_id — unconditional overwrite. No lock in class. _ensure_row() only upserts on absence, no assignment guard.",
+      "status": "resolved",
+      "resolution": {
+        "fix_commit": "5d1bcf4",
+        "repro_test": "tests/integration/test_fr54.py",
+        "resolved_at": "2026-06-24T11:40:03.407575+00:00",
+        "resolved_by": "claude-code phase 4 hunt-resolve",
+        "evidence_note": "Verified current source on disk matches post-5d1bcf4 state."
+      }
     },
     {
       "id": "BUG-05",
@@ -81,7 +152,15 @@
       "suggested_fix": "Remove L73-75 from jobs.py. Callers import core symbols directly from app.core.knowledge.",
       "confidence": "high",
       "confirmed": true,
-      "verify_evidence": "jobs.py:73 top-level import. knowledge.py:1249 and :1389 deferred imports of EmbeddingJob. Circular confirmed."
+      "verify_evidence": "jobs.py:73 top-level import. knowledge.py:1249 and :1389 deferred imports of EmbeddingJob. Circular confirmed.",
+      "status": "resolved",
+      "resolution": {
+        "fix_commit": "5d1bcf4",
+        "repro_test": "tests/integration/test_fr77.py",
+        "resolved_at": "2026-06-24T11:40:03.407575+00:00",
+        "resolved_by": "claude-code phase 4 hunt-resolve",
+        "evidence_note": "Verified current source on disk matches post-5d1bcf4 state."
+      }
     },
     {
       "id": "BUG-06",
@@ -96,7 +175,19 @@
       "suggested_fix": "Use os.environ['OMNIBOT_JWT_SECRET'] — missing var raises KeyError at startup.",
       "confidence": "high",
       "confirmed": true,
-      "verify_evidence": "auth.py:43 confirmed fallback string. websocket.py:188 same fallback used for verification. No startup guard anywhere in src/."
+      "verify_evidence": "auth.py:43 confirmed fallback string. websocket.py:188 same fallback used for verification. No startup guard anywhere in src/.",
+      "status": "resolved",
+      "resolution": {
+        "fix_commits": [
+          "ca59090",
+          "c36c530"
+        ],
+        "fix_commit": "ca59090",
+        "repro_test": "tests/integration/test_fr57.py",
+        "resolved_at": "2026-06-24T11:40:03.407575+00:00",
+        "resolved_by": "claude-code phase 4 hunt-resolve",
+        "evidence_note": "BUG-06 reported both auth.py:43 and websocket.py:188 hardcoded JWT fallback. auth.py:45 already fixed in ca59090 (drops fallback, uses os.environ[\"OMNIBOT_JWT_SECRET\"]). websocket.py:184 fixed in c36c530 (Phase 4 hunt-resolve commit, same approach). Verified current source: both call sites now raise KeyError if env unset."
+      }
     },
     {
       "id": "BUG-07",
@@ -171,7 +262,15 @@
       "suggested_fix": "Add UUID nonce to member: f'{now}:{key}:{uuid4().hex}'",
       "confidence": "high",
       "confirmed": true,
-      "verify_evidence": "Lua L114: ZADD KEYS[1] score ARGV[3] — no NX flag. ARGV[3] is f'{now}:{key}'. Duplicate member updates score in place; ZCARD returns n-1 instead of n."
+      "verify_evidence": "Lua L114: ZADD KEYS[1] score ARGV[3] — no NX flag. ARGV[3] is f'{now}:{key}'. Duplicate member updates score in place; ZCARD returns n-1 instead of n.",
+      "status": "resolved",
+      "resolution": {
+        "fix_commit": "5d1bcf4",
+        "repro_test": "tests/integration/test_fr23.py",
+        "resolved_at": "2026-06-24T11:40:03.407575+00:00",
+        "resolved_by": "claude-code phase 4 hunt-resolve",
+        "evidence_note": "Verified current source on disk matches post-5d1bcf4 state."
+      }
     },
     {
       "id": "BUG-12",
@@ -186,7 +285,15 @@
       "suggested_fix": "Consumer loop must call ack(message_id) after successful processing.",
       "confidence": "high",
       "confirmed": true,
-      "verify_evidence": "grep -r '.ack(' src/app/ returns zero results. Only occurrence is the method definition itself at L198."
+      "verify_evidence": "grep -r '.ack(' src/app/ returns zero results. Only occurrence is the method definition itself at L198.",
+      "status": "resolved",
+      "resolution": {
+        "fix_commit": "5d1bcf4",
+        "repro_test": "tests/integration/test_fr85.py",
+        "resolved_at": "2026-06-24T11:40:03.407575+00:00",
+        "resolved_by": "claude-code phase 4 hunt-resolve",
+        "evidence_note": "Verified current source on disk matches post-5d1bcf4 state."
+      }
     },
     {
       "id": "BUG-13",
@@ -201,7 +308,15 @@
       "suggested_fix": "Change ORDER BY to prioritize exact matches: ORDER BY CASE WHEN match_type='exact' THEN 0 ELSE 1 END, id. Or iterate all rows and pick max(_score(r, query)).",
       "confidence": "high",
       "confirmed": true,
-      "verify_evidence": "L174: ORDER BY id. L208: best = rows[0] — no iteration over remaining rows. L209-211: _score called only on rows[0]."
+      "verify_evidence": "L174: ORDER BY id. L208: best = rows[0] — no iteration over remaining rows. L209-211: _score called only on rows[0].",
+      "status": "resolved",
+      "resolution": {
+        "fix_commit": "dea6d59",
+        "repro_test": "tests/integration/test_fr26.py",
+        "resolved_at": "2026-06-24T11:40:03.407575+00:00",
+        "resolved_by": "claude-code phase 4 hunt-resolve",
+        "evidence_note": "Verified current source on disk matches post-dea6d59 state."
+      }
     },
     {
       "id": "BUG-14",
@@ -231,7 +346,15 @@
       "suggested_fix": "return ok(body.get('result') if isinstance(body, dict) else body)",
       "confidence": "high",
       "confirmed": true,
-      "verify_evidence": "L345: return ok(body) — body is raw response.json(). No body['result'] extraction. Test only asserts result.success is True, masking the wrapping issue."
+      "verify_evidence": "L345: return ok(body) — body is raw response.json(). No body['result'] extraction. Test only asserts result.success is True, masking the wrapping issue.",
+      "status": "resolved",
+      "resolution": {
+        "fix_commit": "dea6d59",
+        "repro_test": "tests/e2e/test_fr89.py",
+        "resolved_at": "2026-06-24T11:40:03.407575+00:00",
+        "resolved_by": "claude-code phase 4 hunt-resolve",
+        "evidence_note": "Verified current source on disk matches post-dea6d59 state."
+      }
     },
     {
       "id": "BUG-16",
@@ -264,7 +387,15 @@
       "suggested_fix": "Add third branch: \\+886[-\\s]?(?:0?\\d{2,3}[-\\s]?\\d{3,4}[-\\s]?\\d{3,4})",
       "confidence": "high",
       "confirmed": true,
-      "verify_evidence": "Regex: r'(?<!\\d)(?:0\\d{1,3}[-\\s]?\\d{3,4}[-\\s]?\\d{3,4}|\\(0\\d{1,2}\\)[-\\s]?\\d{3,4}[-\\s]?\\d{3,4})(?!\\d)'. Both branches require leading '0'. No +886 branch."
+      "verify_evidence": "Regex: r'(?<!\\d)(?:0\\d{1,3}[-\\s]?\\d{3,4}[-\\s]?\\d{3,4}|\\(0\\d{1,2}\\)[-\\s]?\\d{3,4}[-\\s]?\\d{3,4})(?!\\d)'. Both branches require leading '0'. No +886 branch.",
+      "status": "resolved",
+      "resolution": {
+        "fix_commit": "dea6d59",
+        "repro_test": "tests/unit/test_fr20.py",
+        "resolved_at": "2026-06-24T11:40:03.407575+00:00",
+        "resolved_by": "claude-code phase 4 hunt-resolve",
+        "evidence_note": "Verified current source on disk matches post-dea6d59 state."
+      }
     },
     {
       "id": "BUG-18",
@@ -464,5 +595,11 @@
       "confirmed": false,
       "verify_evidence": "Not adversarially verified."
     }
-  ]
+  ],
+  "resolution_summary": {
+    "last_updated": "2026-06-24T11:40:03.407575+00:00",
+    "resolved_count": 11,
+    "pending_count": 19,
+    "resolver_note": "11 confirmed critical+high findings verified resolved via on-disk source code inspection at .methodology/bug_hunt_report.json update time. See resolution.fix_commit and resolution.repro_test per finding."
+  }
 }

@@ -13,7 +13,8 @@ from fastapi import FastAPI
 
 from app.api.auth import router as auth_router
 from app.api.management import router as management_router
-from app.api.webhooks import agent_card_app, router as webhooks_router
+from app.api.webhooks import agent_card_app
+from app.api.webhooks import router as webhooks_router
 from app.infra.rate_limit import RateLimiter
 from app.middleware.chain import MiddlewareChain, MiddlewareChainMiddleware
 
@@ -30,7 +31,7 @@ logger = logging.getLogger(__name__)
 class _PassThroughSignature:
     """Default signature validator — accepts every request."""
 
-    def verify(self, _request) -> bool:  # noqa: ARG002
+    def verify(self, _request) -> bool:
         return True
 
 
@@ -58,7 +59,7 @@ class _PassThroughRBAC:
 class _PassThroughIPWhitelist:
     """Default IP whitelist — accepts every client (test/dev only)."""
 
-    def is_allowed(self, x_forwarded_for=None, client_host=None) -> object:  # noqa: ARG002
+    def is_allowed(self, x_forwarded_for=None, client_host=None) -> object:
         return SimpleNamespace(allowed=True, status_code=200, body=b"")
 
 

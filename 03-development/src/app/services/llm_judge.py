@@ -624,18 +624,18 @@ class CalibrationPipeline:
             pairs = [(item["label"], item["judge_label"]) for item in golden_set if "label" in item and "judge_label" in item]
         else:
             pairs = golden_set
-        
+
         n = len(pairs)
         if n == 0:
             return None
         matches = sum(1 for h, j in pairs if h == j)
         p_o = matches / n
-        
+
         from collections import Counter
         h_counts = Counter(h for h, j in pairs)
         j_counts = Counter(j for h, j in pairs)
         p_e = sum((h_counts[k] / n) * (j_counts[k] / n) for k in set(h_counts) | set(j_counts))
-        
+
         if p_e == 1.0:
             return 1.0 if p_o == 1.0 else 0.0
         return (p_o - p_e) / (1.0 - p_e)

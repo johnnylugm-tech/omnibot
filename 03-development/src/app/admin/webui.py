@@ -316,7 +316,7 @@ class KnowledgeAdminAPI:
             return store.get(entry_id)
 
     from app.admin.rbac import RBACEnforcer
-    
+
     @RBACEnforcer.require("knowledge", "write")
     def update_entry(
         self, entry_id: int, **fields: Any

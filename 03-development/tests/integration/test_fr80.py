@@ -814,8 +814,9 @@ def test_fr80_redis_streams_default_stream_name_is_messages():
     """``AsyncMessageProcessor.__init__`` MUST default ``stream="messages"``.
     Kills mutant wrapping the default string.
     """
-    from app.infra.redis_streams import AsyncMessageProcessor
     from unittest.mock import MagicMock
+
+    from app.infra.redis_streams import AsyncMessageProcessor
     client = MagicMock()
     proc = AsyncMessageProcessor(redis_client=client)
     assert proc.stream == "messages", (
@@ -826,8 +827,9 @@ def test_fr80_redis_streams_default_stream_name_is_messages():
 
 def test_fr80_redis_streams_default_group_name_is_omnibot():
     """``AsyncMessageProcessor.__init__`` MUST default ``group_name="omnibot"``."""
-    from app.infra.redis_streams import AsyncMessageProcessor
     from unittest.mock import MagicMock
+
+    from app.infra.redis_streams import AsyncMessageProcessor
     client = MagicMock()
     proc = AsyncMessageProcessor(redis_client=client)
     assert proc.group_name == "omnibot", (
@@ -901,8 +903,9 @@ def test_fr80_redis_streams_block_ms_default_5000():
     """``AsyncMessageProcessor.block_ms`` MUST default to 5000.
     Kills mutants changing the default.
     """
-    from app.infra.redis_streams import AsyncMessageProcessor
     from unittest.mock import MagicMock
+
+    from app.infra.redis_streams import AsyncMessageProcessor
     proc = AsyncMessageProcessor(redis_client=MagicMock())
     assert proc.block_ms == 5000, (
         f"AsyncMessageProcessor default block_ms MUST be 5000; "
@@ -914,8 +917,9 @@ def test_fr80_redis_streams_idle_ms_default_60000():
     """``AsyncMessageProcessor.idle_ms`` MUST default to 60000.
     Kills mutants changing the default.
     """
-    from app.infra.redis_streams import AsyncMessageProcessor
     from unittest.mock import MagicMock
+
+    from app.infra.redis_streams import AsyncMessageProcessor
     proc = AsyncMessageProcessor(redis_client=MagicMock())
     assert proc.idle_ms == 60000, (
         f"AsyncMessageProcessor default idle_ms MUST be 60000; "

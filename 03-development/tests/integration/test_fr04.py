@@ -436,6 +436,7 @@ def test_fr04_whatsapp_parse_messages_invalid_timestamp_falls_back_to_epoch_zero
     ``None`` (TypeError). Kills mutants #42, #43.
     """
     from datetime import datetime, timezone
+
     from app.api.adapters.whatsapp import WhatsAppWebhookAdapter
     adapter = WhatsAppWebhookAdapter(verify_token="t")
     payload = {

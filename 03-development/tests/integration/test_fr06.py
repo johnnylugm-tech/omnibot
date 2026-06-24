@@ -332,7 +332,7 @@ def test_fr05_web_adapter_process_message_with_valid_jwt_returns_unified_message
     ``Platform.WEB``.
     """
     from app.api.adapters.web import WebAdapter
-    from app.core.unified_message import Platform, MessageType, UnifiedMessage
+    from app.core.unified_message import MessageType, Platform, UnifiedMessage
     secret = "test-secret-fr05-process"
     adapter = WebAdapter(jwt_secret=secret, jwt_expiry_seconds=3600)
     session = adapter.create_guest_session()

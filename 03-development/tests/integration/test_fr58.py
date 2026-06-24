@@ -232,7 +232,7 @@ def test_fr58_user_ws_jwt_verified():
         )
 
     # Sentinels MUST be preserved per spec.
-    
+
     assert expected_connected == "true", (
         f"FR-58: expected_connected sentinel must be 'true'; got "
         f"{expected_connected!r}"

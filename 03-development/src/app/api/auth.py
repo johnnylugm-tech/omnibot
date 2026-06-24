@@ -18,8 +18,8 @@ import os
 import secrets
 import time
 
-from fastapi import APIRouter, HTTPException, Depends, Request
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
 from app.admin.rbac import RBACEnforcer
@@ -37,9 +37,9 @@ def get_current_user_role(credentials: HTTPAuthorizationCredentials = Depends(se
     parts = token.split(".")
     if len(parts) != 3:
         return "anonymous"
-        
+
     header_b64, payload_b64, provided_sig = parts
-    
+
     try:
         # 1. Verify signature
         secret = os.environ["OMNIBOT_JWT_SECRET"].encode()
@@ -52,11 +52,11 @@ def get_current_user_role(credentials: HTTPAuthorizationCredentials = Depends(se
         import base64
         payload_bytes = base64.urlsafe_b64decode(payload_b64 + "=" * (-len(payload_b64) % 4))
         payload = json.loads(payload_bytes)
-        
+
         # 3. Verify expiration
         if payload.get("exp", 0) < time.time():
             return "anonymous"
-            
+
         sub = payload.get("sub", "")
         # Very simple role mapping based on sub for demonstration
         if sub == os.environ.get("OMNIBOT_ADMIN_USER", ""):

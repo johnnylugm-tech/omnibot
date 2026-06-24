@@ -231,8 +231,8 @@ def test_fr48_emotion_should_escalate_none_emotions_returns_false():
     """
     from app.core.emotion import emotion_should_escalate
     assert emotion_should_escalate(None) is False, (
-        f"emotion_should_escalate(None) must return False (no escalation "
-        f"triggered by no input); got True"
+        "emotion_should_escalate(None) must return False (no escalation "
+        "triggered by no input); got True"
     )
 
 
@@ -242,5 +242,5 @@ def test_fr48_emotion_tracker_should_escalate_none_returns_false():
     from app.core.emotion import EmotionTracker
     tracker = EmotionTracker()
     assert tracker.should_escalate(None) is False, (
-        f"EmotionTracker.should_escalate(None) must return False; got True"
+        "EmotionTracker.should_escalate(None) must return False; got True"
     )

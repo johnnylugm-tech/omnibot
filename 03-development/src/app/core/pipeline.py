@@ -31,20 +31,20 @@ Citations:
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 import contextvars
-from typing import Any, TYPE_CHECKING
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from app.core.dst import DialogueState
     from app.core.emotion import EmotionAnalyzer
+    from app.core.knowledge import HybridKnowledge
     from app.core.paladin import PALADINPipeline
     from app.core.pii import PIIMasking
-    from app.core.dst import DialogueState
-    from app.core.knowledge import HybridKnowledge
     from app.core.response import ResponseGenerator
 
-_stage_call_log_var: contextvars.ContextVar[list[str]] = contextvars.ContextVar(
-    "_stage_call_log", default=[]
+_stage_call_log_var: contextvars.ContextVar[list[str] | None] = contextvars.ContextVar(
+    "_stage_call_log", default=None
 )
 
 # ---------------------------------------------------------------------------
@@ -101,7 +101,7 @@ class Pipeline:
     @property
     def _stage_call_log(self) -> list[str]:
         # Test-visible record of which stages ran in what order (H-08).
-        return _stage_call_log_var.get()
+        return _stage_call_log_var.get() or []
 
     def fill_slots(self, intent: str, slots: dict[str, str]) -> list[str]:
         """[FR-35] Fill DST slots for the current intent.
@@ -147,7 +147,7 @@ class Pipeline:
         # _TrackedDST that only tracks attribute access) may not expose
         # the full DialogueState surface; missing attrs are treated as
         # empty defaults rather than raising.
-        intent, slots = self._extract_intent_slots(content)  # noqa: F841
+        _intent, slots = self._extract_intent_slots(content)
         missing_after_fill: list[str] = []
         if self.dst is not None:
             current_log.append("dst")
@@ -248,8 +248,9 @@ class Pipeline:
 
 async def get_context(conversation_id: str) -> dict:
     """[FR-49] Retrieve conversation context from DB."""
-    from app.infra.database import get_session
     from sqlalchemy import text
+
+    from app.infra.database import get_session
     try:
         session_gen = get_session()
         session = await session_gen.__anext__()

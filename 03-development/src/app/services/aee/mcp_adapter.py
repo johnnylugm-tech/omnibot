@@ -214,10 +214,8 @@ class MCPAdapter(ActionAdapter):
         finally:
             if proc is not None and proc.poll() is None:
                 proc.kill()
-                try:
+                with contextlib.suppress(Exception):
                     proc.wait(timeout=1.0)
-                except Exception:
-                    pass
 
     def _connect_sse(self) -> list[ToolDefinition]:
         """[FR-40] 透過 SSE HTTP endpoint 連線並回傳 server 宣告的工具清單。

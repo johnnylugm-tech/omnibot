@@ -20,9 +20,10 @@ from __future__ import annotations
 import time
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.admin.rbac import RBACEnforcer
+from app.api.auth import get_current_user_role
 from app.api.common import PaginatedResponse
 
 router = APIRouter(prefix="/management", tags=["management"])
@@ -137,9 +138,6 @@ def create_experiment(role: str, payload: dict) -> int:
         return _HTTP_FORBIDDEN
     return _HTTP_OK
 
-
-from fastapi import APIRouter, HTTPException, Query, Depends
-from app.api.auth import get_current_user_role
 
 @router.get("/health")
 def _health_route() -> dict:

@@ -45,7 +45,7 @@ class TestStrategy:
             {"scenario": str, "status": "pass" | "fail"}
         """
         from app.core.pipeline import Pipeline
-        
+
         inputs = {
             "faq_exact_match": "business hours",
             "semantic_search": "password reset",
@@ -55,9 +55,9 @@ class TestStrategy:
             "fallback_escalation": "fix my broken TV"
         }
         text = inputs.get(scenario, "test message")
-        
+
         pipeline = Pipeline()
-        
+
         try:
             response = pipeline.process(platform="web", text=text)
             status = "pass" if response else "fail"

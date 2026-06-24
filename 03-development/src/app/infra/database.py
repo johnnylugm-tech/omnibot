@@ -12,17 +12,14 @@ silently escape into unmocked I/O.
 from __future__ import annotations
 
 import logging
-from collections.abc import Mapping
+import os
+from collections.abc import AsyncGenerator, Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
 import alembic.command as _alembic_command
 from alembic.config import Config as _AlembicConfig
-
-
-import os
-from collections.abc import AsyncGenerator
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 _engine = None
 _session_factory = None

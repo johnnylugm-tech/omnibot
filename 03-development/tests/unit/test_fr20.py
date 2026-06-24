@@ -358,7 +358,7 @@ def test_fr20_mask_formats_dict_has_phone_token():
 
 
 def test_fr20_pii_masks_international_phone_with_country_code():
-    """``PIIMasking.mask()`` MUST mask phone numbers with the ``+886``
+    r"""``PIIMasking.mask()`` MUST mask phone numbers with the ``+886``
     Taiwan country code. Kills mutant #4 which wraps the ``\+886`` regex
     segment with ``XX…XX``.
     """

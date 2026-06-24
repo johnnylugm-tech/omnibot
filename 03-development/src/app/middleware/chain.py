@@ -223,7 +223,7 @@ if _HAS_STARLETTE and BaseHTTPMiddleware is not None:
             )
         """
 
-        def __init__(self, app, *, chain: "MiddlewareChain") -> None:
+        def __init__(self, app, *, chain: MiddlewareChain) -> None:
             super().__init__(app)
             self._chain = chain
 

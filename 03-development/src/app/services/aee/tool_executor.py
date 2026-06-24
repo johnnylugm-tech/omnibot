@@ -335,7 +335,7 @@ class ToolExecutor:
 
         except asyncio.CancelledError:
             raise
-        except Exception as exc:
+        except Exception:
             # [M-09] NP-07: ``MemoryError`` / ``RecursionError`` are
             # subclasses of ``Exception`` and therefore land here; the
             # prior explicit ``raise`` is removed so the executor NEVER

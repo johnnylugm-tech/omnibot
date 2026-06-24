@@ -540,8 +540,8 @@ def _get_pipeline():
     """
     from app.core.dst import DialogueState
     from app.core.knowledge import HybridKnowledge
-    from app.core.pipeline import Pipeline
     from app.core.pii import PIIMasking
+    from app.core.pipeline import Pipeline
     from app.core.response import ResponseGenerator
 
     if _PIPELINE is None:
