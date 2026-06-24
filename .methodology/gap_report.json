@@ -1,12 +1,12 @@
 {
   "summary": {
-    "total": 484,
+    "total": 502,
     "missing": 0,
     "incomplete": 0,
-    "orphaned": 484,
+    "orphaned": 502,
     "critical": 0,
     "major": 0,
-    "minor": 484
+    "minor": 502
   },
   "gaps": [
     {
@@ -660,6 +660,36 @@
     {
       "type": "ORPHANED",
       "severity": "minor",
+      "reason": "'verify' has no corresponding specification in SPEC.md",
+      "action": "Add spec for verify or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'parse' has no corresponding specification in SPEC.md",
+      "action": "Add spec for parse or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'enforce' has no corresponding specification in SPEC.md",
+      "action": "Add spec for enforce or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'is_allowed' has no corresponding specification in SPEC.md",
+      "action": "Add spec for is_allowed or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'build_app' has no corresponding specification in SPEC.md",
+      "action": "Add spec for build_app or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
       "reason": "'health' has no corresponding specification in SPEC.md",
       "action": "Add spec for health or remove if unnecessary"
     },
@@ -740,6 +770,60 @@
       "severity": "minor",
       "reason": "'agent_card' has no corresponding specification in SPEC.md",
       "action": "Add spec for agent_card or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'telegram_webhook' has no corresponding specification in SPEC.md",
+      "action": "Add spec for telegram_webhook or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'line_webhook' has no corresponding specification in SPEC.md",
+      "action": "Add spec for line_webhook or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'messenger_challenge' has no corresponding specification in SPEC.md",
+      "action": "Add spec for messenger_challenge or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'messenger_webhook' has no corresponding specification in SPEC.md",
+      "action": "Add spec for messenger_webhook or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'whatsapp_challenge' has no corresponding specification in SPEC.md",
+      "action": "Add spec for whatsapp_challenge or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'whatsapp_webhook' has no corresponding specification in SPEC.md",
+      "action": "Add spec for whatsapp_webhook or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'web_guest_session' has no corresponding specification in SPEC.md",
+      "action": "Add spec for web_guest_session or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'web_message' has no corresponding specification in SPEC.md",
+      "action": "Add spec for web_message or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'a2a_rpc' has no corresponding specification in SPEC.md",
+      "action": "Add spec for a2a_rpc or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
@@ -1202,6 +1286,12 @@
       "severity": "minor",
       "reason": "'Pipeline' has no corresponding specification in SPEC.md",
       "action": "Add spec for Pipeline or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'fill_slots' has no corresponding specification in SPEC.md",
+      "action": "Add spec for fill_slots or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
@@ -2202,6 +2292,18 @@
     {
       "type": "ORPHANED",
       "severity": "minor",
+      "reason": "'MiddlewareChainMiddleware' has no corresponding specification in SPEC.md",
+      "action": "Add spec for MiddlewareChainMiddleware or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'dispatch' has no corresponding specification in SPEC.md",
+      "action": "Add spec for dispatch or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
       "reason": "'IPWhitelistError' has no corresponding specification in SPEC.md",
       "action": "Add spec for IPWhitelistError or remove if unnecessary"
     },
@@ -2768,6 +2870,12 @@
       "severity": "minor",
       "reason": "'run_fallback_escalation_scenario' has no corresponding specification in SPEC.md",
       "action": "Add spec for run_fallback_escalation_scenario or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'consecutive_negative_marker' has no corresponding specification in SPEC.md",
+      "action": "Add spec for consecutive_negative_marker or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
