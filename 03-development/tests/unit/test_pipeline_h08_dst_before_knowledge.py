@@ -57,8 +57,7 @@ class _Msg:
         self.platform = platform
 
 
-@pytest.mark.integration
-@pytest.mark.np13
+@pytest.mark.unit
 def test_pipeline_dst_runs_before_knowledge():
     """H-08: stage log shows dst before knowledge."""
     paladin = _StubPaladin()
@@ -76,8 +75,7 @@ def test_pipeline_dst_runs_before_knowledge():
     )
 
 
-@pytest.mark.integration
-@pytest.mark.np13
+@pytest.mark.unit
 def test_pipeline_records_missing_slots():
     """H-08: stage log captures dst.missing slots for downstream awareness."""
     dst = _StubDST(missing=["order_id", "reason"])
@@ -93,8 +91,7 @@ def test_pipeline_records_missing_slots():
     assert "reason" in missing_entry
 
 
-@pytest.mark.integration
-@pytest.mark.np13
+@pytest.mark.unit
 def test_pipeline_stage_order_complete():
     """H-08: full stage order is paladin→pii→dst→knowledge→emotion→response."""
     paladin = _StubPaladin()

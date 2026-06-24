@@ -35,7 +35,6 @@ class _Msg:
 
 
 @pytest.mark.unit
-@pytest.mark.np15
 @pytest.mark.parametrize(
     "tier,expected_source",
     [
@@ -56,7 +55,6 @@ def test_pipeline_source_derived_from_knowledge(tier, expected_source):
 
 
 @pytest.mark.unit
-@pytest.mark.np15
 def test_pipeline_confidence_propagates_from_knowledge():
     """H-04: confidence is the KnowledgeResult.confidence, not 1.0."""
     knowledge = _StubKnowledge(source="rag", confidence=0.42)
@@ -68,7 +66,6 @@ def test_pipeline_confidence_propagates_from_knowledge():
 
 
 @pytest.mark.unit
-@pytest.mark.np15
 def test_pipeline_no_knowledge_returns_zero_confidence():
     """H-04: no knowledge layer → confidence 0.0 (not the historical 1.0 lie)."""
     pipeline = Pipeline(knowledge=None)

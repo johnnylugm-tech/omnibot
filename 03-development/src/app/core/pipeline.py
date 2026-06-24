@@ -32,7 +32,20 @@ Citations:
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+import contextvars
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.core.emotion import EmotionAnalyzer
+    from app.core.paladin import PALADINPipeline
+    from app.core.pii import PIIMasking
+    from app.core.dst import DialogueState
+    from app.core.knowledge import HybridKnowledge
+    from app.core.response import ResponseGenerator
+
+_stage_call_log_var: contextvars.ContextVar[list[str]] = contextvars.ContextVar(
+    "_stage_call_log", default=[]
+)
 
 # ---------------------------------------------------------------------------
 # Platform identifiers that bypass the emotion analyzer.
@@ -71,12 +84,12 @@ class Pipeline:
 
     def __init__(
         self,
-        emotion: Any | None = None,
-        paladin: Any | None = None,
-        pii: Any | None = None,
-        dst: Any | None = None,
-        knowledge: Any | None = None,
-        response: Any | None = None,
+        emotion: EmotionAnalyzer | Any | None = None,
+        paladin: PALADINPipeline | Any | None = None,
+        pii: PIIMasking | Any | None = None,
+        dst: DialogueState | Any | None = None,
+        knowledge: HybridKnowledge | Any | None = None,
+        response: ResponseGenerator | Any | None = None,
     ) -> None:
         self.emotion = emotion
         self.paladin = paladin
@@ -84,9 +97,11 @@ class Pipeline:
         self.dst = dst
         self.knowledge = knowledge
         self.response = response
+
+    @property
+    def _stage_call_log(self) -> list[str]:
         # Test-visible record of which stages ran in what order (H-08).
-        # Reset to [] at the start of every handle_message call.
-        self._stage_call_log: list[str] = []
+        return _stage_call_log_var.get()
 
     def fill_slots(self, intent: str, slots: dict[str, str]) -> list[str]:
         """[FR-35] Fill DST slots for the current intent.
@@ -113,14 +128,15 @@ class Pipeline:
         from app.core.response import ResponseSource, UnifiedResponse
 
         content: str = msg.content
-        self._stage_call_log = []
+        current_log: list[str] = []
+        _stage_call_log_var.set(current_log)
 
         if self.paladin is not None:
-            self._stage_call_log.append("paladin")
+            current_log.append("paladin")
             self.paladin.check_input(content)
 
         if self.pii is not None:
-            self._stage_call_log.append("pii")
+            current_log.append("pii")
             mask_result = self.pii.mask(content)
             content = mask_result.masked_text
 
@@ -134,30 +150,30 @@ class Pipeline:
         intent, slots = self._extract_intent_slots(content)  # noqa: F841
         missing_after_fill: list[str] = []
         if self.dst is not None:
-            self._stage_call_log.append("dst")
+            current_log.append("dst")
             dst_slots = getattr(self.dst, "slots", None)
             if isinstance(dst_slots, dict):
                 dst_slots.update(slots)
             if hasattr(self.dst, "missing_slots"):
                 missing_after_fill = list(self.dst.missing_slots())
-            self._stage_call_log.append(
+            current_log.append(
                 f"dst.missing={','.join(missing_after_fill) or 'none'}"
             )
 
         # Knowledge query (H-08): always AFTER dst slot resolution.
         knowledge_result = None
         if self.knowledge is not None:
-            self._stage_call_log.append("knowledge")
+            current_log.append("knowledge")
             knowledge_result = self.knowledge.query(content)
 
         # Emotion (FR-46..49)
         process_result = self.process(msg.platform, content)
         emotion_result = process_result.get("emotion")
-        self._stage_call_log.append("emotion")
+        current_log.append("emotion")
 
         # Response (FR-50..53)
         if self.response is not None:
-            self._stage_call_log.append("response")
+            current_log.append("response")
             content = self.response.format_for_platform(
                 str(getattr(msg.platform, "value", msg.platform)), content
             )
@@ -167,7 +183,10 @@ class Pipeline:
             try:
                 source = ResponseSource(knowledge_result.source)
             except ValueError:
-                source = ResponseSource[str(knowledge_result.source).upper()]
+                try:
+                    source = ResponseSource[str(knowledge_result.source).upper()]
+                except KeyError:
+                    source = ResponseSource.RULE
             confidence = knowledge_result.confidence
         else:
             # No knowledge layer injected: report honestly with 0.0
