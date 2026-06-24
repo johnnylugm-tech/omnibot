@@ -164,6 +164,67 @@ def _knowledge_create_route(role: str = Depends(get_current_user_role), body: Op
     return {"status": result}
 
 
+# [H-06] Wire the 5 remaining FR-85 stub functions as FastAPI routes so
+# the management API surface matches the SRS contract (PUT/DELETE knowledge,
+# bulk, conversations, experiments). Each delegates to the stub function
+# and maps its RBAC 403 / 200 returns to HTTPException or 200 JSON.
+@router.put("/knowledge/{id_}")
+def _knowledge_update_route(
+    id_: str,
+    role: str = Depends(get_current_user_role),
+    body: Optional[dict] = None,  # noqa: UP045
+) -> dict:
+    result = update_knowledge(role, id_, body or {})
+    if result == _HTTP_FORBIDDEN:
+        raise HTTPException(status_code=_HTTP_FORBIDDEN)
+    return {"status": result}
+
+
+@router.delete("/knowledge/{id_}")
+def _knowledge_delete_route(
+    id_: str,
+    role: str = Depends(get_current_user_role),
+) -> dict:
+    result = delete_knowledge(role, id_)
+    if result == _HTTP_FORBIDDEN:
+        raise HTTPException(status_code=_HTTP_FORBIDDEN)
+    return {"status": result}
+
+
+@router.post("/knowledge/bulk")
+def _knowledge_bulk_route(
+    role: str = Depends(get_current_user_role),
+    body: Optional[dict] = None,  # noqa: UP045
+) -> dict:
+    result = bulk_create_knowledge(role, body or {})
+    if result == _HTTP_FORBIDDEN:
+        raise HTTPException(status_code=_HTTP_FORBIDDEN)
+    return {"status": result}
+
+
+@router.get("/conversations")
+def _conversations_list_route(
+    role: str = Depends(get_current_user_role),
+    page: int = Query(1),
+    limit: int = Query(20),
+) -> dict:
+    result = list_conversations(role, page, limit)
+    if result == _HTTP_FORBIDDEN:
+        raise HTTPException(status_code=_HTTP_FORBIDDEN)
+    return {"status": result}
+
+
+@router.post("/experiments")
+def _experiments_create_route(
+    role: str = Depends(get_current_user_role),
+    body: Optional[dict] = None,  # noqa: UP045
+) -> dict:
+    result = create_experiment(role, body or {})
+    if result == _HTTP_FORBIDDEN:
+        raise HTTPException(status_code=_HTTP_FORBIDDEN)
+    return {"status": result}
+
+
 __all__ = [
     "bulk_create_knowledge",
     "check_health",

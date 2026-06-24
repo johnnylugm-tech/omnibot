@@ -11,6 +11,8 @@ from types import SimpleNamespace
 
 from fastapi import FastAPI
 
+from app.api.auth import router as auth_router
+from app.api.management import router as management_router
 from app.api.webhooks import agent_card_app, router as webhooks_router
 from app.infra.rate_limit import RateLimiter
 from app.middleware.chain import MiddlewareChain, MiddlewareChainMiddleware
@@ -53,6 +55,13 @@ class _PassThroughRBAC:
                                resource=resource, action=action)
 
 
+class _PassThroughIPWhitelist:
+    """Default IP whitelist — accepts every client (test/dev only)."""
+
+    def is_allowed(self, x_forwarded_for=None, client_host=None) -> object:  # noqa: ARG002
+        return SimpleNamespace(allowed=True, status_code=200, body=b"")
+
+
 def build_app() -> FastAPI:
     """[F-02] Construct the OmniBot FastAPI app with middleware chain wired."""
     app = FastAPI(title="OmniBot", version="0.1.0")
@@ -66,7 +75,13 @@ def build_app() -> FastAPI:
     )
     app.add_middleware(MiddlewareChainMiddleware, chain=chain)
 
-    app.include_router(webhooks_router, prefix="/api/v1")
+    # [H-06 fix doubled prefix] webhooks.py router decorators already carry
+    # the full ``/api/v1/...`` path, so include_router must NOT add another
+    # prefix. Auth + management routers only carry ``/auth`` / ``/management``,
+    # so they DO get the ``/api/v1`` prefix here.
+    app.include_router(webhooks_router)
+    app.include_router(auth_router, prefix="/api/v1")
+    app.include_router(management_router, prefix="/api/v1")
     # [R-07] Mount the Agent Card sub-app at the well-known path only (not "/")
     # so other FastAPI routes (e.g. /api/v1/health) are not shadowed by the
     # sub-app's catch-all 404.
@@ -82,10 +97,3 @@ def build_app() -> FastAPI:
 
 # Module-level instance — uvicorn target imports `app` directly.
 app = build_app()
-
-
-class _PassThroughIPWhitelist:
-    """Default IP whitelist — accepts every client (test/dev only)."""
-
-    def is_allowed(self, x_forwarded_for=None, client_host=None) -> object:
-        return SimpleNamespace(allowed=True, status_code=200, body=b"")
