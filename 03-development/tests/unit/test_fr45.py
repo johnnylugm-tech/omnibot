@@ -174,7 +174,7 @@ def test_fr45_single_tool_definition_class_no_duplication():
         (where DST lives) MUST contain zero ``class ToolDefinition``
         statements — any definition here is a duplication per FR-45.
         """
-        src_root = Path(__file__).resolve().parents[1] / "src" / "app"
+        src_root = Path(__file__).resolve().parents[2] / "src" / "app"
         aee_root = src_root / "services" / "aee"
         core_root = src_root / "core"
 

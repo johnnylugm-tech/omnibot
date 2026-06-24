@@ -607,7 +607,7 @@ def test_fr99_concurrent_threshold_cross_single_probe():
 def test_fr99_nfr09_load_test_exists_in_load_folder():
     # NFR-09: 2000 TPS load test
     import os
-    script_path = os.path.join(os.path.dirname(__file__), "load", "k6_nfr09_2000tps.js")
+    script_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "load", "k6_nfr09_2000tps.js")
     assert os.path.exists(script_path), f"NFR-09: load test script {script_path} must exist"
 
     # Check that it asserts HTTP thresholds

@@ -181,7 +181,7 @@ def verify_jwt(token: str) -> bool:
     except Exception:
         return False
 
-    secret = os.environ.get("OMNIBOT_JWT_SECRET", "dev-secret-do-not-use-in-prod").encode()
+    secret = os.environ["OMNIBOT_JWT_SECRET"].encode()
     msg = f"{header_b64}.{payload_b64}".encode("ascii")
     expected_sig = hmac.new(secret, msg, hashlib.sha256).digest()
 
