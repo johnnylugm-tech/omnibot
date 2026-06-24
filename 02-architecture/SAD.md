@@ -62,11 +62,10 @@ app/
 ├── api/
 │   ├── common.py        # HUB: shared request/response utilities
 │   ├── main.py          # FastAPI application entry point
-│   ├── webhooks.py      # Platform webhook handlers (FR-01–09, FR-84)
+│   ├── webhooks.py      # Platform webhook handlers (FR-01–09, FR-44, FR-84); hosts agent_card_app (see ADR-016)
 │   ├── management.py    # Knowledge/experiment management API (FR-85, FR-88)
 │   ├── auth.py          # Auth/M2M/user API (FR-86, FR-87)
-│   ├── websocket.py     # WebSocket handlers (FR-57–59)
-│   └── webhooks.py      # also hosts agent_card_app (FR-44, see ADR-016)
+│   └── websocket.py     # WebSocket handlers (FR-57–59)
 ├── core/
 │   ├── pipeline.py      # HUB: request orchestrator — calls all core modules
 │   ├── paladin.py       # PALADIN L1–L5 (FR-10–17)
@@ -140,6 +139,7 @@ tests/                  # Flat layout — NFR-32 ratios measured via pytest mark
 - `WhatsAppWebhookVerifier.verify()` → FR-04
 - `WebAdapter` (guest-session + message) → FR-05
 - `A2AAdapter` JSON-RPC 2.0 entry → FR-06
+- GET /.well-known/agent.json (agent_card_app FastAPI sub-app) → FR-44 (see ADR-016 for consolidation decision)
 - Platform routing + error codes → FR-84
 
 #### Module: auth.py
@@ -162,10 +162,6 @@ tests/                  # Flat layout — NFR-32 ratios measured via pytest mark
 - `build_response()`, `extract_user_context()` — called by all sibling modules per function body
 
 > **Note**: `UnifiedMessage` (FR-07) lives in the core layer's unified_message module, not api/common. The api layer imports it as a read-only dataclass (no business logic). See `api_layer_can_import_core_dataclasses_only` in SAB architecture_constraints.
-
-#### Module: webhooks.py (also hosts agent_card_app)
-- GET /.well-known/agent.json (name/description/url/version/capabilities/methods/auth_schemes) → FR-44
-- Agent Card is implemented as `agent_card_app = FastAPI(...)` within webhooks.py (see ADR-016 for consolidation decision)
 
 #### Logical Constraints
 - Middleware chain order enforced: TLS → IP Whitelist → Webhook Signature → Platform Adapter → Rate Limiting → RBAC (FR-24)
@@ -529,11 +525,10 @@ sab:
       modules:
         - app.api.common
         - app.api.main
-        - app.api.webhooks
+        - app.api.webhooks        # hosts agent_card_app (FR-44) — see ADR-016
         - app.api.management
         - app.api.auth
         - app.api.websocket
-        - app.api.agent_card
       allowed_dependencies: ["core", "infra", "admin"]
 
     - name: core

@@ -1,5 +1,15 @@
 # Phase 3 Audit 重驗證報告 (Post-Fix)
 
+> **[STALE 2026-06-17 — verified state at 2026-06-24]**
+>
+> This report was written on 2026-06-22 re-verifying fixes from commit `f409506`. Since then (2026-06-24), a fresh full-codebase audit (`phase3_audit_2026-06-24.md`) was run and additional fixes were applied. Several findings below marked `❌ NOT fixed` have been re-evaluated:
+>
+> - **H-02 (agent_card location)**: SAD §2.1 YAML line 536 was updated to remove `app.api.agent_card`; §2.2 duplicate Module: webhooks.py sections merged (2026-06-24)
+> - **H-05 (AEE split / ADR-010)**: ADR-016 was extended with a "Note on package representation" section clarifying the trailing-slash convention (2026-06-24). ADR-010 is no longer needed since ADR-016 covers the decision
+> - **NEW audit (2026-06-24)**: 42 findings (6 FATAL / 13 HIGH / 13 MEDIUM / 10 MINOR) — see `phase3_audit_2026-06-24.md` for current state
+>
+> Below is the original re-verification report preserved for traceability.
+
 > **Date**: 2026-06-22
 > **Auditor**: Hermes (sequential-thinking MCP)
 > **Fix commit**: `f409506 fix(audit): resolve FATAL/HIGH phase3 audit findings`
