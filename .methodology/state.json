@@ -3,7 +3,7 @@
   "current_phase": 6,
   "last_gate": 3,
   "last_fr": "FR-99",
-  "last_update": "2026-06-24T20:28:13.811107+00:00",
-  "phase_truth_passed": false,
+  "last_update": "2026-06-25T04:30:00Z",
+  "phase_truth_passed": true,
   "last_milestone_command": "advance-phase --completed-phase 5"
 }
