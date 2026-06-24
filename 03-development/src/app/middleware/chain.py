@@ -19,6 +19,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+try:
+    # FastAPI/Starlette BaseHTTPMiddleware. Optional import keeps this
+    # module usable in unit-test contexts where the HTTP stack is absent.
+    from starlette.middleware.base import BaseHTTPMiddleware  # type: ignore
+    from starlette.responses import Response  # type: ignore
+    _HAS_STARLETTE = True
+except ImportError:  # pragma: no cover — exercised only in minimal envs
+    BaseHTTPMiddleware = None  # type: ignore
+    Response = None  # type: ignore
+    _HAS_STARLETTE = False
+
 
 @dataclass
 class ChainResult:
@@ -186,3 +197,49 @@ class MiddlewareChain:
             user_id=ctx.user_id,
             platform=ctx.platform,
         )
+
+
+if _HAS_STARLETTE and BaseHTTPMiddleware is not None:
+
+    class MiddlewareChainMiddleware(BaseHTTPMiddleware):  # type: ignore[misc]
+        """[F-02] Starlette/FastAPI middleware wrapper around :class:`MiddlewareChain`.
+
+        Translates between Starlette's ``Request`` / ``Response`` and the
+        chain's own :class:`ChainResult`. Short-circuited stages return
+        a ``Response`` with the chain's status/reason/body so the chain
+        never reaches downstream handlers when a stage denies.
+
+        Install via::
+
+            app.add_middleware(
+                MiddlewareChainMiddleware,
+                chain=MiddlewareChain(
+                    ip_whitelist=...,
+                    signature_validator=...,
+                    platform_adapter=...,
+                    rate_limiter=...,
+                    rbac_enforcer=...,
+                ),
+            )
+        """
+
+        def __init__(self, app, *, chain: "MiddlewareChain") -> None:
+            super().__init__(app)
+            self._chain = chain
+
+        async def dispatch(self, request, call_next):  # type: ignore[no-untyped-def]
+            chain_result = self._chain.process(request)
+            if chain_result.status != 200:
+                headers = {"X-Chain-Stage": chain_result.stage_completed,
+                           "X-Chain-Reason": chain_result.reason}
+                if Response is None:
+                    raise RuntimeError("starlette not available")
+                return Response(  # type: ignore[misc]
+                    content=chain_result.body or chain_result.reason.encode("utf-8"),
+                    status_code=chain_result.status,
+                    headers=headers,
+                )
+            # Status 200 — chain passed; continue to downstream handler.
+            response = await call_next(request)
+            response.headers.setdefault("X-Chain-Stage", chain_result.stage_completed)
+            return response

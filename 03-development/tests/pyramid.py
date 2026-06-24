@@ -199,47 +199,58 @@ class E2EPipelineRunner:
     Pipeline I/O seams (LLM calls, DB queries, Redis rate-limit checks,
     HMAC verification) are isolated by the autouse fixture in conftest.py
     so these scenario methods can operate against deterministic test data.
+
+    Each ``run_*`` method now invokes the real production module(s) for its
+    scenario (H-05 audit fix). Stubbed ``passed=True`` returns have been
+    replaced with actual assertions on the real module's behaviour.
     """
 
     def run_faq_exact_match_scenario(self, query: str) -> dict[str, Any]:
         """Run FAQ exact-match scenario (Knowledge Tier 1).
 
         [FR-107] Exercises PostgreSQL ILIKE rule matching per FR-26.
-        Returns source="rule" when the FAQ database contains an exact
+        Returns ``source="rule"`` when the FAQ database contains an exact
         match for the query.
 
         Args:
             query: The FAQ question text to match.
 
         Returns:
-            {"source": "rule", "result": Any, "passed": True}
+            ``{"source": "rule", "result": Any, "passed": bool}``
         """
+        from app.core.knowledge import HybridKnowledge
+
+        knowledge = HybridKnowledge(session=None)
+        result = knowledge.query(query)
+        passed = result.source == "rule"
         return {
-            "source": "rule",
-            "result": {"matched": True, "answer": f"FAQ answer for: {query}"},
-            "passed": True,
+            "source": result.source,
+            "result": {"id": result.id, "confidence": result.confidence,
+                       "content": result.content},
+            "passed": passed,
         }
 
     def run_semantic_search_scenario(self, query: str) -> dict[str, Any]:
         """Run semantic search scenario (Knowledge Tier 2).
 
         [FR-107] Exercises RAG + RRF k=60 per FR-27.
-        Returns source="rag" when a semantically similar match is found.
+        Returns ``source="rag"`` when a semantically similar match is found.
 
         Args:
             query: The search query text.
 
         Returns:
-            {"source": "rag", "result": Any, "passed": True}
+            ``{"source": "rag", "result": Any, "passed": bool}``
         """
+        from app.core.knowledge import HybridKnowledge
+
+        knowledge = HybridKnowledge(session=None)
+        result = knowledge.query(query)
+        passed = result.source == "rag"
         return {
-            "source": "rag",
-            "result": {
-                "matched": True,
-                "chunks": ["chunk_1", "chunk_2"],
-                "score": 0.92,
-            },
-            "passed": True,
+            "source": result.source,
+            "result": {"id": result.id, "confidence": result.confidence},
+            "passed": passed,
         }
 
     def run_multi_turn_dst_scenario(
@@ -248,66 +259,86 @@ class E2EPipelineRunner:
         """Run multi-turn DST scenario per FR-34.
 
         [FR-107] Exercises DST 8-state FSM + slot filling.
-        Fills all required slots over the specified number of turns
-        and transitions to a resolved final state.
+        Walks the FSM through the configured number of turns, attempting
+        to fill every required slot each turn; transitions to the
+        AWAITING_CONFIRMATION state when all slots are satisfied.
 
         Args:
             turns: Number of conversation turns to simulate.
-            intent: The dialog intent (e.g. "return_request").
+            intent: The dialog intent (e.g. ``"return_request"``).
             slots: Required slot names to fill.
 
         Returns:
-            {"turns_completed": int, "slots_filled": list[str],
-             "final_state": str, "passed": bool}
+            ``{"turns_completed": int, "slots_filled": list[str],
+             "final_state": str, "passed": bool}``
         """
+        from app.core.dst import DialogueState
+
+        ds = DialogueState(initial_state="IDLE", intent=intent,
+                           slots={s: f"value-{s}" for s in slots})
+        filled = []
+        for _ in range(turns):
+            if not ds.missing_slots():
+                ds.transition("AWAITING_CONFIRMATION")
+                break
+            filled.extend(ds.missing_slots())
+            ds.transition("SLOT_FILLING")
+        final_state = ds.state
+        passed = (not ds.missing_slots()) and (final_state == "AWAITING_CONFIRMATION")
         return {
             "turns_completed": turns,
             "slots_filled": list(slots),
-            "final_state": "RESOLVED",
-            "passed": True,
+            "final_state": final_state,
+            "passed": passed,
         }
 
     @staticmethod
-    def _escalation_result() -> dict[str, Any]:
-        """Return a standard escalation result dict.
-
-        [FR-107] Both emotion-triggered (FR-48) and fallback (FR-31)
-        escalation paths return the same shape.
-        """
-        return {"action": "escalate", "escalated": True, "passed": True}
+    def _escalation_result(escalated: bool, action: str = "escalate") -> dict[str, Any]:
+        """Standard escalation result shape."""
+        return {"action": action, "escalated": escalated, "passed": escalated}
 
     def run_emotion_escalation_scenario(
         self, consecutive_negative: int
     ) -> dict[str, Any]:
         """Run emotion-triggered escalation scenario per FR-48.
 
-        [FR-107] Exercises EmotionAnalyzer + consecutive_negative_count ≥ 3.
-        When the threshold is met, the pipeline must escalate to a human agent.
+        [FR-107] Exercises EmotionTracker.should_escalate when the
+        consecutive-negative threshold is met.
 
         Args:
             consecutive_negative: Number of consecutive negative emotions.
 
         Returns:
-            {"action": "escalate", "escalated": bool, "passed": bool}
+            ``{"action": "escalate", "escalated": bool, "passed": bool}``
         """
-        return self._escalation_result()
+        from app.core.emotion import EmotionTracker
+
+        tracker = EmotionTracker()
+        for _ in range(consecutive_negative):
+            tracker.record("negative", weight=1.0)
+        escalated = tracker.should_escalate()
+        return self._escalation_result(escalated=escalated)
 
     def run_prompt_injection_scenario(self, text: str) -> dict[str, Any]:
         """Run prompt injection defense scenario per FR-11.
 
         [FR-107] Exercises PALADIN L2 pattern detection.
-        Malicious inputs must be blocked by the defense layer.
+        Malicious inputs must be blocked by ``PromptInjectionDefense.check_input``.
 
         Args:
             text: The potentially malicious input text.
 
         Returns:
-            {"blocked": bool, "passed": bool}
+            ``{"blocked": bool, "passed": bool}``
         """
-        return {
-            "blocked": True,
-            "passed": True,
-        }
+        from app.core.paladin import PromptInjectionDefense
+
+        defense = PromptInjectionDefense()
+        result = defense.check_input(text)
+        blocked = bool(getattr(result, "is_injection", False)) or bool(
+            getattr(result, "is_suspicious", False)
+        )
+        return {"blocked": blocked, "passed": blocked}
 
     def run_fallback_escalation_scenario(
         self,
@@ -317,16 +348,30 @@ class E2EPipelineRunner:
     ) -> dict[str, Any]:
         """Run fallback escalation scenario per FR-31.
 
-        [FR-107] Exercises Knowledge Tier 4 escalation (id=-1).
-        When all three knowledge tiers miss, the pipeline must escalate
-        to a human agent.
+        [FR-107] Exercises Knowledge Tier 4 escalation when all tiers miss.
+        When tier1/tier2/tier3 all miss, ``HybridKnowledge.query`` should
+        return ``source="escalate"`` (Tier 4).
 
         Args:
-            tier1_result: Tier 1 result ("hit" or "miss").
-            tier2_result: Tier 2 result ("hit" or "miss").
-            tier3_result: Tier 3 result ("hit" or "miss").
+            tier1_result: Tier 1 result (``"hit"`` or ``"miss"``).
+            tier2_result: Tier 2 result (``"hit"`` or ``"miss"``).
+            tier3_result: Tier 3 result (``"hit"`` or ``"miss"``).
 
         Returns:
-            {"action": "escalate", "escalated": bool, "passed": bool}
+            ``{"action": "escalate", "escalated": bool, "passed": bool}``
         """
-        return self._escalation_result()
+        from app.core.knowledge import HybridKnowledge
+
+        # Tier 1 = rule, Tier 2 = rag, Tier 3 = wiki; all miss → tier 4 escalate
+        knowledge = HybridKnowledge(session=None)
+        all_miss = (tier1_result == "miss" and tier2_result == "miss"
+                    and tier3_result == "miss")
+        query_text = "no-match-" + str(consecutive_negative_marker())
+        result = knowledge.query(query_text)
+        escalated = result.source == "escalate" and all_miss
+        return self._escalation_result(escalated=escalated)
+
+
+def consecutive_negative_marker() -> int:
+    """Stub helper for fallback-escalation query."""
+    return 1

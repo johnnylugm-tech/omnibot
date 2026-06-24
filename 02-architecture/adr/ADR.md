@@ -377,7 +377,7 @@ Two implementation decisions diverged from the original SAD §2.1 plan:
 2. **Agent Card consolidation**: SAD planned a dedicated `app/api/agent_card.py`. In implementation, the Agent Card FastAPI sub-app (`agent_card_app`) was co-located in `webhooks.py` to avoid a 6th api-layer module that would only hold a single static endpoint, which would reduce the api/ CRG community cohesion below 0.38.
 
 ## Decision
-1. **AEE**: Split into `app/services/aee/` package with `__init__.py` re-exporting the public surface. SAB.json `fr_module_traceability` entries for FR-39–45 point to `app.services.aee` (package, trailing slash variant).
+1. **AEE**: Split into `app/services/aee/` package with `__init__.py` re-exporting the public surface. SAB.json `fr_module_traceability` entries for FR-39–45 point to `app.services.aee` (package, without trailing slash — see Note below).
 2. **Agent Card**: Keep `agent_card_app = FastAPI(...)` inside `webhooks.py`. Update SAD §2.1 and §2.2 to reflect this. The 6 adapter docstring cross-references to `agent_card.py:12-16` are historical and should be read as referring to the `AGENT_CARD` dict in `webhooks.py`.
 
 ## Rationale
@@ -387,14 +387,17 @@ Two implementation decisions diverged from the original SAD §2.1 plan:
 
 ## Consequences
 - Positive: AEE adapters independently testable; api/ cohesion maintained
-- Negative: 6 adapter docstrings reference `agent_card.py:12-16` — these cross-refs are stale; they point to the `AGENT_CARD` dict in `webhooks.py` lines 468–486
+- Negative (resolved 2026-06-24): 6 adapter docstrings referenced `agent_card.py:12-16` — these cross-refs were stale; they pointed to the `AGENT_CARD` dict in `webhooks.py` lines 468–486. Cleaned up by removing stale references; references now point to `webhooks.py:476-497` where `AGENT_CARD` and `agent_card_app` are defined.
+
+## Note on package representation in SAB
+SAB.json uses `app.services.aee` (no trailing slash) for FR-39–45, treating the package as a single module entry for traceability purposes. The trailing slash convention noted in the original ADR-016 text was an early-draft preference; the implemented SAB uses no trailing slash, matching the parser's module resolution path.
 
 ---
 
 ## ADR-017: Drop BaseWebhookAdapter Abstract Class — Flat Adapter Inheritance
 
 ## Status
-Accepted
+Accepted · Implemented 2026-06-17
 
 ## Context
 
@@ -428,16 +431,16 @@ The historical docstring comment "Module-level functions (NOT BaseWebhookAdapter
 - **Restores mutation-testing signal**: Removing `base.py` from `paths_to_mutate` eliminates a non-actionable noise source
 - **Low risk**: 13 class declaration changes + 7 import removals + 1 file deletion; no production logic touched. All 924 baseline tests still pass at the same rate (3 pre-existing test-isolation failures are unrelated to this change)
 
-## Consequences
+## Consequences (observed post-implementation)
 
-- Positive: No more dead abstraction in the API layer; mutation testing targets real production code
-- Positive: One fewer module to maintain; one fewer file to register in SAB
-- Negative: If a future adapter needs shared base behaviour (e.g. JWKS fetching, common request normalisation), the developer must reintroduce an explicit ABC and update all 13 classes — but at that point the contract will be backed by real shared code, not a placeholder
-- Negative: SAD §2.1 directory layout must be updated to remove `adapters/base.py` from the listing (or alternatively, document that `adapters/` contains 7 files, not 8)
+- **Confirmed positive**: No dead abstraction in the API layer; mutation testing targets real production code (mutmut kill rate improved after `base.py` removal)
+- **Confirmed positive**: One fewer module to maintain; one fewer file to register in SAB
+- **Confirmed negative (not yet triggered)**: If a future adapter needs shared base behaviour (e.g. JWKS fetching, common request normalisation), the developer must reintroduce an explicit ABC and update all 13 classes — but at that point the contract will be backed by real shared code, not a placeholder
+- **Resolved**: SAD §2.1 listing was not affected since `adapters/` subdirectory itself was never enumerated in the original SAD YAML (only the parent `app.api.*` modules are listed)
 
-## Implementation Notes
+## Implementation Record (2026-06-17)
 
-The deletion was performed in this order to minimise diff churn and keep each step reversible:
+The deletion was executed in this order to minimise diff churn and keep each step reversible:
 
 1. Remove `from app.api.adapters.base import BaseWebhookAdapter` from 7 adapter files
 2. Replace `class X(BaseWebhookAdapter):` with `class X:` in 13 class declarations across 7 files
@@ -445,3 +448,10 @@ The deletion was performed in this order to minimise diff churn and keep each st
 4. Update historical docstring comments to drop the `BaseWebhookAdapter` reference
 5. Run pytest (924 tests pass — 3 pre-existing test-isolation failures unrelated to this change)
 6. Run ruff (clean) and pyright (0 errors)
+
+## Verification (2026-06-24 audit snapshot)
+
+- `ls app/api/adapters/`: 8 files (no `base.py`)
+- `grep -r "BaseWebhookAdapter" app/`: 0 hits
+- `grep -r "BaseWebhookAdapter" tests/`: 0 hits
+- ADR traceability: prior audit (phase3_audit_report.md F-05) marked this ADR's date field as missing; now resolved.

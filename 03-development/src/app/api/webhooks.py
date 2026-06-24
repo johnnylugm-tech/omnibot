@@ -522,33 +522,190 @@ WEBHOOK_ERROR_CODES: tuple[str, ...] = (
     "AUTH_TOKEN_EXPIRED",
     "AUTHZ_INSUFFICIENT_ROLE",
 )
-_WEBHOOK_ROUTES: list[tuple[str, str]] = [
-    ("POST", "/api/v1/webhook/telegram"),
-    ("POST", "/api/v1/webhook/line"),
-    ("GET", "/api/v1/webhook/messenger"),
-    ("POST", "/api/v1/webhook/messenger"),
-    ("GET", "/api/v1/webhook/whatsapp"),
-    ("POST", "/api/v1/webhook/whatsapp"),
-    ("POST", "/api/v1/web/guest-session"),
-    ("POST", "/api/v1/web/message"),
-    ("POST", "/api/v1/a2a/rpc"),
-]
-def _register_webhook_routes(router: APIRouter) -> None:
-    """Register every webhook stub route declared in ``_WEBHOOK_ROUTES``."""
-    for method, path in _WEBHOOK_ROUTES:
-        _add_stub_route(router, method, path)
 
-def _add_stub_route(router: APIRouter, method: str, path: str) -> None:
-    """Register a single stub route that returns ``{"status": "ok"}``."""
-    _register = router.get if method == "GET" else router.post
+# ---------------------------------------------------------------------------
+# [F-01] Per-route real handlers — each platform invokes its real adapter
+# and pipes the resulting UnifiedMessage through Pipeline.handle_message.
+# Module-level adapter instances are constructed lazily on first request to
+# avoid pulling optional dependencies (DB, Redis) at import time.
+# ---------------------------------------------------------------------------
 
-    @_register(path)
-    async def _stub() -> dict[str, str]:  # pragma: no cover
-        return {"status": "ok"}  # pragma: no cover
 
-    # Preserve descriptive metadata for OpenAPI / route inspection.
-    slug = path.rsplit("/", 1)[-1].replace("-", "_")
-    _stub.__name__ = f"webhook_{slug}_{method.lower()}"
-    _stub.__doc__ = f"[FR-84] {method} {path}"
+def _get_pipeline():
+    """Lazy Pipeline factory — defers stage wiring to first request.
 
-_register_webhook_routes(router)
+    Returns a Pipeline with the real PALADIN L2 detector and a default
+    PII/DST/Knowledge/Response stack. Test wiring can monkeypatch the
+    module-level ``_PIPELINE`` to inject mocks.
+    """
+    from app.core.dst import DialogueState
+    from app.core.knowledge import HybridKnowledge
+    from app.core.pipeline import Pipeline
+    from app.core.pii import PIIMasking
+    from app.core.response import ResponseGenerator
+
+    if _PIPELINE is None:
+        global_pipeline = Pipeline(
+            emotion=None,
+            paladin=_get_paladin(),
+            pii=PIIMasking(),
+            dst=DialogueState(),
+            knowledge=HybridKnowledge(session=None),
+            response=ResponseGenerator(),
+        )
+    else:
+        global_pipeline = _PIPELINE
+    return global_pipeline
+
+
+_PIPELINE = None
+
+
+def _get_paladin():
+    from app.core.paladin import PromptInjectionDefense
+    return PromptInjectionDefense()
+
+
+def _telegram_adapter():
+    return TelegramWebhookAdapter()
+
+
+def _line_adapter():
+    return LineWebhookAdapter()
+
+
+def _messenger_adapter():
+    return MessengerWebhookAdapter(verify_token=os.getenv("MESSENGER_VERIFY_TOKEN", "test"))
+
+
+def _whatsapp_adapter():
+    return WhatsAppWebhookAdapter(verify_token=os.getenv("WHATSAPP_VERIFY_TOKEN", "test"))
+
+
+def _web_adapter():
+    return WebAdapter(jwt_secret=os.getenv("OMNIBOT_JWT_SECRET", "test-secret"))
+
+
+def _a2a_adapter():
+    return A2AAdapter(jwks_url=os.getenv("A2A_JWKS_URL", ""),
+                      expected_audience=os.getenv("A2A_AUDIENCE", "omnibot"))
+
+
+@router.post("/api/v1/webhook/telegram")
+async def telegram_webhook(body: dict) -> dict[str, object]:
+    """[F-01] FR-01 — Telegram webhook real handler.
+
+    Invokes ``TelegramWebhookAdapter.process_update`` then pipelines the
+    resulting ``UnifiedMessage`` through ``Pipeline.handle_message``.
+    """
+    try:
+        adapter = _telegram_adapter()
+        msg = adapter.process_update(body)
+        pipeline = _get_pipeline()
+        response = pipeline.handle_message(msg)
+        return {
+            "status": "ok",
+            "source": response.source.value if hasattr(response.source, "value") else str(response.source),
+            "confidence": response.confidence,
+        }
+    except Exception as exc:
+        return {"status": "error", "code": "INTERNAL_ERROR", "detail": str(exc)}
+
+
+@router.post("/api/v1/webhook/line")
+async def line_webhook(body: dict) -> dict[str, object]:
+    """[F-01] FR-02 — LINE webhook real handler."""
+    try:
+        adapter = _line_adapter()
+        msgs = adapter.process_events([body])
+        if not msgs:
+            return {"status": "ok", "count": 0}
+        pipeline = _get_pipeline()
+        response = pipeline.handle_message(msgs[0])
+        return {"status": "ok", "count": len(msgs), "source": str(response.source)}
+    except Exception as exc:
+        return {"status": "error", "code": "INTERNAL_ERROR", "detail": str(exc)}
+
+
+@router.get("/api/v1/webhook/messenger")
+async def messenger_challenge(hub_mode: str = "", hub_verify_token: str = "",
+                              hub_challenge: str = "") -> dict[str, str]:
+    """[F-01] FR-03 — Messenger webhook verification challenge."""
+    adapter = _messenger_adapter()
+    return {"hub.challenge": adapter.handle_challenge(hub_mode, hub_verify_token, hub_challenge)}
+
+
+@router.post("/api/v1/webhook/messenger")
+async def messenger_webhook(body: dict) -> dict[str, object]:
+    """[F-01] FR-03 — Messenger webhook real handler."""
+    try:
+        adapter = _messenger_adapter()
+        entries = body.get("entry", [])
+        msgs = adapter.parse_entries(entries)
+        pipeline = _get_pipeline()
+        response = pipeline.handle_message(msgs[0]) if msgs else None
+        return {"status": "ok", "count": len(msgs),
+                "source": str(response.source) if response else "rule"}
+    except Exception as exc:
+        return {"status": "error", "code": "INTERNAL_ERROR", "detail": str(exc)}
+
+
+@router.get("/api/v1/webhook/whatsapp")
+async def whatsapp_challenge(hub_mode: str = "", hub_verify_token: str = "",
+                             hub_challenge: str = "") -> dict[str, str]:
+    """[F-01] FR-04 — WhatsApp webhook verification challenge."""
+    adapter = _whatsapp_adapter()
+    return {"hub.challenge": adapter.handle_challenge(hub_mode, hub_verify_token, hub_challenge)}
+
+
+@router.post("/api/v1/webhook/whatsapp")
+async def whatsapp_webhook(body: dict) -> dict[str, object]:
+    """[F-01] FR-04 — WhatsApp webhook real handler."""
+    try:
+        adapter = _whatsapp_adapter()
+        msgs = adapter.parse_messages(body)
+        pipeline = _get_pipeline()
+        response = pipeline.handle_message(msgs[0]) if msgs else None
+        return {"status": "ok", "count": len(msgs),
+                "source": str(response.source) if response else "rule"}
+    except Exception as exc:
+        return {"status": "error", "code": "INTERNAL_ERROR", "detail": str(exc)}
+
+
+@router.post("/api/v1/web/guest-session")
+async def web_guest_session() -> dict[str, object]:
+    """[F-01] FR-05 — Web guest session creation."""
+    try:
+        adapter = _web_adapter()
+        return adapter.create_guest_session()
+    except Exception as exc:
+        return {"status": "error", "code": "INTERNAL_ERROR", "detail": str(exc)}
+
+
+@router.post("/api/v1/web/message")
+async def web_message(body: dict, authorization: str = "") -> dict[str, object]:
+    """[F-01] FR-05 — Web message processing (guest JWT auth)."""
+    try:
+        adapter = _web_adapter()
+        token = authorization.removeprefix(_BEARER_PREFIX) if authorization else ""
+        msg = adapter.process_message(token, body.get("content", ""))
+        pipeline = _get_pipeline()
+        response = pipeline.handle_message(msg)
+        return {"status": "ok", "source": str(response.source),
+                "content": response.content}
+    except Exception as exc:
+        return {"status": "error", "code": "INTERNAL_ERROR", "detail": str(exc)}
+
+
+@router.post("/api/v1/a2a/rpc")
+async def a2a_rpc(body: dict, authorization: str = "") -> dict[str, object]:
+    """[F-01] FR-06 — A2A JSON-RPC 2.0 endpoint."""
+    try:
+        adapter = _a2a_adapter()
+        msg = adapter.handle_jsonrpc_call(body, authorization)
+        pipeline = _get_pipeline()
+        response = pipeline.handle_message(msg)
+        return {"status": "ok", "source": str(response.source),
+                "jsonrpc": "2.0", "id": body.get("id")}
+    except Exception as exc:
+        return {"status": "error", "code": "INTERNAL_ERROR", "detail": str(exc)}

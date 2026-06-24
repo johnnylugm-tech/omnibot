@@ -152,6 +152,23 @@ asyncio_mode = "auto"
 markers = [
     "integration: integration tests (require running infra)",
     "slow: slow tests",
+    "unit: pure unit tests (no infra dependency)",
+    "e2e: end-to-end tests (full pipeline)",
+    "np01: NFR Pattern NP-01 (auth 401)",
+    "np02: NFR Pattern NP-02 (authz 403)",
+    "np03: NFR Pattern NP-03 (rate limit 429)",
+    "np04: NFR Pattern NP-04 (validation 422)",
+    "np05: NFR Pattern NP-05 (idempotency)",
+    "np06: NFR Pattern NP-06 (latency SLA)",
+    "np07: NFR Pattern NP-07 (dependency fault)",
+    "np08: NFR Pattern NP-08 (security attack)",
+    "np09: NFR Pattern NP-09 (audit log)",
+    "np10: NFR Pattern NP-10 (data round-trip)",
+    "np11: NFR Pattern NP-11 (backward compat)",
+    "np12: NFR Pattern NP-12 (pagination)",
+    "np13: NFR Pattern NP-13 (concurrency)",
+    "np14: NFR Pattern NP-14 (encryption)",
+    "np15: NFR Pattern NP-15 (timeout)",
 ]
 
 [tool.coverage.run]

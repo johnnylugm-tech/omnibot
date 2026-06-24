@@ -442,10 +442,11 @@ def test_fr49_handle_message_knowledge_source_set_on_response():
     )
 
 
-def test_fr49_handle_message_default_response_source_rule_with_full_confidence():
-    """With NO knowledge injected, ``handle_message`` MUST fall back to
-    ``ResponseSource.RULE`` and ``confidence=1.0``. Kills mutants #35–37
-    (source=None, confidence=2.0, confidence=None).
+def test_fr49_handle_message_default_response_source_rule_with_zero_confidence():
+    """[H-04] With NO knowledge injected, ``handle_message`` MUST fall back to
+    ``ResponseSource.RULE`` and ``confidence=0.0`` (honest report of no
+    knowledge consulted) rather than the historical ``1.0`` hardcoded
+    default that misreported the system as fully certain.
     """
     from datetime import datetime, timezone
     from app.core.unified_message import UnifiedMessage, Platform, MessageType
@@ -465,9 +466,9 @@ def test_fr49_handle_message_default_response_source_rule_with_full_confidence()
         f"Default Response.source must be RULE when no knowledge is "
         f"injected; got source={result.source!r}"
     )
-    assert result.confidence == 1.0, (
-        f"Default Response.confidence must be 1.0 (full) when no "
-        f"knowledge is injected; got confidence={result.confidence!r}"
+    assert result.confidence == 0.0, (
+        f"Default Response.confidence must be 0.0 (no knowledge consulted) "
+        f"when no knowledge is injected; got confidence={result.confidence!r}"
     )
 
 
