@@ -30,18 +30,33 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 security = HTTPBearer()
 
 def get_current_user_role(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
-    """Extract role from JWT."""
+    """Extract role from JWT with signature verification."""
     token = credentials.credentials
     if not token:
         return "anonymous"
     parts = token.split(".")
     if len(parts) != 3:
         return "anonymous"
+        
+    header_b64, payload_b64, provided_sig = parts
+    
     try:
+        # 1. Verify signature
+        secret = os.environ["OMNIBOT_JWT_SECRET"].encode()
+        msg = f"{header_b64}.{payload_b64}".encode()
+        expected_sig = _b64url_encode(hmac.new(secret, msg, "sha256").digest())
+        if not hmac.compare_digest(provided_sig, expected_sig):
+            return "anonymous"
+
+        # 2. Decode payload
         import base64
-        payload_b64 = parts[1]
         payload_bytes = base64.urlsafe_b64decode(payload_b64 + "=" * (-len(payload_b64) % 4))
         payload = json.loads(payload_bytes)
+        
+        # 3. Verify expiration
+        if payload.get("exp", 0) < time.time():
+            return "anonymous"
+            
         sub = payload.get("sub", "")
         # Very simple role mapping based on sub for demonstration
         if sub == os.environ.get("OMNIBOT_ADMIN_USER", ""):
