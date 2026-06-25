@@ -1,12 +1,12 @@
 {
   "summary": {
-    "total": 503,
+    "total": 505,
     "missing": 0,
     "incomplete": 0,
-    "orphaned": 503,
+    "orphaned": 505,
     "critical": 0,
     "major": 0,
-    "minor": 503
+    "minor": 505
   },
   "gaps": [
     {
@@ -2936,6 +2936,18 @@
       "severity": "minor",
       "reason": "'downgrade' has no corresponding specification in SPEC.md",
       "action": "Add spec for downgrade or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'count_loc' has no corresponding specification in SPEC.md",
+      "action": "Add spec for count_loc or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'count_lines' has no corresponding specification in SPEC.md",
+      "action": "Add spec for count_lines or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
