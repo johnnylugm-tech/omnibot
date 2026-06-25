@@ -1,6 +1,0 @@
-#!/usr/bin/expect -f
-set timeout 60
-spawn /Users/johnny/projects/omnibot/.venv/bin/python3 /Users/johnny/projects/omnibot/.runner_wrapper.py
-expect eof
-catch wait result
-exit [lindex $result 3]
