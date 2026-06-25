@@ -23,6 +23,7 @@ Citations:
 from __future__ import annotations
 
 import logging
+import random
 import threading
 import time
 from collections import deque
@@ -132,6 +133,8 @@ class RateLimiter:
         health_probe()  # Hub linkage
         # Inject; do not connect.
         self.redis_client = redis_client
+        # Cached script SHA for EVALSHA — loaded once, refreshed on NoScriptError.
+        self._sha: str | None = None
         # (platform, key) -> deque of monotonic timestamps inside the window.
         # INVARIANT: Keys must be composed of (str, str).
         # INVARIANT: Values must be a deque of floats sorted in ascending order.
@@ -258,13 +261,18 @@ class RateLimiter:
         if self.redis_client is None:  # guaranteed by caller-side preflight
             raise RuntimeError("rate-limit redis client not initialised")
         client = self.redis_client
-        sha = client.script_load(self._SCRIPT)
         now = time.time()
         window_start = now - self._WINDOW_SECONDS
         member = f"{now}:{key}:{uuid.uuid4().hex}"
+
+        # Use cached SHA to avoid TOCTOU between script_load and evalsha.
+        # Load once lazily; refresh on NoScriptError (SCRIPT FLUSH / restart).
+        if self._sha is None:
+            self._sha = client.script_load(self._SCRIPT)
+
         try:
             result = client.evalsha(
-                sha,
+                self._sha,
                 1,
                 f"rate_limit:{platform}:{key}",
                 window_start,
@@ -272,13 +280,12 @@ class RateLimiter:
                 member,
             )
         except NoScriptError:
-            # Script SHA was flushed between ``script_load`` and
-            # ``evalsha`` (SCRIPT FLUSH, Redis restart, fail-over).
-            # Fall through to ``EVAL`` which re-loads the script
-            # implicitly. The caller (``_redis_decide``) wraps this
-            # with a one-shot retry guard.
-            result = client.eval(  # pragma: no cover — health_probe Redis check — requires real Redis
-                self._SCRIPT,
+            # Script SHA was flushed (SCRIPT FLUSH, Redis restart, fail-over).
+            # Re-load and retry once. Caller (_redis_decide) guards against
+            # a second consecutive failure.
+            self._sha = client.script_load(self._SCRIPT)  # pragma: no cover — health_probe Redis check — requires real Redis
+            result = client.evalsha(  # pragma: no cover — health_probe Redis check — requires real Redis
+                self._sha,
                 1,
                 f"rate_limit:{platform}:{key}",
                 window_start,
@@ -321,8 +328,13 @@ class RateLimiter:
                 for k in empty_keys:
                     del self._buckets[k]  # pragma: no cover — aallow async wrapper — single-line defer, covered by sync path
                 if len(self._buckets) > 10000:
-                    import random
-                    keys_to_delete = random.sample(list(self._buckets.keys()), len(self._buckets) - 10000)  # nosec B311 — eviction sampling, not security-relevant
+                    # [BUG-12] Cap eviction at 1000 keys per cycle to limit lock hold time.
+                    # Using reservoir-style sampling (random.choices without replacement)
+                    # to avoid building the full key list when buckets >> 10000.
+                    excess = len(self._buckets) - 10000
+                    evict_count = min(1000, excess)
+                    all_keys = list(self._buckets.keys())
+                    keys_to_delete = random.sample(all_keys, evict_count)  # nosec B311 — eviction sampling, not security-relevant
                     for k in keys_to_delete:
                         del self._buckets[k]
 
