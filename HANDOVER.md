@@ -1,8 +1,8 @@
 # Harness Methodology — Session Handover
 
-**Checkpoint**: `P7-entry-20260625`  
+**Checkpoint**: `P7-exit-20260625`  
 **Phase**: P7 — Risk Register  
-**Generated**: 2026-06-25T08:13:14Z
+**Generated**: 2026-06-25T11:40:47Z
 
 > ⚠️  **開始下一個工作階段前，請先執行 `/compact` 壓縮上下文**，再從「接下來的工作」繼續。
 
@@ -14,9 +14,9 @@
 # 1. Clone (if working directory cleared)
 git clone --recurse-submodules https://github.com/johnnylugm-tech/omnibot.git && cd omnibot
 
-# 2. Read plan and continue Phase 7
-cat .methodology/phase7_plan.md
-# Follow the active plan and continue from where you left off
+# 2. Read plan and start Phase 8
+cat .methodology/phase8_plan.md
+# Follow SKILL.md §0.1 Phase 8 entry check, then execute
 ```
 
 ---
@@ -34,7 +34,7 @@ git log --oneline -3
 cat .methodology/state.json   # expected: phase=7 state=RUNNING last_gate=4 last_fr=FR-99
 
 # Read active plan
-cat .methodology/phase7_plan.md
+cat .methodology/phase8_plan.md
 ```
 
 | 欄位 | 值 |
@@ -42,22 +42,23 @@ cat .methodology/phase7_plan.md
 | Remote | `https://github.com/johnnylugm-tech/omnibot.git` |
 | Branch | `main` |
 | State | `phase=7 state=RUNNING last_gate=4 last_fr=FR-99` |
-| Plan | `.methodology/phase7_plan.md` |
+| Plan | `.methodology/phase8_plan.md` |
 
 ---
 
 ## 任務背景
 
-Phase 6 complete (108/108 FRs Gate 1 PASS). Gate 4 (score=100.0). Advancing to Phase 7.
+P7 Risk Register: all risks documented.
 
 ## 目前執行狀況
 
-Phase 6: 108/108 FRs Gate 1 PASS. Gate 4 (score=100.0) — quality_complete. Ready to begin Phase 7.
+P7 Risk Register complete. Risk log committed.
 
 ## 接下來的工作
 
-1. Follow SKILL.md §0.1 Phase 7 entry checklist
-2. Read the Phase 7 plan and execute
+1. Proceed to P8: Config & Records
+2. Finalize all configuration records
+3. On P8 done → call commit_and_push_p8()
 
 ## 注意事項
 

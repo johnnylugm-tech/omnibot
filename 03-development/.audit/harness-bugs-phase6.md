@@ -66,6 +66,8 @@ d['verdict'] = 'PASS'
 | **P6-BUG-08 / 10** | ❌ 使用者用 `python -m pip_licenses` | ✅ 已修(venv shim) | 框架只說「Run pip-licenses」,沒指定 `-m`;`pip-licenses` 套件只提供 CLI 入口不提供 module |
 | **P6-BUG-09** | ❌ CRG cache workflow | ✅ 已修 | 重跑 `run-gate` 觸發 CRG recon;屬文件/workflow 問題 |
 | **P6-BUG-15** | ❌ Project code style | ✅ 已修 | ruff E402 是標準 linting,logger 移至 import 之後 |
+| **P6-BUG-16** | ✅ 真實 submodule bug | ✅ 已修(upstream `b29782e`) | `_SCORERS` dict 漏註冊 `"readability-v2"`;Plan B commit 改 references 但漏 dispatch dict |
+| **P6-BUG-17** | ✅ 真實 submodule bug | ✅ 已修(upstream `9aa6df7`) | `readability_v2.py` 未過濾 tests/scripts(avg_cc=5.08 含 test);改用 sys.executable + 過濾非 prod 檔 |
 
 ---
 
