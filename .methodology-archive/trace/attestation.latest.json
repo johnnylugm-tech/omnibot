@@ -1,0 +1,1616 @@
+{
+  "schema": "harness/traceability/attestation/v1",
+  "git_sha": "40e25723d49d60a7f545af3d1ec62718b3ce2bed",
+  "content_sha256": "aa0ee7fccce78ede1d781f2cb7a1b8fe5e679640d0bd85fee3eb7b4b969b61d7",
+  "tool": "scripts/build_trace_attestation.py",
+  "overlay_used": null,
+  "overlay_errors": [],
+  "matrix": {
+    "schema_version": "harness/traceability/overlay/v1",
+    "project_id": "omnibot",
+    "completeness": {
+      "total_requirements": 108,
+      "srs_coverage": "100.0%",
+      "code_coverage": "100.0%",
+      "test_coverage": "100.0%",
+      "verification_rate": "100.0%",
+      "total_links": 503,
+      "missing_mappings": {
+        "fr_without_srs": [],
+        "fr_without_code": [],
+        "fr_without_test": []
+      }
+    },
+    "missing": {
+      "fr_without_srs": [],
+      "fr_without_code": [],
+      "fr_without_test": []
+    },
+    "requirements": {
+      "FR-01": {
+        "fr_id": "FR-01",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/api/adapters/telegram.py",
+          "03-development/src/app/api/adapters/verifiers.py",
+          "03-development/src/app/api/webhooks.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr01.py",
+          "tests/test_fr01.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-02": {
+        "fr_id": "FR-02",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/api/adapters/line.py",
+          "03-development/src/app/api/adapters/verifiers.py",
+          "03-development/src/app/api/webhooks.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr02.py",
+          "tests/test_fr02.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-03": {
+        "fr_id": "FR-03",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/api/adapters/messenger.py",
+          "03-development/src/app/api/adapters/verifiers.py",
+          "03-development/src/app/api/webhooks.py",
+          "03-development/tests/integration/test_fr03.py",
+          "03-development/tests/test_fr03.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr03.py",
+          "tests/test_fr03.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-04": {
+        "fr_id": "FR-04",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/api/adapters/verifiers.py",
+          "03-development/src/app/api/adapters/whatsapp.py",
+          "03-development/src/app/api/webhooks.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr04.py",
+          "tests/test_fr04.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-05": {
+        "fr_id": "FR-05",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/api/adapters/utils.py",
+          "03-development/src/app/api/adapters/verifiers.py",
+          "03-development/src/app/api/adapters/web.py",
+          "03-development/src/app/api/webhooks.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr05.py",
+          "tests/test_fr05.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-06": {
+        "fr_id": "FR-06",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/api/adapters/a2a.py",
+          "03-development/src/app/api/adapters/line.py",
+          "03-development/src/app/api/adapters/messenger.py",
+          "03-development/src/app/api/adapters/telegram.py",
+          "03-development/src/app/api/adapters/verifiers.py",
+          "03-development/src/app/api/adapters/web.py",
+          "03-development/src/app/api/adapters/whatsapp.py",
+          "03-development/src/app/api/main.py",
+          "03-development/src/app/api/webhooks.py",
+          "03-development/tests/unit/test_main_pass_through.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr06.py",
+          "tests/test_fr06.py",
+          "tests/unit/test_main_pass_through.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-07": {
+        "fr_id": "FR-07",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/unified_message.py"
+        ],
+        "test_files": [
+          "tests/test_fr07.py",
+          "tests/unit/test_fr07.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-08": {
+        "fr_id": "FR-08",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/response.py"
+        ],
+        "test_files": [
+          "tests/test_fr08.py",
+          "tests/unit/test_fr08.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-09": {
+        "fr_id": "FR-09",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/api/common.py",
+          "03-development/tests/test_fr09.py",
+          "03-development/tests/unit/test_fr09.py"
+        ],
+        "test_files": [
+          "tests/test_fr09.py",
+          "tests/unit/test_fr09.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-10": {
+        "fr_id": "FR-10",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/paladin.py",
+          "03-development/tests/integration/test_fr10.py",
+          "03-development/tests/test_fr10.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr10.py",
+          "tests/test_fr10.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-100": {
+        "fr_id": "FR-100",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/services/media.py"
+        ],
+        "test_files": [
+          "tests/e2e/test_fr100.py",
+          "tests/test_fr100.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-101": {
+        "fr_id": "FR-101",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/admin/webui.py"
+        ],
+        "test_files": [
+          "tests/e2e/test_fr101.py",
+          "tests/test_fr101.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-102": {
+        "fr_id": "FR-102",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/config.py"
+        ],
+        "test_files": [
+          "tests/e2e/test_fr102.py",
+          "tests/test_fr102.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-103": {
+        "fr_id": "FR-103",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/admin/webui.py"
+        ],
+        "test_files": [
+          "tests/e2e/test_fr103.py",
+          "tests/test_fr103.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-104": {
+        "fr_id": "FR-104",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/admin/portal.py"
+        ],
+        "test_files": [
+          "tests/e2e/test_fr104.py",
+          "tests/test_fr104.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-105": {
+        "fr_id": "FR-105",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/admin/odd_sql.py"
+        ],
+        "test_files": [
+          "tests/e2e/test_fr105.py",
+          "tests/test_fr105.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-106": {
+        "fr_id": "FR-106",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/tests/load/__init__.py"
+        ],
+        "test_files": [
+          "tests/e2e/test_fr106.py",
+          "tests/test_fr106.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-107": {
+        "fr_id": "FR-107",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/tests/e2e/test_fr107.py",
+          "03-development/tests/pyramid.py",
+          "03-development/tests/strategy.py",
+          "03-development/tests/test_fr107.py"
+        ],
+        "test_files": [
+          "tests/e2e/test_fr107.py",
+          "tests/test_fr107.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-108": {
+        "fr_id": "FR-108",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/admin/rbac.py",
+          "03-development/src/app/api/adapters/verifiers.py",
+          "03-development/src/app/core/knowledge.py",
+          "03-development/src/app/core/paladin.py",
+          "03-development/src/app/infra/deployment.py",
+          "03-development/src/app/services/escalation.py",
+          "03-development/src/app/services/llm_judge.py",
+          "03-development/tests/golden_dataset.py",
+          "03-development/tests/strategy.py"
+        ],
+        "test_files": [
+          "tests/e2e/test_fr108.py",
+          "tests/test_fr108.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-11": {
+        "fr_id": "FR-11",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/paladin.py",
+          "03-development/tests/integration/test_fr11.py",
+          "03-development/tests/test_fr11.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr11.py",
+          "tests/test_fr11.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-12": {
+        "fr_id": "FR-12",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/paladin.py",
+          "03-development/tests/integration/test_fr12.py",
+          "03-development/tests/test_fr12.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr12.py",
+          "tests/test_fr12.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-13": {
+        "fr_id": "FR-13",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/paladin.py",
+          "03-development/tests/integration/test_fr13.py",
+          "03-development/tests/test_fr13.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr13.py",
+          "tests/test_fr13.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-14": {
+        "fr_id": "FR-14",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/paladin.py",
+          "03-development/tests/integration/test_fr14.py",
+          "03-development/tests/test_fr14.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr14.py",
+          "tests/test_fr14.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-15": {
+        "fr_id": "FR-15",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/paladin.py",
+          "03-development/tests/integration/test_fr15.py",
+          "03-development/tests/test_fr15.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr15.py",
+          "tests/test_fr15.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-16": {
+        "fr_id": "FR-16",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/paladin.py",
+          "03-development/tests/integration/test_fr16.py",
+          "03-development/tests/test_fr16.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr16.py",
+          "tests/test_fr16.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-17": {
+        "fr_id": "FR-17",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/response.py",
+          "03-development/tests/integration/test_fr17.py",
+          "03-development/tests/test_fr17.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr17.py",
+          "tests/test_fr17.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-18": {
+        "fr_id": "FR-18",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/pii.py"
+        ],
+        "test_files": [
+          "tests/test_fr18.py",
+          "tests/unit/test_fr18.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-19": {
+        "fr_id": "FR-19",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/pii.py"
+        ],
+        "test_files": [
+          "tests/test_fr19.py",
+          "tests/unit/test_fr19.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-20": {
+        "fr_id": "FR-20",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/pii.py",
+          "03-development/src/app/infra/security.py"
+        ],
+        "test_files": [
+          "tests/test_fr20.py",
+          "tests/unit/test_fr20.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-21": {
+        "fr_id": "FR-21",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/rate_limit.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr21.py",
+          "tests/test_fr21.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-22": {
+        "fr_id": "FR-22",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/rate_limit.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr22.py",
+          "tests/test_fr22.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-23": {
+        "fr_id": "FR-23",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/middleware/ip_whitelist.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr23.py",
+          "tests/test_fr23.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-24": {
+        "fr_id": "FR-24",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/middleware/chain.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr24.py",
+          "tests/test_fr24.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-25": {
+        "fr_id": "FR-25",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/middleware/ip_whitelist.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr25.py",
+          "tests/test_fr25.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-26": {
+        "fr_id": "FR-26",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/knowledge.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr26.py",
+          "tests/test_fr26.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-27": {
+        "fr_id": "FR-27",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/knowledge.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr27.py",
+          "tests/test_fr27.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-28": {
+        "fr_id": "FR-28",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/knowledge.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr28.py",
+          "tests/test_fr28.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-29": {
+        "fr_id": "FR-29",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/database.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr29.py",
+          "tests/test_fr29.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-30": {
+        "fr_id": "FR-30",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/knowledge.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr30.py",
+          "tests/test_fr30.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-31": {
+        "fr_id": "FR-31",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/knowledge.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr31.py",
+          "tests/test_fr31.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-32": {
+        "fr_id": "FR-32",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/knowledge.py",
+          "03-development/tests/integration/test_fr32.py",
+          "03-development/tests/test_fr32.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr32.py",
+          "tests/test_fr32.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-33": {
+        "fr_id": "FR-33",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/knowledge.py",
+          "03-development/tests/integration/test_fr33.py",
+          "03-development/tests/test_fr33.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr33.py",
+          "tests/test_fr33.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-34": {
+        "fr_id": "FR-34",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/dst.py"
+        ],
+        "test_files": [
+          "tests/test_fr34.py",
+          "tests/unit/test_fr34.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-35": {
+        "fr_id": "FR-35",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/dst.py",
+          "03-development/src/app/core/pipeline.py"
+        ],
+        "test_files": [
+          "tests/test_fr35.py",
+          "tests/unit/test_fr35.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-36": {
+        "fr_id": "FR-36",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/dst.py"
+        ],
+        "test_files": [
+          "tests/test_fr36.py",
+          "tests/unit/test_fr36.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-37": {
+        "fr_id": "FR-37",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/dst.py"
+        ],
+        "test_files": [
+          "tests/test_fr37.py",
+          "tests/unit/test_fr37.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-38": {
+        "fr_id": "FR-38",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/dst.py"
+        ],
+        "test_files": [
+          "tests/test_fr38.py",
+          "tests/unit/test_fr38.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-39": {
+        "fr_id": "FR-39",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/services/aee/__init__.py",
+          "03-development/src/app/services/aee/adapter.py",
+          "03-development/src/app/services/aee/cli_adapter.py"
+        ],
+        "test_files": [
+          "tests/test_fr39.py",
+          "tests/unit/test_fr39.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-40": {
+        "fr_id": "FR-40",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/services/aee/mcp_adapter.py"
+        ],
+        "test_files": [
+          "tests/test_fr40.py",
+          "tests/unit/test_fr40.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-41": {
+        "fr_id": "FR-41",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/services/aee/a2a_adapter.py"
+        ],
+        "test_files": [
+          "tests/test_fr41.py",
+          "tests/unit/test_fr41.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-42": {
+        "fr_id": "FR-42",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/services/aee/cli_adapter.py"
+        ],
+        "test_files": [
+          "tests/test_fr42.py",
+          "tests/unit/test_fr42.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-43": {
+        "fr_id": "FR-43",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/services/aee/tool_executor.py"
+        ],
+        "test_files": [
+          "tests/test_fr43.py",
+          "tests/unit/test_fr43.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-44": {
+        "fr_id": "FR-44",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/api/webhooks.py"
+        ],
+        "test_files": [
+          "tests/test_fr44.py",
+          "tests/unit/test_fr44.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-45": {
+        "fr_id": "FR-45",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/dst.py"
+        ],
+        "test_files": [
+          "tests/test_fr45.py",
+          "tests/unit/test_fr45.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-46": {
+        "fr_id": "FR-46",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/emotion.py"
+        ],
+        "test_files": [
+          "tests/test_fr46.py",
+          "tests/unit/test_fr46.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-47": {
+        "fr_id": "FR-47",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/emotion.py"
+        ],
+        "test_files": [
+          "tests/test_fr47.py",
+          "tests/unit/test_fr47.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-48": {
+        "fr_id": "FR-48",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/emotion.py"
+        ],
+        "test_files": [
+          "tests/test_fr48.py",
+          "tests/unit/test_fr48.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-49": {
+        "fr_id": "FR-49",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/pipeline.py"
+        ],
+        "test_files": [
+          "tests/test_fr49.py",
+          "tests/unit/test_fr49.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-50": {
+        "fr_id": "FR-50",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/response.py"
+        ],
+        "test_files": [
+          "tests/test_fr50.py",
+          "tests/unit/test_fr50.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-51": {
+        "fr_id": "FR-51",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/response.py"
+        ],
+        "test_files": [
+          "tests/test_fr51.py",
+          "tests/unit/test_fr51.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-52": {
+        "fr_id": "FR-52",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/response.py",
+          "03-development/src/app/services/ab_testing.py"
+        ],
+        "test_files": [
+          "tests/test_fr52.py",
+          "tests/unit/test_fr52.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-53": {
+        "fr_id": "FR-53",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/response.py"
+        ],
+        "test_files": [
+          "tests/test_fr53.py",
+          "tests/unit/test_fr53.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-54": {
+        "fr_id": "FR-54",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/services/escalation.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr54.py",
+          "tests/test_fr54.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-55": {
+        "fr_id": "FR-55",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/services/escalation.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr55.py",
+          "tests/test_fr55.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-56": {
+        "fr_id": "FR-56",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/services/escalation.py",
+          "03-development/tests/integration/test_fr56.py",
+          "03-development/tests/test_fr56.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr56.py",
+          "tests/test_fr56.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-57": {
+        "fr_id": "FR-57",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/api/websocket.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr57.py",
+          "tests/test_fr57.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-58": {
+        "fr_id": "FR-58",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/api/websocket.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr58.py",
+          "tests/test_fr58.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-59": {
+        "fr_id": "FR-59",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/api/websocket.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr59.py",
+          "tests/test_fr59.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-60": {
+        "fr_id": "FR-60",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/admin/rbac.py"
+        ],
+        "test_files": [
+          "tests/test_fr60.py",
+          "tests/unit/test_fr60.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-61": {
+        "fr_id": "FR-61",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/admin/rbac.py"
+        ],
+        "test_files": [
+          "tests/test_fr61.py",
+          "tests/unit/test_fr61.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-62": {
+        "fr_id": "FR-62",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/admin/rbac.py"
+        ],
+        "test_files": [
+          "tests/test_fr62.py",
+          "tests/unit/test_fr62.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-63": {
+        "fr_id": "FR-63",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/services/ab_testing.py"
+        ],
+        "test_files": [
+          "tests/test_fr63.py",
+          "tests/unit/test_fr63.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-64": {
+        "fr_id": "FR-64",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/services/ab_testing.py"
+        ],
+        "test_files": [
+          "tests/test_fr64.py",
+          "tests/unit/test_fr64.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-65": {
+        "fr_id": "FR-65",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/services/llm_judge.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr65.py",
+          "tests/test_fr65.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-66": {
+        "fr_id": "FR-66",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/services/llm_judge.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr66.py",
+          "tests/test_fr66.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-67": {
+        "fr_id": "FR-67",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/services/llm_judge.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr67.py",
+          "tests/test_fr67.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-68": {
+        "fr_id": "FR-68",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/services/llm_judge.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr68.py",
+          "tests/test_fr68.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-69": {
+        "fr_id": "FR-69",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/services/llm_judge.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr69.py",
+          "tests/test_fr69.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-70": {
+        "fr_id": "FR-70",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/observability.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr70.py",
+          "tests/test_fr70.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-71": {
+        "fr_id": "FR-71",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/observability.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr71.py",
+          "tests/test_fr71.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-72": {
+        "fr_id": "FR-72",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/observability.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr72.py",
+          "tests/test_fr72.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-73": {
+        "fr_id": "FR-73",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/observability.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr73.py",
+          "tests/test_fr73.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-74": {
+        "fr_id": "FR-74",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/observability.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr74.py",
+          "tests/test_fr74.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-75": {
+        "fr_id": "FR-75",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/jobs.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr75.py",
+          "tests/test_fr75.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-76": {
+        "fr_id": "FR-76",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/jobs.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr76.py",
+          "tests/test_fr76.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-77": {
+        "fr_id": "FR-77",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/jobs.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr77.py",
+          "tests/test_fr77.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-78": {
+        "fr_id": "FR-78",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/core/knowledge.py",
+          "03-development/src/app/infra/jobs.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr78.py",
+          "tests/test_fr78.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-79": {
+        "fr_id": "FR-79",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/jobs.py",
+          "refactor_jobs.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr79.py",
+          "tests/test_fr79.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-80": {
+        "fr_id": "FR-80",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/redis_streams.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr80.py",
+          "tests/test_fr80.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-81": {
+        "fr_id": "FR-81",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/circuit_breaker.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr81.py",
+          "tests/test_fr81.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-82": {
+        "fr_id": "FR-82",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/database.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr82.py",
+          "tests/test_fr82.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-83": {
+        "fr_id": "FR-83",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/database.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr83.py",
+          "tests/test_fr83.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-84": {
+        "fr_id": "FR-84",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/api/webhooks.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr84.py",
+          "tests/test_fr84.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-85": {
+        "fr_id": "FR-85",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/api/management.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr85.py",
+          "tests/test_fr85.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-86": {
+        "fr_id": "FR-86",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/api/auth.py",
+          "03-development/src/app/api/main.py",
+          "03-development/tests/unit/test_auth_jwt_and_routes.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr86.py",
+          "tests/test_fr86.py",
+          "tests/unit/test_auth_jwt_and_routes.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-87": {
+        "fr_id": "FR-87",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/api/webhooks.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr87.py",
+          "tests/test_fr87.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-88": {
+        "fr_id": "FR-88",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/admin/gdpr.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr88.py",
+          "tests/test_fr88.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-89": {
+        "fr_id": "FR-89",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/security.py"
+        ],
+        "test_files": [
+          "tests/e2e/test_fr89.py",
+          "tests/test_fr89.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-90": {
+        "fr_id": "FR-90",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/security.py"
+        ],
+        "test_files": [
+          "tests/e2e/test_fr90.py",
+          "tests/test_fr90.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-91": {
+        "fr_id": "FR-91",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/admin/gdpr.py",
+          "03-development/src/app/infra/security.py",
+          "03-development/tests/e2e/test_fr91.py",
+          "03-development/tests/test_fr91.py"
+        ],
+        "test_files": [
+          "tests/e2e/test_fr91.py",
+          "tests/test_fr91.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-92": {
+        "fr_id": "FR-92",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/security.py"
+        ],
+        "test_files": [
+          "tests/e2e/test_fr92.py",
+          "tests/test_fr92.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-93": {
+        "fr_id": "FR-93",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/admin/gdpr.py"
+        ],
+        "test_files": [
+          "tests/e2e/test_fr93.py",
+          "tests/test_fr93.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-94": {
+        "fr_id": "FR-94",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/admin/gdpr.py"
+        ],
+        "test_files": [
+          "tests/e2e/test_fr94.py",
+          "tests/test_fr94.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-95": {
+        "fr_id": "FR-95",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/deployment.py"
+        ],
+        "test_files": [
+          "tests/e2e/test_fr95.py",
+          "tests/test_fr95.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-96": {
+        "fr_id": "FR-96",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/deployment.py"
+        ],
+        "test_files": [
+          "tests/e2e/test_fr96.py",
+          "tests/test_fr96.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-97": {
+        "fr_id": "FR-97",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/deployment.py"
+        ],
+        "test_files": [
+          "tests/e2e/test_fr97.py",
+          "tests/test_fr97.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-98": {
+        "fr_id": "FR-98",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/deployment.py"
+        ],
+        "test_files": [
+          "tests/e2e/test_fr98.py",
+          "tests/test_fr98.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-99": {
+        "fr_id": "FR-99",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/infra/circuit_breaker.py"
+        ],
+        "test_files": [
+          "tests/e2e/test_fr99.py",
+          "tests/test_fr99.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      }
+    },
+    "annotations": {}
+  }
+}

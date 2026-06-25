@@ -1,0 +1,322 @@
+{
+  "generated_at": "2026-06-24T14:43:13.101242+00:00",
+  "git_sha": "890cd195dc7d9a3a2c94fdd20ee5c63359c10198",
+  "language": "python",
+  "high_risk": [
+    {
+      "path": "app.core.dst",
+      "name": "app.core",
+      "reasons": [
+        "declared"
+      ]
+    },
+    {
+      "path": "app.core.knowledge",
+      "name": "app.core",
+      "reasons": [
+        "declared"
+      ]
+    },
+    {
+      "path": "app.core.paladin",
+      "name": "app.core",
+      "reasons": [
+        "declared"
+      ]
+    },
+    {
+      "path": "app.infra.circuit_breaker",
+      "name": "app.infra",
+      "reasons": [
+        "declared"
+      ]
+    },
+    {
+      "path": "app.infra.jobs",
+      "name": "app.infra",
+      "reasons": [
+        "declared"
+      ]
+    },
+    {
+      "path": "app.infra.rate_limit",
+      "name": "app.infra",
+      "reasons": [
+        "declared"
+      ]
+    },
+    {
+      "path": "app.infra.redis_streams",
+      "name": "app.infra",
+      "reasons": [
+        "declared"
+      ]
+    },
+    {
+      "path": "app.services.aee",
+      "name": "app.services",
+      "reasons": [
+        "declared"
+      ]
+    },
+    {
+      "path": "app.services.llm_judge",
+      "name": "app.services",
+      "reasons": [
+        "declared"
+      ]
+    },
+    {
+      "path": "app.services.media",
+      "name": "app.services",
+      "reasons": [
+        "declared"
+      ]
+    }
+  ],
+  "standard": [
+    {
+      "path": "03-development/src/app/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/app/admin/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/app/admin/gdpr.py",
+      "name": "gdpr"
+    },
+    {
+      "path": "03-development/src/app/admin/odd_sql.py",
+      "name": "odd_sql"
+    },
+    {
+      "path": "03-development/src/app/admin/portal.py",
+      "name": "portal"
+    },
+    {
+      "path": "03-development/src/app/admin/rbac.py",
+      "name": "rbac"
+    },
+    {
+      "path": "03-development/src/app/admin/reports.py",
+      "name": "reports"
+    },
+    {
+      "path": "03-development/src/app/admin/webui.py",
+      "name": "webui"
+    },
+    {
+      "path": "03-development/src/app/api/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/app/api/adapters/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/app/api/adapters/a2a.py",
+      "name": "a2a"
+    },
+    {
+      "path": "03-development/src/app/api/adapters/line.py",
+      "name": "line"
+    },
+    {
+      "path": "03-development/src/app/api/adapters/messenger.py",
+      "name": "messenger"
+    },
+    {
+      "path": "03-development/src/app/api/adapters/telegram.py",
+      "name": "telegram"
+    },
+    {
+      "path": "03-development/src/app/api/adapters/utils.py",
+      "name": "utils"
+    },
+    {
+      "path": "03-development/src/app/api/adapters/verifiers.py",
+      "name": "verifiers"
+    },
+    {
+      "path": "03-development/src/app/api/adapters/web.py",
+      "name": "web"
+    },
+    {
+      "path": "03-development/src/app/api/adapters/whatsapp.py",
+      "name": "whatsapp"
+    },
+    {
+      "path": "03-development/src/app/api/auth.py",
+      "name": "auth"
+    },
+    {
+      "path": "03-development/src/app/api/common.py",
+      "name": "common"
+    },
+    {
+      "path": "03-development/src/app/api/main.py",
+      "name": "main"
+    },
+    {
+      "path": "03-development/src/app/api/management.py",
+      "name": "management"
+    },
+    {
+      "path": "03-development/src/app/api/webhooks.py",
+      "name": "webhooks"
+    },
+    {
+      "path": "03-development/src/app/api/websocket.py",
+      "name": "websocket"
+    },
+    {
+      "path": "03-development/src/app/core/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/app/core/dst.py",
+      "name": "dst"
+    },
+    {
+      "path": "03-development/src/app/core/emotion.py",
+      "name": "emotion"
+    },
+    {
+      "path": "03-development/src/app/core/knowledge.py",
+      "name": "knowledge"
+    },
+    {
+      "path": "03-development/src/app/core/paladin.py",
+      "name": "paladin"
+    },
+    {
+      "path": "03-development/src/app/core/pii.py",
+      "name": "pii"
+    },
+    {
+      "path": "03-development/src/app/core/pipeline.py",
+      "name": "pipeline"
+    },
+    {
+      "path": "03-development/src/app/core/response.py",
+      "name": "response"
+    },
+    {
+      "path": "03-development/src/app/core/unified_message.py",
+      "name": "unified_message"
+    },
+    {
+      "path": "03-development/src/app/infra/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/app/infra/circuit_breaker.py",
+      "name": "circuit_breaker"
+    },
+    {
+      "path": "03-development/src/app/infra/config.py",
+      "name": "config"
+    },
+    {
+      "path": "03-development/src/app/infra/database.py",
+      "name": "database"
+    },
+    {
+      "path": "03-development/src/app/infra/deployment.py",
+      "name": "deployment"
+    },
+    {
+      "path": "03-development/src/app/infra/jobs.py",
+      "name": "jobs"
+    },
+    {
+      "path": "03-development/src/app/infra/observability.py",
+      "name": "observability"
+    },
+    {
+      "path": "03-development/src/app/infra/rate_limit.py",
+      "name": "rate_limit"
+    },
+    {
+      "path": "03-development/src/app/infra/redis_streams.py",
+      "name": "redis_streams"
+    },
+    {
+      "path": "03-development/src/app/infra/security.py",
+      "name": "security"
+    },
+    {
+      "path": "03-development/src/app/middleware/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/app/middleware/chain.py",
+      "name": "chain"
+    },
+    {
+      "path": "03-development/src/app/middleware/ip_whitelist.py",
+      "name": "ip_whitelist"
+    },
+    {
+      "path": "03-development/src/app/services/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/app/services/ab_testing.py",
+      "name": "ab_testing"
+    },
+    {
+      "path": "03-development/src/app/services/aee/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/app/services/aee/a2a_adapter.py",
+      "name": "a2a_adapter"
+    },
+    {
+      "path": "03-development/src/app/services/aee/adapter.py",
+      "name": "adapter"
+    },
+    {
+      "path": "03-development/src/app/services/aee/cli_adapter.py",
+      "name": "cli_adapter"
+    },
+    {
+      "path": "03-development/src/app/services/aee/mcp_adapter.py",
+      "name": "mcp_adapter"
+    },
+    {
+      "path": "03-development/src/app/services/aee/tool_executor.py",
+      "name": "tool_executor"
+    },
+    {
+      "path": "03-development/src/app/services/escalation.py",
+      "name": "escalation"
+    },
+    {
+      "path": "03-development/src/app/services/llm_judge.py",
+      "name": "llm_judge"
+    },
+    {
+      "path": "03-development/src/app/services/media.py",
+      "name": "media"
+    },
+    {
+      "path": "03-development/src/app/services/registry.py",
+      "name": "registry"
+    }
+  ],
+  "mutation_survivors": [],
+  "integration_coverage": {
+    "gate": 2,
+    "score": 60
+  },
+  "sources": {
+    "declared": 10,
+    "crg_hubs": 0,
+    "mutation_survivors": 0,
+    "integration_coverage": true
+  }
+}
