@@ -214,7 +214,7 @@ python3 harness_cli.py load-context --phase 4 --project . --json \
   > (`harness/crg_independent.py`) and overrides any agent-recorded score with
   > `community_cohesion`. error_handling is tool-scored (`ast-error-handling`), not CRG.
   > If architecture = 0 due to Orchestrator/hub-and-spoke pattern: complete DA challenge (A3 above)
-  > and set `da_waiver` in gate4_result.json to bypass the threshold.
+  > and set `da_waiver` in quality_manifest.json to bypass the threshold.
   > See `harness/ssi/prompts/evaluate_dimension.md` §Orchestrator Pattern False Positive.
   > **traceability** is also framework-owned: the harness calls `compute_trace_dimension()`
   > inside `finalize-gate` and injects the score automatically. Do NOT report a traceability

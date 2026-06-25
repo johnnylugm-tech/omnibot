@@ -30,7 +30,7 @@ Agent B peer review of the QA deliverables (HR-01) — both are required to exit
 ### Entry Gate Verification
 
 - **[ENTRY-CHECK]** Gate 3 PASS (P4 exit — P5 has no exit gate, P5 completed stands between):
-  Verify P5 output artifacts exist: `05-verification/VERIFICATION_REPORT.md` + `05-verification/BASELINE.md`
+  Verify P5 output artifacts exist: `05-verification/VERIFICATION_REPORT.md`
   Proof: .methodology/quality_manifest.json records Gate 3 PASS from P4.
   If NOT confirmed: return to Phase 4 and complete exit gate first.
 
@@ -150,7 +150,7 @@ python3 harness_cli.py load-context --phase 6 --project . --json \
   > (`harness/crg_independent.py`) and overrides any agent-recorded score with
   > `community_cohesion`. error_handling is tool-scored (`ast-error-handling`), not CRG.
   > If architecture = 0 due to Orchestrator/hub-and-spoke pattern: complete DA challenge (A3 above)
-  > and set `da_waiver` in gate4_result.json to bypass the threshold.
+  > and set `da_waiver` in quality_manifest.json to bypass the threshold.
   > See `harness/ssi/prompts/evaluate_dimension.md` §Orchestrator Pattern False Positive.
   > **traceability** is also framework-owned: the harness calls `compute_trace_dimension()`
   > inside `finalize-gate` and injects the score automatically. Do NOT report a traceability
@@ -227,13 +227,13 @@ python3 harness_cli.py load-context --phase 6 --project . --json \
 - **G4f** Generate Final Sign-Off:
   Create `FINAL_SIGN_OFF.md` at project root.
   Include: project name, completion date, Gate 4 composite score, sign-off statement.
-  Must reference `BASELINE.md` and `VERIFICATION_REPORT.md` (verification provenance).
+  Must reference `VERIFICATION_REPORT.md` (verification provenance).
 
 - **G4g** Agent B Peer Review (HR-01):
   Agent B (reviewer — stateless) explicitly reviews ALL deliverables.
   1. Review `06-quality/QUALITY_REPORT.md`, `RELEASE_NOTES.md`, and `FINAL_SIGN_OFF.md`.
   2. Cross-check `.methodology/quality_manifest.json` Gate 4 scoring logic.
-  3. Reference `05-verification/VERIFICATION_REPORT.md` and `BASELINE.md` for historical traceability.
+  3. Reference `05-verification/VERIFICATION_REPORT.md` for historical traceability.
   4. Generate approval JSON files in `.methodology/agent_b_approvals/` with these exact filenames:
      `QUALITY_REPORT.md.json`, `RELEASE_NOTES.md.json`, `FINAL_SIGN_OFF.md.json`, `quality_manifest.json`.
      **Note:** Agent B must write these 4 files using file-write tools inside the session.
@@ -267,7 +267,7 @@ python3 harness_cli.py load-context --phase 6 --project . --json \
 
 - **[GIT-TAG]** Push Gate 4 git tag (SKILL.md §0.4):
   ```bash
-  SCORE=$(python3 -c "import json; d=json.load(open('.sessi-work/gate4_result.json')); print(d.get('composite_score','XX'))" 2>/dev/null || echo 'XX')
+  SCORE=$(python3 -c "import json; d=json.load(open('.methodology/quality_manifest.json')); print(d.get('composite_score','XX'))" 2>/dev/null || echo 'XX')
   git tag -a "harness-v4-$(date +%Y%m%d)-score${SCORE}" -m "Gate 4 PASS (score ${SCORE})"
   git push origin --tags
   ```

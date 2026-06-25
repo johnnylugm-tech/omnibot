@@ -31,7 +31,7 @@ Each FR ends with a Gate 1 re-evaluation (CHECKPOINT). No harness run-gate — P
 > At milestones, `HANDOVER.md` is written with phase/FR/status summary.
 
 > **Checkpoint Index**:
-> - MILESTONE: P5-baseline push (BASELINE.md generated) → **HANDOVER.md**
+> - MILESTONE: P5-baseline push (VERIFICATION_REPORT.md generated) → **HANDOVER.md**
 
 ### Entry Gate Verification
 
@@ -120,7 +120,7 @@ python3 harness_cli.py load-context --phase 5 --project . --json \
 
 ### P5 System Verification
 
-- **[BASELINE]** Generate `05-verification/BASELINE.md` (system state snapshot):
+- **[BASELINE]** Generate `05-verification/VERIFICATION_REPORT.md` (system state snapshot):
   - Document: current version, test results summary, coverage %, Gate 3 composite score
   - Reference: `04-testing/TEST_RESULTS.md` and `03-development/src/` module list
 - **[VERIFY-REPORT]** Generate `05-verification/VERIFICATION_REPORT.md`:
@@ -133,14 +133,14 @@ python3 harness_cli.py load-context --phase 5 --project . --json \
 
 ### P5 Milestone Push (10-Push Strategy ⑦)
 
-- **PUSH ⑦ — P5-baseline** (after BASELINE.md is generated):
+- **PUSH ⑦ — P5-baseline** (after VERIFICATION_REPORT.md is generated):
   ```bash
   python3 harness_cli.py push-milestone --type p5-baseline --project .
   ```
   > Writes HANDOVER.md + commits + pushes.
 
 ### Phase 5 Deliverables
-- `05-verification/BASELINE.md` - System baseline
+- `05-verification/VERIFICATION_REPORT.md` - System baseline
 - `05-verification/VERIFICATION_REPORT.md` - Verification report
 - [x] `.methodology/sessions_spawn.log` — auto-populated by AgentSpawner (non-blocking debug trail)
 - Gate 1 PASS for every FR
