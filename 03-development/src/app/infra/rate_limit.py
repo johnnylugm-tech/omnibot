@@ -255,7 +255,8 @@ class RateLimiter:
         # but pyright can't narrow the type across that method boundary — assert
         # so the subsequent attribute access is type-safe.
         import uuid
-        assert self.redis_client is not None
+        if self.redis_client is None:  # guaranteed by caller-side preflight
+            raise RuntimeError("rate-limit redis client not initialised")
         client = self.redis_client
         sha = client.script_load(self._SCRIPT)
         now = time.time()
@@ -294,7 +295,8 @@ class RateLimiter:
         one round trip.
         """
         import uuid  # pragma: no cover — CIDR overflow/cleanup paths — edge case with synthetic IP overflow
-        assert self.redis_client is not None  # pragma: no cover — CIDR overflow/cleanup paths — edge case with synthetic IP overflow
+        if self.redis_client is None:  # pragma: no cover — CIDR overflow/cleanup paths — edge case with synthetic IP overflow
+            raise RuntimeError("rate-limit redis client not initialised")
         client = self.redis_client  # pragma: no cover — CIDR overflow/cleanup paths — edge case with synthetic IP overflow
         now = time.time()  # pragma: no cover — CIDR overflow/cleanup paths — edge case with synthetic IP overflow
         window_start = now - self._WINDOW_SECONDS  # pragma: no cover — CIDR overflow/cleanup paths — edge case with synthetic IP overflow
@@ -320,7 +322,7 @@ class RateLimiter:
                     del self._buckets[k]  # pragma: no cover — aallow async wrapper — single-line defer, covered by sync path
                 if len(self._buckets) > 10000:
                     import random
-                    keys_to_delete = random.sample(list(self._buckets.keys()), len(self._buckets) - 10000)
+                    keys_to_delete = random.sample(list(self._buckets.keys()), len(self._buckets) - 10000)  # nosec B311 — eviction sampling, not security-relevant
                     for k in keys_to_delete:
                         del self._buckets[k]
 

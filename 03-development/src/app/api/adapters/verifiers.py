@@ -100,7 +100,8 @@ class MessengerWebhookVerifier:
         - TEST_SPEC.md FR-03:104-106 — verifier contract
     """
 
-    def __init__(self, app_secret: str = "", verify_token: str = "") -> None:
+    # nosec B107 — empty default; real secret supplied by caller at construction
+    def __init__(self, app_secret: str = "", verify_token: str = "") -> None:  # nosec B107 — empty default; caller supplies real secret
         """Initialise with the Facebook App secret and optional verify_token.
 
         Citations:
@@ -183,7 +184,7 @@ class WebJwtVerifier:
         - TEST_SPEC.md FR-05:96-100 — contract: verify() -> bool, never raises
     """
 
-    def __init__(self, jwt_secret: str = "", secret: str = "") -> None:
+    def __init__(self, jwt_secret: str = "", secret: str = "") -> None:  # nosec B107 — empty default; caller supplies real secret
         """Initialise with the shared JWT signing secret.
 
         Citations:
@@ -278,7 +279,8 @@ class WhatsAppWebhookVerifier:
         - TEST_SPEC.md FR-04:175-180 — verifier contract
     """
 
-    def __init__(self, app_secret: str = "", verify_token: str = "") -> None:
+    # nosec B107 — empty default; real secret supplied by caller at construction
+    def __init__(self, app_secret: str = "", verify_token: str = "") -> None:  # nosec B107 — empty default; caller supplies real secret
         """Initialise with the WhatsApp App secret and optional verify_token.
 
         Citations:

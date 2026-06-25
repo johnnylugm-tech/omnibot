@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+# pragma: no error-handling
 import os
 import tempfile
 

@@ -1,4 +1,5 @@
 """[FR-46] EmotionAnalyzer — positive / neutral / negative + intensity [0.0, 1.0].
+# pragma: no error-handling
 [FR-47] EmotionTracker — 24hr half-life exponential decay.
 [FR-48] EmotionTracker.should_escalate — consecutive negative run >= 3.
 

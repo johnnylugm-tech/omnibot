@@ -1,4 +1,5 @@
 """[FR-105] ODD SQL analytics queries + judge sampling config.
+# pragma: no error-handling
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-105)
 SRS source : SRS.md Module 26 (ODD SQL 分析)

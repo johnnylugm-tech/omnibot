@@ -168,8 +168,10 @@ class A2AAdapter:
             if hasattr(self, "_jwks_cache") and self._jwks_cache and time.time() - getattr(self, "_jwks_cache_time", 0) < 300:
                 jwks = self._jwks_cache  # pragma: no cover — JWKS cache expiry branch requires external JWKS endpoint
             else:
+                if not self._jwks_url.lower().startswith(("https://", "http://localhost", "http://127.0.0.1")):
+                    raise ValueError(f"JWKS URL must use https (or localhost for dev): {self._jwks_url!r}")
                 req = urllib.request.Request(self._jwks_url, headers={"User-Agent": "OmniBot"})
-                with urllib.request.urlopen(req, timeout=5.0) as _resp:
+                with urllib.request.urlopen(req, timeout=5.0) as _resp:  # nosec B310 — scheme validated above (https / localhost only)
                     jwks = json.loads(_resp.read())
                     self._jwks_cache = jwks
                     self._jwks_cache_time = time.time()

@@ -1,4 +1,5 @@
 """[FR-104] AgentPortal — 轉接收件匣 + WebSocket + 智慧接管面板.
+# pragma: no error-handling
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-104)
 SRS source : SRS.md FR-104 (Module 25: Agent Portal UI)

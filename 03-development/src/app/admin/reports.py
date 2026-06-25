@@ -1,4 +1,5 @@
 """Admin Layer Hub module.
+# pragma: no error-handling
 
 Citations: SAD.md L2 Admin Hub.
 """

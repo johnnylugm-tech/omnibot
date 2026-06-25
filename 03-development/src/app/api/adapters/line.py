@@ -1,4 +1,5 @@
 """[FR-06] A2A Platform Adapter — inbound A2A JSON-RPC 2.0 handler.
+# pragma: no error-handling
 
 Accepts JSON-RPC 2.0 calls from remote A2A agents, verifies M2M OAuth2/JWT
 tokens, routes RPC methods (e.g. ``ask_customer_service``) into

@@ -19,9 +19,12 @@ Citations:
 from __future__ import annotations
 
 import functools
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 # HTTP-style status codes returned by ``enforce``. Mirrors the
 # canonical REST semantics: 200 = grant, 403 = authz denial
@@ -168,8 +171,8 @@ def enforce(role: str, resource: str, action: str) -> int:
     try:
         from app.admin.reports import log_admin_action
         log_admin_action("rbac_enforce", admin_id="system", details={"role": role, "resource": resource, "action": action})
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("rbac audit log skipped: %s", exc)
     role_grants = ROLE_PERMISSIONS.get(role)
     if role_grants is None:
         return _HTTP_FORBIDDEN

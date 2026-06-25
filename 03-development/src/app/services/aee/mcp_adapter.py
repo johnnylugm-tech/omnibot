@@ -24,8 +24,9 @@ from __future__ import annotations
 
 import contextlib
 import json
+import logging
 import shlex
-import subprocess
+import subprocess  # nosec B404 — legitimate subprocess use for MCP stdio adapter
 
 from app.services.aee.adapter import (
     ActionAdapter,
@@ -34,6 +35,8 @@ from app.services.aee.adapter import (
     fail,
     ok,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class MCPAdapter(ActionAdapter):
@@ -123,7 +126,7 @@ class MCPAdapter(ActionAdapter):
             }
         ).encode("utf-8")
 
-        proc = subprocess.Popen(
+        proc = subprocess.Popen(  # nosec B603 — shlex.split() tokenizes, no shell injection
             shlex.split(self.command),
             shell=False,
             stdin=subprocess.PIPE,
@@ -179,7 +182,7 @@ class MCPAdapter(ActionAdapter):
         """
         proc: subprocess.Popen | None = None
         try:
-            proc = subprocess.Popen(
+            proc = subprocess.Popen(  # nosec B603 — shlex.split() tokenizes, no shell injection
                 shlex.split(self.command or ""),
                 shell=False,
                 stdin=subprocess.PIPE,
@@ -296,8 +299,8 @@ class MCPAdapter(ActionAdapter):
                             )
                 except json.JSONDecodeError:
                     pass
-        except Exception:  # pragma: no cover — MCP list_tools fallback path — requires real MCP server
-            pass  # pragma: no cover — MCP list_tools fallback path — requires real MCP server
+        except Exception as exc:  # pragma: no cover — MCP list_tools fallback path — requires real MCP server
+            logger.debug("MCP list_tools fallback: %s", exc)  # pragma: no cover — MCP list_tools fallback path — requires real MCP server
         return tools
 
     def _is_server_unreachable(self) -> bool:

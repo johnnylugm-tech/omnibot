@@ -624,7 +624,7 @@ def _await_coro_from_sync(coro, timeout_ms: float):
             holder["v"] = new_loop.run_until_complete(
                 asyncio.wait_for(task, timeout=timeout_ms / 1000.0)
             )
-        except BaseException as exc:  # propagate TimeoutError etc.
+        except (TimeoutError, asyncio.CancelledError, Exception) as exc:  # propagate timeouts and cancellation; catch other to surface in holder
             holder["e"] = exc
         finally:
             new_loop.close()

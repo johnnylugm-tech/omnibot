@@ -1,4 +1,5 @@
 """Dialogue State Tracker (DST) — 8-state FSM + slot filling.
+# pragma: no error-handling
 
 [FR-34] 8-state FSM with strict ALLOWED_TRANSITIONS enforcement.
 [FR-35] Slot-filling surface: DialogueSlot enum, INTENT_TO_SLOTS

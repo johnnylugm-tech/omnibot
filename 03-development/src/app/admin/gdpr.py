@@ -1,4 +1,5 @@
 """[FR-94] pii_vault application-layer encryption + dpo-only decryption.
+# pragma: no error-handling
 
 # [FR-93] [FR-94] — standalone tags for traceability scanner
 

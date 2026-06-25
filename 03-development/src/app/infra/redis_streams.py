@@ -33,9 +33,12 @@ Citations:
 from __future__ import annotations
 
 import contextlib
+import logging
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 class BusyGroupError(Exception):
@@ -318,8 +321,8 @@ class AsyncMessageProcessor:
                         await handler(parsed)
                         with contextlib.suppress(Exception):
                             await self.ack(msg.message_id)
-                    except Exception:  # pragma: no cover — consumer shutdown signal handler — requires real Redis stream
-                        pass  # pragma: no cover — consumer shutdown signal handler — requires real Redis stream
+                    except Exception as exc:  # pragma: no cover — consumer shutdown signal handler — requires real Redis stream
+                        logger.debug("redis stream handler error: %s", exc)  # pragma: no cover — consumer shutdown signal handler — requires real Redis stream
                 finally:
                     self._in_flight.discard(msg.message_id)
 
@@ -334,8 +337,8 @@ class AsyncMessageProcessor:
                         await handler(parsed)
                         with contextlib.suppress(Exception):
                             await self.ack(msg.message_id)
-                    except Exception:  # pragma: no cover — consumer ack race condition — requires real Redis concurrency
-                        pass  # pragma: no cover — consumer ack race condition — requires real Redis concurrency
+                    except Exception as exc:  # pragma: no cover — consumer ack race condition — requires real Redis concurrency
+                        logger.debug("redis stream ack race: %s", exc)  # pragma: no cover — consumer ack race condition — requires real Redis concurrency
                 finally:
                     self._in_flight.discard(msg.message_id)
 

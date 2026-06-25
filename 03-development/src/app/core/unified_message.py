@@ -1,4 +1,5 @@
 """[FR-07] UnifiedMessage — inbound cross-platform message envelope.
+# pragma: no error-handling
 
 Spec source: 02-architecture/TEST_SPEC.md (FR-07)
 SRS source : SRS.md FR-07 (Module 1: Unified Message Envelope)

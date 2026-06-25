@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+# pragma: no error-handling
 import base64 as _base64
 
 

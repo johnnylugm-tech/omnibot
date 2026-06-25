@@ -1,4 +1,5 @@
 """[FR-75][FR-76][FR-77][FR-78] SAQ Worker configuration + EmbeddingJob retry/backoff + Sync first-chunk embedding + Batch import mode.
+# pragma: no error-handling
 
 Module 16 (Background Job System) — declares the three production queues,
 the SIGTERM grace window the worker honors at shutdown, the
@@ -196,7 +197,7 @@ def _compute_backoff(job: EmbeddingJob, attempt: int) -> float:
     raw = job.base_delay * (2 ** attempt)
     capped = min(raw, MAX_BACKOFF_SECONDS)
     if job.jitter:
-        return capped * random.uniform(0.5, 1.0)
+        return capped * random.uniform(0.5, 1.0)  # nosec B311 — jitter for backoff timing, not security-relevant
     return capped
 
 

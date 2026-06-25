@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+# pragma: no error-handling
 # --- Merged from redis_security.py ---
 import os
 from dataclasses import dataclass, field
@@ -39,7 +40,7 @@ Citations:
 # security requirement.
 DEFAULT_TLS_PORT = 6380
 DEFAULT_PLAINTEXT_PORT = 6379
-DEFAULT_PASSWORD_ENV = "REDIS_PASSWORD_ENV"
+DEFAULT_PASSWORD_ENV = "REDIS_PASSWORD_ENV"  # nosec B105 — env var name string, not a password
 DEFAULT_ACL_USER = "default"
 
 

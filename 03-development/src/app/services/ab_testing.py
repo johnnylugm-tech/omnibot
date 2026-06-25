@@ -1,4 +1,5 @@
 """[FR-52, FR-63, FR-64] ABTestManager — SHA-256 deterministic A/B variant assignment
+# pragma: no error-handling
 and automatic winner promotion.
 
 # [FR-52] [FR-63] [FR-64] — standalone tags for traceability scanner

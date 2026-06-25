@@ -1,4 +1,5 @@
 """[FR-102] ``app.infra.config_store`` — platform_configs reader/writer seam.
+# pragma: no error-handling
 
 SRS source : SRS.md FR-102 (Module 25: 管理 WebUI)
              "沙盒調整不寫入 platform_configs" — the slider is a

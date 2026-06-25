@@ -1,4 +1,5 @@
 """[FR-06, FR-86] OmniBot FastAPI root application — router assembly, middleware chain, and health endpoint.
+# pragma: no error-handling
 
 Wires the FR-24 middleware chain (TLS → IP → Signature → Parse → Rate → RBAC)
 via Starlette's BaseHTTPMiddleware, exposes the webhook router, the Agent

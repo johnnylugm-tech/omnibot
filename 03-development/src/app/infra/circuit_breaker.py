@@ -290,7 +290,7 @@ class RetryStrategy:
         raw = self.base_delay * (2 ** attempt)
         capped = min(raw, self.max_delay)
         if self.jitter:
-            return capped * random.uniform(0.5, 1.0)
+            return capped * random.uniform(0.5, 1.0)  # nosec B311 — jitter for backoff timing, not security-relevant
         return capped
 
     def execute_with_retry(self, fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:

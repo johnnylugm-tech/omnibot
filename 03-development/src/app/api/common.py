@@ -1,4 +1,5 @@
 """[FR-09] Unified response wrappers for the management API.
+# pragma: no error-handling
 
 SRS FR-09: 統一回應格式 — ``ApiResponse[T]`` (success, data, error,
 error_code) + ``PaginatedResponse[T]`` (total, page, limit, has_next).

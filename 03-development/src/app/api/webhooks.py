@@ -26,6 +26,7 @@ from __future__ import annotations
 # ------------------------------------------------------------------
 import hashlib
 import json
+import logging
 import os
 import secrets
 import threading
@@ -66,6 +67,8 @@ __all__ = [
 from app.core.unified_message import (
     MessageType,
 )
+
+logger = logging.getLogger(__name__)
 
 _BEARER_PREFIX = "Bearer "
 _UNKNOWN_AGENT = "unknown-agent"
@@ -244,7 +247,7 @@ _CLIENT_ID_BYTES = 8
 
 
 _TOKEN_LOCK = threading.Lock()
-_TOKEN_FILE = ".m2m_tokens.json"
+_TOKEN_FILE = ".m2m_tokens.json"  # nosec B105 — filename constant, not a password
 
 _TOKEN_STORE: dict[str, dict] = {}
 _HASH_LOOKUP: dict[str, str] = {}
@@ -278,8 +281,8 @@ def _load_tokens():
                     _HASH_LOOKUP.update(data.get("lookup", {}))
                 finally:
                     _file_unlock(f)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("token store load failed: %s", exc)
 
 def _save_tokens():
     try:
@@ -289,8 +292,8 @@ def _save_tokens():
                 json.dump({"store": _TOKEN_STORE, "lookup": _HASH_LOOKUP}, f)
             finally:
                 _file_unlock(f)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("token store save failed: %s", exc)
 
 _load_tokens()
 def _hash_token(token: str) -> str:

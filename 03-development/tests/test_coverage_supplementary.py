@@ -176,7 +176,7 @@ def _make_chain(*, tls_check=None, ip_allowed=True, sig_valid=True,
 def test_chain_tls_check_fails():
     """chain.py — TLS check rejection stops processing."""
     tls_deny = MagicMock(allowed=False, status=400, body=b"no-tls")
-    chain, req = _make_chain(tls_check=lambda r: tls_deny)
+    chain, req = _make_chain(tls_check=lambda _r: tls_deny)
     result = chain.process(req)
     assert result.status == 400
 
@@ -1252,3 +1252,84 @@ def test_hybrid_knowledge_query_returns_result():
     hk = HybridKnowledge()
     result = hk.query("hello")
     assert isinstance(result, KnowledgeResult)
+
+
+# ===========================================================================
+# app.infra.rate_limit  — defensive RuntimeError when redis_client is None
+# ===========================================================================
+
+def test_rate_limit_redis_count_raises_when_redis_client_none():
+    """rate_limit.py — _redis_count defensive guard: refuses if redis_client is None.
+
+    The production caller (_check_and_record) gates on `redis_client is not None`
+    before delegating here, but the function still asserts the precondition so
+    pyright can narrow the type. We exercise the guard by calling _redis_count
+    directly with a limiter whose redis_client is None.
+    """
+    from app.infra.rate_limit import RateLimiter
+
+    limiter = RateLimiter()  # redis_client defaults to None
+    assert limiter.redis_client is None
+
+    with pytest.raises(RuntimeError, match="redis client not initialised"):
+        limiter._redis_count("telegram", "user1")
+
+
+# ===========================================================================
+# app.services.llm_judge  — defensive RuntimeError in _single_survivor
+# ===========================================================================
+
+def test_llm_judge_single_survivor_raises_when_both_none():
+    """llm_judge.py — _single_survivor defensive guard: refuses if both judges None.
+
+    The production caller (_aggregate) early-returns _degraded_default() when
+    both primary and secondary are None, so _single_survivor only sees exactly
+    one non-None argument. The function asserts that precondition so pyright
+    can narrow `survivor` to JudgeResult. We exercise the guard by calling
+    _single_survivor directly with both args=None.
+    """
+    from app.services.llm_judge import _single_survivor
+
+    with pytest.raises(RuntimeError, match="unreachable"):
+        _single_survivor(None, None)
+
+
+# ===========================================================================
+# app.api.adapters.a2a  — JWKS URL scheme validation rejects plain http://
+# ===========================================================================
+
+def test_a2a_adapter_jwks_url_must_be_https_or_localhost():
+    """a2a.py — verify_m2m_token rejects non-https / non-localhost JWKS URL.
+
+    The cache-miss branch of verify_m2m_token validates that the JWKS URL
+    uses https:// or http://localhost / http://127.0.0.1 before opening
+    a network socket. A plain http:// URL raises ValueError, which the
+    outer try/except in verify_m2m_token catches and logs as a warning
+    before returning False.
+    """
+    import base64 as _b64
+    import json as _json
+
+    from app.api.adapters.a2a import A2AAdapter
+
+    adapter = A2AAdapter(
+        jwks_url="http://example.com/.well-known/jwks.json",
+        expected_audience="test-audience",
+    )
+
+    # Build a syntactically-valid JWT (3 base64url segments) so verify_m2m_token
+    # reaches the JWKS-fetch branch instead of bailing out on a malformed token.
+    def _b64u(payload: dict) -> str:
+        raw = _json.dumps(payload, separators=(",", ":")).encode("utf-8")
+        return _b64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
+
+    header = _b64u({"alg": "RS256", "typ": "JWT"})
+    payload = _b64u({"sub": "test", "aud": "test-audience", "exp": 9999999999})
+    fake_jwt = f"Bearer {header}.{payload}.signature"
+
+    # The ValueError raised on line 172 is caught by the outer try/except
+    # in verify_m2m_token (which logs and returns False). The fact that
+    # the path reached the raise statement is observable via the WARNING
+    # log message and via the return value.
+    result = adapter.verify_m2m_token(fake_jwt)
+    assert result is False

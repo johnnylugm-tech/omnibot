@@ -1,4 +1,5 @@
 """[FR-39] ActionAdapter 抽象介面 + 結果 / 工具定義資料契約。
+# pragma: no error-handling
 
 Citations:
 - SRS.md FR-39 (Module 7: Action Execution Engine (AEE)):

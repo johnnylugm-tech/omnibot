@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import contextlib
 import signal
-import subprocess
+import subprocess  # nosec B404 — legitimate subprocess use for CLI tool execution (FR-42)
 import time
 
 from app.services.aee.adapter import (
@@ -180,6 +180,7 @@ class CLIAdapter(ActionAdapter):
                 text=True,
                 timeout=timeout_seconds,
                 check=False,
+                shell=False,  # nosec B603 — cmd is list[str], never shell-interpreted
             )
         except subprocess.TimeoutExpired:
             return fail(
@@ -218,6 +219,7 @@ class CLIAdapter(ActionAdapter):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
+                shell=False,  # nosec B603 — cmd is list[str], never shell-interpreted
             )
         except FileNotFoundError as exc:
             return fail(f"interpreter not found: {exc}")

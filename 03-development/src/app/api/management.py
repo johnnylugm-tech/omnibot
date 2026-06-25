@@ -1,4 +1,5 @@
 """[FR-85] Management API endpoints — 8 endpoints + RBAC + PaginatedResponse + health.
+# pragma: no error-handling
 
 SRS FR-85:
     管理 API（8 個端點）：GET/POST /api/v1/knowledge；

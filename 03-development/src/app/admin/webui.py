@@ -53,10 +53,13 @@ from __future__ import annotations
 
 import csv
 import io
+import logging
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Configuration constants — FR-101 canonical values.
@@ -540,8 +543,8 @@ class RAGDebugger:
                 value = self._config_store.get("rag_cosine_threshold", RAG_DEFAULT_THRESHOLD)
                 if value is not None:
                     return float(value)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("config_store threshold lookup failed: %s", exc)
         try:
             from app.infra.config import get_config_store
             store = get_config_store()

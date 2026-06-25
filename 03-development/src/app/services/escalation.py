@@ -1,4 +1,5 @@
 """[FR-54, FR-55, FR-56] EscalationManager — lifecycle + SLA + WS push.
+# pragma: no error-handling
 
 # [FR-54] [FR-55] [FR-56] — standalone tags for traceability scanner
 

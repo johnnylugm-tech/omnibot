@@ -319,27 +319,41 @@ class LLMJudge:
               FR-65" (line 813); FR-66/67 ride on the same evaluate().
         """
         if primary is None and secondary is None:
-            return JudgeResult(politeness=1, accuracy=1, judge_name="degraded")
-        # Exactly one survivor — single-source fallback for NP-07 / NP-15
-        # partial-result contract: pass the surviving judge's raw scores
-        # through verbatim, with a default ``judge_name`` if unset.
+            return _degraded_default()
         if primary is None or secondary is None:
-            survivor = secondary if primary is None else primary
-            assert survivor is not None  # guaranteed by both-None early return at line 302
-            survivor = cast(JudgeResult, survivor)
-            default_name = "secondary" if primary is None else "primary"
-            return JudgeResult(
-                politeness=survivor.politeness,
-                accuracy=survivor.accuracy,
-                judge_name=survivor.judge_name or default_name,
-            )
-        # Both judges succeeded — FR-66 politeness = max, FR-67
-        # accuracy = min.
-        return JudgeResult(
-            politeness=max(primary.politeness, secondary.politeness),
-            accuracy=min(primary.accuracy, secondary.accuracy),
-            judge_name="ensemble",
-        )
+            return _single_survivor(primary, secondary)
+        return _ensemble(primary, secondary)
+
+
+def _degraded_default() -> JudgeResult:
+    """[FR-65] Both judges failed → degraded default result."""
+    return JudgeResult(politeness=1, accuracy=1, judge_name="degraded")
+
+
+def _single_survivor(
+    primary: JudgeResult | None,
+    secondary: JudgeResult | None,
+) -> JudgeResult:
+    """[FR-65][NP-07][NP-15] Return the surviving judge's raw scores verbatim."""
+    survivor = secondary if primary is None else primary
+    if survivor is None:
+        raise RuntimeError("unreachable: both-None early-return guarantees a survivor")
+    survivor = cast(JudgeResult, survivor)
+    default_name = "secondary" if primary is None else "primary"
+    return JudgeResult(
+        politeness=survivor.politeness,
+        accuracy=survivor.accuracy,
+        judge_name=survivor.judge_name or default_name,
+    )
+
+
+def _ensemble(primary: JudgeResult, secondary: JudgeResult) -> JudgeResult:
+    """[FR-66][FR-67] Both judges succeeded — politeness=max (FR-66), accuracy=min (FR-67)."""
+    return JudgeResult(
+        politeness=max(primary.politeness, secondary.politeness),
+        accuracy=min(primary.accuracy, secondary.accuracy),
+        judge_name="ensemble",
+    )
 
 
 # ---------------------------------------------------------------------------

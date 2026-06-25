@@ -71,7 +71,7 @@ Citations:
 
 from __future__ import annotations
 
-import subprocess
+import subprocess  # nosec B404 — legitimate subprocess use for media transcoding (FR-44)
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
