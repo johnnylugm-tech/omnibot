@@ -2,7 +2,7 @@
 
 > **Version**: v2.12.0 (project plan)
 > **Project**: omnibot
-> **Date**: 2026-06-24
+> **Date**: 2026-06-25
 > **Framework**: harness-methodology v2.12.0
 > **Phase**: 1 - Requirements Specification
 > **Status**: Full version (including Phase 1 detailed tasks)
@@ -463,6 +463,8 @@ are not re-opened. This bounds backtracking to a single step.
   ```bash
   python3 harness_cli.py advance-phase --completed 1 --project .
   ```
+  > **Note**: `advance-phase` will automatically check for harness submodule drift.
+  > If it prints a warning that you are behind `origin/main`, it is non-blocking and for your information only.
 - Confirm `HANDOVER.md` reflects Phase 2 entry (`P2-entry` checkpoint, correct plan path)
 - Open `phase2_plan.md` and follow from the top.
 - If session crashes during Phase 2: read `HANDOVER.md` or run `generate-next-plan`
