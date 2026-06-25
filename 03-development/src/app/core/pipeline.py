@@ -31,6 +31,7 @@ Citations:
 
 from __future__ import annotations
 
+import contextlib
 import contextvars
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
@@ -250,9 +251,21 @@ async def get_context(conversation_id: str) -> dict:
 
     from app.infra.database import get_session
 
+    session_gen = get_session()
     try:
-        session_gen = get_session()
         session = await session_gen.__anext__()
+    except StopAsyncIteration:
+        # Generator failed to start (e.g., pool exhaustion) — orphan cleanup
+        with contextlib.suppress(Exception):
+            await session_gen.aclose()
+        return {"conversation_id": conversation_id, "history": []}
+    except Exception:
+        # Unexpected sync exception from __anext__ — orphan cleanup
+        with contextlib.suppress(Exception):
+            await session_gen.aclose()
+        return {"conversation_id": conversation_id, "history": []}
+
+    try:
         try:
             result = await session.execute(
                 text("SELECT role, content FROM messages WHERE conversation_id = :cid ORDER BY id ASC"),

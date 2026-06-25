@@ -144,6 +144,12 @@ def verify_jwt(token: str) -> bool:
     trust boundaries — this gate is the handshake filter the WS
     layer consults before the connection is accepted.
 
+    TODO(FR-57/FR-58): This function is fully implemented (HS256 verification,
+    exp claim, alg confusion protection) but is not yet wired into a production
+    WS connection handler. CRG confirms zero production callers. The WS server
+    entrypoint (e.g. FastAPI WebSocket route or uvicorn WS handler) must call
+    this before accepting the connection. Until then, connections are unauthenticated.
+
     Args:
         token: Raw JWT string (the ``Bearer `` prefix is stripped
             by the caller, mirroring how ``Authorization`` headers

@@ -123,6 +123,7 @@ class AsyncMessageProcessor:
     STREAM_DEFAULT = "messages"
     BLOCK_MS_DEFAULT = 5000
     IDLE_MS_DEFAULT = 60000
+    _MAX_IN_FLIGHT = 10_000  # [BUG-12] bound to prevent unbounded memory growth
 
     def __init__(
         self,
@@ -322,7 +323,7 @@ class AsyncMessageProcessor:
                         with contextlib.suppress(Exception):
                             await self.ack(msg.message_id)
                     except Exception as exc:  # pragma: no cover — consumer shutdown signal handler — requires real Redis stream
-                        logger.debug("redis stream handler error: %s", exc)  # pragma: no cover — consumer shutdown signal handler — requires real Redis stream
+                        logger.warning("redis stream handler error: %s", exc)  # pragma: no cover — consumer shutdown signal handler — requires real Redis stream
                 finally:
                     self._in_flight.discard(msg.message_id)
 
@@ -338,9 +339,16 @@ class AsyncMessageProcessor:
                         with contextlib.suppress(Exception):
                             await self.ack(msg.message_id)
                     except Exception as exc:  # pragma: no cover — consumer ack race condition — requires real Redis concurrency
-                        logger.debug("redis stream ack race: %s", exc)  # pragma: no cover — consumer ack race condition — requires real Redis concurrency
+                        logger.warning("redis stream ack race: %s", exc)  # pragma: no cover — consumer ack race condition — requires real Redis concurrency
                 finally:
                     self._in_flight.discard(msg.message_id)
+
+            # [BUG-12] Evict oldest entries when in-flight set exceeds bound
+            if len(self._in_flight) > self._MAX_IN_FLIGHT:
+                excess = len(self._in_flight) - self._MAX_IN_FLIGHT
+                oldest = list(self._in_flight)[:excess]
+                for mid in oldest:
+                    self._in_flight.discard(mid)
 
 
 __all__ = [
