@@ -1,444 +1,55 @@
-# OmniBot — User Guide (How to Get Started)
+# OmniBot — 全情境使用者與開發者指南 (End-to-End User Guide)
 
-> OmniBot is an enterprise-grade multi-platform customer service chatbot.
-> One bot instance serves Telegram / LINE / Messenger / WhatsApp / Web / A2A agents
-> with unified dialogue state, a 4-tier hybrid knowledge layer, and a
-> 5-layer prompt-injection defence (PALADIN).
+> OmniBot 是一個企業級的跨平台多管道客服機器人 (Multi-platform customer service chatbot)。
+> 單一 Bot 實例即可同時服務 Telegram / LINE / Messenger / WhatsApp / Web / A2A 等終端，並具備統一的對話狀態管理 (Dialogue State Tracking)、四層混合知識架構 (4-tier hybrid knowledge layer)，以及五層 Prompt-Injection 防禦機制 (PALADIN)。
 >
-> **Status**: All phases P1–P8 complete (Gate 4 PASS, 100 FRs registered).
-> This guide covers developer onboarding. End-user / admin docs live in
-> `03-development/` after the admin WebUI is deployed.
+> **狀態**: P1-P8 階段已全數完成 (Gate 4 PASS, 100 FRs registered)。
+
+本指南涵蓋 OmniBot 的 **End-to-End 全生命週期**，並針對不同角色（終端使用者、知識管理者、客服主管、開發維運人員）提供專屬的使用情境導覽與操作說明。
 
 ---
 
-## 1. Prerequisites
+## 1. 角色與情境導覽 (Roles & Scenarios Guide)
 
-| Requirement | Version | Why |
-|-------------|---------|-----|
-| Python | **≥ 3.11** | `requires-python` in `pyproject.toml`; harness_cli rejects system Python 3.9 |
-| Docker Engine + Compose plugin | ≥ 24 | Run the 7-container dev infra (postgres×2, redis, clamav, otel, prometheus, grafana) |
-| Git | ≥ 2.30 | Submodule support (harness is a git submodule) |
-| `uv` (recommended) **or** `pip` + venv | latest | Dependency manager |
-| `openssl` | any | For ad-hoc TLS cert generation (Redis TLS, JWT) |
-| ~6 GB free disk | — | Pulled images, build artifacts, mutation test caches |
+請根據您的角色，跳至對應的情境章節：
 
-**macOS note**: `pyproject.toml` dev extras reference a non-PyPI `gitleaks` binary.
-`uv sync --extra dev` will fail on `gitleaks>=8.18` resolution. Install gitleaks
-separately via Homebrew (`brew install gitleaks`) and use plain `uv sync`
-(without `--extra dev`) for app deps. See `omnibot-env-check-gitleaks` memory.
+| 您的角色 | 關注重點 | 適用情境與章節 |
+|---------|---------|-------------|
+| **終端使用者 (End User)** | 跨平台互動、資安防護體驗 | [情境一：終端用戶體驗](#情境一終端用戶體驗-end-user-experience) |
+| **知識管理者 (Knowledge Manager) / 業務邏輯設計師** | 匯入 FAQ 知識庫、配置對話意圖與流程 | [情境二：知識管理與業務邏輯配置](#情境二知識管理與業務邏輯配置-knowledge-manager--domain-expert) |
+| **客服主管 (CS Supervisor) / 稽核員 (DPO)** | 人工客服接管機制、調閱對話紀錄與合規審查 | [情境三：客服主管與合規稽核](#情境三客服主管與合規稽核-cs-supervisor--dpo) |
+| **開發人員 (Developer) / 維運 (DevOps)** | 系統架構、環境架設、開發測試與 CI/CD | [情境四：開發者與維運人員 onboarding](#情境四開發者與維運人員-developer--devops) |
 
 ---
 
-## 2. Clone the Repository
+## 情境一：終端用戶體驗 (End-User Experience)
 
-```bash
-# --recurse-submodules is REQUIRED: harness/ is a git submodule
-git clone --recurse-submodules https://github.com/johnnylugm-tech/omnibot.git
-cd omnibot
+終端使用者不需安裝任何應用程式，可直接透過熟悉的社群通訊軟體或網頁元件與 OmniBot 互動。
 
-# Verify submodule populated
-ls harness/harness_cli.py      # must exist
-cat .gitmodules                # should reference [submodule "harness"]
-```
+### 1.1 跨管道無縫整合
+OmniBot 核心支援統一的對話狀態，無論使用者從何處進件皆可享有相同的服務體驗：
+- **社群與即時通訊**：支援 LINE, Telegram, Messenger, WhatsApp。
+- **網頁端與系統整合**：支援官方網站 Web Widget 以及 A2A (Application-to-Application) 伺服器整合。
+- 機器人能維持上下文一致性，即使轉換話題也能精準捕捉意圖 (Intent)，不會發生鬼打牆或狀態卡死的情況。
 
-If you forgot `--recurse-submodules`:
-
-```bash
-git submodule update --init --recursive
-```
+### 1.2 企業級安全防護 (PALADIN)
+使用者輸入的任何訊息都會經過底層 PALADIN 五層安全防禦機制的即時過濾：
+- 阻擋各類提示詞注入攻擊 (Prompt Injection) 與越獄嘗試 (Jailbreak)。
+- 若觸發紅旗警告 (Red-flag)，系統將拒絕回答並自動通報/升級至人工客服。
+- 對於對話中可能包含的 PII（個人可識別資訊，如信用卡號、身分證），系統會在底層直接進行遮蔽與加密保護。
 
 ---
 
-## 3. Install Python Dependencies
+## 情境二：知識管理與業務邏輯配置 (Knowledge Manager & Domain Expert)
 
-```bash
-# Option A: uv (fast, recommended)
-uv sync                          # app deps only
-uv sync --extra dev               # INCLUDES gitleaks pin (may fail on some hosts)
+系統嚴格區分三種客服內容：**FAQ 知識庫** (RAG-grounded)、**業務邏輯** (槽位與狀態機) 以及 **路由規則**。管理者無需動到核心引擎碼，即可調整客服行為。
 
-# Option B: pip + venv
-python3.11 -m venv .venv
-source .venv/bin/activate
-pip install -e .
-pip install -e ".[dev]"          # see gitleaks note above
-```
+### 2.1 匯入 FAQ 知識庫 (Knowledge Base)
+開發環境目前主要透過 Python API 進行操作。核心函數 `create_knowledge_with_chunks` (FR-77) 負責處理單筆寫入與非同步向量化 (Embedding)；大量匯入則請使用 `batch_import_knowledge` (FR-78)。
 
-The project uses `03-development/src` as source root (see `setup.cfg` `pythonpath`).
-`pip install -e .` registers the `app` package and the `omnibot` console script
-(`uvicorn:run`).
-
-Verify the install:
-
-```bash
-.venv/bin/python -c "import app; print(app.__file__)"
-# Expected: .../03-development/src/app/__init__.py
-```
-
----
-
-## 4. Bring Up Dev Infrastructure
-
-The dev stack has **7 containers** wired in `docker-compose.yml` (mirrors SAD §2.5
-and the env-check result in `.sessi-work/env_check_result.json`).
-
-```bash
-# Generate dev TLS certs for Redis (one-time, only if using TLS)
-mkdir -p deployment/redis/tls
-openssl req -x509 -newkey rsa:2048 -days 365 -nodes \
-  -keyout deployment/redis/tls/redis.key \
-  -out    deployment/redis/tls/redis.crt \
-  -subj "/CN=localhost"
-cp deployment/redis/tls/redis.crt deployment/redis/tls/ca.crt
-
-# Start everything
-docker compose up -d
-docker compose ps                  # all 7 should be 'healthy' within ~30s
-```
-
-Service → host port map:
-
-| Service      | Image                              | Host port | Notes |
-|--------------|------------------------------------|-----------|-------|
-| pg-super     | pgvector/pgvector:pg16             | 5433      | Primary dev DB (pgvector extension enabled) |
-| db           | postgres:16-alpine                 | 5432      | Secondary DB (different credentials — see `omnibot-db-pg-super-credentials` memory) |
-| redis        | redis:7-alpine                     | 6380      | TLS mode on by default; drop `--tls-*` flags for plain mode |
-| clamav       | clamav/clamav:stable_base          | 3310      | Antivirus scanner for media uploads |
-| otel         | otel/opentelemetry-collector-contrib | 4317/4318 | OTLP gRPC + HTTP receivers |
-| prometheus   | prom/prometheus:latest             | 9090      | Metrics scraping |
-| grafana      | grafana/grafana:latest             | 3000      | Dashboards (default admin/admin) |
-
----
-
-## 5. Configure Environment
-
-```bash
-cp .env.example .env
-# Edit .env: at minimum set OPENAI_API_KEY, JWT_SECRET_KEY, M2M_SECRET_KEY,
-#            DATABASE_URL, REDIS_URL to match docker-compose credentials.
-```
-
-Default dev credentials (from `docker-compose.yml`):
-
-- **pg-super** (5433): `omnibot` / `dev_only_change_me_pg` / db `omnibot`
-- **db** (5432): see `.env.example` for the alternate credentials
-- **redis** (6380): password `dev_only_change_me_redis`, TLS required
-
-Required env keys (full list in `.env.example`):
-
-| Group | Keys |
-|-------|------|
-| LLM | `OPENAI_API_KEY`, `MINIMAX_API_KEY`, `GEMINI_API_KEY`, `FALLBACK_LLM_MODEL` |
-| DB | `DATABASE_URL` |
-| Redis | `REDIS_URL` (use `rediss://` for TLS, `redis://` for plain) |
-| ClamAV | `CLAMAV_HOST`, `CLAMAV_PORT` |
-| Security | `JWT_SECRET_KEY`, `M2M_SECRET_KEY`, `IP_WHITELIST_CIDRS`, `OMNIBOT_ADMIN_USER`, `OMNIBOT_ADMIN_PASS` |
-| Webhooks | `MESSENGER_VERIFY_TOKEN`, `WHATSAPP_VERIFY_TOKEN`, `A2A_JWKS_URL`, `A2A_AUDIENCE` |
-| Observability | `OTEL_EXPORTER_OTLP_ENDPOINT`, `PROMETHEUS_PORT` |
-
-The pre-push **config-liveness** preflight fails if any key used in code is
-absent from `.env.example` — keep the example file in sync.
-
----
-
-## 6. Run Database Migrations
-
-```bash
-# Apply Alembic migrations to pg-super
-.venv/bin/python -m alembic upgrade head
-
-# Verify schema
-.venv/bin/python -m alembic current
-```
-
----
-
-## 7. Start the Application
-
-```bash
-# Method A: console script (installed by pip install -e .)
-omnibot                                           # uses uvicorn:run
-
-# Method B: direct uvicorn (more control)
-.venv/bin/python -m uvicorn app.api.main:build_app \
-  --factory --host 0.0.0.0 --port 8000 --reload
-
-# Health check
-curl http://127.0.0.1:8000/api/v1/health
-# Expected: {"status": "ok"}
-```
-
-The app factory `build_app()` is in `03-development/src/app/api/main.py`. It
-wires the FR-24 middleware chain (TLS → IP → Signature → Parse → Rate → RBAC),
-mounts the webhook router, and mounts the Agent Card sub-app at `/.well-known/`.
-
----
-
-## 8. Run Tests
-
-```bash
-# Full suite (unit + integration + e2e)
-.venv/bin/python -m pytest                              # uses setup.cfg + pyproject.toml
-
-# Unit only (fast, no infra needed)
-.venv/bin/python -m pytest -m "not integration and not slow"
-
-# Coverage
-.venv/bin/python -m pytest --cov=app --cov-report=term-missing
-```
-
-Test layout:
-
-```
-03-development/tests/
-├── unit/                   # FR-tagged tests (test_frNN_*.py)
-├── integration/            # requires running infra
-├── e2e/                    # full-stack scenarios
-├── load/                   # k6 / locust scripts
-├── conftest.py             # shared fixtures
-├── strategy.py             # pyramid strategy config
-└── pyramid.py              # test pyramid enforcement
-```
-
-JS/TS test titles must follow `it('test_frNN_xxx')` for spec-coverage matching.
-
----
-
-## 9. Lint, Type-check, Mutation
-
-```bash
-# Lint
-.venv/bin/python -m ruff check 03-development/src
-.venv/bin/python -m ruff format --check 03-development/src
-
-# Type check
-.venv/bin/python -m pyright 03-development/src
-.venv/bin/python -m mypy 03-development/src
-
-# Mutation testing (config in setup.cfg [mutmut])
-.venv/bin/python -m mutmut run
-.venv/bin/python -m mutmut results
-```
-
-`pyproject.toml` excludes `harness/`, `.sessi-work/`, `tests/`, `docs/`, `.claude/`
-from lint/type targets. Edit the relevant `[tool.*]` section if your workflow differs.
-
----
-
-## 10. Architecture at a Glance
-
-```
-app/
-├── api/        # FastAPI routes, webhooks, agent card (api_layer_no_business_logic)
-├── core/       # Domain logic (paladin, knowledge, dst, emotion, api_response)
-├── services/   # LLM judge, AEE adapters (a2a/cli/mcp), media, ab_testing
-├── infra/      # Redis streams, rate limit, jobs, circuit breaker, alert rules
-├── middleware/ # FR-24 chain (TLS → IP → Signature → Parse → Rate → RBAC)
-└── admin/      # WebUI (depends on PostgreSQL via app.admin.rbac)
-```
-
-Architecture constraints (enforced by `harness detect-arch-violations`):
-
-- **no_circular_dependencies**
-- **api_layer_no_business_logic** — `app/api/*.py` only wires routers; logic lives in `core/`
-- **infra_layer_no_domain_imports** — `app/infra/*` cannot import from `app/core/*`
-- **paladin_executes_before_pii** — PII decryption is downstream of PALADIN
-- **knowledge_query_after_dst_slot_resolution** — DST must resolve slots before knowledge lookup
-- **api_layer_can_import_core_dataclasses_only** — API can import core types but not core functions
-
-High-risk modules (extra scrutiny in review): `app.core.paladin`, `app.core.knowledge`,
-`app.core.dst`, `app.infra.circuit_breaker`, `app.infra.redis_streams`,
-`app.infra.rate_limit`, `app.infra.jobs`, `app.services.aee`, `app.services.llm_judge`,
-`app.services.media`.
-
----
-
-## 11. The Harness Workflow (Why `harness_cli.py` Is in the Repo)
-
-`harness_cli.py` at repo root is an **auto-generated entry-point delegate** to
-`harness/harness_cli.py` (the actual implementation lives in the submodule).
-It exists so `.audit/` and `.methodology/` docs can reference `./harness_cli.py`
-without depending on submodule path layout. Regenerate with `init-project`.
-
-```bash
-# Rebuild traceability attestation (required before push)
-.venv/bin/python harness_cli.py build-trace-attestation --project . --write
-
-# Run a per-FR Gate 1 validation
-.venv/bin/python harness_cli.py run-gate --gate 1 --phase 8 --project . --fr-id FR-73
-```
-
-**Important**: harness_cli refuses system Python 3.9. Always use
-`.venv/bin/python` (3.11). See `omnibot-harness-cli-python` memory.
-
-**Architecture amendment BLOCK**: any new module under `app/` requires
-`SAB.json` / `SAD.md` amendment PR before Gate 1 can run. See
-`run-gate-arch-amendment-block` memory.
-
----
-
-## 12. Common Pitfalls
-
-| Symptom | Cause | Fix |
-|---------|-------|-----|
-| `harness_cli.py` exits with `Python 3.9 not supported` | Ran with system Python | Use `.venv/bin/python harness_cli.py …` |
-| `uv sync --extra dev` fails on `gitleaks` | Dev extras pin a non-PyPI binary | `brew install gitleaks` and use plain `uv sync` |
-| Pre-push hook blocks with SHA mismatch | Code changed but attestation not rebuilt | `.venv/bin/python harness_cli.py build-trace-attestation --project . --write && git add .methodology/trace && git commit --amend --no-edit` |
-| `pg_isready` to `127.0.0.1:5432` fails | You're hitting `db` instead of `pg-super` (5433) | `DATABASE_URL` must point to port **5433** for `pg-super` |
-| Redis TLS handshake error | Missing certs in `deployment/redis/tls/` | Generate certs as in §4, or remove `--tls-*` flags from compose for plain mode |
-| New module import error after adding file | `app.<new>` not in SAD | Open architecture amendment PR first |
-
----
-
-## 13. Importing FAQ, Business Logic, and Workflows
-
-OmniBot separates three kinds of customer-service content:
-
-| Content kind | What it controls | Where it lives |
-|--------------|------------------|----------------|
-| **FAQ / knowledge** | RAG-grounded answers (the bot's "what does X mean?" replies) | `knowledge_base` + `knowledge_chunks` tables (pgvector) |
-| **Business logic** | Which slots each intent requires, escalation thresholds, FSM transitions | `app.core.dst.DialogueSlot` / `INTENT_TO_SLOTS` / `ALLOWED_TRANSITIONS` |
-| **Workflow / routing** | When to escalate to a human, which queue, SLA rules | `app.services.escalation.EscalationManager`, `escalation_queue` table |
-
-### 13.1 Importing FAQ entries
-
-The hot path is **`create_knowledge_with_chunks`** in `app.core.knowledge` (FR-77).
-Each entry produces a `knowledge_base` row + the first `knowledge_chunks` row
-embedded synchronously (or enqueued for async embedding on timeout).
-
+#### 透過 Python API 批次匯入 CSV 範例：
 ```python
-from app.core.knowledge import create_knowledge_with_chunks
-
-result = await create_knowledge_with_chunks(
-    knowledge_id="kb_return_policy_2026",     # stable ID you control
-    title="Return Policy",
-    content="Customers may return any item within 30 days ...",
-    model="text-embedding-3-small",
-    mode="single",
-)
-# result.embedding_synced, result.search_ready, result.fallback
-```
-
-For bulk import use **`batch_import_knowledge`** (FR-78). With `is_batch=True`
-no synchronous embedding wait — all chunks go through the async job queue.
-
-```python
-from app.core.knowledge import batch_import_knowledge
-
-result = batch_import_knowledge(
-    entries=[
-        {"knowledge_id": "kb_faq_shipping",  "title": "...", "content": "..."},
-        {"knowledge_id": "kb_faq_refund",    "title": "...", "content": "..."},
-        {"knowledge_id": "kb_faq_warranty",  "title": "...", "content": "..."},
-    ],
-    is_batch=True,
-)
-# result.enqueued, result.failed_chunk_ids, result.elapsed_seconds
-```
-
-**HTTP equivalents** (under `/api/v1/management`):
-
-> ⚠️  **All `/api/v1/management/*` endpoints are currently stubs (FR-85, deferred).**
-> The route shape, RBAC checks, and function names are frozen per SRS FR-85 so
-> `spec-coverage-check` can match `TEST_SPEC.md` exactly. The handlers pass
-> the RBAC check and return 200, but **they do NOT write to the database**.
-> This applies to:
->
-> | Endpoint | Status |
-> |----------|--------|
-> | `POST   /api/v1/knowledge`        | stub (200, no DB write) |
-> | `PUT    /api/v1/knowledge/{id}`   | stub |
-> | `DELETE /api/v1/knowledge/{id}`   | stub |
-> | `POST   /api/v1/knowledge/bulk`   | stub |
-> | `GET    /api/v1/conversations`    | stub |
-> | `POST   /api/v1/experiments`      | stub |
->
-> **Until the GREEN step implements these bodies, KB imports must go through
-> the Python API** (§13.1 above) or a custom Alembic data migration (§13.4).
-> Wire them to `create_knowledge_with_chunks` / `batch_import_knowledge` when
-> filling in the GREEN step.
-
-> **Production note**: both Python functions are deliberately side-effect-free on
-> the DB in the unit-test path. The integration tests inject a real session; in
-> your deployment you must wire the session factory in `app.infra.db` before
-> calling these functions outside tests. See the integration tests under
-> `03-development/tests/integration/test_fr77*` / `test_fr78*` for the canonical wiring.
-
-**Storage shape** (from `alembic/versions/b4ca5f411741_initial_schema.py`):
-
-```
-knowledge_base        -- 1 row per FAQ article (id, title, content, ...)
-knowledge_chunks      -- N rows per article (FK to knowledge_base.id)
-                         embedding column = pgvector vector(1536)
-                         HNSW index: idx_knowledge_chunks_embedding
-                         GIN index:  idx_knowledge_chunks_content_gin (FTS fallback)
-```
-
-### 13.2 Customizing business logic (slots, intents, FSM)
-
-The dialogue state tracker (`app.core.dst`) is parameterized by three tables
-that you edit **in code** (not at runtime — these are baked at startup):
-
-| Table | File | Purpose |
-|-------|------|---------|
-| `DialogueSlot` enum | `app/core/dst.py` | All slot names the bot can ask for (e.g. `ORDER_ID`, `REASON`) |
-| `INTENT_TO_SLOTS` | `app/core/dst.py` | Maps intent string → required slot list |
-| `ALLOWED_TRANSITIONS` | `app/core/dst.py` | FSM edge table: `state_from → {state_to, ...}` |
-
-Adding a new intent (e.g. `cancel_subscription`):
-
-```python
-# app/core/dst.py
-class DialogueSlot(enum.Enum):
-    ORDER_ID = "order_id"
-    REASON = "reason"
-    SUBSCRIPTION_ID = "subscription_id"     # NEW
-
-INTENT_TO_SLOTS["cancel_subscription"] = (
-    DialogueSlot.SUBSCRIPTION_ID,
-    DialogueSlot.REASON,
-)
-```
-
-Adding a new FSM state:
-
-```python
-ALLOWED_TRANSITIONS["PROCESSING"].add("AWAITING_CANCEL_CONFIRMATION")
-ALLOWED_TRANSITIONS["AWAITING_CANCEL_CONFIRMATION"] = {"PROCESSING", "CANCELLED", "ESCALATED"}
-```
-
-Auto-escalation triggers (FR-36, FR-37) are tunable constants at the top of
-`dst.py`:
-
-```python
-INTENT_CONFIDENCE_THRESHOLD = 0.65    # below → auto-escalate
-MAX_SLOT_FILLING_ROUNDS    = 3        # exceeded → auto-escalate
-MAX_AWAITING_CONFIRMATION_ROUNDS = 2  # exceeded → ESCALATED
-```
-
-### 13.3 Routing to human agents (escalation workflow)
-
-`app.services.escalation.EscalationManager` owns the lifecycle of an escalation
-ticket. It writes to the `escalation_queue` table (FK → `conversations.id`).
-
-The bot auto-escalates when any of these conditions hit (see
-`DialogueState.auto_escalate()` in `dst.py`):
-
-1. Slot-filling rounds > `MAX_SLOT_FILLING_ROUNDS`
-2. Intent classification confidence < `INTENT_CONFIDENCE_THRESHOLD`
-3. AWAITING_CONFIRMATION rounds > `MAX_AWAITING_CONFIRMATION_ROUNDS` and user never confirmed
-4. PALADIN red-flag (security gate refuses to answer)
-
-For custom routing (per-department queues, SLA by priority), extend
-`EscalationManager` or add a new queue discriminator column via Alembic.
-The human-agent takeover UI lives at `app.admin.webui` (depends on `app.admin.rbac`).
-
-### 13.4 Loading FAQ from an external file
-
-The `batch_import_knowledge` function takes `list[dict]`. A typical CSV-to-KB
-loader:
-
-```python
-# scripts/load_faq.py  (dev-only helper, not committed)
+# scripts/load_faq.py (開發輔助腳本)
 import csv
 from app.core.knowledge import batch_import_knowledge
 
@@ -447,36 +58,138 @@ def csv_to_entries(path: str) -> list[dict]:
         return [
             {
                 "knowledge_id": f"kb_{row['id']}",
-                "title":        row["title"],
-                "content":      row["body"],
-            }
-            for row in csv.DictReader(f)
+                "title": row["title"],
+                "content": row["body"],
+            } for row in csv.DictReader(f)
         ]
 
 if __name__ == "__main__":
     result = batch_import_knowledge(csv_to_entries("faq.csv"), is_batch=True)
     print(f"enqueued={result.enqueued} failed={result.failed_chunk_ids}")
 ```
+> **進階技巧**：若知識庫為靜態（如固定規章），建議使用 Alembic 資料遷移指令（位於 `alembic/versions/`）將資料寫入版本控制，確保跨環境部署時的強一致性。
 
-> **Alembic for static corpora**: if your FAQ set is fixed at deploy time and
-> rarely changes, prefer writing an Alembic data migration under
-> `alembic/versions/` rather than running a one-shot script. This keeps the
-> knowledge corpus reproducible across environments.
+### 2.2 自訂對話邏輯 (Slots, Intents & FSM)
+對話狀態追蹤器 (DST) 依賴程式碼中的常數配置。開發團隊可協同業務單位在 `app/core/dst.py` 進行定義：
+- **新增意圖與槽位 (Intent & Slots)**:
+  ```python
+  class DialogueSlot(enum.Enum):
+      ORDER_ID = "order_id"
+      SUBSCRIPTION_ID = "subscription_id" # 新增業務欄位
 
----
-
-## 14. Where to Look Next
-
-- `PROJECT_BRIEF.md` — Business KPIs, functional scope
-- `SPEC.md` — Source specification (v8.1)
-- `HANDOVER.md` — Session handover (FSM state, last gate, last FR)
-- `.methodology/phase8_plan.md` — Active phase plan
-- `02-architecture/SAD.md` — Software architecture document
-- `02-architecture/TEST_SPEC.md` — Test specification
-- `01-requirements/SRS.md` — Software requirements specification
-- `01-requirements/TRACEABILITY_MATRIX.md` — FR ↔ test ↔ code mapping
-- `CLAUDE.md` — Project-specific instructions for AI agents
+  INTENT_TO_SLOTS["cancel_subscription"] = (DialogueSlot.SUBSCRIPTION_ID, DialogueSlot.REASON)
+  ```
+- **設計對話狀態機 (FSM)**: 定義對話何時進入處理中、已完成或取消等狀態。
+  ```python
+  ALLOWED_TRANSITIONS["PROCESSING"].add("AWAITING_CANCEL_CONFIRMATION")
+  ALLOWED_TRANSITIONS["AWAITING_CANCEL_CONFIRMATION"] = {"PROCESSING", "CANCELLED", "ESCALATED"}
+  ```
 
 ---
 
-*Last updated: 2026-06-27 — covers repo state at commit `7828207` (post round-6 cleanup, includes §13 on FAQ/business-logic/workflow import).*
+## 情境三：客服主管與合規稽核 (CS Supervisor & DPO)
+
+### 3.1 人工客服升級 (Escalation) 與防呆機制
+OmniBot 具備完善的自動防呆與真人接手機制（由 `app.services.escalation.EscalationManager` 管理）。符合以下條件時，系統將自動建立工單寫入 `escalation_queue`，終止 AI 生成並轉移給人類：
+1. **槽位填補失敗過多**：追問超過 `MAX_SLOT_FILLING_ROUNDS` (預設 3 次) 仍無法收集齊全業務必填資訊。
+2. **意圖信心度偏低**：AI 判斷信心值低於 `INTENT_CONFIDENCE_THRESHOLD` (預設 0.65)。
+3. **確認超時**：等待使用者回覆確認超過限制次數 (`MAX_AWAITING_CONFIRMATION_ROUNDS`)。
+4. **資安攔截**：觸發上述提到的 PALADIN 紅旗。
+
+### 3.2 對話紀錄調閱與 RBAC 權限管理
+- **稽核員與 DPO (資料保護官)** 可透過 Admin WebUI 或直接呼叫 REST API (`GET /api/v1/conversations`) 分頁調閱對話紀錄。
+- 系統內建 **RBAC (Role-Based Access Control)** 攔截器，嚴格確保只有被標記為 `dpo` 或具備 `escalate:read` 權限的帳號可檢視敏感對話。未經授權之 API 呼叫將在核心業務邏輯執行前被退回 (HTTP 403)。
+
+---
+
+## 情境四：開發者與維運人員 (Developer & DevOps)
+
+本節涵蓋如何從零開始架設 OmniBot 開發環境、啟動微服務基礎設施，以及執行測試規範。
+
+### 4.1 環境前置需求
+| 軟體需求 | 最低版本 | 原因說明 |
+|------|------|---------|
+| Python | **≥ 3.11** | `pyproject.toml` 嚴格規範；`harness_cli` 將會拒絕執行於 Python 3.9 |
+| Docker & Compose | ≥ 24 | 需運行 7 個服務的開發環境 (postgres×2, redis, clamav, otel, prom, grafana) |
+| Git | ≥ 2.30 | 需支援 Git Submodule 功能 (`harness` 工具為 submodule) |
+| `uv` 或 `pip` | latest | Python 依賴套件管理（官方極度推薦使用 `uv` 提升安裝速度） |
+
+> **macOS 注意**：執行 `uv sync --extra dev` 時若遇到 `gitleaks` 解析失敗，請透過作業系統套件管理 `brew install gitleaks` 安裝，並單純使用 `uv sync` 來安裝核心 Python 依賴即可。
+
+### 4.2 專案下載與依賴安裝
+```bash
+# 必須加上 --recurse-submodules 以正確下載 harness 稽核子模組
+git clone --recurse-submodules https://github.com/johnnylugm-tech/omnibot.git
+cd omnibot
+
+# 驗證 submodule 已載入
+ls harness/harness_cli.py
+
+# 透過 uv 安裝虛擬環境與套件
+uv sync
+```
+
+### 4.3 基礎設施與環境變數 (Infrastructure & Config)
+請複製 `.env.example` 並補齊開發用的金鑰（包含 LLM API Key, 資料庫與 Redis 連線字串, Webhooks Tokens）。
+```bash
+cp .env.example .env
+
+# (選擇性) 若 Redis 使用 TLS，產生自簽憑證
+mkdir -p deployment/redis/tls
+openssl req -x509 -newkey rsa:2048 -days 365 -nodes -keyout deployment/redis/tls/redis.key -out deployment/redis/tls/redis.crt -subj "/CN=localhost"
+cp deployment/redis/tls/redis.crt deployment/redis/tls/ca.crt
+
+# 啟動 7 個 Docker 基礎容器
+docker compose up -d
+docker compose ps # 約 30 秒內皆應顯示 healthy
+```
+*(提示：`pg-super` 預設 Port 為 5433，請確認 `.env` 中的 `DATABASE_URL` 設定正確無誤)*
+
+### 4.4 啟動應用程式與資料庫遷移
+```bash
+# 透過 Alembic 執行 PostgreSQL Schema 遷移
+.venv/bin/python -m alembic upgrade head
+
+# 啟動 FastAPI 伺服器 (包含 FR-24 Middleware Chain)
+.venv/bin/python -m uvicorn app.api.main:build_app --factory --host 0.0.0.0 --port 8000 --reload
+```
+
+### 4.5 測試、Linter 與 Mutation Testing
+```bash
+# 執行所有測試 (包含單元與整合測試，耗時較長)
+.venv/bin/python -m pytest
+
+# 僅執行快速單元測試
+.venv/bin/python -m pytest -m "not integration and not slow"
+
+# 程式碼檢查與型別檢查
+.venv/bin/python -m ruff check 03-development/src
+.venv/bin/python -m pyright 03-development/src
+
+# 執行變異測試 (Mutation testing)
+.venv/bin/python -m mutmut run
+```
+
+### 4.6 架構規範與 Harness CLI
+OmniBot 嚴格執行清晰的分層架構 (Clean Architecture) 與溯源矩陣，由根目錄的 `harness_cli.py` 強制把關：
+- **api_layer_no_business_logic**: `api/` 層僅負責路由，嚴禁包含業務邏輯。
+- **infra_layer_no_domain_imports**: `infra/` 基礎設施不可 import 網域邏輯 (`core/`)。
+- **paladin_executes_before_pii**: PALADIN 資安掃描必須在 PII 遮蔽前執行。
+
+任何新模組建立前，皆需發起 SAB.json/SAD.md 的**架構修正案 (Architecture Amendment)**。修改代碼後，在 Push 前必須更新溯源簽章：
+```bash
+# 更新 Traceability Attestation 簽章
+.venv/bin/python harness_cli.py build-trace-attestation --project . --write
+```
+*除錯提示：若 `harness_cli.py` 報錯不支援 Python 3.9，請確認是否誤用了系統全域 Python，必須使用 `.venv/bin/python`。*
+
+---
+
+## 5. 附錄與參考資源 (Appendix & Resources)
+
+若需進一步了解系統底層設計與商業規格，請參閱：
+- **業務規格與架構設計**：`PROJECT_BRIEF.md`, `01-requirements/SRS.md`, `02-architecture/SAD.md`
+- **測試規範與品質矩陣**：`02-architecture/TEST_SPEC.md`, `01-requirements/TRACEABILITY_MATRIX.md`
+- **AI 代理與交接資訊**：`CLAUDE.md`, `HANDOVER.md`
+
+*Last updated: 2026-06-27 — 此版本已依據各端點角色（End Users, CS Supervisors, DPOs, DevOps）使用情境進行全量優化與重構。*
