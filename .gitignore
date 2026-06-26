@@ -180,3 +180,9 @@ comms.json
 
 # M2M OAuth client credentials (runtime security state)
 .m2m_tokens.json
+
+# Stale lint binary dropped by Phase 1 tool runs (.bin/ dir still allowed-empty)
+.bin/
+
+# Runtime logs inside CI-required archive dir (don't break p8-archive-check)
+.methodology-archive/*.log

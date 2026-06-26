@@ -1,12 +1,12 @@
 {
   "summary": {
-    "total": 489,
+    "total": 488,
     "missing": 0,
     "incomplete": 0,
-    "orphaned": 489,
+    "orphaned": 488,
     "critical": 0,
     "major": 0,
-    "minor": 489
+    "minor": 488
   },
   "gaps": [
     {
@@ -2936,12 +2936,6 @@
       "severity": "minor",
       "reason": "'downgrade' has no corresponding specification in SPEC.md",
       "action": "Add spec for downgrade or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'main' has no corresponding specification in SPEC.md",
-      "action": "Add spec for main or remove if unnecessary"
     }
   ]
 }
