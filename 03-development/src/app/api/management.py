@@ -18,7 +18,9 @@ Citations:
 
 from __future__ import annotations
 
+import asyncio
 import time
+import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -97,11 +99,42 @@ def list_knowledge(role: str, page: int, limit: int) -> PaginatedResponse | int:
 # Stub endpoints declared by SRS FR-85 — full implementation deferred
 # to later GREEN steps. The function names MUST match TEST_SPEC.md exactly
 # (spec-coverage-check performs exact-match lookup).
+#
+# Bulk + single endpoints (create_knowledge, bulk_create_knowledge) are now
+# wired to ``app.core.knowledge``: FR-77 single-entry import and FR-78 batch
+# import. The remaining 4 stubs (update / delete / list_conversations /
+# create_experiment) are out of scope for FR-77/78 and remain RBAC-only
+# pending future FRs.
+
 
 def create_knowledge(role: str, payload: dict) -> int:
-    """[FR-85] POST /api/v1/knowledge — stub (deferred)."""
+    """[FR-85] POST /api/v1/knowledge — wire to FR-77 single-entry import.
+
+    Delegates to ``app.core.knowledge.create_knowledge_with_chunks`` after
+    RBAC check. Default ``knowledge_id`` / ``model`` are supplied when
+    payload omits them so callers can post a bare ``{"title", "content"}``.
+
+    NOTE: kept sync to preserve the locked ``int 200/403`` return contract
+    that existing tests assert (``assert func(...) == 200``). The internal
+    ``create_knowledge_with_chunks`` is async; we drive it via
+    ``asyncio.run`` so the public signature stays sync. The FR-85 spec
+    does not require async at this layer.
+    """
     if not _authorized(role, _KNOWLEDGE_RESOURCE, "write"):
         return _HTTP_FORBIDDEN
+
+    from app.core.knowledge import create_knowledge_with_chunks
+
+    result = asyncio.run(
+        create_knowledge_with_chunks(
+            knowledge_id=payload.get("knowledge_id", f"kb_{uuid.uuid4().hex[:12]}"),
+            title=payload.get("title", ""),
+            content=payload.get("content", ""),
+            model=payload.get("model", "text-embedding-3-small"),
+            mode="single",
+        )
+    )
+    _ = result  # response body uses int status; result exposed via route metadata in future FRs
     return _HTTP_OK
 
 
@@ -120,9 +153,27 @@ def delete_knowledge(role: str, id_: str) -> int:
 
 
 def bulk_create_knowledge(role: str, payload: dict) -> int:
-    """[FR-85] POST /api/v1/knowledge/bulk — stub (deferred)."""
+    """[FR-85] POST /api/v1/knowledge/bulk — wire to FR-78 batch import.
+
+    Delegates to ``app.core.knowledge.batch_import_knowledge(entries,
+    is_batch=True)`` so all chunks go through the SAQ embedding queue
+    (per FR-78 contract: ``is_batch=True`` MUST NOT block on sync embedding).
+
+    Payload contract: ``{"items": [{"knowledge_id", "title", "content",
+    "model"}, ...]}``. Items missing the wrapper key default to ``[]``.
+    Type errors fall back to 403 to preserve the locked ``int 200/403``
+    return contract (TEST_SPEC.md FR-85).
+    """
     if not _authorized(role, _KNOWLEDGE_RESOURCE, "write"):
         return _HTTP_FORBIDDEN
+    entries = payload.get("items", [])
+    if not isinstance(entries, list):
+        return _HTTP_FORBIDDEN
+
+    from app.core.knowledge import batch_import_knowledge
+
+    result = batch_import_knowledge(entries, is_batch=True)
+    _ = result  # response body uses int status; enqueued_count exposed via route metadata in future FRs
     return _HTTP_OK
 
 

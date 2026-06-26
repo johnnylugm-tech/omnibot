@@ -289,7 +289,183 @@ without depending on submodule path layout. Regenerate with `init-project`.
 
 ---
 
-## 13. Where to Look Next
+## 13. Importing FAQ, Business Logic, and Workflows
+
+OmniBot separates three kinds of customer-service content:
+
+| Content kind | What it controls | Where it lives |
+|--------------|------------------|----------------|
+| **FAQ / knowledge** | RAG-grounded answers (the bot's "what does X mean?" replies) | `knowledge_base` + `knowledge_chunks` tables (pgvector) |
+| **Business logic** | Which slots each intent requires, escalation thresholds, FSM transitions | `app.core.dst.DialogueSlot` / `INTENT_TO_SLOTS` / `ALLOWED_TRANSITIONS` |
+| **Workflow / routing** | When to escalate to a human, which queue, SLA rules | `app.services.escalation.EscalationManager`, `escalation_queue` table |
+
+### 13.1 Importing FAQ entries
+
+The hot path is **`create_knowledge_with_chunks`** in `app.core.knowledge` (FR-77).
+Each entry produces a `knowledge_base` row + the first `knowledge_chunks` row
+embedded synchronously (or enqueued for async embedding on timeout).
+
+```python
+from app.core.knowledge import create_knowledge_with_chunks
+
+result = await create_knowledge_with_chunks(
+    knowledge_id="kb_return_policy_2026",     # stable ID you control
+    title="Return Policy",
+    content="Customers may return any item within 30 days ...",
+    model="text-embedding-3-small",
+    mode="single",
+)
+# result.embedding_synced, result.search_ready, result.fallback
+```
+
+For bulk import use **`batch_import_knowledge`** (FR-78). With `is_batch=True`
+no synchronous embedding wait — all chunks go through the async job queue.
+
+```python
+from app.core.knowledge import batch_import_knowledge
+
+result = batch_import_knowledge(
+    entries=[
+        {"knowledge_id": "kb_faq_shipping",  "title": "...", "content": "..."},
+        {"knowledge_id": "kb_faq_refund",    "title": "...", "content": "..."},
+        {"knowledge_id": "kb_faq_warranty",  "title": "...", "content": "..."},
+    ],
+    is_batch=True,
+)
+# result.enqueued, result.failed_chunk_ids, result.elapsed_seconds
+```
+
+**HTTP equivalents** (under `/api/v1/management`):
+
+> ⚠️  **All `/api/v1/management/*` endpoints are currently stubs (FR-85, deferred).**
+> The route shape, RBAC checks, and function names are frozen per SRS FR-85 so
+> `spec-coverage-check` can match `TEST_SPEC.md` exactly. The handlers pass
+> the RBAC check and return 200, but **they do NOT write to the database**.
+> This applies to:
+>
+> | Endpoint | Status |
+> |----------|--------|
+> | `POST   /api/v1/knowledge`        | stub (200, no DB write) |
+> | `PUT    /api/v1/knowledge/{id}`   | stub |
+> | `DELETE /api/v1/knowledge/{id}`   | stub |
+> | `POST   /api/v1/knowledge/bulk`   | stub |
+> | `GET    /api/v1/conversations`    | stub |
+> | `POST   /api/v1/experiments`      | stub |
+>
+> **Until the GREEN step implements these bodies, KB imports must go through
+> the Python API** (§13.1 above) or a custom Alembic data migration (§13.4).
+> Wire them to `create_knowledge_with_chunks` / `batch_import_knowledge` when
+> filling in the GREEN step.
+
+> **Production note**: both Python functions are deliberately side-effect-free on
+> the DB in the unit-test path. The integration tests inject a real session; in
+> your deployment you must wire the session factory in `app.infra.db` before
+> calling these functions outside tests. See the integration tests under
+> `03-development/tests/integration/test_fr77*` / `test_fr78*` for the canonical wiring.
+
+**Storage shape** (from `alembic/versions/b4ca5f411741_initial_schema.py`):
+
+```
+knowledge_base        -- 1 row per FAQ article (id, title, content, ...)
+knowledge_chunks      -- N rows per article (FK to knowledge_base.id)
+                         embedding column = pgvector vector(1536)
+                         HNSW index: idx_knowledge_chunks_embedding
+                         GIN index:  idx_knowledge_chunks_content_gin (FTS fallback)
+```
+
+### 13.2 Customizing business logic (slots, intents, FSM)
+
+The dialogue state tracker (`app.core.dst`) is parameterized by three tables
+that you edit **in code** (not at runtime — these are baked at startup):
+
+| Table | File | Purpose |
+|-------|------|---------|
+| `DialogueSlot` enum | `app/core/dst.py` | All slot names the bot can ask for (e.g. `ORDER_ID`, `REASON`) |
+| `INTENT_TO_SLOTS` | `app/core/dst.py` | Maps intent string → required slot list |
+| `ALLOWED_TRANSITIONS` | `app/core/dst.py` | FSM edge table: `state_from → {state_to, ...}` |
+
+Adding a new intent (e.g. `cancel_subscription`):
+
+```python
+# app/core/dst.py
+class DialogueSlot(enum.Enum):
+    ORDER_ID = "order_id"
+    REASON = "reason"
+    SUBSCRIPTION_ID = "subscription_id"     # NEW
+
+INTENT_TO_SLOTS["cancel_subscription"] = (
+    DialogueSlot.SUBSCRIPTION_ID,
+    DialogueSlot.REASON,
+)
+```
+
+Adding a new FSM state:
+
+```python
+ALLOWED_TRANSITIONS["PROCESSING"].add("AWAITING_CANCEL_CONFIRMATION")
+ALLOWED_TRANSITIONS["AWAITING_CANCEL_CONFIRMATION"] = {"PROCESSING", "CANCELLED", "ESCALATED"}
+```
+
+Auto-escalation triggers (FR-36, FR-37) are tunable constants at the top of
+`dst.py`:
+
+```python
+INTENT_CONFIDENCE_THRESHOLD = 0.65    # below → auto-escalate
+MAX_SLOT_FILLING_ROUNDS    = 3        # exceeded → auto-escalate
+MAX_AWAITING_CONFIRMATION_ROUNDS = 2  # exceeded → ESCALATED
+```
+
+### 13.3 Routing to human agents (escalation workflow)
+
+`app.services.escalation.EscalationManager` owns the lifecycle of an escalation
+ticket. It writes to the `escalation_queue` table (FK → `conversations.id`).
+
+The bot auto-escalates when any of these conditions hit (see
+`DialogueState.auto_escalate()` in `dst.py`):
+
+1. Slot-filling rounds > `MAX_SLOT_FILLING_ROUNDS`
+2. Intent classification confidence < `INTENT_CONFIDENCE_THRESHOLD`
+3. AWAITING_CONFIRMATION rounds > `MAX_AWAITING_CONFIRMATION_ROUNDS` and user never confirmed
+4. PALADIN red-flag (security gate refuses to answer)
+
+For custom routing (per-department queues, SLA by priority), extend
+`EscalationManager` or add a new queue discriminator column via Alembic.
+The human-agent takeover UI lives at `app.admin.webui` (depends on `app.admin.rbac`).
+
+### 13.4 Loading FAQ from an external file
+
+The `batch_import_knowledge` function takes `list[dict]`. A typical CSV-to-KB
+loader:
+
+```python
+# scripts/load_faq.py  (dev-only helper, not committed)
+import csv
+from app.core.knowledge import batch_import_knowledge
+
+def csv_to_entries(path: str) -> list[dict]:
+    with open(path, newline="", encoding="utf-8") as f:
+        return [
+            {
+                "knowledge_id": f"kb_{row['id']}",
+                "title":        row["title"],
+                "content":      row["body"],
+            }
+            for row in csv.DictReader(f)
+        ]
+
+if __name__ == "__main__":
+    result = batch_import_knowledge(csv_to_entries("faq.csv"), is_batch=True)
+    print(f"enqueued={result.enqueued} failed={result.failed_chunk_ids}")
+```
+
+> **Alembic for static corpora**: if your FAQ set is fixed at deploy time and
+> rarely changes, prefer writing an Alembic data migration under
+> `alembic/versions/` rather than running a one-shot script. This keeps the
+> knowledge corpus reproducible across environments.
+
+---
+
+## 14. Where to Look Next
 
 - `PROJECT_BRIEF.md` — Business KPIs, functional scope
 - `SPEC.md` — Source specification (v8.1)
@@ -303,4 +479,4 @@ without depending on submodule path layout. Regenerate with `init-project`.
 
 ---
 
-*Last updated: 2026-06-27 — covers repo state at commit `ef32371` (post round-6 cleanup).*
+*Last updated: 2026-06-27 — covers repo state at commit `7828207` (post round-6 cleanup, includes §13 on FAQ/business-logic/workflow import).*
