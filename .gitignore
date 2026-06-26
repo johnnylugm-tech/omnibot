@@ -186,3 +186,7 @@ comms.json
 
 # Runtime logs inside CI-required archive dir (don't break p8-archive-check)
 .methodology-archive/*.log
+
+# Claude Code local config + scratch workflows (machine-specific,
+# never share to remote)
+.claude/
