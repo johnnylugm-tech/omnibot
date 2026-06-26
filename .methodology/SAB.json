@@ -37,6 +37,8 @@
         "app.core.knowledge",
         "app.core.dst",
         "app.core.response",
+        "app.core.retraction",
+        "app.core.conversation",
         "app.core.emotion",
         "app.core.unified_message"
       ],
@@ -463,7 +465,10 @@
     "FR-105": "app.admin.odd_sql",
     "FR-106": "tests.load",
     "FR-107": "tests.strategy",
-    "FR-108": "tests.strategy"
+    "FR-108": "tests.strategy",
+    "FR-200": "app.api.management",
+    "FR-202": "app.api.management",
+    "FR-203": "app.api.management"
   },
   "architecture_constraints": [
     "no_circular_dependencies",
@@ -476,6 +481,7 @@
   "high_risk_modules": [
     "app.core.paladin",
     "app.core.knowledge",
+    "app.core.conversation",
     "app.core.dst",
     "app.infra.circuit_breaker",
     "app.infra.redis_streams",
@@ -507,6 +513,13 @@
       "replaced": [
         "app.services.aee/ (directory marker not honored)"
       ]
+    },
+    {
+      "date": "2026-06-27",
+      "phase": 8,
+      "reason": "FR-200/202/203 implementation: register app.core.conversation as new module; wire 3 management stubs (update_knowledge / list_conversations / create_experiment).",
+      "added": ["app.core.conversation"],
+      "fr_rows_added": ["FR-200", "FR-202", "FR-203"]
     }
   ]
 }

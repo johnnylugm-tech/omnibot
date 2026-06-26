@@ -548,6 +548,8 @@ sab:
         - app.core.knowledge
         - app.core.dst
         - app.core.response
+        - app.core.retraction
+        - app.core.conversation
         - app.core.emotion
       allowed_dependencies: ["infra", "services"]
 
@@ -878,6 +880,9 @@ sab:
     FR-106: "tests.load"
     FR-107: "tests.strategy"
     FR-108: "tests.strategy"
+    FR-200: "app.api.management"
+    FR-202: "app.api.management"
+    FR-203: "app.api.management"
 
   architecture_constraints:
     - "no_circular_dependencies"

@@ -264,6 +264,9 @@ OmniBot 是多平台企業級客服聊天機器人，同時服務 Telegram、LIN
 |-------|------------------------|---------------------|------------------------|
 | FR-107 | 測試金字塔：Unit 70%（InputSanitizer, PromptInjectionDefense, PIIMasking, DST, EmotionTracker, RateLimiter, RRF, RBAC, ABTestManager）；Integration 20%（Webhook→UnifiedMessage, HybridKnowledge 查詢路徑, ResponseGenerator, EscalationManager→WS, EmbeddingJob→SAQ）；E2E 10%（FAQ精確匹配、語意搜尋、多輪對話DST、情緒觸發轉接、Prompt Injection攔截、Fallback轉接） | unit/integration/e2e 覆蓋率達 70/20/10；6個 E2E 場景通過 | pytest test suite, k6 |
 | FR-108 | 黃金數據集：500 筆邊界案例（6 類：語音亂碼/拼寫錯誤/方言簡稱/多意圖/情感爆發/Prompt Injection）；用於回歸測試自動化；edge_cases 表記錄（status: pending/approved/rejected） | 500 筆數量達標；6 類覆蓋；regression 測試可自動執行 | golden dataset + edge_cases table |
+| FR-200 | PUT /api/v1/knowledge/{id} — 真正更新 KB row (title/content) 並重 embed 所有 chunks（超時走 enqueue_embedding_job） | RBAC: knowledge:write 通過；知識存在；回傳 200；role 不符 → 403；chunks 已用新向量覆寫；< 2.5s SLO | `app.api.management.update_knowledge` |
+| FR-202 | GET /api/v1/conversations — 真正從 Postgres `conversations` 表讀取並回傳 PaginatedResponse (total/page/limit/has_next/items) | RBAC: escalate:read 通過；page/limit ∈ [1,100]；回傳 200 + PaginatedResponse；page 越界 → 空 items + has_next=false；未授權/型別錯 → 403 | `app.api.management.list_conversations` |
+| FR-203 | POST /api/v1/experiments — 真正透過 ABTestManager 建實驗（traffic_split 驗證、寫 DB、status='active'、回傳 experiment_id） | RBAC: experiment:write 通過；payload 含 name/traffic_split/model；sum(traffic_split)==1.0；回傳 200；缺欄位/型別錯/role 不符 → 403；DB row 已建立且 status='active' | `app.api.management.create_experiment` |
 
 ---
 

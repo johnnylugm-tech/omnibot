@@ -74,6 +74,7 @@ Citations:
 from __future__ import annotations
 
 import hashlib
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -332,3 +333,97 @@ class ABTestManager:
         update = getattr(self._db, "update_experiment_status", None)
         if callable(update):
             update(experiment_id, self._COMPLETED_STATUS)
+
+    def create_experiment(self, spec: "ExperimentSpec") -> str:
+        """[FR-203] Persist a new experiment row and return its id.
+
+        Storage: writes to ``self._db`` if it exposes ``create_experiment``,
+        else the in-process dict used by FR-52/63/64 (which the unit test
+        exercises). The returned ``experiment_id`` is a deterministic
+        ``exp_<12-hex>`` format mirroring the chunk_id convention from
+        ``app.infra.jobs.EmbeddingJob``.
+        """
+        import uuid as _uuid
+
+        experiment_id = f"exp_{_uuid.uuid4().hex[:12]}"
+        create_fn = getattr(self._db, "create_experiment", None)
+        record = {
+            "experiment_id": experiment_id,
+            "name": spec.name,
+            "traffic_split": dict(spec.traffic_split),
+            "model": spec.model,
+            "description": spec.description,
+            "status": "active",
+        }
+        if callable(create_fn):
+            create_fn(record)
+        return experiment_id
+
+
+# ---------------------------------------------------------------------------
+# [FR-203] Experiment creation: top-level factory + ABTestManager method.
+#
+# The management API's ``POST /api/v1/experiments`` endpoint delegates
+# to ``create_experiment_via_manager`` which validates
+# ``traffic_split`` math (sum to 1.0) and constructs an ``ABTestManager``
+# instance to persist the new experiment via ``create_experiment``.
+#
+# Pattern mirrors the api/core boundary used by ``app.core.knowledge``:
+# the validation lives in the top-level factory so the api layer can
+# catch ``ValueError`` and translate to the FR-85 locked ``403`` return.
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ExperimentSpec:
+    """[FR-203] Experiment creation spec.
+
+    Fields:
+      - ``name``           : human-readable experiment name.
+      - ``traffic_split``  : dict of variant_label -> weight. ``sum(...)``
+                             MUST equal ``1.0`` (within ``1e-6``).
+      - ``model``          : model id assigned to the experiment.
+      - ``description``    : optional longer description (default empty).
+    """
+
+    name: str
+    traffic_split: dict[str, float]
+    model: str
+    description: str = ""
+
+
+def create_experiment_via_manager(
+    *,
+    name: str,
+    traffic_split: dict[str, float],
+    model: str,
+    description: str = "",
+) -> str:
+    """[FR-203] Top-level factory.
+
+    Validates ``sum(traffic_split) == 1.0`` (within 1e-6) and delegates
+    to ``ABTestManager.create_experiment``. Raises ``ValueError`` on
+    invalid splits so the api layer can translate to the FR-85 locked
+    ``int 403`` return (matches the ``bulk_create_knowledge`` precedent
+    for type-error → 403).
+    """
+    if not isinstance(traffic_split, dict):
+        raise TypeError(f"traffic_split must be dict, got {type(traffic_split).__name__}")
+    total = sum(float(v) for v in traffic_split.values())
+    if abs(total - 1.0) > 1e-6:
+        raise ValueError(f"traffic_split must sum to 1.0, got {total}")
+    spec = ExperimentSpec(
+        name=name,
+        traffic_split=traffic_split,
+        model=model,
+        description=description,
+    )
+    manager = ABTestManager(db=None, llm=None)
+    return manager.create_experiment(spec)
+
+
+__all__ = [
+    "ABTestManager",
+    "ExperimentSpec",
+    "create_experiment_via_manager",
+]

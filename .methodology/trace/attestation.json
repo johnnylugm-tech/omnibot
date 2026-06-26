@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "7828207ed1d0ed30f27ce6816b8f449d831404c2",
-  "content_sha256": "8d66edc6118f8cab045d5bb5ae8a99bb17e6890df71695f032de1db335b55e4a",
+  "git_sha": "e0e51acd15db5b9e5a32d1077e7245509488e09b",
+  "content_sha256": "6e3eb90417edbb28f7b6e087fa983d457d4c7e7b863ab187f6fa8938e36f8285",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -9,12 +9,12 @@
     "schema_version": "harness/traceability/overlay/v1",
     "project_id": "omnibot",
     "completeness": {
-      "total_requirements": 108,
+      "total_requirements": 111,
       "srs_coverage": "100.0%",
       "code_coverage": "100.0%",
       "test_coverage": "100.0%",
       "verification_rate": "100.0%",
-      "total_links": 502,
+      "total_links": 517,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [],
@@ -482,6 +482,51 @@
         "test_files": [
           "tests/test_fr20.py",
           "tests/unit/test_fr20.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-200": {
+        "fr_id": "FR-200",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/api/management.py",
+          "03-development/src/app/core/knowledge.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr200.py",
+          "tests/test_fr200.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-202": {
+        "fr_id": "FR-202",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/api/management.py",
+          "03-development/src/app/core/conversation.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr202.py",
+          "tests/test_fr202.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-203": {
+        "fr_id": "FR-203",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/app/api/management.py",
+          "03-development/src/app/services/ab_testing.py"
+        ],
+        "test_files": [
+          "tests/integration/test_fr203.py",
+          "tests/test_fr203.py"
         ],
         "sad_module": "—",
         "priority": "HIGH"

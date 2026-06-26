@@ -2188,6 +2188,69 @@
 
 ---
 
+### FR-200: Knowledge Update — 重 embed 所有 chunks
+
+**Classification**: API_ENDPOINT, DATA_ENTITY
+**Active Patterns**: NP-01, NP-02, NP-12
+
+| # | Test Function | Inputs | Type | Derivation |
+|---|---|---|---|---|
+| 1 | `test_fr200_update_knowledge_returns_200_for_admin` | role="admin"; knowledge_id="kb_seed_001"; payload={"title":"new","content":"new"}; expected_status="200" | happy_path | Q1 |
+| 2 | `test_fr200_update_knowledge_returns_403_for_anon` | role="anonymous"; knowledge_id="kb_seed_001"; expected_status="403" | validation | Q2 |
+| 3 | `test_fr200_update_knowledge_reembed_chunks_enqueued` | role="admin"; knowledge_id="kb_seed_002"; expected_chunks_enqueued=">=1" | happy_path | Q1 |
+
+**Sub-assertions**
+
+| rule_id | predicate (over Inputs / result) | applies_to (case #) |
+|---|---|---|
+| fr200-ok | `result == 200` | 1 |
+| fr200-rbac | `result == 403` | 2 |
+| fr200-enq | `enqueue_embedding_job.call_count >= 1` | 3 |
+
+---
+
+### FR-202: Conversations List — 真分頁
+
+**Classification**: API_ENDPOINT, DATA_ENTITY
+**Active Patterns**: NP-01, NP-02, NP-09
+
+| # | Test Function | Inputs | Type | Derivation |
+|---|---|---|---|---|
+| 1 | `test_fr202_list_conversations_returns_200_for_dpo` | role="dpo"; page=1; limit=10; expected_status="200" | happy_path | Q1 |
+| 2 | `test_fr202_list_conversations_returns_403_for_anon` | role="anonymous"; expected_status="403" | validation | Q2 |
+| 3 | `test_fr202_list_conversations_pagination_math` | seed_total=50; page=2; limit=10; expected_has_next="true"; expected_items="10" | validation | Q2 |
+
+**Sub-assertions**
+
+| rule_id | predicate (over Inputs / result) | applies_to (case #) |
+|---|---|---|
+| fr202-ok | `result == 200` | 1 |
+| fr202-rbac | `result == 403` | 2 |
+| fr202-page | `_LAST_LIST_RESULT.has_next is True and len(_LAST_LIST_RESULT.items) == 10` | 3 |
+
+---
+
+### FR-203: Experiment Create — 透過 ABTestManager
+
+**Classification**: API_ENDPOINT, DATA_ENTITY
+**Active Patterns**: NP-01, NP-02
+
+| # | Test Function | Inputs | Type | Derivation |
+|---|---|---|---|---|
+| 1 | `test_fr203_create_experiment_returns_200_for_admin` | role="admin"; payload={"name":"exp_a","traffic_split":{"variant_a":0.5,"variant_b":0.5},"model":"gpt-4"}; expected_status="200" | happy_path | Q1 |
+| 2 | `test_fr203_create_experiment_returns_403_for_anon` | role="anonymous"; expected_status="403" | validation | Q2 |
+| 3 | `test_fr203_create_experiment_invalid_split_returns_403` | role="admin"; traffic_split={"variant_a":0.7,"variant_b":0.7}; expected_status="403" | validation | Q2 |
+
+**Sub-assertions**
+
+| rule_id | predicate (over Inputs / result) | applies_to (case #) |
+|---|---|---|
+| fr203-ok | `result == 200` | 1 |
+| fr203-rbac | `result == 403` | 2 |
+| fr203-invalid | `result == 403` | 3 |
+
+---
+
 ## Cross-Cutting Test Cases
 
 ### Security Red-Team
