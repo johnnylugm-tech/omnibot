@@ -1,12 +1,12 @@
 {
   "summary": {
-    "total": 505,
+    "total": 489,
     "missing": 0,
     "incomplete": 0,
-    "orphaned": 505,
+    "orphaned": 489,
     "critical": 0,
     "major": 0,
-    "minor": 505
+    "minor": 489
   },
   "gaps": [
     {
@@ -2940,104 +2940,8 @@
     {
       "type": "ORPHANED",
       "severity": "minor",
-      "reason": "'count_loc' has no corresponding specification in SPEC.md",
-      "action": "Add spec for count_loc or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'count_lines' has no corresponding specification in SPEC.md",
-      "action": "Add spec for count_lines or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'extract_section' has no corresponding specification in SPEC.md",
-      "action": "Add spec for extract_section or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'get_source' has no corresponding specification in SPEC.md",
-      "action": "Add spec for get_source or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'replace_in_file' has no corresponding specification in SPEC.md",
-      "action": "Add spec for replace_in_file or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'get_logical_lines' has no corresponding specification in SPEC.md",
-      "action": "Add spec for get_logical_lines or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'DocstringRemover' has no corresponding specification in SPEC.md",
-      "action": "Add spec for DocstringRemover or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'visit_Module' has no corresponding specification in SPEC.md",
-      "action": "Add spec for visit_Module or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'visit_ClassDef' has no corresponding specification in SPEC.md",
-      "action": "Add spec for visit_ClassDef or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'visit_FunctionDef' has no corresponding specification in SPEC.md",
-      "action": "Add spec for visit_FunctionDef or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'visit_AsyncFunctionDef' has no corresponding specification in SPEC.md",
-      "action": "Add spec for visit_AsyncFunctionDef or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
       "reason": "'main' has no corresponding specification in SPEC.md",
       "action": "Add spec for main or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'get_block' has no corresponding specification in SPEC.md",
-      "action": "Add spec for get_block or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'get_block' has no corresponding specification in SPEC.md",
-      "action": "Add spec for get_block or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'get_source' has no corresponding specification in SPEC.md",
-      "action": "Add spec for get_source or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'get_source' has no corresponding specification in SPEC.md",
-      "action": "Add spec for get_source or remove if unnecessary"
-    },
-    {
-      "type": "ORPHANED",
-      "severity": "minor",
-      "reason": "'get_source' has no corresponding specification in SPEC.md",
-      "action": "Add spec for get_source or remove if unnecessary"
     }
   ]
 }
