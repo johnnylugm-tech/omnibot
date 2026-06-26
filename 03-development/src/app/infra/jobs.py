@@ -289,6 +289,162 @@ def process_embedding_job(
     )
 
 
+# ---------------------------------------------------------------------------
+# [FR-201] Atomic cancel of SAQ-queued EmbeddingJobs.
+#
+# SRS.md FR-201 contract:
+#     DELETE /api/v1/knowledge/{id} — 真正刪除 KB row + knowledge_chunks，
+#     並取消所有 SAQ pending EmbeddingJob (payload.knowledge_id == id)
+#
+# Mechanism (matches SAQ Redis layout at saq/queue/redis.py:321-338):
+#     - SAQ stores per-job state at ``SET saq:<queue>:<job_id>`` keys
+#       and the per-job payload (function + kwargs) is reachable via
+#       ``await queue.job(job_key) -> Job | None``.
+#     - ``Job.abort(error, ttl)`` (saq/job.py:286) drives the broker-
+#       level cancel (LREM queued + ZREM incomplete + SETEX abort_id +
+#       PUBLISH) — there is no need to invent a new cancel mechanism.
+#
+# The function is best-effort: a SAQ outage MUST NOT block the api
+# layer's locked ``int 200/403`` response (FR-85 contract). The DB
+# row deletion is the source of truth; a surviving pending job is
+# caught by the worker-side idempotency check (TODO above
+# ``process_embedding_job``).
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class CancelEmbeddingJobsResult:
+    """[FR-201] Outcome of attempting to abort every SAQ-queued
+    EmbeddingJob whose payload references a specific ``knowledge_id``.
+
+    Fields:
+        cancelled : Job ids whose ``Job.abort`` succeeded.
+        matched   : Job ids whose payload matched (function=="embed_job"
+                    AND kwargs.knowledge_id==target) regardless of
+                    whether ``abort`` succeeded. Worker-side idempotency
+                    guards the matched-but-not-cancelled subset.
+        scanned   : Total ``saq:embed_job:*`` keys discovered via SCAN.
+                    Bounded by Redis keyspace at call time, not by queue
+                    contents.
+        fallback  : Non-empty when the cancel could not fully run:
+                       ""                : clean run
+                       "saq_unavailable" : _SAQ_CLIENT is None
+                       "saq_no_scan"     : client has no .redis attribute
+                       "redis_error"     : SCAN / GET raised
+        error     : Exception message accompanying ``fallback``; ``None``
+                    on the clean path.
+    """
+
+    cancelled: tuple[str, ...]
+    matched: tuple[str, ...]
+    scanned: int
+    fallback: str
+    error: str | None
+
+
+_EMBED_QUEUE: str = "embed_job"
+_SAQ_KEY_PREFIX: str = f"saq:{_EMBED_QUEUE}:"
+
+
+async def cancel_embedding_jobs_for(
+    knowledge_id: str,
+    *,
+    error: str = "knowledge_deleted",
+    ttl: int = 300,
+) -> CancelEmbeddingJobsResult:
+    """[FR-201] Atomically abort every SAQ-queued EmbeddingJob whose
+    payload references ``knowledge_id``.
+
+    Implementation:
+      1. SCAN MATCH ``saq:embed_job:*`` via ``_SAQ_CLIENT.redis.scan_iter``.
+      2. For each key: strip prefix → ``job_id`` →
+         ``await _SAQ_CLIENT.job(job_id) -> Job | None``.
+      3. Filter: ``job.function == "embed_job"`` AND
+                 ``job.kwargs.get("knowledge_id") == target``.
+      4. ``await job.abort(error=error, ttl=ttl)``.
+
+    Never raises on Redis / SAQ failure — surfaces via ``fallback``.
+    """
+    if _SAQ_CLIENT is None:
+        return CancelEmbeddingJobsResult(
+            cancelled=(), matched=(), scanned=0,
+            fallback="saq_unavailable",
+            error="SAQ client not wired; call set_saq_client() at boot",
+        )
+
+    redis_client = getattr(_SAQ_CLIENT, "redis", None)
+    if redis_client is None:
+        return CancelEmbeddingJobsResult(
+            cancelled=(), matched=(), scanned=0,
+            fallback="saq_no_scan",
+            error="SAQ client has no .redis attribute",
+        )
+
+    scanned = 0
+    matched: list[str] = []
+    cancelled: list[str] = []
+    try:
+        async for key in redis_client.scan_iter(match=f"{_SAQ_KEY_PREFIX}*", count=500):
+            scanned += 1
+            key_str = key.decode() if isinstance(key, bytes) else key
+            if not key_str.startswith(_SAQ_KEY_PREFIX):
+                continue
+            job_id = key_str[len(_SAQ_KEY_PREFIX):]
+            try:
+                job = await _SAQ_CLIENT.job(job_id)
+            except Exception:
+                # Redis read error on a single key — skip and continue.
+                continue
+            if job is None:
+                continue
+            if getattr(job, "function", None) != _EMBED_QUEUE:
+                continue
+            kwargs = getattr(job, "kwargs", {}) or {}
+            if kwargs.get("knowledge_id") != knowledge_id:
+                continue
+            matched.append(job_id)
+            abort_fn = getattr(job, "abort", None)
+            if not callable(abort_fn):
+                # Job shape mismatch — should never happen with a
+                # real SAQ Job (saq/job.py:286). Surface as matched-
+                # but-not-cancelled; worker idempotency covers the gap.
+                continue
+            try:
+                await abort_fn(error=error, ttl=ttl)
+                cancelled.append(job_id)
+            except Exception:
+                # abort failed but the job matched; worker-side
+                # idempotency check (TODO at process_embedding_job)
+                # prevents data corruption.
+                pass
+    except Exception as exc:
+        return CancelEmbeddingJobsResult(
+            cancelled=tuple(cancelled),
+            matched=tuple(matched),
+            scanned=scanned,
+            fallback="redis_error",
+            error=str(exc),
+        )
+
+    return CancelEmbeddingJobsResult(
+        cancelled=tuple(cancelled),
+        matched=tuple(matched),
+        scanned=scanned,
+        fallback="",
+        error=None,
+    )
+
+
+# TODO(FR-77 worker handler): before writing chunks, the eventual
+# worker handler MUST verify the target knowledge_base row still exists
+# (SELECT 1 FROM knowledge_base WHERE id = :kid). FR-201 deletes the
+# row before cancelling SAQ jobs; if a worker dequeues a job microseconds
+# before the cancel arrives, this check prevents the FR-77/78
+# chunks_reembedded invariant from being violated by a stale job.
+# Out of scope for FR-201 — the handler registration is itself a
+# separate GREEN step (the FR-77/78/200 stubs ship enqueue-only).
+
+
 # Expose the pure backoff helper as an attribute on the processor so
 # tests can reach it via ``getattr(process_embedding_job,
 # "compute_backoff", None)`` without re-importing the private name.

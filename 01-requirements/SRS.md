@@ -267,6 +267,7 @@ OmniBot 是多平台企業級客服聊天機器人，同時服務 Telegram、LIN
 | FR-200 | PUT /api/v1/knowledge/{id} — 真正更新 KB row (title/content) 並重 embed 所有 chunks（超時走 enqueue_embedding_job） | RBAC: knowledge:write 通過；知識存在；回傳 200；role 不符 → 403；chunks 已用新向量覆寫；< 2.5s SLO | `app.api.management.update_knowledge` |
 | FR-202 | GET /api/v1/conversations — 真正從 Postgres `conversations` 表讀取並回傳 PaginatedResponse (total/page/limit/has_next/items) | RBAC: escalate:read 通過；page/limit ∈ [1,100]；回傳 200 + PaginatedResponse；page 越界 → 空 items + has_next=false；未授權/型別錯 → 403 | `app.api.management.list_conversations` |
 | FR-203 | POST /api/v1/experiments — 真正透過 ABTestManager 建實驗（traffic_split 驗證、寫 DB、status='active'、回傳 experiment_id） | RBAC: experiment:write 通過；payload 含 name/traffic_split/model；sum(traffic_split)==1.0；回傳 200；缺欄位/型別錯/role 不符 → 403；DB row 已建立且 status='active' | `app.api.management.create_experiment` |
+| FR-201 | DELETE /api/v1/knowledge/{id} — 真正刪除 KB row + knowledge_chunks，並取消所有 SAQ pending EmbeddingJob (payload.knowledge_id == id) | RBAC: knowledge:delete 通過；DB 刪除成功；SAQ cancel 結果透過 fallback/saq_cancelled 反映；role 不符 → 403 | `app.api.management.delete_knowledge` |
 
 ---
 

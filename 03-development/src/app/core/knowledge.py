@@ -1519,4 +1519,115 @@ async def update_knowledge_with_reembed(
     )
 
 
+# ---------------------------------------------------------------------------
+# [FR-201] Atomic knowledge_base deletion (DB row + chunks + SAQ cancel).
+#
+# SRS.md FR-201 contract:
+#     DELETE /api/v1/knowledge/{id} — 真正刪除 KB row + knowledge_chunks，
+#     並取消所有 SAQ pending EmbeddingJob (payload.knowledge_id == id)
+#
+# Order is critical:
+#   1. DELETE knowledge_chunks WHERE knowledge_base_id = :kid
+#      (no ON DELETE CASCADE in the initial schema, so chunks MUST
+#       be removed explicitly before the parent row to avoid an FK
+#       violation when the parent is deleted)
+#   2. DELETE knowledge_base WHERE id = :kid
+#      (idempotent — rowcount=0 when the row is already gone is
+#       treated as success; caller decides whether that maps to
+#       200 or 404 — FR-201 keeps the existing api-layer int 200/403
+#       contract and treats idempotent delete as 200)
+#   3. await cancel_embedding_jobs_for(knowledge_id)
+#      (best-effort; SAQ outage does NOT raise — it surfaces in the
+#       returned ``saq_fallback`` / ``saq_error`` fields)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class DeleteKnowledgeResult:
+    """[FR-201] Outcome of an atomic knowledge_base deletion.
+
+    Fields:
+        knowledge_id  : Echoes the deleted row id.
+        chunks_deleted: Count of knowledge_chunks rows removed.
+        kb_deleted    : True iff the parent knowledge_base row was
+                        actually removed by this call (rowcount > 0).
+                        False when the row was already absent.
+        saq_cancelled : SAQ job ids whose ``Job.abort`` succeeded.
+        saq_matched   : SAQ job ids whose payload matched the deletion
+                        target (cancelled subset is a prefix).
+        saq_scanned   : Total ``saq:embed_job:*`` keys discovered.
+        saq_fallback  : Non-empty when SAQ cancel could not fully run.
+                        One of: "" | "saq_unavailable" | "saq_no_scan"
+                        | "redis_error".
+        saq_error     : Exception message accompanying ``saq_fallback``.
+    """
+
+    knowledge_id: str
+    chunks_deleted: int
+    kb_deleted: bool
+    saq_cancelled: tuple[str, ...]
+    saq_matched: tuple[str, ...]
+    saq_scanned: int
+    saq_fallback: str
+    saq_error: str | None
+
+
+async def delete_knowledge_and_cancel_jobs(
+    knowledge_id: str,
+    *,
+    saq_error: str = "knowledge_deleted",
+    saq_ttl: int = 300,
+) -> DeleteKnowledgeResult:
+    """[FR-201] Atomically DELETE a ``knowledge_base`` row, its chunks,
+    and every SAQ-queued ``EmbeddingJob`` whose payload references it.
+
+    The function never raises on SAQ outage — DB deletion is the source
+    of truth and the api layer's locked ``int 200/403`` contract is
+    preserved (FR-85). When the SAQ client is un-wired the cancel step
+    is a no-op and ``saq_fallback == "saq_unavailable"``; a worker that
+    later dequeues a surviving job MUST self-check the parent row's
+    existence before writing chunks (TODO at
+    ``app.infra.jobs.process_embedding_job``).
+    """
+    from app.infra.database import get_session  # lazy per api/core boundary
+    from app.infra.jobs import cancel_embedding_jobs_for
+
+    # ``get_session`` is an async generator declared without
+    # ``@asynccontextmanager`` (see ``app.infra.database:41``), so the
+    # static type checker cannot see ``__aenter__`` / ``__aexit__``.
+    # It IS a runtime async context manager — this is a long-standing
+    # typing asymmetry, not a runtime bug. ``type: ignore[attr-defined]``
+    # keeps pyright quiet without changing behaviour.
+    session_cm = get_session()  # type: ignore[attr-defined]
+    session = await session_cm.__aenter__()  # type: ignore[attr-defined]
+    try:
+        chunks_result = await session.execute(
+            "DELETE FROM knowledge_chunks WHERE knowledge_base_id = :kid",
+            {"kid": knowledge_id},
+        )
+        chunks_deleted = int(getattr(chunks_result, "rowcount", 0) or 0)
+        kb_result = await session.execute(
+            "DELETE FROM knowledge_base WHERE id = :kid",
+            {"kid": knowledge_id},
+        )
+        kb_deleted = int(getattr(kb_result, "rowcount", 0) or 0) > 0
+    finally:
+        await session_cm.__aexit__(None, None, None)  # type: ignore[attr-defined]
+
+    saq_result = await cancel_embedding_jobs_for(
+        knowledge_id, error=saq_error, ttl=saq_ttl,
+    )
+
+    return DeleteKnowledgeResult(
+        knowledge_id=knowledge_id,
+        chunks_deleted=chunks_deleted,
+        kb_deleted=kb_deleted,
+        saq_cancelled=saq_result.cancelled,
+        saq_matched=saq_result.matched,
+        saq_scanned=saq_result.scanned,
+        saq_fallback=saq_result.fallback,
+        saq_error=saq_result.error,
+    )
+
+
 

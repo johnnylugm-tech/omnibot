@@ -467,6 +467,7 @@
     "FR-107": "tests.strategy",
     "FR-108": "tests.strategy",
     "FR-200": "app.api.management",
+    "FR-201": "app.api.management",
     "FR-202": "app.api.management",
     "FR-203": "app.api.management"
   },
@@ -520,6 +521,12 @@
       "reason": "FR-200/202/203 implementation: register app.core.conversation as new module; wire 3 management stubs (update_knowledge / list_conversations / create_experiment).",
       "added": ["app.core.conversation"],
       "fr_rows_added": ["FR-200", "FR-202", "FR-203"]
+    },
+    {
+      "date": "2026-06-27",
+      "phase": 8,
+      "reason": "FR-201 implementation: atomic DELETE knowledge_base + knowledge_chunks + SAQ pending EmbeddingJob cancel via Queue.job() + Job.abort() (saq/job.py:286). Worker-side idempotency TODO documented at process_embedding_job.",
+      "fr_rows_added": ["FR-201"]
     }
   ]
 }

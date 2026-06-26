@@ -1,12 +1,12 @@
 {
   "summary": {
-    "total": 488,
+    "total": 496,
     "missing": 0,
     "incomplete": 0,
-    "orphaned": 488,
+    "orphaned": 496,
     "critical": 0,
     "major": 0,
-    "minor": 488
+    "minor": 496
   },
   "gaps": [
     {
@@ -888,6 +888,24 @@
     {
       "type": "ORPHANED",
       "severity": "minor",
+      "reason": "'Conversation' has no corresponding specification in SPEC.md",
+      "action": "Add spec for Conversation or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'ConversationListPage' has no corresponding specification in SPEC.md",
+      "action": "Add spec for ConversationListPage or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'list_conversations_paginated' has no corresponding specification in SPEC.md",
+      "action": "Add spec for list_conversations_paginated or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
       "reason": "'DialogueSlot' has no corresponding specification in SPEC.md",
       "action": "Add spec for DialogueSlot or remove if unnecessary"
     },
@@ -1130,6 +1148,18 @@
       "severity": "minor",
       "reason": "'batch_import_knowledge' has no corresponding specification in SPEC.md",
       "action": "Add spec for batch_import_knowledge or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'UpdateKnowledgeResult' has no corresponding specification in SPEC.md",
+      "action": "Add spec for UpdateKnowledgeResult or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'update_knowledge_with_reembed' has no corresponding specification in SPEC.md",
+      "action": "Add spec for update_knowledge_with_reembed or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
@@ -2372,6 +2402,24 @@
       "severity": "minor",
       "reason": "'auto_promote' has no corresponding specification in SPEC.md",
       "action": "Add spec for auto_promote or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'create_experiment' has no corresponding specification in SPEC.md",
+      "action": "Add spec for create_experiment or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'ExperimentSpec' has no corresponding specification in SPEC.md",
+      "action": "Add spec for ExperimentSpec or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'create_experiment_via_manager' has no corresponding specification in SPEC.md",
+      "action": "Add spec for create_experiment_via_manager or remove if unnecessary"
     },
     {
       "type": "ORPHANED",

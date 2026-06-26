@@ -2251,6 +2251,29 @@
 
 ---
 
+### FR-201: Knowledge Delete — atomic (DB row + chunks + SAQ pending jobs)
+
+**Classification**: API_ENDPOINT, DATA_ENTITY
+**Active Patterns**: NP-01, NP-02, NP-12
+
+| # | Test Function | Inputs | Type | Derivation |
+|---|---|---|---|---|
+| 1 | `test_fr201_delete_knowledge_returns_200_for_admin` | role="admin"; id_="kb-1"; expected_status="200" | happy_path | Q1 |
+| 2 | `test_fr201_delete_knowledge_returns_403_for_anon` | role="anonymous"; expected_status="403" | validation | Q2 |
+| 3 | `test_fr201_saq_cancel_only_targets_matching_knowledge_id` | scanned=3; 1 matching job; expected_cancelled="1" | validation | Q2 |
+| 4 | `test_fr201_saq_unavailable_returns_200_with_fallback` | _SAQ_CLIENT=None; expected_status="200"; expected_fallback="saq_unavailable" | error_path | Q3 |
+
+**Sub-assertions**
+
+| rule_id | predicate | applies_to (case #) |
+|---|---|---|
+| fr201-ok | `result == 200` | 1 |
+| fr201-rbac | `result == 403` | 2 |
+| fr201-precision | `len(cancelled) == 1 and len(scanned) == 3` | 3 |
+| fr201-fallback | `result == 200 AND saq_fallback == "saq_unavailable"` | 4 |
+
+---
+
 ## Cross-Cutting Test Cases
 
 ### Security Red-Team

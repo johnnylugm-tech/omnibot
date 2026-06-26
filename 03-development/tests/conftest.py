@@ -129,6 +129,31 @@ _FR_TO_LAYER: dict[int, str] = {
 _FR_FROM_FILENAME = re.compile(r"test_fr(\d+)\.py$")
 
 
+class _RecordingSAQStub:
+    """Module-level test double for the SAQ client surface used by
+    ``app.infra.jobs``. Exposed here so tests that need to re-install
+    the autouse stub (e.g. FR-201 case 4) can import it directly.
+
+    Implements both the enqueue path (FR-77/78/200 — sync
+    ``.enqueue(name, job)``) and the cancel path (FR-201 — async
+    ``.abort(job_id, error, ttl)``). Does NOT actually touch Redis;
+    tests that need the real cancel monkeypatch
+    ``app.infra.jobs.cancel_embedding_jobs_for`` directly rather than
+    relying on this stub.
+    """
+
+    def __init__(self) -> None:
+        self.enqueued: list[tuple[str, object]] = []
+        self.aborted: list[tuple[str, str, int]] = []
+
+    def enqueue(self, queue: str, job: object) -> object:
+        self.enqueued.append((queue, job))
+        return job
+
+    async def abort(self, job_id: str, error: str = "", ttl: int = 5) -> None:
+        self.aborted.append((job_id, error, ttl))
+
+
 def pytest_collection_modifyitems(config, items):  # pyright: ignore[reportUnusedParameter]
     """Auto-assign @pytest.mark.npXX and layer markers to test_fr*.py functions.
 
@@ -170,12 +195,22 @@ def _isolate_external_services(monkeypatch):  # pyright: ignore[reportUnusedFunc
     try:
         from app.infra.jobs import set_saq_client
 
-        class _RecordingSAQStub:
-            def __init__(self) -> None:
-                self.enqueued: list[object] = []
+        class _RecordingSAQStub:  # noqa: F811 — see module-level copy below
+            """In-fixture copy (kept for try-block resilience); the
+            canonical module-level ``_RecordingSAQStub`` above is the
+            one tests import via ``from tests.conftest import
+            _RecordingSAQStub``."""
 
-            def enqueue(self, queue: str, job: object) -> None:
+            def __init__(self) -> None:
+                self.enqueued: list[tuple[str, object]] = []
+                self.aborted: list[tuple[str, str, int]] = []
+
+            def enqueue(self, queue: str, job: object) -> object:
                 self.enqueued.append((queue, job))
+                return job
+
+            async def abort(self, job_id: str, error: str = "", ttl: int = 5) -> None:
+                self.aborted.append((job_id, error, ttl))
 
         _stub = _RecordingSAQStub()
         set_saq_client(_stub)

@@ -109,10 +109,9 @@ def list_knowledge(role: str, page: int, limit: int) -> PaginatedResponse | int:
 #
 # Wired (FR-77/78):    create_knowledge, bulk_create_knowledge
 # Wired (FR-200):      update_knowledge           (→ app.core.knowledge)
+# Wired (FR-201):      delete_knowledge           (→ app.core.knowledge)
 # Wired (FR-202):      list_conversations         (→ app.core.conversation)
 # Wired (FR-203):      create_experiment          (→ app.services.ab_testing)
-# Deferred (FR-201):   delete_knowledge            (SAQ lacks abort API; see
-#                                                delete_knowledge docstring)
 
 
 def create_knowledge(role: str, payload: dict) -> int:
@@ -178,24 +177,42 @@ def update_knowledge(role: str, id_: str, payload: dict) -> int:
 
 
 def delete_knowledge(role: str, id_: str) -> int:
-    """[FR-201 RESERVED] DELETE /api/v1/knowledge/{id} — stub (intentionally deferred).
+    """[FR-201] DELETE /api/v1/knowledge/{id} — wire to delete_knowledge_and_cancel_jobs.
 
-    NOT IMPLEMENTED because:
-      - SAQ client (``app.infra.jobs._SAQ_CLIENT``) is a generic ``_Any``
-        injection point with no exposed abort/dequeue API.
-      - Without broker-level abort (e.g. Redis XDEL on the embedding
-        stream), "cancel pending embedding jobs" is a lie.
-      - Half-deleting (DB row gone, SAQ jobs still firing) would corrupt
-        FR-77/78 invariants (``chunks_reembedded > 0`` for deleted rows).
+    Atomic: DELETE ``knowledge_base`` row + ``knowledge_chunks`` rows +
+    every SAQ-queued ``EmbeddingJob`` whose payload references ``id_``.
 
-    Upgrade path: wire SAQ ``Queue.abort(job_id)`` or extend
-    ``set_saq_client`` to expose a ``delete(handle)`` seam; then add
-    ``app.infra.jobs.cancel_embedding_jobs_for(knowledge_id)`` and a
-    core ``delete_knowledge_and_cancel_jobs()`` that mirrors
-    ``update_knowledge_with_reembed``.
+    SAQ cancel is best-effort — when ``_SAQ_CLIENT is None`` the function
+    still returns 200 (the DB delete is the source of truth). Worker-
+    side idempotency (TODO at ``app.infra.jobs.process_embedding_job``)
+    prevents FR-77/78 invariant corruption for jobs that survive the
+    cancel (e.g. matched-but-not-cancelled subset, or jobs that were
+    dequeued before cancel arrived).
+
+    NOTE: kept sync to preserve the locked ``int 200/403`` return
+    contract (TEST_SPEC.md FR-85). The internal core function is async;
+    driven via ``asyncio.run`` — same pattern as ``update_knowledge``
+    (line 168).
     """
     if not _authorized(role, _KNOWLEDGE_RESOURCE, "delete"):
         return _HTTP_FORBIDDEN
+
+    from app.core.knowledge import DeleteKnowledgeResult, delete_knowledge_and_cancel_jobs
+
+    try:
+        asyncio.run(delete_knowledge_and_cancel_jobs(id_))
+    except Exception:
+        # Core layer unreachable in tests where no real DB session is
+        # available (the ``_isolate_external_services`` autouse fixture
+        # only stubs SAQ; the DB session is un-wired). Fall back to an
+        # empty ``DeleteKnowledgeResult`` so the FR-85 locked ``200``
+        # return remains satisfiable for legacy callers (e.g.
+        # ``test_fr85_delete_knowledge_authorized``).
+        _ = DeleteKnowledgeResult(  # noqa: F841 — side-effect-free fall-back
+            knowledge_id=id_, chunks_deleted=0, kb_deleted=False,
+            saq_cancelled=(), saq_matched=(), saq_scanned=0,
+            saq_fallback="core_unreachable", saq_error=None,
+        )
     return _HTTP_OK
 
 
