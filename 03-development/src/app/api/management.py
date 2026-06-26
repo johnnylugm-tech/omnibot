@@ -19,6 +19,7 @@ Citations:
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import time
 import uuid
 from typing import Optional
@@ -47,7 +48,7 @@ _KNOWLEDGE_READ: str = "read"
 # route handler to consume. Not thread-safe; per-request scope would
 # require Depends(request) — accepted as a known limitation since
 # spec-coverage does not exercise concurrency.
-_LAST_LIST_RESULT: object | None = None
+_LAST_LIST_RESULT: contextvars.ContextVar[object | None] = contextvars.ContextVar("_LAST_LIST_RESULT", default=None)
 
 
 def _authorized(role: str, resource: str, action: str) -> bool:
@@ -257,7 +258,6 @@ def list_conversations(role: str, page: int, limit: int) -> int:
     "RBAC pass → 200", not "DB live → 200", so the api layer must not
     5xx the legacy callers (e.g. ``test_fr85_list_conversations_authorized``).
     """
-    global _LAST_LIST_RESULT
     if not _authorized(role, "escalate", "read"):
         return _HTTP_FORBIDDEN
     from app.core.conversation import (
@@ -266,17 +266,17 @@ def list_conversations(role: str, page: int, limit: int) -> int:
     )
 
     try:
-        _LAST_LIST_RESULT = asyncio.run(
+        _LAST_LIST_RESULT.set(asyncio.run(
             list_conversations_paginated(page=page, limit=limit)
-        )
+        ))
     except Exception:
         # Core layer unreachable (no DB, async_generator typing seam, etc.).
         # Fall back to empty page so the FR-85 locked ``200`` return
         # remains satisfiable for legacy callers and the route handler
         # still gets a valid dataclass to serialise.
-        _LAST_LIST_RESULT = ConversationListPage(
+        _LAST_LIST_RESULT.set(ConversationListPage(
             items=[], total=0, page=page, limit=limit, has_next=False
-        )
+        ))
     return _HTTP_OK
 
 
@@ -381,7 +381,7 @@ def _conversations_list_route(
     result = list_conversations(role, page, limit)  # pragma: no cover — conversations list route 403 branch
     if result == _HTTP_FORBIDDEN:  # pragma: no cover — conversations list route 403 branch
         raise HTTPException(status_code=_HTTP_FORBIDDEN)  # pragma: no cover — conversations list route 403 branch
-    page_obj = _LAST_LIST_RESULT  # FR-202: real data lives here
+    page_obj = _LAST_LIST_RESULT.get()  # FR-202: real data lives here
     items_dicts: list[dict] = []
     for c in getattr(page_obj, "items", []):
         items_dicts.append({

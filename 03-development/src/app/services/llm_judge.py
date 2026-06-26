@@ -582,7 +582,7 @@ class CalibrationPipeline:
                 action="pass",
                 fallback=None,
             )
-        except TimeoutError:
+        except (TimeoutError, asyncio.TimeoutError):
             # NP-15 timeout — the wall-clock budget was breached.
             # The cycle is abandoned gracefully and the operator
             # retries next month (action == "skip_cycle"). The

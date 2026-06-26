@@ -568,7 +568,7 @@ class SemanticInjectionClassifier:
             # handle both shapes on the same code path.
             if asyncio.iscoroutine(verdict):
                 verdict = _await_coro_from_sync(verdict, timeout_ms)  # pragma: no cover — async coroutine dispatch path covered by test_fr13
-        except (TimeoutError, ConnectionError, OSError, ValueError):
+        except (TimeoutError, asyncio.TimeoutError, ConnectionError, OSError, ValueError):
             # asyncio.TimeoutError is NOT a subclass of TimeoutError in py3.9
             return _make_passthrough(is_unverified=True)
 
@@ -609,7 +609,10 @@ def _await_coro_from_sync(coro, timeout_ms: float):
         asyncio.get_running_loop()
     except RuntimeError:
         # No running loop — safe to use asyncio.run (FR-13 sync path).
-        return asyncio.run(asyncio.wait_for(coro, timeout=timeout_ms / 1000.0))
+        try:
+            return asyncio.run(asyncio.wait_for(coro, timeout=timeout_ms / 1000.0))
+        except asyncio.TimeoutError as exc:
+            raise TimeoutError(str(exc)) from exc
 
     # Running loop already exists (FR-15 async path). Run the
     # coroutine on a worker thread with its own fresh event loop.
@@ -642,7 +645,10 @@ def _await_coro_from_sync(coro, timeout_ms: float):
                 loop.call_soon_threadsafe(loop.stop)
         raise TimeoutError(f"FR-15: _await_coro_from_sync timed out after {timeout_ms}ms")
     if "e" in holder:
-        raise holder["e"]
+        exc = holder["e"]
+        if isinstance(exc, asyncio.TimeoutError):
+            raise TimeoutError(str(exc)) from exc
+        raise exc
     return holder["v"]
 
 

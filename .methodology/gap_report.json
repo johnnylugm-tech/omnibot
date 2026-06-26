@@ -1,12 +1,12 @@
 {
   "summary": {
-    "total": 496,
+    "total": 500,
     "missing": 0,
     "incomplete": 0,
-    "orphaned": 496,
+    "orphaned": 500,
     "critical": 0,
     "major": 0,
-    "minor": 496
+    "minor": 500
   },
   "gaps": [
     {
@@ -1164,6 +1164,18 @@
     {
       "type": "ORPHANED",
       "severity": "minor",
+      "reason": "'DeleteKnowledgeResult' has no corresponding specification in SPEC.md",
+      "action": "Add spec for DeleteKnowledgeResult or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'delete_knowledge_and_cancel_jobs' has no corresponding specification in SPEC.md",
+      "action": "Add spec for delete_knowledge_and_cancel_jobs or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
       "reason": "'StrEnum' has no corresponding specification in SPEC.md",
       "action": "Add spec for StrEnum or remove if unnecessary"
     },
@@ -1892,6 +1904,18 @@
       "severity": "minor",
       "reason": "'process_embedding_job' has no corresponding specification in SPEC.md",
       "action": "Add spec for process_embedding_job or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'CancelEmbeddingJobsResult' has no corresponding specification in SPEC.md",
+      "action": "Add spec for CancelEmbeddingJobsResult or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'cancel_embedding_jobs_for' has no corresponding specification in SPEC.md",
+      "action": "Add spec for cancel_embedding_jobs_for or remove if unnecessary"
     },
     {
       "type": "ORPHANED",

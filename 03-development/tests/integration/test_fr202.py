@@ -87,7 +87,7 @@ def test_fr202_list_conversations_pagination_math(monkeypatch):
     # Read it through the module (not a captured import reference) because
     # the function uses ``global _LAST_LIST_RESULT`` and ``from app.api
     # .management import _LAST_LIST_RESULT`` gives a stale snapshot.
-    page_obj = management_mod._LAST_LIST_RESULT
+    page_obj = management_mod._LAST_LIST_RESULT.get()
     assert page_obj is not None
     assert page_obj.has_next is True
     assert len(page_obj.items) == 10
