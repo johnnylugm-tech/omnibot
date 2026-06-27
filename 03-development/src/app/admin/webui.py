@@ -918,7 +918,19 @@ class RealSQLKnowledgeAdminAPI(KnowledgeAdminAPI):
                 except Exception as exc:
                     result.skipped += 1
                     result.errors.append(str(exc))
-            await session.commit()
+            # Wrap commit so deferred-FK / commit-time errors (which surface
+            # only at the COMMIT boundary, not per-row) don't escape as 500
+            # after result.imported was already counted.
+            try:
+                await session.commit()
+            except Exception as exc:
+                await session.rollback()
+                result.errors.append(f"commit failed: {exc}")
+                # Per-row savepoints released optimistically but the outer
+                # commit failed → nothing persisted. Move the optimistic
+                # imported count into skipped so the totals match DB state.
+                result.skipped += result.imported
+                result.imported = 0
             break
         return result
 
@@ -939,12 +951,17 @@ class RealSQLKnowledgeAdminAPI(KnowledgeAdminAPI):
             if not isinstance(item, dict) or not item.get("title"):
                 result.skipped += 1
                 continue
-            
+
             kw = item.get("keywords") or []
             if isinstance(kw, str):
                 kw = [k.strip() for k in kw.split("|") if k.strip()]
-            elif not isinstance(kw, list):
-                kw = list(kw)
+            elif not isinstance(kw, (list, tuple)):
+                # Whitelist: dict would silently iterate keys, set would
+                # lose order, int/float/bool would crash the bulk insert
+                # and poison the whole batch via atomic rollback.
+                result.skipped += 1
+                result.errors.append(f"invalid keywords type: {type(kw).__name__}")
+                continue
 
             rows_to_insert.append({
                 "title": str(item["title"]).strip(),
@@ -966,6 +983,9 @@ class RealSQLKnowledgeAdminAPI(KnowledgeAdminAPI):
                 await session.rollback()
                 result.errors.append(f"bulk insert failed: {exc}")
                 result.imported = 0
-                result.skipped = len(items)
+                # Preserve the pre-validation skip count (rows that failed
+                # `not isinstance(item, dict) or not item.get("title")`)
+                # rather than clobbering it with the total input length.
+                result.skipped += len(rows_to_insert)
             break
         return result
