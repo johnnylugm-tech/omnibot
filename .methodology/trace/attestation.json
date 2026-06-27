@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "2787beabe0646ca4eb27eed24b27b3e293bf5e1a",
-  "content_sha256": "98328c01f03c132f32a9ef703494b94f1dde478c6745198f47dab6f5d6882ad6",
+  "git_sha": "46ab194205cda7c99e894563608beddb3931e495",
+  "content_sha256": "28e0ff2cf80258dd8e3a83d16951034c4eb498bdeb79f502b05b900e22c2f6c2",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -14,7 +14,7 @@
       "code_coverage": "100.0%",
       "test_coverage": "100.0%",
       "verification_rate": "100.0%",
-      "total_links": 522,
+      "total_links": 535,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [],
@@ -199,6 +199,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/src/app/api/media_router.py",
           "03-development/src/app/services/media.py"
         ],
         "test_files": [
@@ -213,7 +214,8 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/admin/webui.py"
+          "03-development/src/app/admin/webui.py",
+          "03-development/src/app/api/admin_router.py"
         ],
         "test_files": [
           "tests/e2e/test_fr101.py",
@@ -227,6 +229,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/src/app/api/admin_router.py",
           "03-development/src/app/infra/config.py"
         ],
         "test_files": [
@@ -241,7 +244,8 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/admin/webui.py"
+          "03-development/src/app/admin/webui.py",
+          "03-development/src/app/api/admin_router.py"
         ],
         "test_files": [
           "tests/e2e/test_fr103.py",
@@ -255,7 +259,8 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/admin/portal.py"
+          "03-development/src/app/admin/portal.py",
+          "03-development/src/app/api/portal_router.py"
         ],
         "test_files": [
           "tests/e2e/test_fr104.py",
@@ -491,7 +496,11 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/src/app/api/auth.py",
+          "03-development/src/app/api/chat_router.py",
+          "03-development/src/app/api/main.py",
           "03-development/src/app/api/management.py",
+          "03-development/src/app/api/media_router.py",
           "03-development/src/app/core/knowledge.py"
         ],
         "test_files": [
@@ -1049,6 +1058,7 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
+          "03-development/src/app/api/ws_router.py",
           "03-development/src/app/services/escalation.py",
           "03-development/tests/integration/test_fr56.py",
           "03-development/tests/test_fr56.py"
@@ -1065,7 +1075,8 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/api/websocket.py"
+          "03-development/src/app/api/websocket.py",
+          "03-development/src/app/api/ws_router.py"
         ],
         "test_files": [
           "tests/integration/test_fr57.py",
@@ -1079,7 +1090,8 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/api/websocket.py"
+          "03-development/src/app/api/websocket.py",
+          "03-development/src/app/api/ws_router.py"
         ],
         "test_files": [
           "tests/integration/test_fr58.py",
@@ -1093,7 +1105,8 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/app/api/websocket.py"
+          "03-development/src/app/api/websocket.py",
+          "03-development/src/app/api/ws_router.py"
         ],
         "test_files": [
           "tests/integration/test_fr59.py",
