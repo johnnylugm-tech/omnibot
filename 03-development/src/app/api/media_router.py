@@ -67,11 +67,14 @@ def _classify_mime(mime: str) -> str:
     return "FILE"
 
 
+from typing import Optional
+
 @router.post("/web/upload")
 async def upload(
     files: list[UploadFile] = File(...),
-    conversation_id: str | None = None,
+    conversation_id: Optional[str] = None,
     role: str = Depends(get_current_user_role),
+    session = Depends(get_session),
 ) -> dict:
     """Persist uploads as BYTEA rows and return their media_ids."""
     if role == "anonymous":
@@ -80,12 +83,6 @@ async def upload(
     media_ids: list[str] = []
     attachments: list[dict] = []
     conversation_id = conversation_id or f"conv_{uuid.uuid4().hex[:12]}"
-
-    session_gen = get_session()
-    try:
-        session = await session_gen.__anext__()
-    except Exception:
-        raise HTTPException(status_code=503, detail="database unavailable")
 
     try:
         for f in files:
@@ -167,8 +164,6 @@ async def upload(
         await session.rollback()
         logger.exception("media upload failed: %s", exc)
         raise HTTPException(status_code=500, detail="upload failed")
-    finally:
-        await session_gen.aclose()
 
     return {
         "conversation_id": conversation_id,
@@ -178,24 +173,18 @@ async def upload(
 
 
 @router.get("/media/{media_id}")
-async def get_media(media_id: str) -> Response:
+async def get_media(
+    media_id: str,
+    session = Depends(get_session),
+) -> Response:
     """Stream a previously-uploaded attachment back to the caller."""
-    session_gen = get_session()
-    try:
-        session = await session_gen.__anext__()
-    except Exception:
-        raise HTTPException(status_code=503, detail="database unavailable")
-
-    try:
-        result = await session.execute(
-            text(
-                "SELECT payload, mime_type FROM media_attachments WHERE id = :id"
-            ),
-            {"id": media_id},
-        )
-        row = result.fetchone()
-    finally:
-        await session_gen.aclose()
+    result = await session.execute(
+        text(
+            "SELECT payload, mime_type FROM media_attachments WHERE id = :id"
+        ),
+        {"id": media_id},
+    )
+    row = result.fetchone()
 
     if row is None:
         raise HTTPException(status_code=404, detail="media not found")

@@ -689,9 +689,8 @@ class RealSQLOperationsDashboard(OperationsDashboard):
             "time_range": time_range,
         }
         try:
-            session_gen = get_session()
-            session = await session_gen.__anext__()
-            try:
+            from app.infra.database import get_session
+            async for session in get_session():
                 row = (
                     await session.execute(
                         text(
@@ -731,8 +730,6 @@ class RealSQLOperationsDashboard(OperationsDashboard):
                     key = f"tier{r[0]}"
                     if key in out["knowledge_distribution"]:
                         out["knowledge_distribution"][key] = int(r[1])
-            finally:
-                await session_gen.aclose()
         except Exception as exc:
             import logging
 
@@ -742,3 +739,151 @@ class RealSQLOperationsDashboard(OperationsDashboard):
                 time_range, exc,
             )
         return out
+
+class RealSQLKnowledgeAdminAPI(KnowledgeAdminAPI):
+    """[FR-101] Async SQL-backed implementation of KnowledgeAdminAPI."""
+
+    async def list_entries(self, page: int = 1, limit: int = 20) -> dict[str, Any]:
+        page = max(1, int(page))
+        limit = max(1, min(200, int(limit)))
+        start = (page - 1) * limit
+        from sqlalchemy import text
+        from app.infra.database import get_session
+
+        out = {"total": 0, "page": page, "limit": limit, "items": []}
+        async for session in get_session():
+            total_row = (await session.execute(text("SELECT COUNT(*) FROM knowledge_base"))).fetchone()
+            out["total"] = total_row[0] if total_row else 0
+
+            rows = (await session.execute(
+                text("SELECT id, title, content, keywords, embedding_status, embedding_chunks_synced, embedding_chunks_total "
+                     "FROM knowledge_base ORDER BY id DESC LIMIT :limit OFFSET :offset"),
+                {"limit": limit, "offset": start}
+            )).fetchall()
+
+            for r in rows:
+                out["items"].append(KnowledgeEntry(
+                    id=r[0], title=r[1], content=r[2], keywords=r[3] or [],
+                    embedding_status=r[4] or EMBEDDING_STATUS_SYNCED,
+                    embedding_chunks_synced=r[5] or 0,
+                    embedding_chunks_total=r[6] or 0
+                ))
+            break
+        return out
+
+    async def crud(self, action: str, **kwargs: Any) -> dict[str, Any]:
+        from sqlalchemy import text
+        from app.infra.database import get_session
+        from app.admin.reports import log_admin_action
+        log_admin_action("knowledge_crud", admin_id="system", details={"action": action})
+
+        async for session in get_session():
+            if action == KNOWLEDGE_ACTION_CREATE:
+                title = kwargs.get("title", "")
+                content = kwargs.get("content", "")
+                keywords = kwargs.get("keywords") or []
+                row = (await session.execute(
+                    text("INSERT INTO knowledge_base (title, content, keywords, embedding_status, embedding_chunks_synced, embedding_chunks_total) "
+                         "VALUES (:title, :content, :keywords, :status, 0, 0) RETURNING id"),
+                    {"title": title, "content": content, "keywords": keywords, "status": EMBEDDING_STATUS_SYNCED}
+                )).fetchone()
+                await session.commit()
+                entry = KnowledgeEntry(id=row[0], title=title, content=content, keywords=keywords)
+                return self._crud_response(entry)
+
+            if action == KNOWLEDGE_ACTION_READ:
+                entry_id = kwargs.get("entry_id", 0)
+                row = (await session.execute(
+                    text("SELECT id, title, content, keywords, embedding_status, embedding_chunks_synced, embedding_chunks_total "
+                         "FROM knowledge_base WHERE id = :id"),
+                    {"id": entry_id}
+                )).fetchone()
+                if row:
+                    entry = KnowledgeEntry(id=row[0], title=row[1], content=row[2], keywords=row[3] or [], embedding_status=row[4] or EMBEDDING_STATUS_SYNCED, embedding_chunks_synced=row[5] or 0, embedding_chunks_total=row[6] or 0)
+                    return self._crud_response(entry)
+                return self._crud_response(None)
+
+            if action == KNOWLEDGE_ACTION_UPDATE:
+                from app.admin.rbac import RBACEnforcer
+                # Note: Role check happens in the router; this skips the sync RBAC decorator
+                entry_id = kwargs.get("entry_id", 0)
+                fields = kwargs.get("fields", {})
+                if not fields:
+                    return await self.crud(KNOWLEDGE_ACTION_READ, entry_id=entry_id)
+
+                set_clauses = []
+                params = {"id": entry_id}
+                for k, v in fields.items():
+                    if k in {"title", "content", "keywords"}:
+                        set_clauses.append(f"{k} = :{k}")
+                        params[k] = v
+
+                if set_clauses:
+                    row = (await session.execute(
+                        text(f"UPDATE knowledge_base SET {', '.join(set_clauses)} WHERE id = :id RETURNING id, title, content, keywords, embedding_status, embedding_chunks_synced, embedding_chunks_total"),
+                        params
+                    )).fetchone()
+                    await session.commit()
+                    if row:
+                        entry = KnowledgeEntry(id=row[0], title=row[1], content=row[2], keywords=row[3] or [], embedding_status=row[4] or EMBEDDING_STATUS_SYNCED, embedding_chunks_synced=row[5] or 0, embedding_chunks_total=row[6] or 0)
+                        return self._crud_response(entry)
+                return self._crud_response(None)
+
+            if action == KNOWLEDGE_ACTION_DELETE:
+                entry_id = kwargs.get("entry_id", 0)
+                result = await session.execute(
+                    text("DELETE FROM knowledge_base WHERE id = :id"),
+                    {"id": entry_id}
+                )
+                await session.commit()
+                return {
+                    "status": KNOWLEDGE_API_OK_STATUS,
+                    "entry": None,
+                    "ok": result.rowcount > 0,
+                }
+            break
+
+        return {
+            "status": 400,
+            "entry": None,
+            "ok": False,
+            "error": f"unknown action: {action!r}",
+        }
+
+    async def import_csv(self, file_bytes: bytes, filename: str = "kb.csv") -> ImportResult:
+        result = ImportResult()
+        try:
+            text_data = file_bytes.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            result.errors.append(f"decode error: {exc}")
+            return result
+
+        import csv, io
+        reader = csv.DictReader(io.StringIO(text_data))
+        from sqlalchemy import text
+        from app.infra.database import get_session
+
+        async for session in get_session():
+            for row in reader:
+                try:
+                    title = (row.get("title") or "").strip()
+                    content = (row.get("content") or "").strip()
+                    kw_raw = (row.get("keywords") or "").strip()
+                    keywords = [k for k in kw_raw.split("|") if k]
+                    if not title:
+                        result.skipped += 1
+                        result.errors.append("missing title")
+                        continue
+
+                    await session.execute(
+                        text("INSERT INTO knowledge_base (title, content, keywords, embedding_status, embedding_chunks_synced, embedding_chunks_total) "
+                             "VALUES (:title, :content, :keywords, :status, 0, 0)"),
+                        {"title": title, "content": content, "keywords": keywords, "status": EMBEDDING_STATUS_SYNCED}
+                    )
+                    result.imported += 1
+                except Exception as exc:
+                    result.skipped += 1
+                    result.errors.append(str(exc))
+            await session.commit()
+            break
+        return result

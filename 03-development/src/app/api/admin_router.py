@@ -39,7 +39,7 @@ from app.admin.webui import (
     KNOWLEDGE_ACTION_DELETE,
     KNOWLEDGE_ACTION_READ,
     KNOWLEDGE_ACTION_UPDATE,
-    KnowledgeAdminAPI,
+    RealSQLKnowledgeAdminAPI,
     RAG_DEFAULT_THRESHOLD,
     RAGDebugger,
     RealSQLOperationsDashboard,
@@ -51,7 +51,7 @@ security = HTTPBearer()
 
 # Module-level dispatcher instances — single source of truth so the
 # sandbox slider state (held on RAGDebugger) survives across requests.
-_knowledge_api = KnowledgeAdminAPI()
+_knowledge_api = RealSQLKnowledgeAdminAPI()
 _rag_debugger = RAGDebugger()
 _ops_dashboard = RealSQLOperationsDashboard()
 
@@ -71,13 +71,13 @@ def _check(role: str, resource: str, action: str) -> None:
 
 
 @router.get("/knowledge")
-def _knowledge_list(
+async def _knowledge_list(
     role: str = Depends(get_current_user_role),
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=200),
 ) -> dict:
     _check(role, "knowledge", "read")
-    result = _knowledge_api.list_entries(page=page, limit=limit)
+    result = await _knowledge_api.list_entries(page=page, limit=limit)
     return {
         "total": result["total"],
         "page": result["page"],
@@ -87,12 +87,12 @@ def _knowledge_list(
 
 
 @router.post("/knowledge")
-def _knowledge_create(
+async def _knowledge_create(
     body: dict[str, Any],
     role: str = Depends(get_current_user_role),
 ) -> dict:
     _check(role, "knowledge", "write")
-    result = _knowledge_api.crud(
+    result = await _knowledge_api.crud(
         KNOWLEDGE_ACTION_CREATE,
         title=body.get("title", ""),
         content=body.get("content", ""),
@@ -102,38 +102,38 @@ def _knowledge_create(
 
 
 @router.get("/knowledge/{entry_id}")
-def _knowledge_read(
+async def _knowledge_read(
     entry_id: int,
     role: str = Depends(get_current_user_role),
 ) -> dict:
     _check(role, "knowledge", "read")
-    result = _knowledge_api.crud(KNOWLEDGE_ACTION_READ, entry_id=entry_id)
+    result = await _knowledge_api.crud(KNOWLEDGE_ACTION_READ, entry_id=entry_id)
     if not result.get("ok"):
         raise HTTPException(status_code=404, detail="entry not found")
     return result
 
 
 @router.put("/knowledge/{entry_id}")
-def _knowledge_update(
+async def _knowledge_update(
     entry_id: int,
     body: dict[str, Any],
     role: str = Depends(get_current_user_role),
 ) -> dict:
     _check(role, "knowledge", "write")
     fields = {k: v for k, v in body.items() if k in {"title", "content", "keywords"}}
-    result = _knowledge_api.crud(
+    result = await _knowledge_api.crud(
         KNOWLEDGE_ACTION_UPDATE, entry_id=entry_id, fields=fields
     )
     return result
 
 
 @router.delete("/knowledge/{entry_id}")
-def _knowledge_delete(
+async def _knowledge_delete(
     entry_id: int,
     role: str = Depends(get_current_user_role),
 ) -> dict:
     _check(role, "knowledge", "delete")
-    result = _knowledge_api.crud(KNOWLEDGE_ACTION_DELETE, entry_id=entry_id)
+    result = await _knowledge_api.crud(KNOWLEDGE_ACTION_DELETE, entry_id=entry_id)
     return result
 
 
@@ -156,14 +156,15 @@ async def _knowledge_import(
             if not isinstance(row, dict) or not row.get("title"):
                 result.skipped += 1
                 continue
-            _knowledge_api.create_entry(
+            await _knowledge_api.crud(
+                KNOWLEDGE_ACTION_CREATE,
                 title=row["title"],
                 content=row.get("content", ""),
                 keywords=row.get("keywords") or [],
             )
             result.imported += 1
     else:
-        result = _knowledge_api.import_csv(raw, filename=file.filename or "kb.csv")
+        result = await _knowledge_api.import_csv(raw, filename=file.filename or "kb.csv")
     return {
         "imported": result.imported,
         "skipped": result.skipped,
