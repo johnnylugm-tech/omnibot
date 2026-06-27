@@ -1,12 +1,12 @@
 {
   "summary": {
-    "total": 500,
+    "total": 502,
     "missing": 0,
     "incomplete": 0,
-    "orphaned": 500,
+    "orphaned": 502,
     "critical": 0,
     "major": 0,
-    "minor": 500
+    "minor": 502
   },
   "gaps": [
     {
@@ -2996,6 +2996,18 @@
       "severity": "minor",
       "reason": "'run_migrations_online' has no corresponding specification in SPEC.md",
       "action": "Add spec for run_migrations_online or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'upgrade' has no corresponding specification in SPEC.md",
+      "action": "Add spec for upgrade or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'downgrade' has no corresponding specification in SPEC.md",
+      "action": "Add spec for downgrade or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
