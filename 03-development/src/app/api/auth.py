@@ -180,6 +180,51 @@ def _assign_role_route(user_id: str, body: RoleAssignBody, caller_role: str = De
     return {"status": result}
 
 
+class MeResponse(BaseModel):
+    """[FR-200] /auth/me response — current JWT bearer identity."""
+
+    username: str
+    role: str
+    exp: int
+
+
+@router.get("/me", response_model=MeResponse)
+def _me_route(credentials: HTTPAuthorizationCredentials = Depends(security)) -> MeResponse:
+    """[FR-200] Decode the caller's JWT and return their role + expiry.
+
+    Reuses the same verification path as ``get_current_user_role`` so
+    the role mapping (admin / customer / anonymous) stays single-source.
+    Returns the role + expiry so the Admin WebUI can render
+    "logged in as …" without an additional roundtrip.
+    """
+    token = credentials.credentials
+    parts = token.split(".")
+    if len(parts) != 3:
+        raise HTTPException(status_code=401, detail="invalid token")
+    header_b64, payload_b64, provided_sig = parts
+    try:
+        import base64
+        secret = os.environ["OMNIBOT_JWT_SECRET"].encode()
+        msg = f"{header_b64}.{payload_b64}".encode()
+        expected_sig = _b64url_encode(hmac.new(secret, msg, "sha256").digest())
+        if not hmac.compare_digest(provided_sig, expected_sig):
+            raise HTTPException(status_code=401, detail="bad signature")
+        payload_bytes = base64.urlsafe_b64decode(payload_b64 + "=" * (-len(payload_b64) % 4))
+        payload = json.loads(payload_bytes)
+        if payload.get("exp", 0) < time.time():
+            raise HTTPException(status_code=401, detail="token expired")
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=401, detail="invalid token")
+    role = get_current_user_role(credentials)
+    return MeResponse(
+        username=payload.get("sub", ""),
+        role=role,
+        exp=int(payload.get("exp", 0)),
+    )
+
+
 # API cohesion requirement
 from app.api.common import build_response, extract_user_context  # noqa: E402
 

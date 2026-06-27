@@ -129,6 +129,7 @@ EXPECTED_TABLES: frozenset[str] = frozenset({
     "retry_log",
     "encryption_config",
     "schema_migrations",
+    "media_attachments",
 })
 
 # [FR-82] Foreign-key graph for the 20 tables. Every child table listed

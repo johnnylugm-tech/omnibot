@@ -30,9 +30,10 @@ import logging
 import os
 import secrets
 import threading
+import uuid
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, FastAPI, Query
+from fastapi import APIRouter, FastAPI, Header, Query
 
 from app.api.adapters.a2a import A2AAdapter
 from app.api.adapters.line import LineWebhookAdapter
@@ -692,18 +693,129 @@ async def web_guest_session() -> dict[str, object]:
 
 
 @router.post("/api/v1/web/message")
-async def web_message(body: dict, authorization: str = "") -> dict[str, object]:
-    """[F-01] FR-05 — Web message processing (guest JWT auth)."""
+async def web_message(
+    body: dict,
+    authorization: str = Header(default=""),
+) -> dict[str, object]:
+    """[F-01] FR-05 / FR-200 — Web message processing (guest JWT auth).
+
+    Extended body contract (additive over the FR-05 base contract):
+        * ``conversation_id`` — client-supplied id for resume; if
+          missing the handler generates one and returns it so the
+          client can persist it in localStorage / IndexedDB.
+        * ``attachments``    — list of ``media_id`` strings produced
+          by ``POST /web/upload``. The pipeline carries them through
+          the message; the response echoes them so the client can
+          render inline previews without re-fetching.
+
+    The handler ALWAYS returns ``conversation_id`` + ``message_id``
+    (both non-empty strings). After the pipeline runs it pushes a
+    ``message.reply`` frame on the ``/ws/user`` channel so a logged-
+    in browser receives the bot's reply in real time — same channel
+    used by ``/ws/user``.
+    """
     try:
         adapter = _web_adapter()
         token = authorization.removeprefix(_BEARER_PREFIX) if authorization else ""
-        msg = adapter.process_message(token, body.get("content", ""))
+        content = body.get("content", "")
+        conversation_id = body.get("conversation_id") or f"conv-{uuid.uuid4().hex[:12]}"
+        message_id = f"msg-{uuid.uuid4().hex[:12]}"
+        attachment_ids = body.get("attachments") or []
+
+        msg = adapter.process_message(token, content)
         pipeline = _get_pipeline()
         response = pipeline.handle_message(msg)
-        return {"status": "ok", "source": (response.source.value if hasattr(response.source, "value") else str(response.source)),
-                "content": response.content}
+
+        # Resolve media metadata for the attachments the client
+        # referenced. Best-effort — the chat UI already knows the
+        # URLs it uploaded, so a failure here just omits the echo.
+        attachments_meta = await _resolve_attachments(attachment_ids, conversation_id)
+
+        result = {
+            "status": "ok",
+            "conversation_id": conversation_id,
+            "message_id": message_id,
+            "source": (
+                response.source.value
+                if hasattr(response.source, "value")
+                else str(response.source)
+            ),
+            "content": response.content,
+            "attachments": attachments_meta,
+        }
+
+        # [P4] Push the bot reply to any subscribed /ws/user client.
+        # The push is fire-and-forget; the HTTP caller already has
+        # the same payload synchronously so a dropped frame is not
+        # a correctness issue, only a UX degradation.
+        try:
+            from app.api.ws_router import _publish
+
+            await _publish(
+                channel="/ws/user",
+                event="message.reply",
+                payload={
+                    "conversation_id": conversation_id,
+                    "message_id": message_id,
+                    "content": response.content,
+                    "source": result["source"],
+                    "attachments": attachments_meta,
+                },
+            )
+        except Exception:
+            pass
+
+        return result
     except Exception as exc:
         return {"status": "error", "code": "INTERNAL_ERROR", "detail": str(exc)}
+
+
+async def _resolve_attachments(media_ids: list, conversation_id: str) -> list[dict]:
+    """[P4] Hydrate the media_id list into the metadata the chat UI renders.
+
+    Joins against ``media_attachments`` for each id (in the same
+    conversation). Missing rows are silently dropped — the chat UI
+    treats them as gone rather than crashing the message reply.
+    """
+    if not media_ids:
+        return []
+    try:
+        from sqlalchemy import text
+
+        from app.infra.database import get_session
+
+        ids = [str(m) for m in media_ids if m]
+        if not ids:
+            return []
+        session_gen = get_session()
+        session = await session_gen.__anext__()
+        try:
+            placeholders = ", ".join(f":id{i}" for i in range(len(ids)))
+            params = {f"id{i}": v for i, v in enumerate(ids)}
+            params["cid"] = conversation_id
+            result = await session.execute(
+                text(
+                    "SELECT id, mime_type, size_bytes, message_type "
+                    f"FROM media_attachments WHERE id IN ({placeholders}) "
+                    "AND conversation_id = :cid"
+                ),
+                params,
+            )
+            rows = result.fetchall()
+        finally:
+            await session_gen.aclose()
+        return [
+            {
+                "media_id": r[0],
+                "mime_type": r[1],
+                "size_bytes": r[2],
+                "message_type": r[3],
+                "url": f"/api/v1/media/{r[0]}",
+            }
+            for r in rows
+        ]
+    except Exception:
+        return []
 
 
 @router.post("/api/v1/a2a/rpc")

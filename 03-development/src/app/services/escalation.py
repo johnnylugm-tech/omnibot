@@ -217,15 +217,21 @@ class EscalationManager:
 
         Single source of truth for the SRS FR-56 field set so the
         push contract stays in lockstep with the row schema produced
-        by ``_make_row``.
+        by ``_make_row``. ``queued_at`` is serialised as an ISO
+        string (the row stores a ``datetime`` which ``json.dumps``
+        cannot encode natively — the WS layer would otherwise raise
+        ``TypeError`` and drop the frame).
         """
+        queued_at = row["queued_at"]
+        if hasattr(queued_at, "isoformat"):
+            queued_at = queued_at.isoformat()
         return {
             "escalation_id": row["escalation_id"],
             "conversation_id": row["conversation_id"],
             "priority": row["priority"],
             "reason": row["reason"],
             "platform": row["platform"],
-            "queued_at": row["queued_at"],
+            "queued_at": queued_at,
             "preview": row["preview"],
         }
 
