@@ -907,17 +907,15 @@ class RealSQLKnowledgeAdminAPI(KnowledgeAdminAPI):
                         result.errors.append("missing title")
                         continue
 
-                    await session.execute(
-                        text(_KB_INSERT_SQL),
-                        {"title": title, "content": content, "keywords": keywords, "status": EMBEDDING_STATUS_SYNCED},
-                    )
+                    # Use a SAVEPOINT so a per-row failure only rolls back
+                    # this specific insert, preserving previous rows in the transaction.
+                    async with session.begin_nested():
+                        await session.execute(
+                            text(_KB_INSERT_SQL),
+                            {"title": title, "content": content, "keywords": keywords, "status": EMBEDDING_STATUS_SYNCED},
+                        )
                     result.imported += 1
                 except Exception as exc:
-                    # Per-row failure: rollback the failed statement so the
-                    # AsyncSession is reusable for subsequent rows. Without
-                    # this the transaction enters a deactivated state and
-                    # the final session.commit() raises InvalidRequestError.
-                    await session.rollback()
                     result.skipped += 1
                     result.errors.append(str(exc))
             await session.commit()
@@ -941,10 +939,17 @@ class RealSQLKnowledgeAdminAPI(KnowledgeAdminAPI):
             if not isinstance(item, dict) or not item.get("title"):
                 result.skipped += 1
                 continue
+            
+            kw = item.get("keywords") or []
+            if isinstance(kw, str):
+                kw = [k.strip() for k in kw.split("|") if k.strip()]
+            elif not isinstance(kw, list):
+                kw = list(kw)
+
             rows_to_insert.append({
                 "title": str(item["title"]).strip(),
                 "content": str(item.get("content", "")).strip(),
-                "keywords": list(item.get("keywords") or []),
+                "keywords": kw,
                 "status": EMBEDDING_STATUS_SYNCED,
             })
 
