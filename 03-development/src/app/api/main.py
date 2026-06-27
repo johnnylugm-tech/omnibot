@@ -174,7 +174,13 @@ def build_app() -> FastAPI:  # pragma: no cover
     async def _spa_404(request: Request, exc):  # noqa: ARG001
         if request.method != "GET" or _spa_index is None:
             return JSONResponse({"detail": "Not Found"}, status_code=404)
-        # Honour Accept: api callers send application/json.
+        # API surface must always return JSON 404 — never the SPA shell,
+        # regardless of the client's Accept header. Web scanners probing
+        # for `{"detail":"Not Found"}` rely on this contract.
+        path = request.url.path
+        if path.startswith("/api/") or path.startswith("/.well-known/"):
+            return JSONResponse({"detail": "Not Found"}, status_code=404)
+        # Honour Accept for non-API paths: JSON clients still get JSON.
         accept = request.headers.get("accept", "")
         if "application/json" in accept and "text/html" not in accept:
             return JSONResponse({"detail": "Not Found"}, status_code=404)

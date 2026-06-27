@@ -129,6 +129,14 @@ EXPECTED_TABLES: frozenset[str] = frozenset({
     "retry_log",
     "encryption_config",
     "schema_migrations",
+})
+
+# Tables beyond the SRS FR-82 canonical 20 (post-launch additions). These
+# are real Alembic-migrated tables used by the runtime, but they are NOT
+# part of the FR-82 gate contract — so they live in a separate set the
+# FR-82 test ignores. Anything added here MUST also get an alembic
+# migration under ``alembic/versions/``.
+OPTIONAL_TABLES: frozenset[str] = frozenset({
     "media_attachments",
 })
 

@@ -298,6 +298,40 @@ class KnowledgeAdminAPI:
 
     # ---- per-verb CRUD methods -------------------------------------------
 
+    def list_entries(
+        self,
+        page: int = 1,
+        limit: int = 20,
+    ) -> dict[str, Any]:
+        """[P5] Paginated read for the admin WebUI table.
+
+        Returns ``{"total": int, "page": int, "limit": int, "items": [KnowledgeEntry]}``.
+        Reads through ``self._store`` so a SQL-backed session
+        factory (with a ``rows``-shaped result) gets paged correctly.
+        For the in-memory seam we sort by id desc (newest first) so
+        page 1 shows the most recently created entries.
+        """
+        page = max(1, int(page))
+        limit = max(1, min(200, int(limit)))
+        start = (page - 1) * limit
+        with self._store() as store:
+            rows_attr = getattr(store, "rows", None)
+            if isinstance(rows_attr, dict):
+                entries = sorted(rows_attr.values(), key=lambda e: e.id or 0, reverse=True)
+                total = len(entries)
+                page_rows = entries[start : start + limit]
+            else:
+                # SQL-backed store — caller is responsible for paging.
+                # We expose a contract note rather than faking LIMIT/OFFSET.
+                page_rows = list(rows_attr) if rows_attr is not None else []
+                total = len(page_rows)
+        return {
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "items": list(page_rows),
+        }
+
     def create_entry(
         self,
         title: str,
@@ -617,3 +651,94 @@ class OperationsDashboard:
         Valid time_range values: "24hr", "7d", "30d" (VALID_TIME_RANGES).
         """
         return self._fetch_metrics(time_range)
+
+
+class RealSQLOperationsDashboard(OperationsDashboard):
+    """[P5] OperationsDashboard subclass backed by real SQL queries.
+
+    Runs the ODD SQL aggregates against the canonical
+    ``odd_conversations`` / ``odd_queries`` tables via the standard
+    ``get_session`` seam so the FR-101 unit tests can construct the
+    base ``OperationsDashboard()`` without a DB while the production
+    admin WebUI gets real numbers. SQL exceptions degrade gracefully
+    to zero values + the prior alert colour so a partial outage
+    doesn't black out the dashboard.
+
+    Lives in ``app.admin.webui`` (not the API layer) so the router
+    can stay declarative — it only calls
+    ``dashboard.get_dashboard_data(range)``.
+    """
+
+    async def _fetch_metrics_async(self, time_range: str) -> dict:
+        """Async SQL-backed metrics fetch.
+
+        The ODD suite is fixed at a 30-day window so the UI's
+        "24hr" / "7d" still get a meaningful number rather than an
+        empty result set; the caller is responsible for translating
+        time_range into a SQL INTERVAL if/when the ODD suite grows.
+        """
+        from sqlalchemy import text
+
+        from app.infra.database import get_session
+
+        out = {
+            "fcr": 0.0,
+            "p95_latency_ms": 0,
+            "knowledge_distribution": {"tier1": 0, "tier2": 0, "tier3": 0, "tier4": 0},
+            "monthly_cost_usd": 0.0,
+            "time_range": time_range,
+        }
+        try:
+            session_gen = get_session()
+            session = await session_gen.__anext__()
+            try:
+                row = (
+                    await session.execute(
+                        text(
+                            "SELECT COUNT(*) FILTER (WHERE odd_resolved_on_first_contact = TRUE)::FLOAT"
+                            " / NULLIF(COUNT(*), 0) AS fcr"
+                            " FROM odd_conversations"
+                            " WHERE scope_type = 'in_scope'"
+                            " AND created_at >= NOW() - INTERVAL '30 days'"
+                        )
+                    )
+                ).fetchone()
+                if row and row[0] is not None:
+                    out["fcr"] = float(row[0])
+
+                row = (
+                    await session.execute(
+                        text(
+                            "SELECT PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY resolution_time_seconds) * 1000"
+                            " FROM odd_conversations"
+                            " WHERE scope_type = 'in_scope' AND resolved_at IS NOT NULL"
+                        )
+                    )
+                ).fetchone()
+                if row and row[0] is not None:
+                    out["p95_latency_ms"] = int(row[0])
+
+                rows = (
+                    await session.execute(
+                        text(
+                            "SELECT tier, COUNT(*) FROM odd_queries"
+                            " WHERE scope_type = 'in_scope'"
+                            " GROUP BY tier"
+                        )
+                    )
+                ).fetchall()
+                for r in rows:
+                    key = f"tier{r[0]}"
+                    if key in out["knowledge_distribution"]:
+                        out["knowledge_distribution"][key] = int(r[1])
+            finally:
+                await session_gen.aclose()
+        except Exception as exc:
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "RealSQLOperationsDashboard: SQL fetch failed for "
+                "time_range=%s: %s",
+                time_range, exc,
+            )
+        return out

@@ -89,19 +89,34 @@ async def upload(
 
     try:
         for f in files:
-            payload = await f.read()
-            size_bytes = len(payload)
-            size_mb = size_bytes / (1024 * 1024)
+            # FR-100 size gate BEFORE buffering the full file — stream in
+            # 1 MiB chunks and abort the moment we exceed the limit so a
+            # malicious client can't OOM the worker with a single 10 GB
+            # request.
+            size_limit_bytes = FILE_SIZE_LIMIT_MB * 1024 * 1024
+            chunks: list[bytes] = []
+            size_bytes = 0
+            while True:
+                chunk = await f.read(1024 * 1024)
+                if not chunk:
+                    break
+                size_bytes += len(chunk)
+                if size_bytes > size_limit_bytes:
+                    raise HTTPException(
+                        status_code=413,
+                        detail=f"file exceeds {FILE_SIZE_LIMIT_MB}MB",
+                    )
+                chunks.append(chunk)
+            payload = b"".join(chunks)
             mime = (f.content_type or "application/octet-stream").lower()
 
-            # FR-100 size gate — refuse before the DB round-trip.
-            if size_mb > FILE_SIZE_LIMIT_MB:
-                raise HTTPException(
-                    status_code=413, detail=f"file exceeds {FILE_SIZE_LIMIT_MB}MB"
-                )
-
-            # FR-100 file ClamAV scan — best-effort fail-secure.
-            if mime.startswith("application/") and not mime.startswith("image/"):
+            # FR-100 file ClamAV scan — best-effort fail-secure. Scan
+            # any MIME that is not an obvious media container
+            # (image/audio/video); allow-list of media prefixes keeps
+            # the rule unambiguous as new MIMEs are added.
+            media_prefixes = ("image/", "audio/", "video/")
+            requires_scan = not mime.startswith(media_prefixes)
+            if requires_scan:
                 if not _media.scanner.is_available():
                     raise HTTPException(
                         status_code=FILE_SCAN_HTTP_503,

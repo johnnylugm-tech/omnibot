@@ -746,8 +746,11 @@ async def web_message(
 
         # [P4] Push the bot reply to any subscribed /ws/user client.
         # The push is fire-and-forget; the HTTP caller already has
-        # the same payload synchronously so a dropped frame is not
-        # a correctness issue, only a UX degradation.
+        # the same payload synchronously so a dropped frame is not a
+        # correctness issue, only a UX degradation. We log the failure
+        # so operators can detect a WebSocket broker outage from the
+        # logs (matching the FR-56 propagation contract used by
+        # ``escalation.new`` in ``app.services.escalation``).
         try:
             from app.api.ws_router import _publish
 
@@ -762,8 +765,12 @@ async def web_message(
                     "attachments": attachments_meta,
                 },
             )
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning(
+                "web_message: WS push failed for "
+                "conversation_id=%s message_id=%s: %s",
+                conversation_id, message_id, exc,
+            )
 
         return result
     except Exception as exc:
@@ -774,21 +781,30 @@ async def _resolve_attachments(media_ids: list, conversation_id: str) -> list[di
     """[P4] Hydrate the media_id list into the metadata the chat UI renders.
 
     Joins against ``media_attachments`` for each id (in the same
-    conversation). Missing rows are silently dropped — the chat UI
-    treats them as gone rather than crashing the message reply.
+    conversation). DB errors are logged (not silently swallowed) so
+    operators can diagnose attachment drops; the chat UI still receives
+    an empty list rather than a 5xx so the message reply succeeds.
     """
     if not media_ids:
         return []
+    from sqlalchemy import text
+
+    from app.infra.database import get_session
+
+    ids = [str(m) for m in media_ids if m]
+    if not ids:
+        return []
+    session_gen = get_session()
     try:
-        from sqlalchemy import text
-
-        from app.infra.database import get_session
-
-        ids = [str(m) for m in media_ids if m]
-        if not ids:
-            return []
-        session_gen = get_session()
         session = await session_gen.__anext__()
+    except Exception as exc:
+        logger.exception(
+            "_resolve_attachments: failed to acquire DB session "
+            "for conversation_id=%s ids=%s: %s",
+            conversation_id, ids, exc,
+        )
+        return []
+    try:
         try:
             placeholders = ", ".join(f":id{i}" for i in range(len(ids)))
             params = {f"id{i}": v for i, v in enumerate(ids)}
@@ -802,6 +818,13 @@ async def _resolve_attachments(media_ids: list, conversation_id: str) -> list[di
                 params,
             )
             rows = result.fetchall()
+        except Exception as exc:
+            logger.exception(
+                "_resolve_attachments: query failed for "
+                "conversation_id=%s ids=%s: %s",
+                conversation_id, ids, exc,
+            )
+            return []
         finally:
             await session_gen.aclose()
         return [
@@ -814,7 +837,15 @@ async def _resolve_attachments(media_ids: list, conversation_id: str) -> list[di
             }
             for r in rows
         ]
-    except Exception:
+    except Exception as exc:
+        # Defensive outer net — should be unreachable now that the
+        # inner blocks log + return. Kept so a future refactor cannot
+        # silently swallow a programmer error.
+        logger.exception(
+            "_resolve_attachments: unexpected error for "
+            "conversation_id=%s ids=%s: %s",
+            conversation_id, ids, exc,
+        )
         return []
 
 

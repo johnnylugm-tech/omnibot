@@ -40,9 +40,9 @@ from app.admin.webui import (
     KNOWLEDGE_ACTION_READ,
     KNOWLEDGE_ACTION_UPDATE,
     KnowledgeAdminAPI,
-    OperationsDashboard,
     RAG_DEFAULT_THRESHOLD,
     RAGDebugger,
+    RealSQLOperationsDashboard,
 )
 from app.api.auth import get_current_user_role
 
@@ -53,88 +53,7 @@ security = HTTPBearer()
 # sandbox slider state (held on RAGDebugger) survives across requests.
 _knowledge_api = KnowledgeAdminAPI()
 _rag_debugger = RAGDebugger()
-_ops_dashboard = OperationsDashboard()
-
-
-class _RealSQLDashboard(OperationsDashboard):
-    """[P5] OperationsDashboard subclass backed by real SQL queries.
-
-    The base ``_fetch_metrics`` returns zero-everything so the FR-101
-    unit tests can construct the dashboard without a DB. The
-    OperationsDashboard web UI requires real numbers, so this
-    subclass runs the ODD SQL queries against the canonical
-    ``odd_conversations`` / ``odd_queries`` tables via the standard
-    ``get_session`` seam. SQL exceptions degrade gracefully (zero
-    values + the prior alert colour) so a partial outage doesn't
-    black out the dashboard.
-    """
-
-    async def _fetch_metrics_async(self, time_range: str) -> dict:
-        from sqlalchemy import text
-
-        from app.infra.database import get_session
-
-        # Map UI time range to the ODD SQL window — the ODD suite
-        # is fixed at a 30-day window so the UI's "24hr" still gets
-        # a meaningful number rather than an empty result set.
-        out = {
-            "fcr": 0.0,
-            "p95_latency_ms": 0,
-            "knowledge_distribution": {"tier1": 0, "tier2": 0, "tier3": 0, "tier4": 0},
-            "monthly_cost_usd": 0.0,
-            "time_range": time_range,
-        }
-        try:
-            session_gen = get_session()
-            session = await session_gen.__anext__()
-            try:
-                row = (
-                    await session.execute(
-                        text(
-                            "SELECT COUNT(*) FILTER (WHERE odd_resolved_on_first_contact = TRUE)::FLOAT"
-                            " / NULLIF(COUNT(*), 0) AS fcr"
-                            " FROM odd_conversations"
-                            " WHERE scope_type = 'in_scope'"
-                            " AND created_at >= NOW() - INTERVAL '30 days'"
-                        )
-                    )
-                ).fetchone()
-                if row and row[0] is not None:
-                    out["fcr"] = float(row[0])
-
-                row = (
-                    await session.execute(
-                        text(
-                            "SELECT PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY resolution_time_seconds) * 1000"
-                            " FROM odd_conversations"
-                            " WHERE scope_type = 'in_scope' AND resolved_at IS NOT NULL"
-                        )
-                    )
-                ).fetchone()
-                if row and row[0] is not None:
-                    out["p95_latency_ms"] = int(row[0])
-
-                rows = (
-                    await session.execute(
-                        text(
-                            "SELECT tier, COUNT(*) FROM odd_queries"
-                            " WHERE scope_type = 'in_scope'"
-                            " GROUP BY tier"
-                        )
-                    )
-                ).fetchall()
-                for r in rows:
-                    key = f"tier{r[0]}"
-                    if key in out["knowledge_distribution"]:
-                        out["knowledge_distribution"][key] = int(r[1])
-            finally:
-                await session_gen.aclose()
-        except Exception:
-            pass
-        return out
-
-
-_ops_dashboard = _RealSQLDashboard()
+_ops_dashboard = RealSQLOperationsDashboard()
 
 _HTTP_OK = 200
 _HTTP_FORBIDDEN = 403
@@ -158,14 +77,12 @@ def _knowledge_list(
     limit: int = Query(20, ge=1, le=200),
 ) -> dict:
     _check(role, "knowledge", "read")
-    rows = list(_knowledge_api._default_store.rows.values())  # noqa: SLF001 — read-side list for WebUI
-    start = (page - 1) * limit
-    page_rows = rows[start : start + limit]
+    result = _knowledge_api.list_entries(page=page, limit=limit)
     return {
-        "total": len(rows),
-        "page": page,
-        "limit": limit,
-        "items": [_entry_to_dict(e) for e in page_rows],
+        "total": result["total"],
+        "page": result["page"],
+        "limit": result["limit"],
+        "items": [_entry_to_dict(e) for e in result["items"]],
     }
 
 
@@ -319,12 +236,10 @@ async def _dashboard(
     role: str = Depends(get_current_user_role),
 ) -> dict:
     _check(role, "knowledge", "read")
-    fetcher = getattr(_ops_dashboard, "_fetch_metrics_async", None)
-    if fetcher is not None:
-        data = await fetcher(range)
-    else:
-        data = _ops_dashboard.get_dashboard_data(range)
-    # Augment with the alert colour the dashboard KPI cards render.
+    # Delegate to the dispatcher — the SQL implementation lives in
+    # ``RealSQLOperationsDashboard`` so this router stays declarative
+    # and the api_layer_no_business_logic constraint holds.
+    data = await _ops_dashboard._fetch_metrics_async(range)
     fcr = float(data.get("fcr", 0.0))
     data["fcr_alert_color"] = _ops_dashboard.get_fcr_alert_color(fcr)
     return data
