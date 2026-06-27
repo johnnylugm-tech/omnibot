@@ -1,12 +1,12 @@
 {
   "summary": {
-    "total": 502,
+    "total": 519,
     "missing": 0,
     "incomplete": 0,
-    "orphaned": 502,
+    "orphaned": 519,
     "critical": 0,
     "major": 0,
-    "minor": 502
+    "minor": 519
   },
   "gaps": [
     {
@@ -270,6 +270,12 @@
     {
       "type": "ORPHANED",
       "severity": "minor",
+      "reason": "'list_entries' has no corresponding specification in SPEC.md",
+      "action": "Add spec for list_entries or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
       "reason": "'create_entry' has no corresponding specification in SPEC.md",
       "action": "Add spec for create_entry or remove if unnecessary"
     },
@@ -392,6 +398,36 @@
       "severity": "minor",
       "reason": "'get_dashboard_data' has no corresponding specification in SPEC.md",
       "action": "Add spec for get_dashboard_data or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'RealSQLOperationsDashboard' has no corresponding specification in SPEC.md",
+      "action": "Add spec for RealSQLOperationsDashboard or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'RealSQLKnowledgeAdminAPI' has no corresponding specification in SPEC.md",
+      "action": "Add spec for RealSQLKnowledgeAdminAPI or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'list_entries' has no corresponding specification in SPEC.md",
+      "action": "Add spec for list_entries or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'crud' has no corresponding specification in SPEC.md",
+      "action": "Add spec for crud or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'import_csv' has no corresponding specification in SPEC.md",
+      "action": "Add spec for import_csv or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
@@ -636,6 +672,18 @@
     {
       "type": "ORPHANED",
       "severity": "minor",
+      "reason": "'MeResponse' has no corresponding specification in SPEC.md",
+      "action": "Add spec for MeResponse or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'conversation_history' has no corresponding specification in SPEC.md",
+      "action": "Add spec for conversation_history or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
       "reason": "'ApiResponse' has no corresponding specification in SPEC.md",
       "action": "Add spec for ApiResponse or remove if unnecessary"
     },
@@ -740,6 +788,18 @@
       "severity": "minor",
       "reason": "'create_experiment' has no corresponding specification in SPEC.md",
       "action": "Add spec for create_experiment or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'upload' has no corresponding specification in SPEC.md",
+      "action": "Add spec for upload or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'get_media' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get_media or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
@@ -884,6 +944,36 @@
       "severity": "minor",
       "reason": "'handle_message_reply' has no corresponding specification in SPEC.md",
       "action": "Add spec for handle_message_reply or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'push' has no corresponding specification in SPEC.md",
+      "action": "Add spec for push or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'ws_agent' has no corresponding specification in SPEC.md",
+      "action": "Add spec for ws_agent or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'ws_user' has no corresponding specification in SPEC.md",
+      "action": "Add spec for ws_user or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'get_escalation_manager' has no corresponding specification in SPEC.md",
+      "action": "Add spec for get_escalation_manager or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'fire_test_escalation' has no corresponding specification in SPEC.md",
+      "action": "Add spec for fire_test_escalation or remove if unnecessary"
     },
     {
       "type": "ORPHANED",
@@ -2996,6 +3086,18 @@
       "severity": "minor",
       "reason": "'run_migrations_online' has no corresponding specification in SPEC.md",
       "action": "Add spec for run_migrations_online or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'upgrade' has no corresponding specification in SPEC.md",
+      "action": "Add spec for upgrade or remove if unnecessary"
+    },
+    {
+      "type": "ORPHANED",
+      "severity": "minor",
+      "reason": "'downgrade' has no corresponding specification in SPEC.md",
+      "action": "Add spec for downgrade or remove if unnecessary"
     },
     {
       "type": "ORPHANED",

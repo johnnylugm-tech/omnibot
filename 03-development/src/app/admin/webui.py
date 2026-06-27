@@ -740,8 +740,36 @@ class RealSQLOperationsDashboard(OperationsDashboard):
             )
         return out
 
+# Column list shared by every SELECT/UPDATE-RETURNING against
+# knowledge_base. Extracted so a schema change touches one place, not five.
+_KB_COLUMNS = (
+    "id, title, content, keywords, embedding_status, "
+    "embedding_chunks_synced, embedding_chunks_total"
+)
+_KB_INSERT_SQL = (
+    "INSERT INTO knowledge_base "
+    "(title, content, keywords, embedding_status, "
+    "embedding_chunks_synced, embedding_chunks_total) "
+    "VALUES (:title, :content, :keywords, :status, 0, 0)"
+)
+
+
 class RealSQLKnowledgeAdminAPI(KnowledgeAdminAPI):
     """[FR-101] Async SQL-backed implementation of KnowledgeAdminAPI."""
+
+    @staticmethod
+    def _row_to_entry(r: Any) -> KnowledgeEntry:
+        """Map a ``knowledge_base`` row tuple to a KnowledgeEntry.
+
+        All three read paths (list_entries, crud READ, crud UPDATE-RETURNING)
+        share this projection so a column-list change stays in one place.
+        """
+        return KnowledgeEntry(
+            id=r[0], title=r[1], content=r[2], keywords=r[3] or [],
+            embedding_status=r[4] or EMBEDDING_STATUS_SYNCED,
+            embedding_chunks_synced=r[5] or 0,
+            embedding_chunks_total=r[6] or 0,
+        )
 
     async def list_entries(self, page: int = 1, limit: int = 20) -> dict[str, Any]:
         page = max(1, int(page))
@@ -756,18 +784,14 @@ class RealSQLKnowledgeAdminAPI(KnowledgeAdminAPI):
             out["total"] = total_row[0] if total_row else 0
 
             rows = (await session.execute(
-                text("SELECT id, title, content, keywords, embedding_status, embedding_chunks_synced, embedding_chunks_total "
-                     "FROM knowledge_base ORDER BY id DESC LIMIT :limit OFFSET :offset"),
-                {"limit": limit, "offset": start}
+                text(
+                    f"SELECT {_KB_COLUMNS} FROM knowledge_base "
+                    "ORDER BY id DESC LIMIT :limit OFFSET :offset"
+                ),
+                {"limit": limit, "offset": start},
             )).fetchall()
 
-            for r in rows:
-                out["items"].append(KnowledgeEntry(
-                    id=r[0], title=r[1], content=r[2], keywords=r[3] or [],
-                    embedding_status=r[4] or EMBEDDING_STATUS_SYNCED,
-                    embedding_chunks_synced=r[5] or 0,
-                    embedding_chunks_total=r[6] or 0
-                ))
+            out["items"] = [self._row_to_entry(r) for r in rows]
             break
         return out
 
@@ -775,7 +799,13 @@ class RealSQLKnowledgeAdminAPI(KnowledgeAdminAPI):
         from sqlalchemy import text
         from app.infra.database import get_session
         from app.admin.reports import log_admin_action
-        log_admin_action("knowledge_crud", admin_id="system", details={"action": action})
+
+        # Audit log uses the caller's actor_id (router's role) so the
+        # audit trail attributes actions to the actual admin instead of
+        # an opaque "system" sentinel. RBAC itself stays in the router;
+        # this layer only records who triggered the action.
+        actor_id = kwargs.pop("actor_id", None) or "system"
+        log_admin_action("knowledge_crud", admin_id=actor_id, details={"action": action})
 
         async for session in get_session():
             if action == KNOWLEDGE_ACTION_CREATE:
@@ -783,33 +813,33 @@ class RealSQLKnowledgeAdminAPI(KnowledgeAdminAPI):
                 content = kwargs.get("content", "")
                 keywords = kwargs.get("keywords") or []
                 row = (await session.execute(
-                    text("INSERT INTO knowledge_base (title, content, keywords, embedding_status, embedding_chunks_synced, embedding_chunks_total) "
-                         "VALUES (:title, :content, :keywords, :status, 0, 0) RETURNING id"),
-                    {"title": title, "content": content, "keywords": keywords, "status": EMBEDDING_STATUS_SYNCED}
+                    text(f"{_KB_INSERT_SQL} RETURNING {_KB_COLUMNS}"),
+                    {"title": title, "content": content, "keywords": keywords, "status": EMBEDDING_STATUS_SYNCED},
                 )).fetchone()
                 await session.commit()
-                entry = KnowledgeEntry(id=row[0], title=title, content=content, keywords=keywords)
-                return self._crud_response(entry)
+                return self._crud_response(self._row_to_entry(row))
 
             if action == KNOWLEDGE_ACTION_READ:
                 entry_id = kwargs.get("entry_id", 0)
                 row = (await session.execute(
-                    text("SELECT id, title, content, keywords, embedding_status, embedding_chunks_synced, embedding_chunks_total "
-                         "FROM knowledge_base WHERE id = :id"),
-                    {"id": entry_id}
+                    text(f"SELECT {_KB_COLUMNS} FROM knowledge_base WHERE id = :id"),
+                    {"id": entry_id},
                 )).fetchone()
-                if row:
-                    entry = KnowledgeEntry(id=row[0], title=row[1], content=row[2], keywords=row[3] or [], embedding_status=row[4] or EMBEDDING_STATUS_SYNCED, embedding_chunks_synced=row[5] or 0, embedding_chunks_total=row[6] or 0)
-                    return self._crud_response(entry)
-                return self._crud_response(None)
+                return self._crud_response(self._row_to_entry(row) if row else None)
 
             if action == KNOWLEDGE_ACTION_UPDATE:
-                from app.admin.rbac import RBACEnforcer
-                # Note: Role check happens in the router; this skips the sync RBAC decorator
                 entry_id = kwargs.get("entry_id", 0)
                 fields = kwargs.get("fields", {})
                 if not fields:
-                    return await self.crud(KNOWLEDGE_ACTION_READ, entry_id=entry_id)
+                    # Empty fields → return current state via an inline
+                    # SELECT on the SAME session. The previous recursive
+                    # self.crud(READ) re-entered the async-for and opened
+                    # a second pool connection while the first was pinned.
+                    row = (await session.execute(
+                        text(f"SELECT {_KB_COLUMNS} FROM knowledge_base WHERE id = :id"),
+                        {"id": entry_id},
+                    )).fetchone()
+                    return self._crud_response(self._row_to_entry(row) if row else None)
 
                 set_clauses = []
                 params = {"id": entry_id}
@@ -820,13 +850,15 @@ class RealSQLKnowledgeAdminAPI(KnowledgeAdminAPI):
 
                 if set_clauses:
                     row = (await session.execute(
-                        text(f"UPDATE knowledge_base SET {', '.join(set_clauses)} WHERE id = :id RETURNING id, title, content, keywords, embedding_status, embedding_chunks_synced, embedding_chunks_total"),
-                        params
+                        text(
+                            f"UPDATE knowledge_base SET {', '.join(set_clauses)} "
+                            f"WHERE id = :id RETURNING {_KB_COLUMNS}"
+                        ),
+                        params,
                     )).fetchone()
                     await session.commit()
                     if row:
-                        entry = KnowledgeEntry(id=row[0], title=row[1], content=row[2], keywords=row[3] or [], embedding_status=row[4] or EMBEDDING_STATUS_SYNCED, embedding_chunks_synced=row[5] or 0, embedding_chunks_total=row[6] or 0)
-                        return self._crud_response(entry)
+                        return self._crud_response(self._row_to_entry(row))
                 return self._crud_response(None)
 
             if action == KNOWLEDGE_ACTION_DELETE:
@@ -876,14 +908,59 @@ class RealSQLKnowledgeAdminAPI(KnowledgeAdminAPI):
                         continue
 
                     await session.execute(
-                        text("INSERT INTO knowledge_base (title, content, keywords, embedding_status, embedding_chunks_synced, embedding_chunks_total) "
-                             "VALUES (:title, :content, :keywords, :status, 0, 0)"),
-                        {"title": title, "content": content, "keywords": keywords, "status": EMBEDDING_STATUS_SYNCED}
+                        text(_KB_INSERT_SQL),
+                        {"title": title, "content": content, "keywords": keywords, "status": EMBEDDING_STATUS_SYNCED},
                     )
                     result.imported += 1
                 except Exception as exc:
+                    # Per-row failure: rollback the failed statement so the
+                    # AsyncSession is reusable for subsequent rows. Without
+                    # this the transaction enters a deactivated state and
+                    # the final session.commit() raises InvalidRequestError.
+                    await session.rollback()
                     result.skipped += 1
                     result.errors.append(str(exc))
             await session.commit()
+            break
+        return result
+
+    async def _import_json(self, items: list[Any]) -> ImportResult:
+        """Atomic JSON bulk import — one session + one commit.
+
+        Unlike the per-row ``crud(CREATE)`` path, this opens a SINGLE
+        session, INSERTs every valid row, and commits ONCE at the end
+        so a partial failure leaves the database untouched (atomicity
+        preserved) and the pool connection is reused across all rows.
+        """
+        from sqlalchemy import text
+        from app.infra.database import get_session
+
+        result = ImportResult()
+        rows_to_insert: list[dict[str, Any]] = []
+        for item in items:
+            if not isinstance(item, dict) or not item.get("title"):
+                result.skipped += 1
+                continue
+            rows_to_insert.append({
+                "title": str(item["title"]).strip(),
+                "content": str(item.get("content", "")).strip(),
+                "keywords": list(item.get("keywords") or []),
+                "status": EMBEDDING_STATUS_SYNCED,
+            })
+
+        if not rows_to_insert:
+            return result
+
+        async for session in get_session():
+            try:
+                for params in rows_to_insert:
+                    await session.execute(text(_KB_INSERT_SQL), params)
+                await session.commit()
+                result.imported = len(rows_to_insert)
+            except Exception as exc:
+                await session.rollback()
+                result.errors.append(f"bulk insert failed: {exc}")
+                result.imported = 0
+                result.skipped = len(items)
             break
         return result

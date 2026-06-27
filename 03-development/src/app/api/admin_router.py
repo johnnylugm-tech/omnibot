@@ -97,6 +97,7 @@ async def _knowledge_create(
         title=body.get("title", ""),
         content=body.get("content", ""),
         keywords=body.get("keywords") or [],
+        actor_id=role,
     )
     return result
 
@@ -107,7 +108,9 @@ async def _knowledge_read(
     role: str = Depends(get_current_user_role),
 ) -> dict:
     _check(role, "knowledge", "read")
-    result = await _knowledge_api.crud(KNOWLEDGE_ACTION_READ, entry_id=entry_id)
+    result = await _knowledge_api.crud(
+        KNOWLEDGE_ACTION_READ, entry_id=entry_id, actor_id=role,
+    )
     if not result.get("ok"):
         raise HTTPException(status_code=404, detail="entry not found")
     return result
@@ -122,7 +125,10 @@ async def _knowledge_update(
     _check(role, "knowledge", "write")
     fields = {k: v for k, v in body.items() if k in {"title", "content", "keywords"}}
     result = await _knowledge_api.crud(
-        KNOWLEDGE_ACTION_UPDATE, entry_id=entry_id, fields=fields
+        KNOWLEDGE_ACTION_UPDATE,
+        entry_id=entry_id,
+        fields=fields,
+        actor_id=role,
     )
     return result
 
@@ -133,7 +139,9 @@ async def _knowledge_delete(
     role: str = Depends(get_current_user_role),
 ) -> dict:
     _check(role, "knowledge", "delete")
-    result = await _knowledge_api.crud(KNOWLEDGE_ACTION_DELETE, entry_id=entry_id)
+    result = await _knowledge_api.crud(
+        KNOWLEDGE_ACTION_DELETE, entry_id=entry_id, actor_id=role,
+    )
     return result
 
 
@@ -149,20 +157,10 @@ async def _knowledge_import(
         import json
 
         items = json.loads(raw or b"[]")
-        from app.admin.webui import ImportResult, KnowledgeEntry
-
-        result = ImportResult()
-        for row in items:
-            if not isinstance(row, dict) or not row.get("title"):
-                result.skipped += 1
-                continue
-            await _knowledge_api.crud(
-                KNOWLEDGE_ACTION_CREATE,
-                title=row["title"],
-                content=row.get("content", ""),
-                keywords=row.get("keywords") or [],
-            )
-            result.imported += 1
+        # Atomic bulk import — one session + one commit, not N per-row
+        # commits. Old per-row crud(CREATE) lost atomicity and pinned N
+        # pool connections for one import.
+        result = await _knowledge_api._import_json(items)
     else:
         result = await _knowledge_api.import_csv(raw, filename=file.filename or "kb.csv")
     return {
